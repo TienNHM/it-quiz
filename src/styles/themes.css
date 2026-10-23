@@ -192,3 +192,8 @@
 :root[data-style='paper'] { --ring-a: #c2410c; --ring-b: #fb923c; --logo-a: #fb923c; --logo-b: #c2410c; }
 :root[data-style='sunset'] { --ring-a: #ffb347; --ring-b: #ff5e7e; --logo-a: #ffb347; --logo-b: #c13584; --glow: rgba(255, 94, 126, .45); }
 :root[data-style='pop'] .app-brand span, :root[data-style='terminal'] .app-brand span, :root[data-style='paper'] .app-brand span { background: none; -webkit-text-fill-color: currentColor; color: inherit; }
+
+/* Style không có blur: nền thanh cố định phải đặc, nếu không chữ cuộn bên dưới lọt lên trên */
+:root[data-style='pop'] .app-header::before, :root[data-style='terminal'] .app-header::before, :root[data-style='paper'] .app-header::before { background: var(--bg); }
+:root[data-style='pop'] .dock, :root[data-style='terminal'] .dock, :root[data-style='paper'] .dock,
+:root[data-style='pop'] .actionbar, :root[data-style='terminal'] .actionbar, :root[data-style='paper'] .actionbar { background: var(--surface-solid); }

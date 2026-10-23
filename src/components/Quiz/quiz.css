@@ -166,3 +166,9 @@ details.acc[open] > div { animation: rise 0.45s var(--ease) backwards; }
   .grid > .subj:only-child { grid-column: 1 / -1; }
   .grid > .subj:only-child p.muted { max-width: 70ch; }
 }
+
+/* Thẻ chương: phần chân (tiến độ, số liệu, nút) luôn dính đáy thẻ để các thẻ cùng hàng thẳng nhau */
+.chapters > .card { display: flex; flex-direction: column; }
+.chapters > .card > p { margin-bottom: 14px; }
+.chap-foot { margin-top: auto; display: grid; gap: 8px; }
+.chap-foot .btn { width: 100%; }

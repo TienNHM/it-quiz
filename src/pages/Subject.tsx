@@ -46,14 +46,14 @@ export default function SubjectPage() {
           <div className="card" key={c.id}>
             <h3>{c.title}</h3>
             <p className="muted">{c.description}</p>
-            <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={p} aria-label={`Tiến độ ${c.title}`}>
-              <span style={{width: `${p}%`}} />
-            </div>
-            <div className="row" style={{marginTop: 8}}>
+            <div className="chap-foot">
+              <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={p} aria-label={`Tiến độ ${c.title}`}>
+                <span style={{width: `${p}%`}} />
+              </div>
               <small className="muted">
                 {cs.seen}/{cs.total} câu · thuộc {cs.mastered} · đúng {Math.round(cs.accuracy * 100)}%
               </small>
-              <Link className="btn primary" style={{marginLeft: 'auto'}} to={`/play/${subject.id}/practice?chapter=${encodeURIComponent(c.id)}`}>
+              <Link className="btn primary" to={`/play/${subject.id}/practice?chapter=${encodeURIComponent(c.id)}`}>
                 Luyện chương <Icon name="arrowRight" size={16} />
               </Link>
             </div>
