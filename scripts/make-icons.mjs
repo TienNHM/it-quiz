@@ -11,7 +11,7 @@ await render(180, 'apple-touch-icon.png');
 
 // Maskable: nền kín + biểu tượng thu nhỏ ~70% vào vùng an toàn.
 const inner = await sharp(svg, {density: 384}).resize(360, 360).png().toBuffer();
-await sharp({create: {width: 512, height: 512, channels: 4, background: '#4f46e5'}})
+await sharp({create: {width: 512, height: 512, channels: 4, background: '#0e1122'}})
   .composite([{input: inner, gravity: 'center'}])
   .png()
   .toFile('public/pwa-maskable-512.png');

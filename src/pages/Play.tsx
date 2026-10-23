@@ -10,6 +10,9 @@ import {
   type Mode,
   type Session,
 } from '../lib';
+import BottomSheet from '../components/BottomSheet';
+import {haptic} from '../components/fx';
+import {Icon} from '../components/Icon';
 import ConfirmDialog from '../components/Quiz/ConfirmDialog';
 import QuestionCard from '../components/Quiz/QuestionCard';
 import {fmtDuration} from '../components/Quiz/format';
@@ -59,7 +62,7 @@ function Runner({session}: {session: Session}) {
   const [picks, setPicks] = useState<number[][]>(() => session.items.map(() => []));
   const [checked, setChecked] = useState<boolean[]>(() => session.items.map(() => false));
   const [marked, setMarked] = useState<Set<number>>(() => new Set());
-  const [confirm, setConfirm] = useState<null | 'exit' | 'submit'>(null);
+  const [confirm, setConfirm] = useState<null | 'exit' | 'submit' | 'list'>(null);
   const [remaining, setRemaining] = useState<number | null>(session.durationSec ?? null);
   const msRef = useRef<number[]>(session.items.map(() => 0));
   const enterRef = useRef(performance.now());
@@ -120,6 +123,7 @@ function Runner({session}: {session: Session}) {
     if (picks[idx].length === 0 || checked[idx]) return;
     flushTime(idx);
     setChecked((c) => c.map((v, i) => (i === idx ? true : v)));
+    haptic(isCorrect(item, picks[idx]) ? 12 : [28, 40, 28]);
   };
 
   const pick = (d: number) => {
@@ -129,6 +133,7 @@ function Runner({session}: {session: Session}) {
     } else {
       setPicks((p) => p.map((arr, i) => (i === idx ? [d] : arr)));
       if (!isExam) {
+        haptic(isCorrect(item, [d]) ? 12 : [28, 40, 28]);
         flushTime(idx);
         setChecked((c) => c.map((v, i) => (i === idx ? true : v)));
       }
@@ -172,74 +177,77 @@ function Runner({session}: {session: Session}) {
   const isLast = idx === n - 1;
   const revealed = !isExam && checked[idx];
 
+  const nextLabel = isLast ? (isExam ? 'Nộp bài' : 'Hoàn thành') : 'Câu tiếp';
+  const toggleMark = () =>
+    setMarked((m) => {
+      const s = new Set(m);
+      if (s.has(idx)) s.delete(idx);
+      else s.add(idx);
+      return s;
+    });
+
   return (
-    <div>
-      <div className="row" style={{marginBottom: 8}}>
-        <button className="btn" onClick={() => setConfirm('exit')} aria-label="Thoát phiên">✕ Thoát</button>
-        <strong style={{flex: 1, minWidth: 0}}>{session.title}</strong>
+    <div className="play">
+      <div className="playtop">
+        <button className="iconbtn" onClick={() => setConfirm('exit')} aria-label="Thoát phiên">
+          <Icon name="close" size={20} />
+        </button>
+        <div className="progress thin" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pctDone} aria-label="Tiến độ">
+          <span style={{width: `${pctDone}%`}} />
+        </div>
+        <span className="q-count">
+          {idx + 1}/{n}
+        </span>
         {remaining !== null && (
           <span className={`q-timer${remaining <= 60 ? ' low' : ''}`} role="timer" aria-label="Thời gian còn lại">
-            ⏱ {fmtDuration(remaining * 1000)}
+            <Icon name="clock" size={14} /> {fmtDuration(remaining * 1000)}
           </span>
         )}
       </div>
-      <div className="progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pctDone} aria-label="Tiến độ">
-        <span style={{width: `${pctDone}%`}} />
-      </div>
-      <p className="muted" style={{margin: '4px 0 12px'}}>
-        Câu {idx + 1}/{n}
+      <p className="muted play-title">
+        {session.title}
         {isExam && ` · đã trả lời ${answered}`}
       </p>
 
-      <div className="card">
-        <QuestionCard item={item} picked={picks[idx]} revealed={revealed} onPick={pick} />
-        <div className="q-actions">
-          {isExam ? (
-            <>
-              <button className="btn" disabled={idx === 0} onClick={() => goTo(idx - 1)}>← Trước</button>
-              <button
-                className="btn"
-                aria-pressed={marked.has(idx)}
-                onClick={() =>
-                  setMarked((m) => {
-                    const s = new Set(m);
-                    if (s.has(idx)) s.delete(idx);
-                    else s.add(idx);
-                    return s;
-                  })
-                }
-              >
-                {marked.has(idx) ? '⚑ Bỏ đánh dấu' : '⚐ Đánh dấu'}
-              </button>
-              <span className="spacer" />
-              {isLast ? (
-                <button className="btn primary" onClick={() => setConfirm('submit')}>Nộp bài</button>
-              ) : (
-                <button className="btn primary" onClick={next}>Câu tiếp →</button>
-              )}
-            </>
-          ) : (
-            <>
-              {multi && !checked[idx] && (
-                <button className="btn primary" disabled={picks[idx].length === 0} onClick={check}>Kiểm tra</button>
-              )}
-              <span className="spacer" />
-              {checked[idx] && (
-                <button className="btn primary" onClick={next}>
-                  {isLast ? 'Hoàn thành' : 'Câu tiếp'} <span className="kbd">Enter</span>
-                </button>
-              )}
-            </>
-          )}
+      <div className="card q-card">
+        <div key={idx} className="q-slide">
+          <QuestionCard item={item} picked={picks[idx]} revealed={revealed} onPick={pick} />
         </div>
       </div>
 
-      {isExam && (
-        <div className="card">
-          <div className="row">
-            <strong>Danh sách câu</strong>
-            <button className="btn primary" style={{marginLeft: 'auto'}} onClick={() => setConfirm('submit')}>Nộp bài</button>
-          </div>
+      <div className="actionbar" role="toolbar" aria-label="Hành động">
+        {isExam ? (
+          <>
+            <button className="iconbtn" onClick={() => setConfirm('list')} aria-label="Danh sách câu">
+              <Icon name="grid" size={20} />
+            </button>
+            <button className={`iconbtn${marked.has(idx) ? ' on' : ''}`} aria-pressed={marked.has(idx)} aria-label={marked.has(idx) ? 'Bỏ đánh dấu' : 'Đánh dấu'} onClick={toggleMark}>
+              <Icon name="flag" size={20} filled={marked.has(idx)} />
+            </button>
+            <button className="iconbtn" disabled={idx === 0} onClick={() => goTo(idx - 1)} aria-label="Câu trước">
+              <Icon name="arrowLeft" size={20} />
+            </button>
+            <button className="btn primary big grow" onClick={next}>
+              {nextLabel} <Icon name={isLast ? 'check' : 'arrowRight'} size={18} />
+            </button>
+          </>
+        ) : checked[idx] ? (
+          <button className="btn primary big grow" onClick={next} autoFocus>
+            {nextLabel} <Icon name={isLast ? 'check' : 'arrowRight'} size={18} />
+          </button>
+        ) : multi ? (
+          <button className="btn primary big grow" disabled={picks[idx].length === 0} onClick={check}>
+            <Icon name="check" size={18} /> Kiểm tra
+          </button>
+        ) : (
+          <button className="btn big grow" disabled>
+            Chọn một đáp án
+          </button>
+        )}
+      </div>
+
+      {confirm === 'list' && (
+        <BottomSheet title={`Danh sách câu · ${answered}/${n}`} onClose={() => setConfirm(null)}>
           <div className="q-nav">
             {session.items.map((_, i) => (
               <button
@@ -247,15 +255,22 @@ function Runner({session}: {session: Session}) {
                 className={`${i === idx ? 'cur' : picks[i].length ? 'done' : ''}${marked.has(i) ? ' flag' : ''}`}
                 aria-label={`Câu ${i + 1}${picks[i].length ? ', đã trả lời' : ''}${marked.has(i) ? ', đã đánh dấu' : ''}`}
                 aria-current={i === idx}
-                onClick={() => goTo(i)}
+                onClick={() => {
+                  goTo(i);
+                  setConfirm(null);
+                }}
               >
                 {i + 1}
               </button>
             ))}
           </div>
-        </div>
+          <div className="sheet-actions">
+            <button className="btn primary big" onClick={() => setConfirm('submit')}>
+              Nộp bài
+            </button>
+          </div>
+        </BottomSheet>
       )}
-
       {confirm === 'exit' && (
         <ConfirmDialog
           title="Thoát phiên?"

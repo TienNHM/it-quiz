@@ -2,6 +2,7 @@ import {StrictMode, useEffect, useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {registerSW} from 'virtual:pwa-register';
 import App from './App';
+import {Icon} from './components/Icon';
 import '@fontsource/be-vietnam-pro/400.css';
 import '@fontsource/be-vietnam-pro/600.css';
 import '@fontsource/be-vietnam-pro/700.css';
@@ -44,7 +45,7 @@ function Root() {
             </button>
           )}
           <button className="btn ghost" aria-label="Đóng thông báo" onClick={() => setNotice(null)}>
-            ✕
+            <Icon name="close" size={16} />
           </button>
         </div>
       )}

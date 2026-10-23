@@ -15,8 +15,8 @@ export default defineConfig({
         description: 'Ôn tập kiến thức IT và luyện phỏng vấn bằng quiz, chạy offline.',
         lang: 'vi',
         display: 'standalone',
-        theme_color: '#4f46e5',
-        background_color: '#0f172a',
+        theme_color: '#090b14',
+        background_color: '#090b14',
         start_url: './',
         scope: './',
         icons: [

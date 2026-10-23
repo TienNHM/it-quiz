@@ -126,7 +126,7 @@ export default function Review() {
 
       {finished ? (
         <div className="card" role="status">
-          <h2>Hoàn thành lượt ôn 🎉</h2>
+          <h2>Hoàn thành lượt ôn</h2>
           <p>
             Bạn nhớ <strong>{finished.correct}</strong>/{finished.total} thẻ, nhận <strong>+{finished.xp} XP</strong>.
           </p>
@@ -151,7 +151,7 @@ export default function Review() {
         </div>
       ) : !current ? (
         <div className="card" role="status">
-          <h2>Hôm nay không còn câu đến hạn 🎉</h2>
+          <h2>Hôm nay không còn câu đến hạn</h2>
           <p className="muted">Bạn đã ôn xong mọi thẻ cần nhắc. Hãy luyện thêm để củng cố kiến thức.</p>
           <Link className="btn primary" to={subjectId ? `/s/${subjectId}` : '/'}>
             Luyện thêm

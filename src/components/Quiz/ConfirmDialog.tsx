@@ -1,6 +1,7 @@
-import {useEffect, useRef} from 'react';
+import BottomSheet from '../BottomSheet';
 import './quiz.css';
 
+/** Xác nhận dạng bottom sheet: nút hành động nằm sát đáy, vừa tầm ngón cái. */
 export default function ConfirmDialog(props: {
   title: string;
   message: string;
@@ -10,29 +11,17 @@ export default function ConfirmDialog(props: {
   onConfirm: () => void;
   onCancel: () => void;
 }) {
-  const ref = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    ref.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') props.onCancel();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [props]);
   return (
-    <div className="dialog-back" onClick={props.onCancel}>
-      <div className="card dialog" role="dialog" aria-modal="true" aria-label={props.title} onClick={(e) => e.stopPropagation()}>
-        <h3>{props.title}</h3>
-        <p>{props.message}</p>
-        <div className="row" style={{justifyContent: 'flex-end'}}>
-          <button ref={ref} className="btn" onClick={props.onCancel}>
-            {props.cancelLabel ?? 'Hủy'}
-          </button>
-          <button className={`btn ${props.danger ? 'danger' : 'primary'}`} onClick={props.onConfirm}>
-            {props.confirmLabel}
-          </button>
-        </div>
+    <BottomSheet title={props.title} onClose={props.onCancel}>
+      <p className="muted">{props.message}</p>
+      <div className="sheet-actions">
+        <button className={`btn big ${props.danger ? 'danger' : 'primary'}`} onClick={props.onConfirm}>
+          {props.confirmLabel}
+        </button>
+        <button className="btn big" autoFocus onClick={props.onCancel}>
+          {props.cancelLabel ?? 'Hủy'}
+        </button>
       </div>
-    </div>
+    </BottomSheet>
   );
 }

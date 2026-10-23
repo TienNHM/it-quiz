@@ -174,3 +174,15 @@
 :root[data-style='sunset'] .btn:hover:not(:disabled), :root[data-style='sunset'] .q-opt:hover:not(:disabled), :root[data-style='sunset'] a.card:hover { transform: translateY(-2px); }
 :root[data-style='sunset'] .btn:active:not(:disabled), :root[data-style='sunset'] .q-opt:active:not(:disabled), :root[data-style='sunset'] a.card:active, :root[data-style='sunset'] .q-opt.selected { transform: translateY(4px); }
 :root[data-style='terminal'] pre, :root[data-style='terminal'] code, :root[data-style='terminal'] .mermaid-box, :root[data-style='terminal'] details.acc, :root[data-style='terminal'] .q-explain { border-radius: 0; }
+
+/* Các style khác không dùng viền gradient / glow của Obsidian */
+:root[data-style='pop'], :root[data-style='aurora'], :root[data-style='terminal'], :root[data-style='paper'], :root[data-style='sunset'] {
+  --edge: none;
+  --glow: transparent;
+}
+:root[data-style='pop'] { --ring-a: #ff4d8d; --ring-b: #ffdd33; --logo-a: #ffdd33; --logo-b: #ff4d8d; }
+:root[data-style='aurora'] { --ring-a: #38bdf8; --ring-b: #c084fc; --logo-a: #38bdf8; --logo-b: #c084fc; --glow: rgba(109, 92, 255, .45); }
+:root[data-style='terminal'] { --ring-a: #33ff66; --ring-b: #0b7a2b; --logo-a: #33ff66; --logo-b: #0b7a2b; }
+:root[data-style='paper'] { --ring-a: #c2410c; --ring-b: #fb923c; --logo-a: #fb923c; --logo-b: #c2410c; }
+:root[data-style='sunset'] { --ring-a: #ffb347; --ring-b: #ff5e7e; --logo-a: #ffb347; --logo-b: #c13584; --glow: rgba(255, 94, 126, .45); }
+:root[data-style='pop'] .app-brand span, :root[data-style='terminal'] .app-brand span, :root[data-style='paper'] .app-brand span { background: none; -webkit-text-fill-color: currentColor; color: inherit; }

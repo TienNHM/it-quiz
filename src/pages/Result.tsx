@@ -1,5 +1,7 @@
 import {Link, Navigate} from 'react-router-dom';
 import {getQuestion, getSubject, useProgress} from '../lib';
+import {Confetti, CountUp, ScoreRing} from '../components/fx';
+import {Icon} from '../components/Icon';
 import RichText from '../components/RichText';
 import Mermaid from '../components/Mermaid';
 import {fmtDuration, pct} from '../components/Quiz/format';
@@ -18,20 +20,21 @@ export default function Result() {
     <div>
       <h1>Kết quả</h1>
       <p className="muted">{r.title}</p>
-      <div className="card" style={{textAlign: 'center'}}>
-        <div style={{fontSize: '3rem', fontWeight: 800, color: score >= 50 ? 'var(--success)' : 'var(--danger)'}}>{score}%</div>
-        <p>{verdict}</p>
+      <div className="card result-hero">
+        {score >= 70 && <Confetti />}
+        <ScoreRing pct={score} />
+        <p className="verdict">{verdict}</p>
       </div>
       <div className="stat-grid" style={{marginTop: 12}}>
-        <div className="card"><div className="stat-big">{r.correct}/{r.total}</div><div className="muted">đúng</div></div>
+        <div className="card"><div className="stat-big"><CountUp value={r.correct} />/{r.total}</div><div className="muted">đúng</div></div>
         <div className="card"><div className="stat-big">{fmtDuration(r.durationMs)}</div><div className="muted">thời gian</div></div>
-        <div className="card"><div className="stat-big">+{r.xpGained}</div><div className="muted">XP</div></div>
-        <div className="card"><div className="stat-big">🔥 {streak}</div><div className="muted">streak</div></div>
+        <div className="card"><div className="stat-big"><CountUp value={r.xpGained} prefix="+" /></div><div className="muted">XP</div></div>
+        <div className="card"><div className="stat-big"><CountUp value={streak} /></div><div className="muted">ngày liên tiếp</div></div>
       </div>
-      <div className="row" style={{margin: '16px 0'}}>
-        <Link className="btn primary" to={retry}>Làm lại</Link>
-        {wrong.length > 0 && <Link className="btn" to={`/play/${r.subjectId}/review`}>Ôn câu sai ({wrong.length})</Link>}
-        <Link className="btn" to={`/s/${r.subjectId}`}>Về môn học{subject ? ` ${subject.title}` : ''}</Link>
+      <div className="stack" style={{margin: '16px 0'}}>
+        <Link className="btn primary big" to={retry}><Icon name="retry" size={18} /> Làm lại</Link>
+        {wrong.length > 0 && <Link className="btn big" to={`/play/${r.subjectId}/review`}><Icon name="review" size={18} /> Ôn câu sai ({wrong.length})</Link>}
+        <Link className="btn big" to={`/s/${r.subjectId}`}>Về môn học{subject ? ` ${subject.title}` : ''}</Link>
       </div>
       <h2>Câu trả lời sai ({wrong.length})</h2>
       {wrong.length === 0 && <p className="muted">Tuyệt vời, bạn không sai câu nào!</p>}

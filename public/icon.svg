@@ -1,5 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#4f46e5"/>
-  <text x="256" y="300" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="190" text-anchor="middle" fill="#fff">IT?</text>
-  <rect x="136" y="340" width="240" height="22" rx="11" fill="#a5b4fc"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b1f3a"/><stop offset="1" stop-color="#090b14"/></linearGradient>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6e6b8"/><stop offset="0.55" stop-color="#d9b46c"/><stop offset="1" stop-color="#b8893a"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.45" r="0.55"><stop offset="0" stop-color="#d9b46c" stop-opacity="0.35"/><stop offset="1" stop-color="#d9b46c" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glow)"/>
+  <path d="M256 92 408 208 256 420 104 208 256 92Z" fill="url(#g)"/>
+  <path d="M104 208h304M200 208l56 212 56-212M200 208l56-116 56 116" fill="none" stroke="#fff" stroke-opacity="0.5" stroke-width="10" stroke-linejoin="round"/>
 </svg>

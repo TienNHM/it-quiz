@@ -31,7 +31,7 @@ export default function Stats() {
       <h1>Thống kê</h1>
       <div className="grid" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))'}}>
         <StatTile label="Tổng XP" value={progress.xp} />
-        <StatTile label="Chuỗi ngày" value={`🔥 ${progress.streak}`} sub={`Kỷ lục ${progress.bestStreak}`} />
+        <StatTile label="Chuỗi ngày" value={String(progress.streak)} sub={`Kỷ lục ${progress.bestStreak}`} />
         <StatTile label="Đã học" value={`${seen}/${total}`} />
         <StatTile label="Thành thạo" value={`${mastered}/${total}`} />
         <StatTile label="Độ chính xác" value={`${accuracy}%`} />

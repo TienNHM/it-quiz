@@ -1,4 +1,6 @@
+import {useEffect, useRef} from 'react';
 import {correctDisplayIndices, type PlayQuestion} from '../../lib';
+import {Icon} from '../Icon';
 import Mermaid from '../Mermaid';
 import RichText from '../RichText';
 import './quiz.css';
@@ -16,6 +18,10 @@ export default function QuestionCard(props: {
   const multi = Array.isArray(q.answer);
   const correct = new Set(revealed ? correctDisplayIndices(item) : []);
   const sel = new Set(picked);
+  const explainRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (revealed) explainRef.current?.scrollIntoView({behavior: 'smooth', block: 'center'});
+  }, [revealed]);
   return (
     <div>
       <div className="q-head">
@@ -42,24 +48,25 @@ export default function QuestionCard(props: {
               key={d}
               type="button"
               className={cls}
+              style={{['--i' as string]: d}}
               disabled={props.disabled || revealed}
               role={multi ? 'checkbox' : 'radio'}
               aria-checked={isSel}
               onClick={() => props.onPick(d)}
             >
-              <span className="kbd key" aria-hidden="true">
-                {multi ? (isSel ? '☑' : '☐') : d + 1}
+              <span className={multi ? 'key box' : 'key'} aria-hidden="true">
+                {multi ? (isSel || (revealed && correct.has(d)) ? <Icon name="check" size={14} /> : null) : d + 1}
               </span>
               <span style={{flex: 1, minWidth: 0}}>
                 <RichText text={q.options[orig]} />
               </span>
-              {revealed && (correct.has(d) ? <span className="mark" style={{color: 'var(--success)'}}>✓</span> : isSel ? <span className="mark" style={{color: 'var(--danger)'}}>✗</span> : null)}
+              {revealed && (correct.has(d) ? <span className="mark ok"><Icon name="check" size={20} /></span> : isSel ? <span className="mark bad"><Icon name="close" size={20} /></span> : null)}
             </button>
           );
         })}
       </div>
       {revealed && (
-        <div className="q-explain" aria-live="polite">
+        <div className="q-explain" aria-live="polite" ref={explainRef}>
           <strong>Giải thích</strong>
           <RichText text={q.explanation} />
         </div>

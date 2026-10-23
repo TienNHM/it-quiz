@@ -38,7 +38,7 @@ writeFileSync(
     {
       id: 'os',
       title: 'Hệ điều hành',
-      icon: '🖥️',
+      icon: 'cpu',
       description: 'Tiến trình, lập lịch CPU, đồng bộ, deadlock, quản lý bộ nhớ, thay trang, đĩa và hệ thống file.',
       chapters,
     },

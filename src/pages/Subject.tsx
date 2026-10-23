@@ -1,5 +1,6 @@
 import {Link, useParams} from 'react-router-dom';
 import {chapterStats, dueQuestionIds, getSubject, subjectStats, useProgress} from '../lib';
+import {Icon} from '../components/Icon';
 import {pct} from '../components/Quiz/format';
 import '../components/Quiz/quiz.css';
 
@@ -19,20 +20,18 @@ export default function SubjectPage() {
   const examCount = Math.min(settings.examSize, st.total);
   return (
     <div>
-      <p><Link to="/">← Trang chủ</Link></p>
-      <h1>
-        <span aria-hidden="true">{subject.icon}</span> {subject.title}
-      </h1>
+      <p><Link to="/" className="backlink"><Icon name="arrowLeft" size={16} /> Trang chủ</Link></p>
+      <h1 className="titled"><span className="subj-ico"><Icon name={subject.icon} size={26} /></span> {subject.title}</h1>
       <p className="muted">{subject.description}</p>
       <div className="card">
-        <div className="row">
-          <Link className="btn primary" to={`/play/${subject.id}/practice`}>📚 Luyện toàn môn ({st.total} câu)</Link>
+        <div className="stack">
+          <Link className="btn primary big" to={`/play/${subject.id}/practice`}><Icon name="layers" size={18} /> Luyện toàn môn ({st.total} câu)</Link>
           {due > 0 ? (
-            <Link className="btn" to={`/play/${subject.id}/review`}>🔁 Ôn tập thông minh ({due} đến hạn)</Link>
+            <Link className="btn big" to={`/play/${subject.id}/review`}><Icon name="review" size={18} /> Ôn tập thông minh ({due} đến hạn)</Link>
           ) : (
-            <button className="btn" disabled title="Chưa có câu đến hạn ôn">🔁 Ôn tập thông minh (0)</button>
+            <button className="btn big" disabled title="Chưa có câu đến hạn ôn"><Icon name="review" size={18} /> Ôn tập thông minh (0)</button>
           )}
-          <Link className="btn" to={`/play/${subject.id}/exam`}>📝 Thi thử</Link>
+          <Link className="btn big" to={`/play/${subject.id}/exam`}><Icon name="exam" size={18} /> Thi thử</Link>
         </div>
         <p className="muted" style={{margin: '8px 0 0'}}>
           Thi thử: {examCount} câu, {settings.examMinutes} phút. Đã làm {st.seen}/{st.total}, thuộc {st.mastered}.
@@ -54,7 +53,7 @@ export default function SubjectPage() {
                 {cs.seen}/{cs.total} câu · thuộc {cs.mastered} · đúng {Math.round(cs.accuracy * 100)}%
               </small>
               <Link className="btn primary" style={{marginLeft: 'auto'}} to={`/play/${subject.id}/practice?chapter=${encodeURIComponent(c.id)}`}>
-                Luyện chương
+                Luyện chương <Icon name="arrowRight" size={16} />
               </Link>
             </div>
           </div>

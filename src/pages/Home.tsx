@@ -1,5 +1,7 @@
 import {Link} from 'react-router-dom';
 import {dueQuestionIds, getSubjects, subjectStats, useProgress} from '../lib';
+import {CountUp} from '../components/fx';
+import {Icon} from '../components/Icon';
 import {pct} from '../components/Quiz/format';
 import '../components/Quiz/quiz.css';
 
@@ -14,25 +16,26 @@ export default function Home() {
         <p className="muted">Luyện trắc nghiệm, thi thử và ôn tập thông minh. Chạy offline, chuẩn bị cho phỏng vấn.</p>
       </section>
       <div className="stat-grid" aria-label="Thành tích">
-        <div className="card">
-          <div className="stat-big">🔥 {progress.streak}</div>
+        <div className="card stat">
+          <span className="stat-ico flame"><Icon name="flame" size={22} /></span>
+          <div className="stat-big"><CountUp value={progress.streak} /></div>
           <div className="muted">ngày liên tiếp</div>
         </div>
-        <div className="card">
-          <div className="stat-big">⭐ {progress.xp}</div>
-          <div className="muted">XP</div>
+        <div className="card stat">
+          <span className="stat-ico"><Icon name="sparkle" size={22} /></span>
+          <div className="stat-big"><CountUp value={progress.xp} /></div>
+          <div className="muted">điểm XP</div>
         </div>
-        <div className="card">
-          <div className="stat-big">🏆 {progress.bestStreak}</div>
-          <div className="muted">streak tốt nhất</div>
+        <div className="card stat">
+          <span className="stat-ico"><Icon name="trophy" size={22} /></span>
+          <div className="stat-big"><CountUp value={progress.bestStreak} /></div>
+          <div className="muted">kỷ lục</div>
         </div>
       </div>
       {first && (
-        <p style={{marginTop: 16}}>
-          <Link className="btn primary" to={`/play/${first.id}/daily`}>
-            ⚡ Luyện hôm nay
-          </Link>
-        </p>
+        <Link className="btn primary big cta" to={`/play/${first.id}/daily`}>
+          <Icon name="bolt" size={20} /> Luyện hôm nay
+        </Link>
       )}
       <h2>Các môn học</h2>
       {subjects.length === 0 && <p className="muted">Chưa có môn học nào.</p>}
@@ -42,11 +45,9 @@ export default function Home() {
           const due = dueQuestionIds(s.id).length;
           const p = pct(st.seen, st.total);
           return (
-            <Link key={s.id} to={`/s/${s.id}`} className="card" style={{textDecoration: 'none', color: 'inherit', display: 'block', margin: 0}}>
+            <Link key={s.id} to={`/s/${s.id}`} className="card subj" style={{textDecoration: 'none', color: 'inherit', display: 'block', margin: 0}}>
               <div className="row">
-                <span style={{fontSize: '2rem'}} aria-hidden="true">
-                  {s.icon}
-                </span>
+                <span className="subj-ico"><Icon name={s.icon} size={28} /></span>
                 <div style={{flex: 1, minWidth: 0}}>
                   <h3 style={{margin: 0}}>{s.title}</h3>
                   <span className="muted">{st.total} câu · {s.chapters.length} chương</span>

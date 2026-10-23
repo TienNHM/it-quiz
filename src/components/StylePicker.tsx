@@ -1,10 +1,11 @@
 import {STYLES, updateSettings, useProgress} from '../lib';
 import type {Settings} from '../lib';
+import {Icon} from './Icon';
 
 const MODES: {id: Settings['theme']; label: string; icon: string}[] = [
-  {id: 'light', label: 'Sáng', icon: '☀️'},
-  {id: 'dark', label: 'Tối', icon: '🌙'},
-  {id: 'auto', label: 'Hệ thống', icon: '🖥️'},
+  {id: 'light', label: 'Sáng', icon: 'sun'},
+  {id: 'dark', label: 'Tối', icon: 'moon'},
+  {id: 'auto', label: 'Hệ thống', icon: 'monitor'},
 ];
 
 /** Chọn chế độ sáng/tối/hệ thống + style. Dùng trong Cài đặt và popover ở header. */
@@ -24,7 +25,7 @@ export default function StylePicker({compact = false}: {compact?: boolean}) {
             className={settings.theme === m.id ? 'on' : undefined}
             onClick={() => updateSettings({theme: m.id})}
           >
-            <span aria-hidden="true">{m.icon}</span> {m.label}
+            <Icon name={m.icon} size={16} /> {m.label}
           </button>
         ))}
       </div>

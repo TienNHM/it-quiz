@@ -1,6 +1,8 @@
 import {useEffect, useLayoutEffect, useState, type ReactNode} from 'react';
-import {Link, NavLink} from 'react-router-dom';
+import {Link, NavLink, useLocation} from 'react-router-dom';
 import {useProgress} from '../lib';
+import BottomSheet from './BottomSheet';
+import {Icon, Logo} from './Icon';
 import StylePicker from './StylePicker';
 
 interface InstallPromptEvent extends Event {
@@ -9,14 +11,17 @@ interface InstallPromptEvent extends Event {
 }
 
 const NAV = [
-  {to: '/', label: 'Trang chủ', icon: '🏠', end: true},
-  {to: '/review', label: 'Ôn tập', icon: '🔁', end: false},
-  {to: '/stats', label: 'Thống kê', icon: '📊', end: false},
-  {to: '/settings', label: 'Cài đặt', icon: '⚙️', end: false},
+  {to: '/', label: 'Trang chủ', icon: 'home', end: true},
+  {to: '/review', label: 'Ôn tập', icon: 'review', end: false},
+  {to: '/stats', label: 'Thống kê', icon: 'stats', end: false},
+  {to: '/settings', label: 'Cài đặt', icon: 'settings', end: false},
 ];
 
 export default function Layout({children}: {children: ReactNode}) {
   const {settings} = useProgress();
+  const {pathname} = useLocation();
+  // Đang làm bài: ẩn header + dock để tối đa chỗ cho câu hỏi và thanh hành động ở đáy.
+  const immersive = pathname.startsWith('/play/');
   const [online, setOnline] = useState(() => navigator.onLine);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [installEvt, setInstallEvt] = useState<InstallPromptEvent | null>(null);
@@ -38,11 +43,8 @@ export default function Layout({children}: {children: ReactNode}) {
   }, [settings.theme, settings.style]);
 
   useEffect(() => {
-    if (!paletteOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setPaletteOpen(false);
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [paletteOpen]);
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   useEffect(() => {
     const on = () => setOnline(true);
@@ -72,46 +74,49 @@ export default function Layout({children}: {children: ReactNode}) {
   };
 
   return (
-    <>
+    <div className={immersive ? 'shell immersive' : 'shell'}>
       {!online && (
         <div className="offline-banner" role="status">
           Bạn đang offline - ứng dụng vẫn hoạt động bình thường
         </div>
       )}
-      <header className="app-header">
-        <div className="app-header-inner">
-          <Link to="/" className="app-brand">
-            IT Quiz
-          </Link>
-          {installEvt && (
-            <button className="btn" onClick={() => void install()}>
-              Cài app
-            </button>
-          )}
-          <div className="palette-wrap">
-            <button className="btn ghost palette-btn" aria-label="Đổi giao diện" aria-expanded={paletteOpen} onClick={() => setPaletteOpen((o) => !o)}>
-              🎨
-            </button>
-            {paletteOpen && (
-              <>
-                <div className="palette-back" onClick={() => setPaletteOpen(false)} />
-                <div className="palette card" role="dialog" aria-label="Giao diện">
-                  <StylePicker compact />
-                </div>
-              </>
+      {!immersive && (
+        <header className="app-header">
+          <div className="app-header-inner">
+            <Link to="/" className="app-brand">
+              <Logo />
+              <span>IT Quiz</span>
+            </Link>
+            {installEvt && (
+              <button className="btn sm" onClick={() => void install()}>
+                <Icon name="download" size={16} /> Cài app
+              </button>
             )}
+            <nav className="app-nav dock" aria-label="Điều hướng chính">
+              {NAV.map((n) => (
+                <NavLink key={n.to} to={n.to} end={n.end} className={({isActive}) => (isActive ? 'active' : undefined)}>
+                  <Icon name={n.icon} size={22} />
+                  <span>{n.label}</span>
+                </NavLink>
+              ))}
+              <button type="button" className="dock-btn" aria-label="Đổi giao diện" aria-expanded={paletteOpen} onClick={() => setPaletteOpen(true)}>
+                <Icon name="palette" size={22} />
+                <span>Giao diện</span>
+              </button>
+            </nav>
           </div>
-          <nav className="app-nav" aria-label="Điều hướng chính">
-            {NAV.map((n) => (
-              <NavLink key={n.to} to={n.to} end={n.end} className={({isActive}) => (isActive ? 'active' : undefined)}>
-                <span aria-hidden="true">{n.icon}</span>
-                <span>{n.label}</span>
-              </NavLink>
-            ))}
-          </nav>
+        </header>
+      )}
+      <main className={immersive ? 'container app-main play-main' : 'container app-main'}>
+        <div key={pathname} className="page">
+          {children}
         </div>
-      </header>
-      <main className="container app-main">{children}</main>
-    </>
+      </main>
+      {paletteOpen && (
+        <BottomSheet title="Giao diện" onClose={() => setPaletteOpen(false)}>
+          <StylePicker compact />
+        </BottomSheet>
+      )}
+    </div>
   );
 }
