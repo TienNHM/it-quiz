@@ -96,7 +96,7 @@ export default function Settings() {
   };
 
   return (
-    <div className="container">
+    <div>
       <h1>Cài đặt</h1>
 
       <div className="card">

@@ -86,7 +86,15 @@
 }
 .hero h1 { background: var(--grad-accent); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.stat-grid .card { text-align: center; margin: 0 !important; padding: 14px 8px; border-radius: var(--radius-sm); }
+.stat-grid { align-items: stretch; }
+.stat-grid .card, .grid > .card { margin: 0 !important; }
+.stat-grid .card { text-align: center; padding: 14px 8px; border-radius: var(--radius-sm); }
+.stat-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.stat-grid.two > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+.stat-tile { display: grid; justify-items: center; align-content: start; gap: 2px; padding: 16px 10px !important; }
+.stat-tile .stat-ico { margin-bottom: 4px; }
+.stat-label { font-weight: 600; font-size: 0.86rem; }
+.stat-sub { font-size: 0.72rem; min-height: 1.2em; }
 .stat-ico {
   display: inline-grid; place-items: center; width: 40px; height: 40px; margin-bottom: 6px; border-radius: 14px;
   color: var(--gold-text); background: var(--grad-primary); box-shadow: 0 8px 16px -8px var(--glow);

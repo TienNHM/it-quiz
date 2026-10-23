@@ -27,14 +27,15 @@ export default function Stats() {
   const recent = progress.history.slice(0, 14).reverse();
 
   return (
-    <div className="container">
+    <div>
       <h1>Thống kê</h1>
-      <div className="grid" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))'}}>
-        <StatTile label="Tổng XP" value={progress.xp} />
-        <StatTile label="Chuỗi ngày" value={String(progress.streak)} sub={`Kỷ lục ${progress.bestStreak}`} />
-        <StatTile label="Đã học" value={`${seen}/${total}`} />
-        <StatTile label="Thành thạo" value={`${mastered}/${total}`} />
-        <StatTile label="Độ chính xác" value={`${accuracy}%`} />
+      <div className="stat-grid two">
+        <StatTile icon="sparkle" label="Tổng XP" value={progress.xp} />
+        <StatTile icon="flame" label="Chuỗi ngày" value={progress.streak} sub={`Kỷ lục ${progress.bestStreak}`} />
+        <StatTile icon="layers" label="Đã học" value={`${seen}/${total}`} />
+        <StatTile icon="trophy" label="Thành thạo" value={`${mastered}/${total}`} />
+        <StatTile icon="target" label="Độ chính xác" value={`${accuracy}%`} />
+        <StatTile icon="clock" label="Số phiên đã chơi" value={progress.history.length} sub="50 phiên gần nhất" />
       </div>
 
       <h2 style={{marginTop: 24}}>Độ chính xác 14 phiên gần nhất</h2>

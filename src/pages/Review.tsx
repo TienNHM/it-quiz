@@ -100,7 +100,7 @@ export default function Review() {
   }, [finished, current, flipped, mark]);
 
   return (
-    <div className="container">
+    <div>
       <h1>Ôn tập thẻ ghi nhớ</h1>
       {subjects.length > 1 && (
         <label style={{display: 'block', marginBottom: 12}}>
