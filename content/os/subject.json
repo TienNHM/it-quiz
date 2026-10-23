@@ -1,0 +1,71 @@
+{
+  "id": "os",
+  "title": "Hệ điều hành",
+  "icon": "🖥️",
+  "description": "Tiến trình, lập lịch CPU, đồng bộ, deadlock, quản lý bộ nhớ, thay trang, đĩa và hệ thống file.",
+  "chapters": [
+    {
+      "id": "os-overview",
+      "slug": "01-overview",
+      "title": "Chương 1–2: Tổng quan hệ điều hành",
+      "description": "Chức năng của HĐH, system call, ngắt, IPC và phân loại hệ thống.",
+      "count": 17
+    },
+    {
+      "id": "os-process-scheduling",
+      "slug": "02-process-scheduling",
+      "title": "Chương 3–5: Tiến trình, luồng và lập lịch CPU",
+      "description": "fork(), PCB, trạng thái tiến trình, thread, IPC và các thuật toán lập lịch FCFS, SJF, SRTF, Round Robin, Priority.",
+      "count": 54
+    },
+    {
+      "id": "os-synchronization",
+      "slug": "03-synchronization",
+      "title": "Chương 6: Đồng bộ tiến trình",
+      "description": "Miền găng, Peterson, mutex lock, semaphore, monitor và các bài toán đồng bộ kinh điển.",
+      "count": 27
+    },
+    {
+      "id": "os-deadlock",
+      "slug": "04-deadlock",
+      "title": "Chương 7: Deadlock",
+      "description": "Deadlock và starvation, bốn điều kiện Coffman, điều kiện tài nguyên an toàn, giải thuật Banker và đồ thị cấp phát.",
+      "count": 34
+    },
+    {
+      "id": "os-memory-management",
+      "slug": "05-memory-management",
+      "title": "Chương 8: Quản lý bộ nhớ",
+      "description": "Dịch địa chỉ động, MMU, cấp phát phân vùng, phân mảnh, phân đoạn, swap space và lỗi trang.",
+      "count": 18
+    },
+    {
+      "id": "os-paging",
+      "slug": "06-paging",
+      "title": "Chương 9: Phân trang, bảng trang và TLB",
+      "description": "Bảng trang đa cấp, kích thước bảng trang, số bit địa chỉ, thời gian truy cập hiệu quả với TLB.",
+      "count": 22
+    },
+    {
+      "id": "os-virtual-memory",
+      "slug": "07-virtual-memory",
+      "title": "Chương 10: Bộ nhớ ảo và thay trang",
+      "description": "Demand paging, bit valid-invalid, lỗi trang, thrashing, nghịch lý Belady và thời gian truy cập hiệu quả.",
+      "count": 15
+    },
+    {
+      "id": "os-disk-io",
+      "slug": "08-disk-io",
+      "title": "Chương 11: Hệ thống I/O và lập lịch đĩa",
+      "description": "Seek time, rotational latency và các thuật toán lập lịch đĩa FCFS, SSTF, SCAN, C-SCAN.",
+      "count": 8
+    },
+    {
+      "id": "os-file-system",
+      "slug": "09-file-system",
+      "title": "Chương 12: Hệ thống file",
+      "description": "FCB, các lớp chức năng của hệ thống file, volume control block, FAT32 và NTFS.",
+      "count": 13
+    }
+  ]
+}

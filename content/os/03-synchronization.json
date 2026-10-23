@@ -1,0 +1,397 @@
+{
+  "id": "os-synchronization",
+  "title": "Chương 6: Đồng bộ tiến trình",
+  "description": "Miền găng, Peterson, mutex lock, semaphore, monitor và các bài toán đồng bộ kinh điển.",
+  "questions": [
+    {
+      "id": "os-sync-01",
+      "topic": "Critical Section",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Một tiến trình tạm dừng bên ngoài miền găng (Critical Section) không được ngăn cản các tiến trình khác vào miền găng, điều này liên quan tới yêu cầu nào trong bài toán Critical Section?",
+      "options": [
+        "Bounded Waiting",
+        "Progress",
+        "Preemption",
+        "Mutual Exclusion"
+      ],
+      "answer": 1,
+      "explanation": "**Progress** (tiến triển): nếu không có tiến trình nào đang ở trong miền găng và có tiến trình muốn vào, thì việc chọn ai được vào **chỉ được quyết định bởi các tiến trình đang xin vào**, và quyết định không được trì hoãn vô hạn.\n\nTiến trình đang dừng ở **remainder section** (đoạn ngoài miền găng) không tham gia quyết định đó, nên nó không được phép chặn ai cả.\n\nVí dụ vi phạm Progress — thuật toán luân phiên nghiêm ngặt:\n```\n// P0                  // P1\nwhile (turn != 0);     while (turn != 1);\n   critical section        critical section\nturn = 1;              turn = 0;\n```\nNếu P0 xong rồi ngồi mãi ở remainder section, `turn` vẫn bằng 0 và P1 không bao giờ vào được dù miền găng trống."
+    },
+    {
+      "id": "os-sync-02",
+      "topic": "Critical Section",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Không có tiến trình nào phải chờ vô hạn để được vào miền Critical-section liên quan tới yêu cầu nào trong bài toán Critical Section?",
+      "options": [
+        "Mutual Exclusion",
+        "Bounded Waiting",
+        "Progress",
+        "Preemption"
+      ],
+      "answer": 1,
+      "explanation": "**Bounded Waiting** (chờ có giới hạn): phải tồn tại một **cận trên** cho số lần các tiến trình khác được vào miền găng sau khi một tiến trình đã đăng ký xin vào và trước khi nó được chấp nhận.\n\nĐây chính là điều kiện chống **starvation**: đợi thì được, nhưng không được đợi vô hạn.\n\nPhân biệt với **Progress**: Progress nói *hệ thống không bị kẹt* (luôn có người vào được), còn Bounded Waiting nói *từng tiến trình cụ thể không bị bỏ đói*. Một thuật toán có thể thoả Progress mà vẫn vi phạm Bounded Waiting nếu một tiến trình xui liên tục bị qua mặt."
+    },
+    {
+      "id": "os-sync-03",
+      "topic": "Critical Section",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Không có hai tiến trình cùng ở trong miền Critical-section cùng lúc liên quan tới yêu cầu nào trong bài toán Critical Section?",
+      "options": [
+        "Mutual Exclusion",
+        "Progress",
+        "Preemption",
+        "Bounded Waiting"
+      ],
+      "answer": 0,
+      "explanation": "**Mutual Exclusion** (loại trừ tương hỗ): tại mỗi thời điểm, nhiều nhất **một** tiến trình được ở trong miền găng.\n\nĐây là yêu cầu cốt lõi, sinh ra từ vấn đề **race condition**: hai tiến trình cùng sửa `counter++` (thực chất là load – tăng – store) có thể đan xen lệnh và làm mất một lần cập nhật.\n\nBa yêu cầu của bài toán Critical Section:\n- **Mutual Exclusion** — không hai tiến trình cùng trong miền găng.\n- **Progress** — miền găng trống thì không được cản người muốn vào.\n- **Bounded Waiting** — chờ có giới hạn, không bị bỏ đói.\n\n*Preemption* là khái niệm của lập lịch CPU, không nằm trong ba yêu cầu này."
+    },
+    {
+      "id": "os-sync-04",
+      "topic": "Peterson",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Đoạn code sau giải quyết bài toán Critical-section thuộc giải pháp nào sau đây?",
+      "code": "while (true) {\n\n    flag[i] = true;   /* Pi ready */\n    turn = j;         /* preemptive Pj */\n    while (flag[j] && turn == j)\n        ;\n\n    /* critical section */\n\n    flag[i] = false;\n\n    /* remainder section */\n}",
+      "options": [
+        "Software Solution 1",
+        "Peterson's Algorithm",
+        "Special hardware instructions",
+        "Memory barriers"
+      ],
+      "answer": 1,
+      "explanation": "Dấu hiệu nhận ra **thuật toán Peterson**: dùng **đồng thời hai biến** `flag[]` và `turn`.\n\n- `flag[i] = true` — Pi tuyên bố *muốn vào*.\n- `turn = j` — Pi **nhường lượt** cho Pj. Chính cú nhường này làm nên điều kỳ diệu: nếu cả hai cùng muốn vào, cả hai cùng nhường, và `turn` chỉ giữ được *một* giá trị ghi sau cùng → đúng một tiến trình lọt qua.\n- Điều kiện chờ `flag[j] && turn == j`: chỉ chờ khi Pj vừa muốn vào **vừa** đang tới lượt.\n\nPeterson thoả cả ba yêu cầu: Mutual Exclusion, Progress và Bounded Waiting.\n\nPhân biệt:\n- **Software Solution 1** chỉ dùng mỗi biến `turn` (luân phiên nghiêm ngặt) — vi phạm Progress.\n- **Special hardware instructions** là `test_and_set`, `compare_and_swap` — lệnh nguyên tử của phần cứng, không phải code thuần như trên."
+    },
+    {
+      "id": "os-sync-05",
+      "topic": "Mutex lock",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Giải pháp cho bài toán Critical-section nào dùng 2 thao tác **acquire()** và **release()**?",
+      "options": [
+        "Mutex lock",
+        "Liveness",
+        "Semaphores",
+        "Monitors"
+      ],
+      "answer": 0,
+      "explanation": "**Mutex lock** (mutual exclusion lock) là giải pháp đơn giản nhất ở mức phần mềm hệ thống:\n\n```\nacquire();\n    /* critical section */\nrelease();\n```\n\n- `acquire()` chờ tới khi khoá rảnh rồi chiếm nó (`available = false`).\n- `release()` trả khoá (`available = true`).\n- Cả hai phải là thao tác **nguyên tử**, thường cài bằng lệnh phần cứng `compare_and_swap`.\n\nMutex là khoá **nhị phân có chủ sở hữu**: ai khoá thì người đó mở. Nhớ theo cặp từ khoá: acquire/release → **mutex**, wait/signal → **semaphore**.\n\n*Liveness* không phải cơ chế khoá — nó là nhóm tính chất \"việc gì đó cuối cùng cũng xảy ra\" (không deadlock, không starvation)."
+    },
+    {
+      "id": "os-sync-06",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Giải pháp cho bài toán Critical-section nào dùng 2 thao tác **wait()** và **signal()**?",
+      "options": [
+        "Semaphores",
+        "Monitors",
+        "Mutex lock",
+        "Liveness"
+      ],
+      "answer": 0,
+      "explanation": "**Semaphore** là biến nguyên S với hai thao tác nguyên tử, ký hiệu gốc tiếng Hà Lan là P (proberen) và V (verhogen):\n\n```\nwait(S):   while (S <= 0) ; S--;\nsignal(S): S++;\n```\n\n- **Binary semaphore** (S chỉ 0/1) dùng như mutex.\n- **Counting semaphore** đếm số tài nguyên còn rảnh — đây là điểm mạnh mà mutex không có, ví dụ quản lý 5 máy in thì khởi tạo S = 5.\n- Semaphore **không có chủ sở hữu**: tiến trình A `wait` còn tiến trình B `signal` là chuyện bình thường, nhờ vậy dùng được để **đồng bộ thứ tự** (bắt P2 chạy sau P1).\n\n**Monitor** là cấu trúc mức ngôn ngữ, cũng có `wait()`/`signal()` nhưng trên **biến điều kiện** bên trong monitor, khác với semaphore ở chỗ mọi thủ tục của monitor đã tự động loại trừ tương hỗ."
+    },
+    {
+      "id": "os-sync-09",
+      "topic": "Critical Section",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Hai tiến trình P1 và P2 dùng hai biến boolean chung S1 và S2 (giá trị ban đầu gán ngẫu nhiên) để vào Critical section. Câu nào mô tả đúng các thuộc tính đạt được?",
+      "code": "Method Used by P1          Method Used by P2\nwhile (S1 == S2) ;         while (S1 != S2) ;\n    Critical Section           Critical Section\nS1 = S2;                   S2 = not (S1);",
+      "options": [
+        "Có Mutual exclusion và Progress",
+        "Không Mutual exclusion và Progress",
+        "Progress nhưng không Mutual exclusion",
+        "Mutual exclusion nhưng không Progress"
+      ],
+      "answer": 3,
+      "explanation": "**Mutual Exclusion: có.** Điều kiện vào của hai bên loại trừ nhau tuyệt đối:\n- P1 vào khi `S1 != S2`\n- P2 vào khi `S1 == S2`\n\nHai mệnh đề này không bao giờ cùng đúng, nên không thể có hai tiến trình trong miền găng cùng lúc.\n\n**Progress: không.** Đây là **luân phiên nghiêm ngặt** trá hình:\n- P1 ra khỏi CS đặt `S1 = S2` → thành `S1 == S2` → chỉ **P2** vào được.\n- P2 ra khỏi CS đặt `S2 = not(S1)` → thành `S1 != S2` → chỉ **P1** vào được.\n\nNghĩa là thứ tự bắt buộc là P1, P2, P1, P2… Nếu P2 xong việc và bỏ đi luôn (ở remainder section), P1 sẽ kẹt mãi dù miền găng đang trống — đúng định nghĩa vi phạm **Progress**."
+    },
+    {
+      "id": "os-sync-10",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Chương trình sau gồm 3 tiến trình đồng thời và 3 binary semaphore, khởi tạo **S0 = 1, S1 = 0, S2 = 0**. Tiến trình P0 print \"0\" bao nhiêu lần?",
+      "code": "Process P0              Process P1       Process P2\nwhile (true) {          wait(S1);        wait(S2);\n    wait(S0);           release(S0);     release(S0);\n    print '0';\n    release(S1);\n    release(S2);\n}",
+      "options": [
+        "Ít nhất hai lần",
+        "Chính xác hai lần",
+        "Chính xác một lần",
+        "Nhiều nhất hai lần"
+      ],
+      "answer": 0,
+      "explanation": "Mấu chốt: P1 và P2 **không có vòng lặp**, mỗi tiến trình chỉ chạy đúng một lần; còn **binary semaphore bão hoà ở 1** — release khi giá trị đang là 1 thì không cộng dồn.\n\nLần in thứ nhất chắc chắn xảy ra: S0 = 1 nên P0 qua `wait(S0)`, in \"0\", rồi release S1 và S2.\n\nSau đó P1 và P2 mỗi bên release S0 một lần, nhưng kết quả phụ thuộc thứ tự:\n\n**Trường hợp 2 lần in** — P1 và P2 release S0 sát nhau khi P0 chưa kịp tiêu thụ:\n- P1: release(S0) → S0 = 1\n- P2: release(S0) → S0 vẫn = 1 (**mất một tín hiệu** vì là binary)\n- P0 in lần 2 rồi kẹt ở `wait(S0)` mãi.\n\n**Trường hợp 3 lần in** — P0 tiêu thụ xen kẽ:\n- P1: release(S0) → P0 in lần 2\n- P2: release(S0) → P0 in lần 3\n\nVậy số lần in tối thiểu là 2 và có thể hơn → **ít nhất hai lần**. Các đáp án \"chính xác hai lần\" hay \"nhiều nhất hai lần\" đều sai vì bỏ sót trường hợp 3 lần."
+    },
+    {
+      "id": "os-sync-11",
+      "topic": "Critical Section",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Hai tiến trình X và Y cần truy cập một critical section, dùng cấu trúc đồng bộ hoá sau (varP, varQ là biến chia sẻ, khởi tạo **false**). Phát biểu nào sau đây là đúng?",
+      "code": "Process X                       Process Y\nwhile (true)                    while (true)\n{                               {\n    varP = true;                    varQ = true;\n    while (varQ == true)            while (varP == true)\n    {                               {\n        /* Critical Section */          /* Critical Section */\n        varP = false;                   varQ = false;\n    }                               }\n}                               }",
+      "options": [
+        "Ngăn chặn Deadlock nhưng không đảm bảo Mutual Exclusion",
+        "Không ngăn chặn được Deadlock và không đảm bảo Mutual Exclusion",
+        "Đảm bảo Mutual Exclusion nhưng không ngăn chặn được Deadlock",
+        "Đảm bảo Mutual Exclusion và ngăn chặn Deadlock"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án theo đề là **d**, dựa trên lập luận: miền găng nằm *bên trong* vòng `while`, X chỉ vào được khi Y đã giơ tay (`varQ == true`) và ngược lại, nên hai bên \"bắt tay\" nhau chứ không cùng giành khoá; và không tồn tại thế cả hai cùng chờ vĩnh viễn nên không deadlock.\n\n**Về deadlock thì chắc chắn đúng**: X chỉ kẹt khi `varQ == false`, mà lúc đó Y đang ở vòng ngoài và luôn đặt `varQ = true` — nên không có trạng thái cả hai cùng đứng im mãi.\n\n**Cần nói rõ:** phần **Mutual Exclusion** của câu này gây tranh cãi ngay từ đề gốc (GATE 2015). Xen kẽ sau đây cho cả hai cùng vào miền găng:\n\n- X: `varP = true`\n- Y: `varQ = true`\n- X: kiểm tra `varQ == true` → đúng → **vào CS**\n- Y: kiểm tra `varP == true` → vẫn đúng (X chỉ đặt `varP = false` ở **cuối** thân CS) → **vào CS**\n\nTheo phân tích sát mã nguồn thì Mutual Exclusion **không** được đảm bảo, tức phương án a mới đúng. Đi thi cứ chọn theo đáp án của đề, nhưng nên biết lỗ hổng này để không áp dụng sai vào bài khác."
+    },
+    {
+      "id": "os-sync-12",
+      "topic": "Critical Section",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Xem xét giải pháp đồng bộ hoá hai tiến trình sau, biến chia sẻ **turn** khởi tạo bằng 0. Điều nào sau đây là ĐÚNG?",
+      "code": "Process 0                          Process 1\nEntry: loop while (turn == 1);     Entry: loop while (turn == 0);\n       (critical section)                 (critical section)\nExit:  turn = 1;                   Exit:  turn = 0;",
+      "options": [
+        "Đây là một giải pháp đồng bộ hoá hai tiến trình đúng",
+        "Giải pháp này vi phạm yêu cầu Mutual Exclusion",
+        "Giải pháp này vi phạm yêu cầu Bounded Waiting",
+        "Giải pháp này vi phạm yêu cầu Progress"
+      ],
+      "answer": 3,
+      "explanation": "Đây là **luân phiên nghiêm ngặt** (strict alternation) — giải pháp phần mềm số 1, chỉ dùng duy nhất biến `turn`.\n\n**Mutual Exclusion: đạt.** `turn` chỉ mang một giá trị nên đúng một tiến trình qua được cổng.\n\n**Progress: vi phạm.** Sau khi Process 0 ra khỏi miền găng, `turn = 1`. Nếu Process 1 đang ở remainder section và không có nhu cầu vào, `turn` đứng yên ở 1, còn Process 0 muốn vào lại thì kẹt ở `loop while (turn == 1)` — **miền găng trống mà không ai vào được**, và kẻ chặn lại là một tiến trình đang ở ngoài miền găng.\n\n**Bounded Waiting: vẫn đạt**, vì nếu cả hai đều muốn vào thì chúng thay phiên đều đặn, không ai bị qua mặt quá một lần.\n\nNhớ mẹo: giải pháp chỉ có mỗi `turn` → hỏng **Progress**; thêm mảng `flag[]` nữa thành **Peterson** thì đủ cả ba."
+    },
+    {
+      "id": "os-sync-13",
+      "topic": "Race condition",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Hai tiến trình P1 và P2 thực thi đồng thời trên các biến dùng chung a, b, c. Giá trị nào sau đây **không thể** là giá trị của c sau khi cả hai tiến trình hoàn tất?",
+      "code": "Khởi tạo: a = 4, b = 5, c = 0\n\nP1                      P2\nif (a < 0)              b = 10;\n    c = b-a;            a = -3;\nelse\n    c = b+a;",
+      "options": [
+        "9",
+        "7",
+        "11",
+        "13"
+      ],
+      "answer": 2,
+      "explanation": "Liệt kê mọi giá trị c có thể nhận, nhớ rằng P1 đọc `a` **hai lần**: một lần ở điều kiện, một lần ở biểu thức — giữa hai lần đó P2 có thể chen vào.\n\n**Nhánh else** (điều kiện đọc được a = 4), c = b + a với cặp (b, a) tại lúc tính:\n- (5, 4) → **9** — P1 chạy trọn trước P2\n- (10, 4) → 14 — P2 kịp gán b = 10\n- (10, −3) → **7** — P2 chạy trọn cả hai lệnh\n- (5, −3) → 2 — hiếm nhưng có: P1 đọc b = 5 trước, P2 gán a = −3 sau\n\n**Nhánh if** (điều kiện đọc được a = −3): vì `b = 10` đứng **trước** `a = -3` trong P2 nên lúc này b chắc chắn đã là 10 → c = 10 − (−3) = **13**.\n\nTập giá trị khả dĩ: {2, 7, 9, 13, 14}. **11 không thuộc tập này** nên là đáp án."
+    },
+    {
+      "id": "os-sync-14",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Hai hoạt động nguyên tử được phép trên **Semaphores** là ____ và ____.",
+      "options": [
+        "wait, signal",
+        "acquire(), release()",
+        "hold, signal",
+        "wait, hold"
+      ],
+      "answer": 0,
+      "explanation": "Semaphore chỉ có hai thao tác nguyên tử: **wait()** (còn gọi là P, giảm) và **signal()** (còn gọi là V, tăng).\n\n```\nwait(S):   while (S <= 0) ; S--;\nsignal(S): S++;\n```\n\nNguyên tử ở đây nghĩa là không tiến trình nào chen vào giữa phép kiểm tra và phép giảm — nếu chen được thì chính semaphore lại sinh race condition.\n\n*acquire()/release()* là của **mutex lock**; *hold* không phải thao tác của cơ chế nào cả."
+    },
+    {
+      "id": "os-sync-15",
+      "topic": "Mutex lock",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Hai hoạt động nguyên tử được phép trong **Mutex locks** là ____ và ____.",
+      "options": [
+        "hold, signal",
+        "acquire(), release()",
+        "wait(), signal()",
+        "wait, hold"
+      ],
+      "answer": 1,
+      "explanation": "Mutex lock dùng **acquire()** để chiếm khoá và **release()** để trả khoá.\n\nNhớ theo cặp để khỏi lẫn:\n- **mutex** → acquire / release\n- **semaphore** → wait / signal\n- **monitor** → wait / signal nhưng trên **biến điều kiện**, và việc loại trừ tương hỗ là tự động\n\nKhác biệt bản chất: mutex có **chủ sở hữu** (ai khoá người đó mở) và chỉ mang hai giá trị; semaphore không có chủ và có thể đếm nhiều tài nguyên."
+    },
+    {
+      "id": "os-sync-16",
+      "topic": "Bài toán kinh điển",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Bài toán **Bounded buffer** còn được gọi là",
+      "options": [
+        "Bài toán Dining Philosophers",
+        "Bài toán Reader - Writer",
+        "Bài toán Producer - Consumer",
+        "Cả Reader – Writer và Dining Philosophers"
+      ],
+      "answer": 2,
+      "explanation": "**Bounded buffer** = **Producer - Consumer** với vùng đệm hữu hạn n phần tử: producer bỏ dữ liệu vào, consumer lấy ra; producer phải chờ khi đầy, consumer phải chờ khi rỗng.\n\nLời giải chuẩn dùng ba semaphore:\n```\nmutex = 1     // bảo vệ vùng đệm\nempty = n     // số ô trống\nfull  = 0     // số ô có dữ liệu\n```\n\nBa bài toán đồng bộ kinh điển, đừng lẫn:\n- **Producer - Consumer (bounded buffer)** — vùng đệm giới hạn.\n- **Reader - Writer** — nhiều người đọc cùng lúc được, người ghi phải độc quyền.\n- **Dining Philosophers** — năm triết gia tranh đũa, minh hoạ cho deadlock và starvation."
+    },
+    {
+      "id": "os-sync-17",
+      "topic": "Critical Section",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "**Mutual Exclusion** xảy ra khi nào?",
+      "options": [
+        "Giữa hai tiến trình rời rạc không tương tác",
+        "Giữa các tiến trình không sử dụng cùng một tài nguyên",
+        "Giữa các tiến trình chia sẻ tài nguyên",
+        "Giữa hai tiến trình sử dụng tài nguyên khác nhau của máy khác nhau"
+      ],
+      "answer": 2,
+      "explanation": "Loại trừ tương hỗ chỉ có ý nghĩa khi **có cái để tranh nhau**: cùng một biến, cùng một file, cùng một máy in.\n\nTiến trình không dùng chung tài nguyên thì chạy song song thoải mái, không cần và cũng không nên khoá — khoá thừa chỉ làm chậm hệ thống.\n\nNói cách khác: chia sẻ tài nguyên sinh ra **race condition**, race condition đòi hỏi **miền găng**, miền găng đòi hỏi **mutual exclusion**."
+    },
+    {
+      "id": "os-sync-18",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Tại thời điểm cụ thể, giá trị của một **counting semaphore** là 12. Nó sẽ trở thành 15 khi:\n\n- (a) 3 hoạt động của signal()\n- (b) 3 hoạt động của wait()\n- (c) 5 hoạt động của signal() và 2 hoạt động của wait()\n- (d) 2 hoạt động của signal() và 5 hoạt động của wait()\n\nPhương án nào sau đây là đúng?",
+      "options": [
+        "(a) và (c)",
+        "(a) và (d)",
+        "(a) và (b)",
+        "(b) và (d)"
+      ],
+      "answer": 0,
+      "explanation": "Quy tắc: `signal()` **tăng 1**, `wait()` **giảm 1**. Cần đi từ 12 lên 15, tức tăng ròng **+3**.\n\n- (a) +3 → 12 + 3 = **15** ✔\n- (b) −3 → 12 − 3 = 9 ✘\n- (c) +5 − 2 = +3 → **15** ✔\n- (d) +2 − 5 = −3 → 9 ✘\n\nVậy đáp án là **(a) và (c)**.\n\nLưu ý đây là **counting semaphore** nên giá trị cộng dồn tự do; nếu là **binary semaphore** thì giá trị chỉ quanh quẩn 0 và 1, thừa signal sẽ bị bỏ qua."
+    },
+    {
+      "id": "os-sync-19",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Ba thread T1, T2, T3 chạy trên một bộ xử lý duy nhất, đồng bộ bằng 3 binary semaphore S1, S2, S3. Việc khởi tạo semaphore nào sẽ in ra chuỗi **BCABCABCA…**?",
+      "code": "T1                  T2                  T3\nwhile (true) {      while (true) {      while (true) {\n    wait(S3);           wait(S1);           wait(S2);\n    print(\"C\");         print(\"B\");         print(\"A\");\n    signal(S2); }       signal(S3); }       signal(S1); }",
+      "options": [
+        "S1 = 1; S2 = 1; S3 = 1",
+        "S1 = 1; S2 = 1; S3 = 0",
+        "S1 = 0; S2 = 1; S3 = 1",
+        "S1 = 1; S2 = 0; S3 = 0"
+      ],
+      "answer": 3,
+      "explanation": "Chuỗi cần in là **B → C → A → B → C → A…**, mà mỗi thread in đúng một chữ:\n- T2 in **B**, cần S1\n- T1 in **C**, cần S3\n- T3 in **A**, cần S2\n\nMuốn **B chạy trước**: chỉ **S1 = 1**, hai semaphore còn lại phải bằng 0 để T1 và T3 nằm chờ.\n\nDây chuyền tự chạy đúng thứ tự:\n```\nT2: wait(S1) ✔ → in \"B\" → signal(S3)\nT1: wait(S3) ✔ → in \"C\" → signal(S2)\nT3: wait(S2) ✔ → in \"A\" → signal(S1)\n→ quay lại T2, lặp mãi: BCABCABCA...\n```\n\nCác phương án khác sai vì mở khoá nhiều hơn một thread cùng lúc: ví dụ S1 = S2 = S3 = 1 thì cả ba chạy tự do, thứ tự in phụ thuộc bộ lập lịch, không còn là chuỗi cố định."
+    },
+    {
+      "id": "os-sync-20",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "**Semaphores** được sử dụng để giải quyết vấn đề của:\n\n- I. Deadlock\n- II. Process Synchronization\n- III. Starvation\n- IV. Không có cái nào",
+      "options": [
+        "IV",
+        "I và III",
+        "II",
+        "I"
+      ],
+      "answer": 2,
+      "explanation": "Semaphore sinh ra để làm **đồng bộ tiến trình** (process synchronization): bảo vệ miền găng và ép thứ tự thực thi giữa các tiến trình.\n\nNó **không** giải quyết hai vấn đề còn lại, thậm chí còn gây ra:\n- **Deadlock**: dùng sai thứ tự `wait()` là kẹt ngay — `P0: wait(S); wait(Q)` trong khi `P1: wait(Q); wait(S)`.\n- **Starvation**: nếu hàng đợi của semaphore hoạt động theo LIFO, tiến trình vào trước có thể chờ mãi.\n\nSemaphore là **công cụ**, không phải lời giải cho mọi vấn đề đồng thời — lập trình viên vẫn phải tự lo thứ tự khoá và chính sách hàng đợi."
+    },
+    {
+      "id": "os-sync-21",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Giá trị của một **counting semaphore** đang là 7. Sau đó **20 phép wait()** và **15 phép signal()** được hoàn thành trên semaphore này. Giá trị kết quả là bao nhiêu?",
+      "options": [
+        "2",
+        "12",
+        "7",
+        "42"
+      ],
+      "answer": 0,
+      "explanation": "Chỉ là phép cộng trừ: `wait()` giảm 1, `signal()` tăng 1.\n\n```\n7 - 20 + 15 = 2\n```\n\nĐề nói các phép toán đã **hoàn thành** nên không tiến trình nào bị chặn giữa chừng, cứ cộng trừ thẳng.\n\nGhi chú về cài đặt thật: trong bản semaphore có hàng đợi, giá trị **âm** mang ý nghĩa — trị tuyệt đối của nó là **số tiến trình đang nằm chờ**. Ví dụ S = −3 nghĩa là ba tiến trình đang bị chặn trên semaphore đó."
+    },
+    {
+      "id": "os-sync-22",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Một **counting semaphore** được khởi tạo là 10. Sau đó **6 phép wait()** và **4 phép signal()** được hoàn thành trên semaphore này. Giá trị kết quả là bao nhiêu?",
+      "options": [
+        "12",
+        "10",
+        "0",
+        "8"
+      ],
+      "answer": 3,
+      "explanation": "```\n10 - 6 + 4 = 8\n```\n\nMỗi `wait()` trừ 1, mỗi `signal()` cộng 1. Giá trị khởi tạo 10 đủ lớn nên không phép `wait()` nào bị chặn, cứ tính thẳng.\n\nÝ nghĩa thực tế: semaphore này đang giữ **8 tài nguyên rảnh** — ví dụ 10 kết nối trong connection pool, 6 lần mượn và 4 lần trả, còn lại 8."
+    },
+    {
+      "id": "os-sync-23",
+      "topic": "Race condition",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "P1 và P2 cùng dùng chung biến **TaiKhoan** và mỗi tiến trình có **TienRut** riêng (không âm). Khởi đầu TaiKhoan = 1000, P1 rút 600, P2 rút 500. Khi xảy ra **race condition**, TaiKhoan có khả năng bằng bao nhiêu?",
+      "code": "if (TaiKhoan - TienRut >= 0)\n    TaiKhoan = TaiKhoan - TienRut;\nelse\n    error();",
+      "options": [
+        "500",
+        "Giá trị không xác định (undefined value)",
+        "-100",
+        "600"
+      ],
+      "answer": 2,
+      "explanation": "Xen kẽ tai hại: **cả hai cùng kiểm tra trước khi ai kịp trừ**.\n```\nP1: kiểm tra 1000 - 600 >= 0  → đúng, được phép rút\nP2: kiểm tra 1000 - 500 >= 0  → đúng, được phép rút   (TaiKhoan vẫn còn 1000!)\nP1: TaiKhoan = 1000 - 600 = 400\nP2: TaiKhoan = 400  - 500 = -100\n```\n\nKết quả **−100**: tài khoản âm dù đoạn mã có kiểm tra số dư hẳn hoi.\n\nGốc rễ của lỗi: phép **kiểm tra rồi hành động** (check-then-act) không phải thao tác nguyên tử. Giữa lúc kiểm tra và lúc trừ tiền, dữ liệu đã bị tiến trình khác thay đổi.\n\nCách chữa: bọc **toàn bộ** đoạn kiểm tra và cập nhật vào miền găng, dùng mutex hoặc semaphore. Đây chính là lý do mọi hệ thống ngân hàng đều phải dùng giao dịch."
+    },
+    {
+      "id": "os-sync-24",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Mô phỏng nào sau đây đúng cho hàm **Wait(s)** trong giải pháp Semaphore?",
+      "options": [
+        "While s <= 0; s = s − 1;",
+        "While s <= 0; s = s + 1;",
+        "While s < 0; s = s − 1;",
+        "While s <= 0, s = s + 1;"
+      ],
+      "answer": 0,
+      "explanation": "```\nWait(s):   while (s <= 0) ;   // bận chờ khi không còn tài nguyên\n           s = s - 1;         // chiếm một tài nguyên\n\nSignal(s): s = s + 1;         // trả lại tài nguyên\n```\n\nHai chi tiết quyết định tính đúng đắn:\n- Điều kiện phải là **s <= 0**, không phải s < 0. Khi s = 0 nghĩa là **đã hết tài nguyên**, phải chờ; nếu dùng s < 0 thì tiến trình sẽ lọt qua và semaphore tụt xuống âm sai cách.\n- `Wait` phải **giảm** (s − 1), còn `Signal` mới **tăng**. Phương án nào cho Wait cộng lên đều sai bản chất.\n\nToàn bộ khối này phải **nguyên tử**, nếu không chính semaphore lại đẻ ra race condition."
+    },
+    {
+      "id": "os-sync-25",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "P1 và P2 cùng truy xuất Buffer, semaphore **S = 1** kiểm soát truy xuất. Khi P1 **đang truy xuất thành công** Buffer thì giá trị S bằng bao nhiêu?",
+      "code": "P1                          P2\n...                         ...\nWait(S);                    Wait(S);\n  đặt data vào Buffer;        lấy data từ Buffer;\nSignal(S);                  Signal(S);\n...                         ...",
+      "options": [
+        "0",
+        "-1",
+        "Giá trị không xác định (undefined value)",
+        "1"
+      ],
+      "answer": 0,
+      "explanation": "S khởi tạo bằng **1** (buffer đang rảnh). P1 gọi `Wait(S)`, thấy S = 1 > 0 nên **lọt qua và giảm S xuống 0**, rồi vào miền găng.\n\n```\nS = 1  →  P1: Wait(S) thành công  →  S = 0  →  P1 ở trong miền găng\n```\n\nTrong lúc đó P2 gọi `Wait(S)` sẽ thấy S = 0 nên **phải chờ** — đúng mục tiêu loại trừ tương hỗ. Khi P1 gọi `Signal(S)`, S trở lại 1 và P2 mới vào được.\n\nGiá trị **−1** chỉ xuất hiện ở cách cài đặt semaphore **có hàng đợi** (không bận chờ), khi đó trị tuyệt đối của số âm cho biết có bao nhiêu tiến trình đang nằm chờ. Ở mô hình bận chờ của câu này, S không bao giờ âm."
+    },
+    {
+      "id": "os-sync-26",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Dùng semaphore để **đồng bộ thứ tự**: tác vụ X1 (trong P1) phải xong trước rồi X2 (trong P2) mới chạy. Với S = 1, khi P2 **kết thúc hoạt động** thì S bằng bao nhiêu?",
+      "code": "P1                     P2\n...                    ...\nWait(S);               Wait(S);\n  Đoạn CT P1;            Đoạn CT P2;\nSignal(S);             ...\n...",
+      "options": [
+        "0",
+        "1",
+        "Giá trị không xác định (undefined value)",
+        "-1"
+      ],
+      "answer": 0,
+      "explanation": "Lần theo giá trị S:\n```\nS = 1\nP1: Wait(S)    →  S = 0   (P1 vào đoạn CT của mình)\nP1: Signal(S)  →  S = 1   (báo hiệu \"tôi xong rồi\")\nP2: Wait(S)    →  S = 0   (P2 nhận tín hiệu, chạy đoạn CT)\nP2 kết thúc, KHÔNG có Signal  →  S giữ nguyên = 0\n```\n\nKhác biệt mấu chốt so với câu trước: P2 **không gọi Signal(S)**, vì ở đây semaphore dùng để **ép thứ tự thực thi** chứ không phải bảo vệ miền găng dùng chung. Tín hiệu đã được \"tiêu thụ\" nên S dừng ở **0**.\n\nĐây là mẫu dùng semaphore kinh điển thứ hai: ngoài loại trừ tương hỗ, semaphore còn đảm bảo **P2 luôn chạy sau P1**, dù bộ lập lịch có xếp thế nào."
+    },
+    {
+      "id": "os-sync-27",
+      "topic": "Producer-Consumer",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Bài toán Producer–Consumer với buffer **n phần tử** và 3 semaphore: **mutex = 1**, **full = 0**, **empty = n**. Khi Buffer **chứa đầy data**, giá trị của mutex, full, empty lần lượt là bao nhiêu?",
+      "options": [
+        "1; n; 0",
+        "1; 0; n",
+        "1; 1; 1",
+        "0; 0; 0"
+      ],
+      "answer": 0,
+      "explanation": "Ý nghĩa của ba semaphore, nhớ kỹ để suy ra mọi trạng thái:\n```\nmutex - 1 nếu không ai đang ở trong miền găng, 0 nếu có người\nfull  - SỐ Ô ĐANG CÓ data\nempty - SỐ Ô CÒN TRỐNG\n```\nBất biến luôn đúng: **full + empty = n**.\n\nBuffer đầy nghĩa là cả n ô đều có data:\n```\nfull  = n     (n ô có data)\nempty = 0     (không còn ô trống)\nmutex = 1     (không tiến trình nào đang thao tác trên buffer)\n```\n\nLúc này producer gọi `Wait(empty)` sẽ **bị chặn** vì empty = 0 — đúng như mong muốn, không cho ghi đè lên data chưa ai lấy."
+    },
+    {
+      "id": "os-sync-28",
+      "topic": "Producer-Consumer",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Cùng bài toán Producer–Consumer với mutex = 1, full = 0, empty = n. Khi P1 **đang đặt phần tử data đầu tiên** vào Buffer, giá trị mutex, full, empty lần lượt là bao nhiêu?",
+      "code": "P1 (Producer)                P2 (Consumer)\n...                          ...\nTạo data;                    Wait(full);\nWait(empty);                 Wait(mutex);\nWait(mutex);                   lấy data từ Buffer;\n  đặt data vào Buffer;       Signal(mutex);\nSignal(mutex);               Signal(empty);\nSignal(full);                Xử lý data;",
+      "options": [
+        "0; 0; n−1",
+        "1; 1; 1",
+        "1; n; 0",
+        "1; 0; n"
+      ],
+      "answer": 0,
+      "explanation": "Bám theo đúng thứ tự lệnh của P1, dừng lại **ngay lúc đang đặt data**:\n```\nTrạng thái đầu:        mutex = 1, full = 0, empty = n\nWait(empty)            →  empty = n - 1\nWait(mutex)            →  mutex = 0\n  đang đặt data...     →  full VẪN = 0\n```\n\nKết quả: **mutex = 0, full = 0, empty = n − 1**.\n\nChi tiết quan trọng nhất là **full vẫn bằng 0**: lệnh `Signal(full)` nằm **sau** khi đặt xong. Nếu tăng full sớm, consumer sẽ tưởng đã có data và lao vào đọc một ô **chưa ghi xong** — sai dữ liệu.\n\nCũng để ý thứ tự `Wait(empty)` **trước** `Wait(mutex)`: đảo ngược hai dòng này sẽ gây **deadlock** khi buffer đầy, vì producer ôm mutex rồi nằm chờ empty, còn consumer cần mutex mới lấy được data ra."
+    },
+    {
+      "id": "os-sync-29",
+      "topic": "Producer-Consumer",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Cùng bài toán Producer–Consumer (mutex = 1, full = 0, empty = n). Khi P2 **đang lấy phần tử data cuối cùng** ra khỏi Buffer thì mutex, full, empty lần lượt bằng bao nhiêu?",
+      "code": "P1 (Producer)                P2 (Consumer)\n...                          ...\nTạo data;                    Wait(full);\nWait(empty);                 Wait(mutex);\nWait(mutex);                   lấy data từ Buffer;\n  đặt data vào Buffer;       Signal(mutex);\nSignal(mutex);               Signal(empty);\nSignal(full);                Xử lý data;",
+      "options": [
+        "1; n; 0",
+        "0; 0; n−1",
+        "0; 1; n",
+        "1; 1; 1"
+      ],
+      "answer": 1,
+      "explanation": "\"Phần tử cuối cùng\" nghĩa là trước thao tác này buffer chỉ còn **đúng 1 data**: full = 1, empty = n − 1.\n\nBám theo từng lệnh của P2:\n```\nTrước:            mutex = 1, full = 1, empty = n-1\nWait(full)    →   full  = 0\nWait(mutex)   →   mutex = 0\n  đang lấy data... →  empty VẪN = n-1\n```\n\nKết quả: **mutex = 0, full = 0, empty = n − 1**.\n\nĐiểm mấu chốt giống hệt câu producer: `Signal(empty)` nằm **sau** khi lấy xong, nên trong lúc P2 còn đang đọc, ô nhớ đó **chưa được báo là trống**. Nếu tăng empty sớm, producer sẽ ghi đè lên đúng ô mà consumer đang đọc dở.\n\nSo sánh hai trạng thái để nhớ lâu: producer đặt data đầu tiên cho **(0; 0; n−1)**, consumer lấy data cuối cùng cũng cho **(0; 0; n−1)** — trùng nhau, vì cả hai đều đang ở trong miền găng với buffer đúng một ô đang chuyển trạng thái."
+    }
+  ]
+}

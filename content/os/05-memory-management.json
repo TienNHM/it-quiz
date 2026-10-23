@@ -1,0 +1,268 @@
+{
+  "id": "os-memory-management",
+  "title": "Chương 8: Quản lý bộ nhớ",
+  "description": "Dịch địa chỉ động, MMU, cấp phát phân vùng, phân mảnh, phân đoạn, swap space và lỗi trang.",
+  "questions": [
+    {
+      "id": "os-mm-01",
+      "topic": "Dịch địa chỉ",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "**Dịch địa chỉ động** (dynamic address translation)",
+      "options": [
+        "là phần cứng cần thiết để thực hiện phân trang",
+        "là vô ích khi hoán đổi (swapping) được sử dụng",
+        "là một phần của thuật toán phân trang hệ điều hành",
+        "các trang lưu trữ tại một vị trí cụ thể trên đĩa"
+      ],
+      "answer": 0,
+      "explanation": "Dịch địa chỉ động là việc chuyển **địa chỉ logic → địa chỉ vật lý ngay lúc chạy**, và nó phải do **phần cứng** làm.\n\nLý do bắt buộc là phần cứng: mỗi lần CPU truy cập bộ nhớ đều cần dịch địa chỉ một lần. Nếu để phần mềm làm thì mỗi lệnh sẽ chậm đi hàng chục lần. Vì vậy MMU dịch song song với chu kỳ truy cập, có TLB đỡ phần tra bảng trang.\n\nCác phương án sai:\n- **\"vô ích khi swapping\"** — ngược lại, nhờ dịch động mà tiến trình bị swap ra rồi nạp lại ở vùng nhớ khác vẫn chạy bình thường.\n- **\"một phần của thuật toán phân trang của HĐH\"** — HĐH chỉ *thiết lập* bảng trang; việc dịch là của phần cứng."
+    },
+    {
+      "id": "os-mm-02",
+      "topic": "MMU",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Chức năng thích hợp nhất của **Bộ quản lý bộ nhớ (MMU)** là gì?",
+      "options": [
+        "Nó là một thuật toán để cấp phát và phân bổ bộ nhớ chính cho một tiến trình",
+        "Nó là một kỹ thuật hỗ trợ đa chương trình bằng cách tạo các phân vùng động",
+        "Nó là một bộ nhớ liên kết để lưu trữ TLB (translation lookaside buffer)",
+        "Nó là một con chip (thiết bị phần cứng) để ánh xạ địa chỉ ảo sang địa chỉ thực"
+      ],
+      "answer": 3,
+      "explanation": "**MMU là phần cứng** — một khối mạch nằm trong CPU hiện đại — làm đúng một việc: **ánh xạ địa chỉ ảo sang địa chỉ vật lý** ở mỗi lần truy cập bộ nhớ.\n\nViệc MMU làm trong một lần truy cập:\n- Tách địa chỉ ảo thành **số hiệu trang + offset**\n- Tra **TLB**, trượt thì tra tiếp bảng trang trong bộ nhớ\n- Kiểm tra quyền (đọc/ghi/thực thi) và bit hợp lệ; vi phạm thì sinh **trap** cho HĐH xử lý\n\nCác phương án sai vì mô tả **phần mềm**: thuật toán cấp phát bộ nhớ và kỹ thuật phân vùng đều là việc của hệ điều hành. Còn **TLB** chỉ là một bộ đệm *bên trong* MMU, không phải định nghĩa của MMU."
+    },
+    {
+      "id": "os-mm-03",
+      "topic": "Cấp phát bộ nhớ",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Sáu phân vùng bộ nhớ kích thước **200 KB, 400 KB, 600 KB, 500 KB, 300 KB và 250 KB** cần được phân bổ cho bốn tiến trình **357 KB, 210 KB, 468 KB và 491 KB** theo thứ tự. Dùng thuật toán **Best-fit**, phân vùng nào **KHÔNG** được cấp cho tiến trình nào?",
+      "options": [
+        "200 KB and 300 KB",
+        "250 KB and 300 KB",
+        "200 KB and 250 KB",
+        "300 KB and 400 KB"
+      ],
+      "answer": 0,
+      "explanation": "**Best-fit**: chọn phân vùng **nhỏ nhất trong số những phân vùng đủ chứa**.\n\n```\nCòn trống: 200, 400, 600, 500, 300, 250\n\n357 KB → đủ chỗ: 400, 600, 500  → nhỏ nhất = 400   ✔ chiếm 400\n210 KB → đủ chỗ: 600, 500, 300, 250 → nhỏ nhất = 250 ✔ chiếm 250\n468 KB → đủ chỗ: 600, 500          → nhỏ nhất = 500  ✔ chiếm 500\n491 KB → đủ chỗ: 600               → chiếm 600\n```\n\nCòn lại **200 KB và 300 KB** không dùng được: 200 KB nhỏ hơn mọi tiến trình, còn 300 KB thì chỉ có tiến trình 210 KB vừa, nhưng 210 KB đã bị Best-fit đẩy vào ô 250 KB khít hơn.\n\nSo sánh nhanh nếu dùng **First-fit**: 357 → 400, 210 → 600, 468 → 500, 491 → không còn chỗ nào đủ. Best-fit ở bài này xếp được cả bốn."
+    },
+    {
+      "id": "os-mm-04",
+      "topic": "Bộ nhớ ảo",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Vùng **swap space** trên đĩa được dùng để làm gì?",
+      "options": [
+        "Storing the super-block",
+        "Saving temporary html pages",
+        "Storing device drivers",
+        "Saving process data"
+      ],
+      "answer": 3,
+      "explanation": "**Swap space** là phần đĩa dành riêng để chứa **dữ liệu của tiến trình** khi bộ nhớ vật lý không đủ: các trang bị đẩy ra (page out) nằm ở đó, khi cần lại nạp về (page in).\n\nNhờ vậy tổng bộ nhớ mà các tiến trình dùng được **lớn hơn RAM thật** — đó chính là cơ chế bộ nhớ ảo.\n\nCác phương án sai:\n- **super-block** là siêu dữ liệu của hệ thống file, nằm trong phân vùng file system.\n- **html tạm** là cache của trình duyệt, chuyện của ứng dụng.\n- **device driver** nằm trong kernel image trên phân vùng hệ thống.\n\nCảnh báo kinh điển: nếu hệ thống swap quá nhiều, thời gian chạy bị nuốt hết bởi việc nạp/đẩy trang — hiện tượng **thrashing**."
+    },
+    {
+      "id": "os-mm-05",
+      "topic": "Bộ nhớ ảo",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Tăng RAM của máy tính thường cải thiện hiệu năng vì:",
+      "options": [
+        "Larger RAMs are faster",
+        "Fewer page faults occur",
+        "Virtual memory increases",
+        "Fewer segmentation faults occur"
+      ],
+      "answer": 1,
+      "explanation": "RAM lớn hơn ⇒ chứa được nhiều khung trang hơn ⇒ **ít lỗi trang (page fault) hơn**.\n\nCon số cho thấy vì sao điều này quan trọng: truy cập RAM mất khoảng **100 nanosecond**, còn một lỗi trang phải đọc đĩa mất **vài mili giây** — chậm hơn cỡ **10.000 lần**. Giảm được vài phần trăm lỗi trang là hiệu năng đổi khác hẳn.\n\nCác phương án sai:\n- **\"RAM lớn thì nhanh hơn\"** — dung lượng không quyết định tốc độ, tốc độ do công nghệ (DDR4/DDR5) và bus quyết định.\n- **\"bộ nhớ ảo tăng\"** — kích thước không gian địa chỉ ảo do **số bit địa chỉ** quy định, không liên quan RAM thật.\n- **\"ít segmentation fault\"** — đó là lỗi lập trình truy cập vùng nhớ trái phép, thêm RAM không chữa được."
+    },
+    {
+      "id": "os-mm-06",
+      "topic": "Bộ nhớ ảo",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Hệ thống hỗ trợ địa chỉ ảo 32 bit và địa chỉ vật lý cũng 32 bit. Vì không gian địa chỉ ảo có **cùng kích thước** với không gian địa chỉ vật lý, nhà thiết kế quyết định **loại bỏ hoàn toàn bộ nhớ ảo**. Điều nào sau đây là đúng?",
+      "options": [
+        "Tổ chức bộ nhớ cache của bộ xử lý có thể được thực hiện hiệu quả hơn bây giờ",
+        "Lập lịch CPU có thể được thực hiện hiệu quả hơn bây giờ",
+        "Không còn khả năng triển khai hiệu quả hỗ trợ nhiều người dùng",
+        "Hỗ trợ phần cứng để quản lý bộ nhớ không còn cần thiết"
+      ],
+      "answer": 3,
+      "explanation": "Bỏ bộ nhớ ảo nghĩa là **địa chỉ logic chính là địa chỉ vật lý**, không còn việc dịch địa chỉ nữa — mà dịch địa chỉ chính là lý do tồn tại của MMU, bảng trang và TLB. Vậy **phần cứng quản lý bộ nhớ không còn cần thiết**.\n\nVì sao các phương án khác sai:\n- **Cache** đánh chỉ mục theo địa chỉ vật lý, hoạt động độc lập với bộ nhớ ảo → không nhanh hơn.\n- **Lập lịch CPU** là chuyện của tiến trình, chẳng liên quan tới cách dịch địa chỉ.\n- **Nhiều người dùng** vẫn triển khai được, chỉ là quay về mô hình phân vùng kiểu cũ.\n\nLưu ý thực tế: cái giá phải trả rất đắt — mất bảo vệ bộ nhớ giữa các tiến trình, mất khả năng chạy chương trình lớn hơn RAM, và tái sinh bài toán phân mảnh ngoài."
+    },
+    {
+      "id": "os-mm-07",
+      "topic": "Phân mảnh",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Khẳng định nào sau đây là đúng?\n\n- (a) External Fragmentation tồn tại khi có đủ tổng dung lượng bộ nhớ để đáp ứng yêu cầu nhưng không gian khả dụng lại không liền kề\n- (b) Phân mảnh bộ nhớ có thể bên trong cũng như bên ngoài\n- (c) Một giải pháp cho External Fragmentation là nén (compaction)",
+      "options": [
+        "(a)",
+        "(a) và (b)",
+        "(a), (b) và (c)",
+        "(b) và (c)"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đề là **(b) và (c)**.\n\n**Lưu ý — cả ba mệnh đề đều đúng theo sách giáo khoa**, nên câu này đúng ra phải chọn \"(a), (b) và (c)\":\n- **(a)** chính là *định nghĩa* của phân mảnh ngoài: tổng bộ nhớ trống đủ, nhưng bị chia vụn thành nhiều mảnh rời rạc, không mảnh nào đủ lớn.\n- **(b)** đúng: **phân mảnh trong** là phần thừa bên trong khối đã cấp (cấp 4 KB mà tiến trình dùng 3 KB), **phân mảnh ngoài** là khoảng trống rời rạc giữa các khối.\n- **(c)** đúng: **nén (compaction)** dồn các vùng đang dùng lại với nhau để gom các lỗ trống thành một khối liền kề. Điều kiện là hệ thống phải dùng **tái định vị động** lúc chạy.\n\nĐi thi chọn theo đáp án đề, nhưng đừng học thuộc rằng (a) sai — nó là định nghĩa chuẩn."
+    },
+    {
+      "id": "os-mm-08",
+      "topic": "Phân đoạn",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Cho bảng phân đoạn dưới đây. Điều gì sẽ xảy ra nếu địa chỉ logic được yêu cầu là **Segment ID 2, offset 1000**?",
+      "code": "SegmentID   Base   Limit\n0           200    200\n1           500    12510\n2           1527   498\n3           2500   50",
+      "options": [
+        "Deadlock",
+        "Tìm nạp mục nhập tại địa chỉ vật lý 2527 cho segment Id2",
+        "Tìm nạp mục nhập tại địa chỉ vật lý 1498 cho segment Id2",
+        "Một trap được tạo ra"
+      ],
+      "answer": 3,
+      "explanation": "Quy tắc dịch địa chỉ của phân đoạn, kiểm tra **trước**, cộng **sau**:\n```\nnếu offset >= Limit  →  trap \"segmentation fault\"\nngược lại            →  địa chỉ vật lý = Base + offset\n```\n\nỞ đây segment 2 có **Limit = 498** trong khi offset yêu cầu là **1000**. Vì 1000 ≥ 498 nên phần cứng sinh **trap** báo truy cập ngoài giới hạn đoạn, HĐH nhận trap và thường kết thúc tiến trình.\n\nĐáp án 2527 chính là cái bẫy: đó là 1527 + 1000, tức kết quả nếu ai đó cộng trước mà quên kiểm tra Limit.\n\nChính cơ chế kiểm tra Limit này mang lại **bảo vệ bộ nhớ**: tiến trình không thể đọc lem sang vùng nhớ của đoạn khác."
+    },
+    {
+      "id": "os-mm-09",
+      "topic": "Cấp phát bộ nhớ",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Chiến lược cấp phát vùng nhớ động nào phân bổ **vùng nhớ nhỏ nhất đủ lớn** để đáp ứng nhu cầu của tiến trình đến?",
+      "options": [
+        "Worst-fit",
+        "Best-fit",
+        "Next-fit",
+        "First-fit"
+      ],
+      "answer": 1,
+      "explanation": "Bốn chiến lược cấp phát vùng nhớ động:\n\n- **First-fit** — lấy vùng trống **đầu tiên** đủ lớn. Nhanh nhất vì dừng ngay khi tìm thấy.\n- **Best-fit** — duyệt toàn bộ, lấy vùng **nhỏ nhất** mà vẫn đủ. Đây là đáp án.\n- **Worst-fit** — lấy vùng **lớn nhất**, với ý định phần dư còn đủ dùng cho tiến trình khác.\n- **Next-fit** — như first-fit nhưng bắt đầu tìm từ vị trí dừng lần trước.\n\nNghịch lý đáng nhớ: **best-fit không phải chiến lược tốt nhất**. Nó phải duyệt hết danh sách và để lại những mẩu thừa rất nhỏ, vụn tới mức không tiến trình nào dùng được — phân mảnh ngoài nặng hơn. Trong thực nghiệm, **first-fit thường nhanh hơn và tận dụng bộ nhớ tương đương**."
+    },
+    {
+      "id": "os-mm-10",
+      "topic": "Cache",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Khi thiết kế bộ nhớ đệm cache, kích thước khối (cache line) là tham số quan trọng. Câu nào sau đây **đúng**?",
+      "options": [
+        "Kích thước khối nhỏ hơn phải chịu hình phạt bỏ lỡ (miss penalty) thấp hơn",
+        "Kích thước khối nhỏ hơn ngụ ý vị trí không gian (spatial locality) tốt hơn",
+        "Kích thước khối nhỏ hơn có nghĩa là thời gian truy cập cache thấp hơn",
+        "Kích thước khối nhỏ hơn có nghĩa là thẻ (tag) bộ nhớ cache nhỏ hơn"
+      ],
+      "answer": 0,
+      "explanation": "**Miss penalty** là thời gian nạp một khối từ bộ nhớ chính về cache. Khối càng nhỏ thì càng ít byte phải chuyển, nên **hình phạt bỏ lỡ càng thấp** — phương án a đúng.\n\nBa phương án kia đều ngược:\n- **Spatial locality**: khối **lớn hơn** mới khai thác tốt tính cục bộ không gian, vì nạp sẵn các byte lân cận sắp được dùng.\n- **Thời gian truy cập cache** phụ thuộc kích thước tổng và mức độ liên kết, không phải kích thước khối.\n- **Tag**: khối nhỏ hơn ⇒ nhiều khối hơn ⇒ ít bit offset trong khối ⇒ **tag dài hơn**, và tổng bộ nhớ dành cho tag cũng lớn hơn.\n\nĐánh đổi kinh điển khi chọn kích thước khối: khối lớn khai thác cục bộ tốt và giảm số tag, nhưng tốn thời gian nạp và dễ kéo về dữ liệu thừa."
+    },
+    {
+      "id": "os-mm-11",
+      "topic": "Kết buộc địa chỉ",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "File MAP dưới đây cho thấy địa chỉ các phân đoạn khi dịch một chương trình. Sự ràng buộc này thuộc loại kết buộc địa chỉ nào?",
+      "code": "Start     Stop      Length    Name      Class\n00000H    00010H    00011H    _TEXT     CODE\n00020H    00030H    00011H    _DATA     DATA\n00040H    0013FH    00100H    STACK     STACK\n\nProgram entry point at 0000:0000",
+      "options": [
+        "Địa chỉ động (Relocatable address)",
+        "Địa chỉ tương đối (Relative address)",
+        "Địa chỉ không xác định (Undefined address)",
+        "Địa chỉ tuyệt đối (Absolute address)"
+      ],
+      "answer": 3,
+      "explanation": "File MAP ghi ra những con số **cố định, xác định ngay từ lúc biên dịch** (`00000H`, `00020H`, `00040H`) — đó là đặc trưng của **kết buộc địa chỉ tuyệt đối**, xảy ra ở **compile time**.\n\nBa thời điểm kết buộc địa chỉ:\n```\nCompile time  - biết trước vị trí nạp → sinh ra ĐỊA CHỈ TUYỆT ĐỐI\n                (chương trình .COM của MS-DOS là ví dụ kinh điển)\nLoad  time    - chưa biết vị trí → sinh mã KHẢ TÁI ĐỊNH VỊ (relocatable),\n                địa chỉ thật được tính lúc nạp\nExecution time- tiến trình có thể bị dời trong lúc chạy → cần phần cứng\n                MMU với thanh ghi base/limit\n```\n\nHệ quả của kết buộc tuyệt đối: muốn nạp chương trình vào **vị trí khác** trong bộ nhớ thì phải **biên dịch lại**. Đó là lý do hệ điều hành hiện đại dùng kết buộc lúc thực thi."
+    },
+    {
+      "id": "os-mm-12",
+      "topic": "Phân vùng động",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Bộ nhớ **15 đơn vị**, cấp phát theo **phân vùng động** với thuật toán **First-Fit**, chuỗi thao tác A → B → C → thu hồi B → D → thu hồi A → E. Tại thời điểm **thu hồi vùng nhớ của A**, có bao nhiêu **vùng trống (Hole)**?",
+      "code": "Tiến trình   Số đơn vị bộ nhớ yêu cầu\nA            3\nB            5\nC            2\nD            2\nE            3",
+      "options": [
+        "3",
+        "4",
+        "5",
+        "2"
+      ],
+      "answer": 0,
+      "explanation": "Lần theo từng bước, ghi rõ vùng trống sau mỗi thao tác:\n```\nCấp A (3)   : A[0-3)                     Hole: [3,15) = 12\nCấp B (5)   : A[0-3) B[3-8)              Hole: [8,15) = 7\nCấp C (2)   : A B C[8-10)                Hole: [10,15) = 5\nThu hồi B   : A[0-3) _[3-8) C[8-10)      Hole: [3,8)=5 và [10,15)=5   → 2 hole\nCấp D (2)   : First-Fit lấy hole đầu tiên đủ lớn → D[3-5)\n              A[0-3) D[3-5) _[5-8) C[8-10)   Hole: [5,8)=3 và [10,15)=5\nThu hồi A   : _[0-3) D[3-5) _[5-8) C[8-10)   Hole: [0,3)=3, [5,8)=3, [10,15)=5\n```\n\nKết quả: **3 vùng trống**.\n\nChú ý hai điểm dễ sai:\n- Khi thu hồi A, vùng [0,3) **không gộp** được với [5,8) vì D đang nằm chắn ở giữa — chỉ hai vùng trống **liền kề** mới gộp lại được.\n- First-Fit chọn hole [3,8) chứ không phải hole nhỏ vừa vặn, vì nó lấy **hole đầu tiên đủ lớn**, không quan tâm lãng phí."
+    },
+    {
+      "id": "os-mm-13",
+      "topic": "Phân vùng động",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Cùng bài toán trên (bộ nhớ 15 đơn vị, **First-Fit**, chuỗi A → B → C → thu hồi B → D → thu hồi A → E). **Danh sách vùng trống** sau khi cấp phát cho E là gì? Record có dạng H(x, y) với x là ô bắt đầu, y là kích thước.",
+      "code": "Tiến trình   Số đơn vị bộ nhớ yêu cầu\nA            3\nB            5\nC            2\nD            2\nE            3",
+      "options": [
+        "H(5,5); H(5,5)",
+        "H(3,3); H(8,5)",
+        "H(5,3); H(10,5)",
+        "H(4,3); H(9,5)"
+      ],
+      "answer": 2,
+      "explanation": "Nối tiếp câu trước, ngay trước khi cấp cho E ta có ba vùng trống:\n```\n_[0-3)=3   D[3-5)   _[5-8)=3   C[8-10)   _[10,15)=5\n```\n\nE cần **3 đơn vị**. First-Fit duyệt từ đầu, gặp hole **[0,3) kích thước 3** — vừa khít → cấp luôn cho E.\n```\nE[0-3) D[3-5) _[5-8) C[8-10) _[10,15)\n```\n\nCòn lại đúng hai vùng trống: **H(5,3)** và **H(10,5)**.\n\nLưu ý cách đọc record: H(5,3) nghĩa là *bắt đầu ở ô 5, dài 3 đơn vị*, tức chiếm các ô 5, 6, 7 — không phải \"từ ô 5 đến ô 3\"."
+    },
+    {
+      "id": "os-mm-14",
+      "topic": "Phân vùng động",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Hiện trạng bộ nhớ như hình (mỗi ô là 1 đơn vị). Dùng **Next-Fit**, hãy cho biết record quản lý bộ nhớ của tiến trình **E** sau khi cấp 3 đơn vị cho D và 2 đơn vị cho E.",
+      "code": "Ô:   0   1   2 | 3   4 | 5   6   7   8 | 9  10  11 | 12  13  14 | 15 ...\n     [--- A ---] [trống] [---- B ----] [-- trống --] [--- C ---] [--- trống ---]\n\nVùng    Ô bắt đầu   Kích thước   Trạng thái\nA       0           3            đang dùng\n-       3           2            TRỐNG\nB       5           4            đang dùng\n-       9           3            TRỐNG\nC       12          3            đang dùng\n-       15          rất lớn      TRỐNG",
+      "options": [
+        "E(15,2)",
+        "E(3,2)",
+        "E(9,2)",
+        "E(12,2)"
+      ],
+      "answer": 0,
+      "explanation": "**Next-Fit** giống First-Fit nhưng **không quay về đầu mỗi lần**: nó tiếp tục tìm từ **vị trí dừng của lần cấp phát trước**.\n\n```\nCấp D (3 đơn vị):\n  duyệt tới hole [3,5) = 2 → không đủ\n  duyệt tiếp hole [9,12) = 3 → vừa khít → D[9-12)\n  con trỏ dừng tại ô 12\n\nCấp E (2 đơn vị):\n  bắt đầu tìm TỪ ô 12, không quay lại đầu\n  [12,15) là C đang chiếm → bỏ qua\n  gặp vùng trống từ ô 15 → E[15-17)\n```\n\nVậy record là **E(15, 2)**.\n\nĐáp án **E(3,2)** chính là cái bẫy: hole [3,5) đủ chỗ cho E thật, nhưng Next-Fit **không quay đầu lại** để nhìn nó. Đây vừa là ưu điểm (tìm nhanh hơn, phân bố đều hơn) vừa là nhược điểm (bỏ sót các hole nhỏ ở đầu bộ nhớ) của thuật toán này."
+    },
+    {
+      "id": "os-mm-15",
+      "topic": "Phân vùng động",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Cùng hiện trạng bộ nhớ như trên. Dùng **Best-Fit**, record quản lý bộ nhớ của tiến trình **D** sau khi cấp 3 đơn vị là gì?",
+      "code": "Ô:   0   1   2 | 3   4 | 5   6   7   8 | 9  10  11 | 12  13  14 | 15 ...\n     [--- A ---] [trống] [---- B ----] [-- trống --] [--- C ---] [--- trống ---]\n\nVùng    Ô bắt đầu   Kích thước   Trạng thái\nA       0           3            đang dùng\n-       3           2            TRỐNG\nB       5           4            đang dùng\n-       9           3            TRỐNG\nC       12          3            đang dùng\n-       15          rất lớn      TRỐNG",
+      "options": [
+        "D(3,3)",
+        "D(9,3)",
+        "D(12,3)",
+        "D(15,3)"
+      ],
+      "answer": 1,
+      "explanation": "**Best-Fit** duyệt **toàn bộ** danh sách rồi chọn hole **nhỏ nhất mà vẫn đủ chứa**.\n\n```\nCác vùng trống:\n  [3,5)   = 2 đơn vị  → không đủ cho D (cần 3)\n  [9,12)  = 3 đơn vị  → vừa khít  ✔ nhỏ nhất trong số đủ chỗ\n  [15,..) = lớn       → đủ nhưng phí\n```\n\nChọn **[9,12)** → record **D(9, 3)**, và hole này biến mất hoàn toàn, không để lại mẩu thừa nào.\n\nSo sánh ba thuật toán trên cùng dữ liệu để thấy khác biệt:\n- **First-Fit** → cũng chọn [9,12) vì đó là hole đầu tiên đủ lớn.\n- **Next-Fit** → tuỳ vị trí con trỏ, có thể nhảy xuống vùng sau ô 15.\n- **Worst-Fit** → chọn vùng lớn nhất từ ô 15, để lại mẩu thừa to.\n\nĐáp án **D(3,3)** sai vì hole [3,5) chỉ có 2 đơn vị, không chứa nổi 3."
+    },
+    {
+      "id": "os-mm-16",
+      "topic": "Phân vùng động",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Cùng hiện trạng bộ nhớ như trên. Dùng **Worst-Fit**, record quản lý bộ nhớ của tiến trình **D** sau khi cấp 2 đơn vị là gì?",
+      "code": "Ô:   0   1   2 | 3   4 | 5   6   7   8 | 9  10  11 | 12  13  14 | 15 ...\n     [--- A ---] [trống] [---- B ----] [-- trống --] [--- C ---] [--- trống ---]\n\nVùng    Ô bắt đầu   Kích thước   Trạng thái\nA       0           3            đang dùng\n-       3           2            TRỐNG\nB       5           4            đang dùng\n-       9           3            TRỐNG\nC       12          3            đang dùng\n-       15          rất lớn      TRỐNG",
+      "options": [
+        "D(3,2)",
+        "D(12,2)",
+        "D(15,2)",
+        "D(9,2)"
+      ],
+      "answer": 2,
+      "explanation": "**Worst-Fit** chọn **vùng trống lớn nhất**, ngược hẳn với Best-Fit.\n\n```\nCác vùng trống:\n  [3,5)   = 2      đủ cho D nhưng nhỏ\n  [9,12)  = 3      đủ\n  [15,..) = lớn nhất  ✔ Worst-Fit chọn cái này\n```\n→ record **D(15, 2)**.\n\nÝ tưởng đằng sau Worst-Fit: cắt từ vùng lớn thì **phần dư còn lại vẫn đủ to** để dùng cho tiến trình khác, thay vì để lại mẩu vụn vô dụng như Best-Fit.\n\nThực tế thì Worst-Fit hoạt động kém nhất trong bốn thuật toán: nó **phá vỡ các vùng trống lớn** nên khi có tiến trình cần nhiều bộ nhớ thì không còn chỗ nào chứa nổi.\n\nSo sánh trên cùng dữ liệu: First-Fit → [9,12), Best-Fit → [3,5), Worst-Fit → [15,..)."
+    },
+    {
+      "id": "os-mm-17",
+      "topic": "Phân đoạn",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Phân đoạn (Segmentation), bộ nhớ bắt đầu từ 0K, bảng phân đoạn SMT như dưới đây. Địa chỉ vật lý tương ứng với địa chỉ logic **⟨2, 120K⟩** là bao nhiêu?",
+      "code": "S   Kích thước   Địa chỉ (base)\n0   300K         200K\n1   200K         1300K\n2   500K         700K\n3   400K         1500K",
+      "options": [
+        "820K",
+        "1420K",
+        "320K",
+        "1620K"
+      ],
+      "answer": 0,
+      "explanation": "Hai bước, **kiểm tra trước, cộng sau**:\n```\n1. Kiểm tra: offset 120K < Kích thước segment 2 (500K)  ✔ hợp lệ\n2. Địa chỉ vật lý = base + offset = 700K + 120K = 820K\n```\n\nKhác biệt cốt lõi so với phân trang: các segment có **kích thước khác nhau** và **không cần nằm liền kề** trong bộ nhớ vật lý — nhìn bảng sẽ thấy S0 ở 200K, S2 ở 700K, S1 lại tận 1300K.\n\nNếu offset ≥ kích thước, phần cứng sinh **trap** báo truy cập ngoài giới hạn. Chính phép kiểm tra này tạo ra bảo vệ bộ nhớ ở mức từng đoạn logic (code, data, stack có quyền khác nhau)."
+    },
+    {
+      "id": "os-mm-18",
+      "topic": "Phân đoạn",
+      "source": "Cuối kỳ HĐH – SPKT",
+      "question": "Với cùng bảng SMT, địa chỉ vật lý **1600K** ứng với địa chỉ logic ⟨s, d⟩ nào?",
+      "code": "S   Kích thước   Địa chỉ (base)\n0   300K         200K\n1   200K         1300K\n2   500K         700K\n3   400K         1500K",
+      "options": [
+        "s=3; d=420K",
+        "s=0; d=120K",
+        "s=2; d=320K",
+        "s=1; d=220K"
+      ],
+      "answer": 0,
+      "explanation": "Cách làm: tìm segment có **khoảng [base, base + size)** chứa địa chỉ vật lý, rồi lấy hiệu.\n```\nS0: [200K, 500K)     S1: [1300K, 1500K)\nS2: [700K, 1200K)    S3: [1500K, 1900K)   ← chứa 1600K\n```\nVậy **s = 3**, và **d = 1600K − 1500K = 100K**.\n\n**Lưu ý:** con số 100K **không có trong phương án nào**; đáp án đề là *s=3; d=420K*, vốn ứng với địa chỉ vật lý 1920K chứ không phải 1600K. Nhiều khả năng đề in nhầm số.\n\nPhần **s = 3** thì chắc chắn đúng, nên đi thi vẫn chọn phương án a. Điều cần nắm là **phương pháp**: xác định khoảng địa chỉ của từng segment rồi trừ base."
+    }
+  ]
+}
