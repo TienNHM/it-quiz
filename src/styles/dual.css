@@ -10,7 +10,7 @@
     --seg1-left: env(viewport-segment-left 1 0, calc(50vw + 12px));
     --hinge: calc(var(--seg1-left) - var(--seg0-right));
   }
-  .container, .app-header-inner { max-width: none; }
+  .container, .container.wide, .app-header-inner { max-width: none; }
 
   /* hai cột, như hai trang sách */
   .page { column-count: 2; column-gap: var(--hinge); }

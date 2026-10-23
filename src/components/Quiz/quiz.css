@@ -80,7 +80,7 @@
 /* ---------- Trang chủ / thống kê ---------- */
 .hero { position: relative; padding: 10px 0 14px; isolation: isolate; }
 .hero::after {
-  content: ''; position: absolute; right: 0; top: -24px; width: 130px; height: 130px; z-index: -1; border-radius: 50%;
+  content: ''; position: absolute; right: 0; top: 0; width: 130px; height: 130px; z-index: -1; border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--gold) 55%, transparent), transparent 70%);
   animation: floaty 7s ease-in-out infinite;
 }
@@ -151,3 +151,18 @@ details.acc[open] > div { animation: rise 0.45s var(--ease) backwards; }
 .h-score small { display: block; font-weight: 600; opacity: 0.8; }
 .h-score.good { color: var(--success); }
 .h-score.bad { color: var(--danger); }
+
+@media (min-width: 900px) {
+  .hero { padding: 24px 0 18px; }
+  .hero h1 { font-size: 2.8rem; }
+  .hero p { font-size: 1.05rem; max-width: 56ch; }
+  .container.wide .stat-grid { gap: 16px; }
+  .container.wide .stat-grid .card { padding: 20px 12px; }
+  .stat-grid.two { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .btn.cta { width: auto; display: inline-flex; padding: 0 36px; margin: 22px 0 6px; }
+  .page h2 { margin-top: 1.8em; }
+}
+@media (min-width: 900px) {
+  .grid > .subj:only-child { grid-column: 1 / -1; }
+  .grid > .subj:only-child p.muted { max-width: 70ch; }
+}

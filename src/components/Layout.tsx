@@ -22,6 +22,8 @@ export default function Layout({children}: {children: ReactNode}) {
   const {pathname} = useLocation();
   // Đang làm bài: ẩn header + dock để tối đa chỗ cho câu hỏi và thanh hành động ở đáy.
   const immersive = pathname.startsWith('/play/');
+  // Trang dạng lưới/danh sách dùng bề ngang rộng trên desktop; trang đọc/làm bài giữ cột hẹp cho dễ đọc.
+  const wide = pathname === '/' || pathname.startsWith('/s/') || pathname === '/stats';
   const [online, setOnline] = useState(() => navigator.onLine);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [installEvt, setInstallEvt] = useState<InstallPromptEvent | null>(null);
@@ -107,7 +109,7 @@ export default function Layout({children}: {children: ReactNode}) {
           </div>
         </header>
       )}
-      <main className={immersive ? 'container app-main play-main' : 'container app-main'}>
+      <main className={`container app-main${immersive ? ' play-main' : ''}${wide ? ' wide' : ''}`}>
         <div key={pathname} className="page">
           {children}
         </div>

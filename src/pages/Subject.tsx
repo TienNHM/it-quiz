@@ -38,6 +38,7 @@ export default function SubjectPage() {
         </p>
       </div>
       <h2 style={{marginTop: 20}}>Các chương</h2>
+      <div className="grid chapters">
       {subject.chapters.map((c) => {
         const cs = chapterStats(subject.id, c.id);
         const p = pct(cs.seen, cs.total);
@@ -59,6 +60,7 @@ export default function SubjectPage() {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
