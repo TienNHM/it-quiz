@@ -16,12 +16,12 @@
   --muted: #6a6682;
   --ink: rgba(40, 30, 80, 0.14); /* viền */
   --border: rgba(40, 30, 80, 0.12);
-  --primary: #9a6b12;
+  --primary: #86590a;
   --primary-text: #ffffff;
   --gold: #c9a05a;
   --gold-text: #1d1608;
   --grad-primary: linear-gradient(135deg, #f3dfae 0%, #d9b46c 52%, #bd8f42 100%);
-  --grad-accent: linear-gradient(90deg, #8a5a0c 0%, #c2902f 50%, #8a5a0c 100%);
+  --grad-accent: linear-gradient(90deg, #7a4f08 0%, #a87518 50%, #7a4f08 100%);
   --success: #0f9d6b;
   --danger: #d6385f;
   --warning: #c9892a;
