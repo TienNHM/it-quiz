@@ -78,11 +78,11 @@
 .q-timer.low { color: #fff; background: var(--danger); border-color: transparent; animation: pop 1s ease infinite; }
 
 /* ---------- Trang chủ / thống kê ---------- */
-.hero { position: relative; padding: 10px 0 14px; }
+.hero { position: relative; padding: 10px 0 14px; isolation: isolate; }
 .hero::after {
-  content: ''; position: absolute; right: -40px; top: -30px; width: 150px; height: 150px; z-index: -1; border-radius: 50%;
+  content: ''; position: absolute; right: 0; top: -24px; width: 130px; height: 130px; z-index: -1; border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--gold) 55%, transparent), transparent 70%);
-  filter: blur(8px); animation: floaty 7s ease-in-out infinite;
+  animation: floaty 7s ease-in-out infinite;
 }
 .hero h1 { background: var(--grad-accent); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
