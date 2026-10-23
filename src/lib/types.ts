@@ -81,9 +81,12 @@ export interface CardState {
   due: number; // epoch ms đến hạn ôn
 }
 
+export type StyleId = 'obsidian' | 'pop' | 'aurora' | 'terminal' | 'paper' | 'sunset';
+
 export interface Settings {
+  style: StyleId;
   shuffleOptions: boolean;
-  theme: 'auto' | 'light' | 'dark';
+  theme: 'auto' | 'light' | 'dark'; // chế độ sáng/tối, độc lập với style
   examSize: number; // số câu đề thi thử, mặc định 30
   examMinutes: number; // mặc định 45
 }

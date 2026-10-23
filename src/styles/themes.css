@@ -1,0 +1,176 @@
+/* ============================================================
+   Style presets. Mỗi style = bộ token (cấu trúc + màu); chế độ sáng/tối là trục riêng:
+     :root[data-style='x']                      -> sáng
+     :root[data-style='x'][data-mode='dark']    -> tối
+   data-mode luôn là 'light' | 'dark' đã resolve (kể cả khi người dùng chọn "theo hệ thống").
+   'obsidian' là mặc định, nằm trong global.css.
+   ============================================================ */
+
+/* ---------- Brutal Pop: màu phẳng chói, viền đen dày, bóng cứng ---------- */
+:root[data-style='pop'] {
+  --bg: #fff4d6; --bg-a: #fff4d6; --bg-b: #fff4d6; --bg-c: #fff4d6;
+  --surface: #ffffff; --surface-solid: #ffffff; --surface-2: rgba(0, 0, 0, .07);
+  --text: #000000; --muted: #3d3d3d; --ink: #000000; --border: rgba(0, 0, 0, .3);
+  --primary: #ff4d8d; --primary-text: #000000; --gold: #ffdd33; --gold-text: #000000;
+  --grad-primary: linear-gradient(#ffdd33, #ffdd33);
+  --grad-accent: linear-gradient(#ff4d8d, #ff4d8d);
+  --success: #00b36b; --danger: #ff3b3b; --warning: #ffdd33;
+  --radius: 6px; --bw: 3px; --shadow-c: #000000;
+  --shadow: 6px 6px 0 var(--shadow-c); --shadow-sm: 4px 4px 0 var(--shadow-c);
+  --shadow-xs: 2px 2px 0 var(--shadow-c); --shadow-hover: 6px 6px 0 var(--shadow-c); --shadow-lift: 9px 9px 0 var(--shadow-c);
+  --blur: none; --code-bg: #111111; --code-text: #fff4d6;
+  color-scheme: light;
+}
+:root[data-style='pop'][data-mode='dark'] {
+  --bg: #141414; --bg-a: #141414; --bg-b: #141414; --bg-c: #141414;
+  --surface: #1f1f1f; --surface-solid: #1f1f1f; --surface-2: rgba(255, 255, 255, .08);
+  --text: #ffffff; --muted: #c8c8c8; --ink: #ffffff; --border: rgba(255, 255, 255, .3);
+  --primary: #ff6fa5; --primary-text: #000000; --gold: #ffdd33; --gold-text: #000000;
+  --success: #3be6a0; --danger: #ff6b6b; --shadow-c: #ffdd33;
+  --code-bg: #000000; --code-text: #ffffff;
+  color-scheme: dark;
+}
+:root[data-style='pop'] body {
+  background-image: radial-gradient(color-mix(in srgb, var(--ink) 22%, transparent) 1.4px, transparent 1.5px);
+  background-size: 20px 20px;
+}
+:root[data-style='pop'] .app-brand { background: none; color: var(--text); -webkit-text-fill-color: currentColor; text-transform: uppercase; letter-spacing: .02em; }
+:root[data-style='pop'] .hero h1 { background: none; -webkit-text-fill-color: currentColor; color: var(--text); text-shadow: 4px 4px 0 var(--gold); }
+:root[data-style='pop'] .btn, :root[data-style='pop'] h1, :root[data-style='pop'] h2 { text-transform: uppercase; letter-spacing: .02em; }
+:root[data-style='pop'] .progress > span, :root[data-style='pop'] .progress > div { background: var(--primary); }
+
+/* ---------- Aurora Glass: kính trong, bóng đổ êm, cực quang ---------- */
+:root[data-style='aurora'] {
+  --bg: #e6ecff; --bg-a: #8b7cff; --bg-b: #5ce1e6; --bg-c: #ff9ad5;
+  --surface: rgba(255, 255, 255, .42); --surface-solid: rgba(255, 255, 255, .85); --surface-2: rgba(255, 255, 255, .45);
+  --text: #141a3d; --muted: #4c5486; --ink: rgba(255, 255, 255, .85); --border: rgba(255, 255, 255, .6);
+  --primary: #6d5cff; --primary-text: #ffffff; --gold: #8b7cff; --gold-text: #ffffff;
+  --grad-primary: linear-gradient(135deg, #38bdf8 0%, #6d5cff 55%, #c084fc 100%);
+  --grad-accent: linear-gradient(135deg, #38bdf8 0%, #8b7cff 50%, #f472b6 100%);
+  --success: #12b886; --danger: #f0446e; --warning: #f5a524;
+  --radius: 26px; --bw: 1.5px; --shadow-c: rgba(60, 50, 160, .28);
+  --shadow: 0 14px 40px var(--shadow-c); --shadow-sm: 0 8px 22px var(--shadow-c);
+  --shadow-xs: 0 3px 10px var(--shadow-c); --shadow-hover: 0 12px 30px var(--shadow-c); --shadow-lift: 0 22px 50px var(--shadow-c);
+  --shadow-press: 0 2px 6px var(--shadow-c);
+  --blur: saturate(190%) blur(26px); --code-bg: rgba(20, 26, 61, .88); --code-text: #eef1ff;
+  color-scheme: light;
+}
+:root[data-style='aurora'][data-mode='dark'] {
+  --bg: #070b22; --bg-a: #5b3df5; --bg-b: #0891b2; --bg-c: #be185d;
+  --surface: rgba(255, 255, 255, .08); --surface-solid: rgba(24, 30, 70, .88); --surface-2: rgba(255, 255, 255, .09);
+  --text: #eef1ff; --muted: #a9b1e0; --ink: rgba(255, 255, 255, .28); --border: rgba(255, 255, 255, .18);
+  --primary: #9a8cff; --primary-text: #070b22; --success: #34d8a0; --danger: #ff6b91;
+  --shadow-c: rgba(0, 0, 0, .55); --code-bg: rgba(0, 0, 0, .45); --code-text: #eef1ff;
+  color-scheme: dark;
+}
+:root[data-style='aurora'] .btn, :root[data-style='aurora'] .q-opt { border-radius: 16px; }
+:root[data-style='aurora'] .btn.primary { color: #fff; }
+:root[data-style='aurora'] .q-opt .key, :root[data-style='aurora'] .q-nav button.cur, :root[data-style='aurora'] .badge, :root[data-style='aurora'] .app-nav a.active { color: #fff; }
+:root[data-style='aurora'] .btn:hover:not(:disabled), :root[data-style='aurora'] .q-opt:hover:not(:disabled), :root[data-style='aurora'] a.card:hover { transform: translateY(-2px); }
+:root[data-style='aurora'] .btn:active:not(:disabled), :root[data-style='aurora'] .q-opt:active:not(:disabled), :root[data-style='aurora'] a.card:active, :root[data-style='aurora'] .q-opt.selected { transform: translateY(1px); }
+
+/* ---------- Terminal: monospace, xanh phosphor, góc vuông ---------- */
+:root[data-style='terminal'] {
+  --bg: #eef3e4; --bg-a: #eef3e4; --bg-b: #eef3e4; --bg-c: #eef3e4;
+  --surface: #f6f9ee; --surface-solid: #f6f9ee; --surface-2: rgba(16, 35, 15, .07);
+  --text: #10230f; --muted: #3f5a3c; --ink: #10230f; --border: rgba(16, 35, 15, .3);
+  --primary: #0b7a2b; --primary-text: #ffffff; --gold: #0b7a2b; --gold-text: #ffffff;
+  --grad-primary: linear-gradient(#0b7a2b, #0b7a2b); --grad-accent: linear-gradient(#0b7a2b, #0b7a2b);
+  --success: #0b7a2b; --danger: #b3261e; --warning: #9a6700;
+  --radius: 0px; --bw: 1.5px; --shadow-c: rgba(16, 35, 15, .35);
+  --shadow: 4px 4px 0 var(--shadow-c); --shadow-sm: 3px 3px 0 var(--shadow-c); --shadow-xs: 2px 2px 0 var(--shadow-c);
+  --shadow-hover: 4px 4px 0 var(--shadow-c); --shadow-lift: 6px 6px 0 var(--shadow-c);
+  --blur: none; --code-bg: #0b1a0c; --code-text: #7dff9a;
+  --font: ui-monospace, 'Cascadia Code', 'JetBrains Mono', SFMono-Regular, Menlo, Consolas, monospace;
+  --font-display: var(--font);
+  color-scheme: light;
+}
+:root[data-style='terminal'][data-mode='dark'] {
+  --bg: #050a06; --bg-a: #050a06; --bg-b: #050a06; --bg-c: #050a06;
+  --surface: #09120a; --surface-solid: #09120a; --surface-2: rgba(51, 255, 102, .08);
+  --text: #b6ffc6; --muted: #6fbf84; --ink: #33ff66; --border: rgba(51, 255, 102, .35);
+  --primary: #33ff66; --primary-text: #031a08; --gold: #33ff66; --gold-text: #031a08;
+  --grad-primary: linear-gradient(#33ff66, #33ff66); --grad-accent: linear-gradient(#33ff66, #33ff66);
+  --success: #33ff66; --danger: #ff5c5c; --warning: #ffd23f;
+  --shadow-c: rgba(51, 255, 102, .35);
+  --shadow: 0 0 18px var(--shadow-c); --shadow-sm: 0 0 12px var(--shadow-c); --shadow-xs: 0 0 6px var(--shadow-c);
+  --shadow-hover: 0 0 20px var(--shadow-c); --shadow-lift: 0 0 26px var(--shadow-c); --shadow-press: 0 0 4px var(--shadow-c);
+  --code-bg: #000000; --code-text: #7dff9a;
+  color-scheme: dark;
+}
+:root[data-style='terminal'] body { font-size: 15px; }
+:root[data-style='terminal'] body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999;
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0) 2px, rgba(0, 0, 0, .09) 3px);
+}
+:root[data-style='terminal'] h1, :root[data-style='terminal'] h2, :root[data-style='terminal'] h3 { letter-spacing: 0; }
+:root[data-style='terminal'] h1::before { content: '> '; color: var(--primary); }
+:root[data-style='terminal'] .app-brand { background: none; -webkit-text-fill-color: currentColor; color: var(--primary); }
+:root[data-style='terminal'] .app-brand::before { content: '$ '; }
+:root[data-style='terminal'] .hero h1 { background: none; -webkit-text-fill-color: currentColor; color: var(--primary); }
+:root[data-style='terminal'] .btn:hover:not(:disabled), :root[data-style='terminal'] a.card:hover { transform: none; }
+:root[data-style='terminal'] .chip, :root[data-style='terminal'] .badge, :root[data-style='terminal'] .progress, :root[data-style='terminal'] .q-timer { border-radius: 0; }
+:root[data-style='terminal'] .btn, :root[data-style='terminal'] .q-opt, :root[data-style='terminal'] .q-nav button { border-radius: 0; }
+
+/* ---------- Paper: tối giản kiểu tạp chí ---------- */
+:root[data-style='paper'] {
+  --bg: #fafaf7; --bg-a: #fafaf7; --bg-b: #fafaf7; --bg-c: #fafaf7;
+  --surface: #ffffff; --surface-solid: #ffffff; --surface-2: rgba(26, 26, 26, .05);
+  --text: #1a1a1a; --muted: #6b6b66; --ink: rgba(26, 26, 26, .16); --border: rgba(26, 26, 26, .12);
+  --primary: #c2410c; --primary-text: #ffffff; --gold: #c2410c; --gold-text: #ffffff;
+  --grad-primary: linear-gradient(#1a1a1a, #1a1a1a); --grad-accent: linear-gradient(#c2410c, #c2410c);
+  --success: #15803d; --danger: #b91c1c; --warning: #b45309;
+  --radius: 12px; --bw: 1px; --shadow-c: rgba(26, 26, 26, .1);
+  --shadow: 0 1px 2px rgba(0, 0, 0, .06), 0 10px 28px rgba(0, 0, 0, .06); --shadow-sm: 0 1px 2px rgba(0, 0, 0, .07);
+  --shadow-xs: 0 1px 1px rgba(0, 0, 0, .06); --shadow-hover: 0 4px 14px rgba(0, 0, 0, .1); --shadow-lift: 0 14px 34px rgba(0, 0, 0, .12);
+  --shadow-press: 0 0 0 rgba(0, 0, 0, 0);
+  --blur: none; --code-bg: #f1f0ea; --code-text: #1a1a1a;
+  color-scheme: light;
+}
+:root[data-style='paper'][data-mode='dark'] {
+  --bg: #121212; --bg-a: #121212; --bg-b: #121212; --bg-c: #121212;
+  --surface: #1b1b1b; --surface-solid: #1b1b1b; --surface-2: rgba(255, 255, 255, .06);
+  --text: #ecebe6; --muted: #9a9a94; --ink: rgba(255, 255, 255, .2); --border: rgba(255, 255, 255, .14);
+  --primary: #fb923c; --primary-text: #121212; --gold: #fb923c; --gold-text: #121212;
+  --grad-primary: linear-gradient(#ecebe6, #ecebe6); --grad-accent: linear-gradient(#fb923c, #fb923c);
+  --success: #4ade80; --danger: #f87171; --shadow-c: rgba(0, 0, 0, .5);
+  --code-bg: #0c0c0c; --code-text: #ecebe6;
+  color-scheme: dark;
+}
+:root[data-style='paper'] .btn.primary, :root[data-style='paper'] .q-opt .key, :root[data-style='paper'] .q-nav button.cur, :root[data-style='paper'] .badge, :root[data-style='paper'] .app-nav a.active { color: var(--bg); }
+:root[data-style='paper'] .app-brand { background: none; -webkit-text-fill-color: currentColor; color: var(--text); letter-spacing: -.03em; }
+:root[data-style='paper'] .hero h1 { background: none; -webkit-text-fill-color: currentColor; color: var(--text); }
+:root[data-style='paper'] .q-opt:hover:not(:disabled), :root[data-style='paper'] .btn:hover:not(:disabled), :root[data-style='paper'] a.card:hover { transform: translateY(-1px); }
+:root[data-style='paper'] .q-opt:active:not(:disabled), :root[data-style='paper'] .btn:active:not(:disabled), :root[data-style='paper'] a.card:active, :root[data-style='paper'] .q-opt.selected { transform: none; }
+:root[data-style='paper'] .q-opt.selected { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary); }
+:root[data-style='paper'] .progress > span, :root[data-style='paper'] .progress > div { background: var(--primary); }
+
+/* ---------- Sunset: gradient hoàng hôn, bo tròn lớn ---------- */
+:root[data-style='sunset'] {
+  --bg: #ffe9dc; --bg-a: #ff9a6b; --bg-b: #ff6fa5; --bg-c: #b794ff;
+  --surface: rgba(255, 255, 255, .55); --surface-solid: #fff6ef; --surface-2: rgba(59, 15, 74, .07);
+  --text: #3b0f4a; --muted: #7a4a86; --ink: #3b0f4a; --border: rgba(59, 15, 74, .22);
+  --primary: #e0366b; --primary-text: #ffffff; --gold: #ff8a3d; --gold-text: #ffffff;
+  --grad-primary: linear-gradient(135deg, #ffb347 0%, #ff5e7e 55%, #c13584 100%);
+  --grad-accent: linear-gradient(135deg, #ff8a3d 0%, #ff4f81 50%, #8f4bff 100%);
+  --success: #0e9f6e; --danger: #d6204f; --warning: #ff8a3d;
+  --radius: 22px; --bw: 2px; --shadow-c: #3b0f4a;
+  --shadow: 0 6px 0 var(--shadow-c); --shadow-sm: 0 4px 0 var(--shadow-c); --shadow-xs: 0 2px 0 var(--shadow-c);
+  --shadow-hover: 0 6px 0 var(--shadow-c); --shadow-lift: 0 9px 0 var(--shadow-c); --shadow-press: 0 0 0 var(--shadow-c);
+  --blur: saturate(170%) blur(14px); --code-bg: #2a0b36; --code-text: #ffe9dc;
+  color-scheme: light;
+}
+:root[data-style='sunset'][data-mode='dark'] {
+  --bg: #1b0b2e; --bg-a: #ff5e3a; --bg-b: #c2185b; --bg-c: #5b3df5;
+  --surface: rgba(48, 18, 74, .55); --surface-solid: #2a1245; --surface-2: rgba(255, 255, 255, .08);
+  --text: #ffeadb; --muted: #d2a9c9; --ink: #ffb199; --border: rgba(255, 177, 153, .25);
+  --primary: #ff7a9c; --primary-text: #1b0b2e; --gold: #ff9a55; --gold-text: #230a31;
+  --success: #43e0a0; --danger: #ff6b8e; --shadow-c: #ff5e7e;
+  --code-bg: #12061f; --code-text: #ffeadb;
+  color-scheme: dark;
+}
+:root[data-style='sunset'] .btn, :root[data-style='sunset'] .q-opt { border-radius: 18px; }
+:root[data-style='sunset'] .btn.primary, :root[data-style='sunset'] .q-opt .key, :root[data-style='sunset'] .q-nav button.cur, :root[data-style='sunset'] .badge, :root[data-style='sunset'] .app-nav a.active { color: #fff; }
+:root[data-style='sunset'] .btn:hover:not(:disabled), :root[data-style='sunset'] .q-opt:hover:not(:disabled), :root[data-style='sunset'] a.card:hover { transform: translateY(-2px); }
+:root[data-style='sunset'] .btn:active:not(:disabled), :root[data-style='sunset'] .q-opt:active:not(:disabled), :root[data-style='sunset'] a.card:active, :root[data-style='sunset'] .q-opt.selected { transform: translateY(4px); }
+:root[data-style='terminal'] pre, :root[data-style='terminal'] code, :root[data-style='terminal'] .mermaid-box, :root[data-style='terminal'] details.acc, :root[data-style='terminal'] .q-explain { border-radius: 0; }

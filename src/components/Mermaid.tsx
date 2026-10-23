@@ -1,10 +1,7 @@
 import {useEffect, useId, useState} from 'react';
 
 function isDark(): boolean {
-  const t = document.documentElement.dataset.theme;
-  if (t === 'dark') return true;
-  if (t === 'light') return false;
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  return document.documentElement.dataset.mode === 'dark';
 }
 
 export default function Mermaid({chart}: {chart: string}) {
@@ -17,7 +14,7 @@ export default function Mermaid({chart}: {chart: string}) {
   useEffect(() => {
     const update = () => setDark(isDark());
     const mo = new MutationObserver(update);
-    mo.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+    mo.observe(document.documentElement, {attributes: true, attributeFilter: ['data-mode']});
     const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
     mq?.addEventListener('change', update);
     return () => {

@@ -8,13 +8,13 @@
   box-shadow: var(--shadow-sm);
   transition: transform .1s ease, box-shadow .1s ease, background .15s;
 }
-.q-opt:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--shadow-c); background: color-mix(in srgb, var(--primary) 10%, var(--surface-solid)); }
-.q-opt:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--shadow-c); }
+.q-opt:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: var(--shadow-hover); background: color-mix(in srgb, var(--primary) 10%, var(--surface-solid)); }
+.q-opt:active:not(:disabled) { transform: translate(3px, 3px); box-shadow: var(--shadow-press); }
 .q-opt:disabled { cursor: default; }
 .q-opt .rich p { margin: 0; }
 .q-opt .key { flex: none; margin-top: 1px; background: var(--grad-primary); color: var(--gold-text); }
 .q-opt .mark { flex: none; margin-left: auto; font-weight: 900; font-size: 1.2rem; }
-.q-opt.selected { background: color-mix(in srgb, var(--primary) 22%, var(--surface-solid)); transform: translate(3px, 3px); box-shadow: 0 0 0 var(--shadow-c); }
+.q-opt.selected { background: color-mix(in srgb, var(--primary) 22%, var(--surface-solid)); transform: translate(3px, 3px); box-shadow: var(--shadow-press); }
 .q-opt.correct { background: color-mix(in srgb, var(--success) 30%, var(--surface-solid)); }
 .q-opt.wrong { background: color-mix(in srgb, var(--danger) 28%, var(--surface-solid)); }
 .q-explain {
@@ -28,7 +28,7 @@
 .q-nav { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 8px; margin-top: 14px; }
 .q-nav button {
   min-height: 42px; border-radius: 10px; border: 2px solid var(--ink); background: var(--surface-solid);
-  cursor: pointer; font-weight: 800; position: relative; box-shadow: 2px 2px 0 var(--shadow-c);
+  cursor: pointer; font-weight: 800; position: relative; box-shadow: var(--shadow-xs);
 }
 .q-nav button.done { background: color-mix(in srgb, var(--primary) 28%, var(--surface-solid)); }
 .q-nav button.cur { background: var(--grad-primary); color: var(--gold-text); }

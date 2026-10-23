@@ -1,10 +1,11 @@
 import {useSyncExternalStore} from 'react';
-import type {CardState, ProgressState, SessionResult, Settings} from './types';
+import type {CardState, ProgressState, SessionResult, Settings, StyleId} from './types';
+import {STYLE_IDS} from './styles';
 
 export const STORAGE_KEY = 'itquiz.v1';
 export const MAX_HISTORY = 50;
 
-export const defaultSettings = (): Settings => ({shuffleOptions: true, theme: 'auto', examSize: 30, examMinutes: 45});
+export const defaultSettings = (): Settings => ({style: 'obsidian', shuffleOptions: true, theme: 'auto', examSize: 30, examMinutes: 45});
 
 export const defaultProgress = (): ProgressState => ({
   version: 1,
@@ -46,6 +47,7 @@ export function migrate(raw: unknown): ProgressState | null {
 
   const s = isObj(raw.settings) ? raw.settings : {};
   const settings: Settings = {
+    style: STYLE_IDS.includes(s.style as StyleId) ? (s.style as StyleId) : base.settings.style,
     shuffleOptions: typeof s.shuffleOptions === 'boolean' ? s.shuffleOptions : base.settings.shuffleOptions,
     theme: s.theme === 'light' || s.theme === 'dark' || s.theme === 'auto' ? s.theme : base.settings.theme,
     examSize: posInt(s.examSize, base.settings.examSize),

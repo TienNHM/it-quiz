@@ -1,6 +1,7 @@
-import {useEffect, useState, type ReactNode} from 'react';
+import {useEffect, useLayoutEffect, useState, type ReactNode} from 'react';
 import {Link, NavLink} from 'react-router-dom';
 import {useProgress} from '../lib';
+import StylePicker from './StylePicker';
 
 interface InstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -17,13 +18,31 @@ const NAV = [
 export default function Layout({children}: {children: ReactNode}) {
   const {settings} = useProgress();
   const [online, setOnline] = useState(() => navigator.onLine);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [installEvt, setInstallEvt] = useState<InstallPromptEvent | null>(null);
 
-  useEffect(() => {
+  // Áp style + chế độ (sáng/tối/hệ thống -> data-mode luôn là light|dark đã resolve).
+  useLayoutEffect(() => {
     const root = document.documentElement;
-    if (settings.theme === 'auto') root.removeAttribute('data-theme');
-    else root.setAttribute('data-theme', settings.theme);
-  }, [settings.theme]);
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => {
+      const dark = settings.theme === 'dark' || (settings.theme === 'auto' && mq.matches);
+      root.dataset.mode = dark ? 'dark' : 'light';
+      root.dataset.theme = settings.theme;
+      root.dataset.style = settings.style;
+    };
+    apply();
+    if (settings.theme !== 'auto') return;
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, [settings.theme, settings.style]);
+
+  useEffect(() => {
+    if (!paletteOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setPaletteOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [paletteOpen]);
 
   useEffect(() => {
     const on = () => setOnline(true);
@@ -69,6 +88,19 @@ export default function Layout({children}: {children: ReactNode}) {
               Cài app
             </button>
           )}
+          <div className="palette-wrap">
+            <button className="btn ghost palette-btn" aria-label="Đổi giao diện" aria-expanded={paletteOpen} onClick={() => setPaletteOpen((o) => !o)}>
+              🎨
+            </button>
+            {paletteOpen && (
+              <>
+                <div className="palette-back" onClick={() => setPaletteOpen(false)} />
+                <div className="palette card" role="dialog" aria-label="Giao diện">
+                  <StylePicker compact />
+                </div>
+              </>
+            )}
+          </div>
           <nav className="app-nav" aria-label="Điều hướng chính">
             {NAV.map((n) => (
               <NavLink key={n.to} to={n.to} end={n.end} className={({isActive}) => (isActive ? 'active' : undefined)}>

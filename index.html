@@ -8,6 +8,17 @@
     <link rel="icon" type="image/svg+xml" href="./icon.svg" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
     <title>IT Quiz</title>
+    <script>
+      (function () {
+        try {
+          var s = (JSON.parse(localStorage.getItem('itquiz.v1')) || {}).settings || {};
+          var r = document.documentElement;
+          var dark = s.theme === 'dark' || (s.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+          r.dataset.mode = dark ? 'dark' : 'light';
+          r.dataset.style = s.style || 'obsidian';
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

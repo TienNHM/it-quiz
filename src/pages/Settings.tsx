@@ -1,4 +1,5 @@
 import {useEffect, useRef, useState} from 'react';
+import StylePicker from '../components/StylePicker';
 import {exportProgress, importProgress, resetProgress, updateSettings, useProgress} from '../lib';
 
 const VERSION = '0.1.0';
@@ -100,14 +101,7 @@ export default function Settings() {
 
       <div className="card">
         <h2>Giao diện</h2>
-        <label style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12}}>
-          <span>Chủ đề màu</span>
-          <select value={settings.theme} onChange={(e) => updateSettings({theme: e.target.value as 'auto' | 'light' | 'dark'})} style={{minHeight: 40}}>
-            <option value="auto">Theo hệ thống</option>
-            <option value="light">Sáng</option>
-            <option value="dark">Tối</option>
-          </select>
-        </label>
+        <StylePicker />
       </div>
 
       <div className="card">

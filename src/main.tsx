@@ -8,6 +8,7 @@ import '@fontsource/be-vietnam-pro/700.css';
 import '@fontsource/be-vietnam-pro/800.css';
 import '@fontsource/be-vietnam-pro/900.css';
 import './styles/global.css';
+import './styles/themes.css';
 
 type Notice = 'update' | 'offline' | null;
 
