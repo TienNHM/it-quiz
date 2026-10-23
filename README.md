@@ -22,6 +22,10 @@ Sinh lại icon PWA từ `public/icon.svg`: `node scripts/make-icons.mjs`.
 3. Với mỗi chương, tạo `content/<môn>/<slug>.json` dạng `{ "questions": [...] }`. Mỗi câu gồm `id` (duy nhất toàn cục), `question`, `options`, `answer` (index hoặc mảng index), `explanation`; tuỳ chọn `topic`, `source`, `code`, `diagram` (mermaid).
 4. Chạy `npm run validate` rồi `npm run build`.
 
-## Deploy
+## Deploy (GitHub Pages)
 
-`base` là `./` nên deploy được ở sub-path. Đẩy thư mục `dist/` lên bất kỳ host tĩnh nào (GitHub Pages, Netlify...). Router dùng hash nên không cần rewrite.
+Workflow `.github/workflows/deploy.yml` tự chạy khi push lên `main` hoặc `master` (hoặc bấm **Run workflow** thủ công): cài đặt, kiểm tra nội dung, chạy test, build rồi đăng `dist/` lên Pages.
+
+Cấu hình một lần: repo → **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+
+Site chạy tại `https://<user>.github.io/<repo>/`. `base` là `./` và router dùng hash nên không cần rewrite hay trang 404. Có thể đẩy `dist/` lên host tĩnh khác (Netlify, Cloudflare Pages...) mà không cần đổi gì.

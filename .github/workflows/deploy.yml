@@ -1,0 +1,57 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+# Cần để deploy-pages ghi lên Pages và xác thực bằng OIDC
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Mỗi lần chỉ một lượt deploy; lượt mới huỷ lượt đang chờ nhưng không ngắt lượt đang chạy
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Validate content
+        run: npm run validate
+
+      - name: Test
+        run: npm test
+
+      # tsc --noEmit + vite build. base './' nên chạy được ở https://<user>.github.io/<repo>/
+      - name: Build
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
