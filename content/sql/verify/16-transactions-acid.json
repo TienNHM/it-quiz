@@ -1,0 +1,54 @@
+[
+  {
+    "id": "sql-d16-02",
+    "kind": "predict",
+    "query": "BEGIN; UPDATE products SET price = price - 1000000 WHERE product_id = 5; SAVEPOINT a; UPDATE products SET price = price - 1000000 WHERE product_id = 5; SAVEPOINT b; UPDATE products SET price = price - 1000000 WHERE product_id = 5; ROLLBACK TO SAVEPOINT a; UPDATE products SET price = price - 500000 WHERE product_id = 5; COMMIT; SELECT price FROM products WHERE product_id = 5",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d16-04",
+    "kind": "predict",
+    "query": "BEGIN; UPDATE products SET stock_quantity = stock_quantity - 10 WHERE product_id = 1 AND stock_quantity >= 10; UPDATE products SET stock_quantity = stock_quantity - 2 WHERE product_id = 1; SELECT stock_quantity FROM products WHERE product_id = 1",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d16-05",
+    "kind": "predict",
+    "query": "BEGIN; UPDATE products SET stock_quantity = stock_quantity - 3 WHERE product_id = 16; SAVEPOINT s1; UPDATE products SET stock_quantity = stock_quantity - 5 WHERE product_id = 22; ROLLBACK TO SAVEPOINT s1; SELECT stock_quantity FROM products WHERE product_id IN (16, 22) ORDER BY product_id",
+    "format": "list"
+  },
+  {
+    "id": "sql-d16-06",
+    "kind": "predict",
+    "query": "BEGIN; INSERT INTO orders (customer_id, order_date, status, channel) VALUES (16, '2026-10-17 09:00+07', 'pending', 'online'); ROLLBACK; BEGIN; INSERT INTO orders (customer_id, order_date, status, channel) VALUES (16, '2026-10-17 09:00+07', 'pending', 'online') RETURNING order_id",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d16-07",
+    "kind": "find-error",
+    "options": [
+      "BEGIN; UPDATE products SET stock_quantity = stock_quantity - 1 WHERE product_id = 3; SELECT 1",
+      "BEGIN; UPDATE products SET stock_quantity = stock_quantity - 1 WHERE product_id = 3 AND stock_quantity >= 1; SELECT 1",
+      "BEGIN; UPDATE products SET stock_quantity = stock_quantity - 1 WHERE product_id = 999; SELECT 1",
+      "BEGIN; UPDATE products SET stock_quantity = stock_quantity - 1 WHERE product_id = 2; SELECT 1"
+    ]
+  },
+  {
+    "id": "sql-d16-08",
+    "kind": "choose-query",
+    "probe": "SELECT product_id, stock_quantity FROM products ORDER BY product_id",
+    "ordered": true,
+    "options": [
+      "UPDATE products SET stock_quantity = stock_quantity - 3 WHERE product_id = 9",
+      "UPDATE products SET stock_quantity = stock_quantity - 3 WHERE stock_quantity >= 3",
+      "UPDATE products SET stock_quantity = stock_quantity - 3 WHERE product_id = 9 AND stock_quantity > 0",
+      "UPDATE products SET stock_quantity = stock_quantity - 3 WHERE product_id = 9 AND stock_quantity >= 3"
+    ]
+  },
+  {
+    "id": "sql-d16-09",
+    "kind": "predict",
+    "query": "CREATE TABLE wallets (customer_id INT PRIMARY KEY REFERENCES customers (customer_id), balance NUMERIC(12,0) NOT NULL CHECK (balance >= 0)); INSERT INTO wallets VALUES (1, 1000000), (2, 500000), (3, 0); BEGIN; UPDATE wallets SET balance = balance - 200000 WHERE customer_id = 1; UPDATE wallets SET balance = balance + 200000 WHERE customer_id = 99; COMMIT; SELECT sum(balance) FROM wallets",
+    "format": "scalar"
+  }
+]

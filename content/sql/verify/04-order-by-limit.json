@@ -1,0 +1,107 @@
+[
+  {
+    "id": "sql-d04-01",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku, price FROM products\nORDER BY price DESC\nLIMIT 3;",
+      "SELECT sku, price FROM products\nORDER BY price\nLIMIT 3;",
+      "SELECT sku, price FROM products\nLIMIT 3 ORDER BY price;",
+      "SELECT sku, price FROM products\nLIMIT 3;"
+    ],
+    "ordered": true
+  },
+  {
+    "id": "sql-d04-02",
+    "kind": "predict",
+    "query": "SELECT sku\nFROM products\nORDER BY price\nLIMIT 5 OFFSET 22;",
+    "format": "rowcount"
+  },
+  {
+    "id": "sql-d04-03",
+    "kind": "predict",
+    "query": "SELECT full_name\nFROM customers\nORDER BY birth_date DESC, customer_id DESC\nLIMIT 1;",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d04-04",
+    "kind": "find-error",
+    "options": [
+      "SELECT city FROM customers\nORDER BY 1;",
+      "SELECT full_name FROM customers\nORDER BY created_at DESC;",
+      "SELECT price * 2 AS gia FROM products\nORDER BY gia DESC;",
+      "SELECT DISTINCT city\nFROM customers\nORDER BY created_at;"
+    ]
+  },
+  {
+    "id": "sql-d04-05",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku, price - cost_price AS profit\nFROM products\nORDER BY profit DESC, sku\nLIMIT 5;",
+      "SELECT sku, price - cost_price AS profit\nFROM products\nORDER BY profit NULLS LAST, sku\nLIMIT 5;",
+      "SELECT sku, price - cost_price AS profit\nFROM products\nORDER BY profit DESC NULLS LAST, sku\nLIMIT 5;",
+      "SELECT sku, price - cost_price AS profit\nFROM products\nORDER BY profit DESC LAST NULLS, sku\nLIMIT 5;"
+    ],
+    "ordered": true
+  },
+  {
+    "id": "sql-d04-06",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku, price FROM products\nORDER BY price DESC, sku\nLIMIT 5 OFFSET 15;",
+      "SELECT sku, price FROM products\nORDER BY price DESC, sku\nLIMIT 5 OFFSET 20;",
+      "SELECT sku, price FROM products\nORDER BY price DESC, sku\nLIMIT 5 OFFSET 4;",
+      "SELECT sku, price FROM products\nORDER BY price DESC, sku\nLIMIT 15 OFFSET 5;"
+    ],
+    "ordered": true
+  },
+  {
+    "id": "sql-d04-07",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku FROM products\nORDER BY stock_quantity\nLIMIT 1;",
+      "SELECT sku FROM products\nORDER BY stock_quantity\nFETCH FIRST 1 ROWS WITH TIES;",
+      "SELECT sku FROM products\nFETCH FIRST 1 ROWS WITH TIES;",
+      "SELECT sku FROM products\nORDER BY stock_quantity DESC\nFETCH FIRST 1 ROWS WITH TIES;"
+    ]
+  },
+  {
+    "id": "sql-d04-08",
+    "kind": "predict",
+    "query": "SELECT sku\nFROM products\nORDER BY category_id DESC\nFETCH FIRST 3 ROWS WITH TIES;",
+    "format": "rowcount"
+  },
+  {
+    "id": "sql-d04-09",
+    "kind": "predict",
+    "query": "SELECT full_name\nFROM customers\nORDER BY birth_date\nLIMIT 1;",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d04-14",
+    "kind": "choose-query",
+    "options": [
+      "SELECT order_id, status FROM orders\nWHERE order_id > 30\nORDER BY order_id DESC\nLIMIT 4;",
+      "SELECT order_id, status FROM orders\nWHERE order_id <= 30\nORDER BY order_id DESC\nLIMIT 4;",
+      "SELECT order_id, status FROM orders\nWHERE order_id < 30\nORDER BY order_id DESC\nLIMIT 4;",
+      "SELECT order_id, status FROM orders\nWHERE order_id < 30\nORDER BY order_id\nLIMIT 4;"
+    ],
+    "ordered": true
+  },
+  {
+    "id": "sql-d04-15",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku, category_id, price FROM products\nORDER BY category_id DESC, price, sku\nLIMIT 6;",
+      "SELECT sku, category_id, price FROM products\nORDER BY price DESC, category_id, sku\nLIMIT 6;",
+      "SELECT sku, category_id, price FROM products\nORDER BY category_id, price, sku\nLIMIT 6;",
+      "SELECT sku, category_id, price FROM products\nORDER BY category_id, price DESC, sku\nLIMIT 6;"
+    ],
+    "ordered": true
+  },
+  {
+    "id": "sql-d04-16",
+    "kind": "predict",
+    "query": "SELECT sku\nFROM products\nORDER BY price DESC\nLIMIT 1 OFFSET 2;",
+    "format": "scalar"
+  }
+]

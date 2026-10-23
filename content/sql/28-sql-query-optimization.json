@@ -1,0 +1,221 @@
+{
+  "id": "sql-d28",
+  "title": "Ngày 28: Tối ưu truy vấn",
+  "description": "Điều kiện sargable, viết lại subquery, EXISTS/IN/NOT EXISTS, covering index, phân trang keyset, N+1 và materialized view.",
+  "questions": [
+    {
+      "id": "sql-d28-01",
+      "topic": "Lọc theo ngày sargable",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Cột `orders.order_date` là `TIMESTAMPTZ` (có giờ) và đã có index. Đếm các đơn đặt trong ngày 11/11/2025 (có 2 đơn: lúc 19:00 và 23:30), viết sao cho dùng được index và đúng kết quả. Câu nào đúng?",
+      "options": [
+        "```sql\nSELECT COUNT(*) FROM orders\nWHERE order_date >= '2025-11-11'\n  AND order_date <= '2025-11-30';\n```",
+        "```sql\nSELECT COUNT(*) FROM orders\nWHERE order_date >= '2025-11-11'\n  AND order_date < '2025-11-12';\n```",
+        "```sql\nSELECT COUNT(*) FROM orders\nWHERE order_date BETWEEN '2025-11-11'\n  AND '2025-11-11';\n```",
+        "```sql\nSELECT COUNT(*) FROM orders\nWHERE order_date >= '2025-11-11'\n  AND order_date < '2025-11-11 23:00';\n```"
+      ],
+      "answer": 1,
+      "explanation": "Khoảng nửa mở `[đầu ngày, đầu ngày sau)` để cột `order_date` trần một bên nên dùng được index, và bắt đủ mọi giờ trong ngày: kết quả 2.\n- Phương án 1 chạy tới hết 30/11 nên đếm thêm đơn ngày 25/11: ra 3.\n- Phương án 3: `BETWEEN '2025-11-11' AND '2025-11-11'` hiểu là đúng 00:00 của ngày đó, ra 0. Cột có giờ thì cận trên phải là đầu ngày kế tiếp.\n- Phương án 4 dừng ở 23:00 nên bỏ sót đơn lúc 23:30: ra 1.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d28-02",
+      "topic": "BETWEEN với cột có giờ",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Trong DSC Shop có 2 đơn đặt trong tháng 12/2025: một đơn lúc 20:20 ngày 12/12 và một đơn lúc 16:00 ngày 24/12. Truy vấn dưới đây trả về bao nhiêu?",
+      "code": "SELECT COUNT(*)\nFROM orders\nWHERE order_date BETWEEN '2025-12-01' AND '2025-12-24';",
+      "codeLang": "sql",
+      "options": [
+        "2",
+        "0",
+        "1",
+        "3"
+      ],
+      "answer": 2,
+      "explanation": "`'2025-12-24'` được hiểu là 00:00 ngày 24/12, nên đơn lúc 16:00 cùng ngày lớn hơn cận trên và bị bỏ sót. Chỉ còn đơn ngày 12/12: kết quả 1.\n- 2 là kết quả đúng ý định nhưng chỉ có khi viết `order_date < '2025-12-25'`.\n- 0 sai: đơn ngày 12/12 vẫn nằm trong khoảng.\n- 3 sai: không có đơn thứ ba trong tháng.\nKhi cột có giờ, dùng khoảng nửa mở thay cho `BETWEEN` theo ngày.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d28-03",
+      "topic": "Sargable",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Cột `order_date` đã có index B-tree. Điều kiện nào dưới đây có thể dùng index để tìm các đơn trong tháng 9/2026?",
+      "options": [
+        "`date_trunc('month', order_date) = '2026-09-01'`",
+        "`order_date::date >= '2026-09-01' AND order_date::date < '2026-10-01'`",
+        "`to_char(order_date, 'YYYY-MM') = '2026-09'`",
+        "`order_date >= '2026-09-01' AND order_date < '2026-10-01'`"
+      ],
+      "answer": 3,
+      "explanation": "Index lưu giá trị `order_date` đã sắp xếp, nên chỉ tra được khi cột đứng trần một bên so với hằng số: đó là phương án cuối.\n- `date_trunc(...)` bọc hàm quanh cột: PostgreSQL phải tính hàm cho từng dòng rồi mới so sánh, nên Seq Scan.\n- `order_date::date` là ép kiểu bọc quanh cột, cùng lỗi (kể cả khi viết thành khoảng).\n- `to_char(...)` cũng là hàm bọc cột.\nQuy tắc: mọi phép tính dồn về phía hằng số, cột để trần.",
+      "kind": "theory"
+    },
+    {
+      "id": "sql-d28-04",
+      "topic": "So sánh hàng (keyset)",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Phân trang keyset dùng so sánh hàng `(a, b) < (x, y)`. Câu nào dưới đây gây LỖI khi chạy?",
+      "options": [
+        "```sql\nSELECT name FROM products\nWHERE (price, product_id) < (19990000, 10)\nORDER BY price DESC, product_id DESC;\n```",
+        "```sql\nSELECT name FROM products\nWHERE (price, name) < (19990000, 'Dell')\nORDER BY price DESC, name DESC;\n```",
+        "```sql\nSELECT name FROM products\nWHERE (price, product_id) < (19990000, 10, 1)\nORDER BY price DESC, product_id DESC;\n```",
+        "```sql\nSELECT name FROM products\nWHERE (price, product_id) > (0, 0)\nORDER BY price DESC, product_id DESC;\n```"
+      ],
+      "answer": 2,
+      "explanation": "So sánh hàng yêu cầu hai vế có **cùng số phần tử**. Phương án 3 so một hàng 2 cột với bộ 3 giá trị nên PostgreSQL báo lỗi `unequal number of entries in row expressions`.\n- Phương án 1 là mẫu keyset chuẩn: hai vế đều 2 phần tử.\n- Phương án 2 chạy được: so sánh theo thứ tự từ điển, `name` là chuỗi nên so với `'Dell'` bình thường (chỉ khác ý nghĩa với trang đang xét).\n- Phương án 4 cũng chạy được; `(0, 0)` chỉ là một mốc bắt đầu, mọi sản phẩm đều lớn hơn nó.\nLưu ý: lỗi này chỉ về số phần tử, còn việc các cột sắp xếp phải cùng chiều là ràng buộc về ý nghĩa, không phải lỗi cú pháp.",
+      "kind": "find-error"
+    },
+    {
+      "id": "sql-d28-05",
+      "topic": "NOT EXISTS (anti join)",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Tìm sản phẩm chưa từng được bán (không xuất hiện trong `order_items`). Hiện DSC Shop có đúng 1 sản phẩm như vậy. Câu nào đúng?",
+      "options": [
+        "```sql\nSELECT p.sku, p.name FROM products p\nLEFT JOIN order_items oi\n  ON oi.product_id = p.product_id\n GROUP BY p.product_id\nHAVING COUNT(*) = 0;\n```",
+        "```sql\nSELECT p.sku, p.name FROM products p\nWHERE NOT EXISTS (\n  SELECT 1 FROM order_items oi\n  WHERE oi.product_id = p.product_id);\n```",
+        "```sql\nSELECT p.sku, p.name FROM products p\nJOIN order_items oi\n  ON oi.product_id = p.product_id\nWHERE oi.product_id IS NULL;\n```",
+        "```sql\nSELECT p.sku, p.name FROM products p\nLEFT JOIN order_items oi\n  ON oi.product_id = p.product_id\n AND oi.product_id IS NULL;\n```"
+      ],
+      "answer": 1,
+      "explanation": "`NOT EXISTS` với điều kiện tương quan trả đúng sản phẩm chưa bán (`ACC-009`, Lót chuột DSC XXL) và PostgreSQL xử lý nó như một Anti Join.\n- Phương án 1: `LEFT JOIN` rồi `COUNT(*)`: sản phẩm chưa bán vẫn có một dòng (cột của `order_items` là NULL) nên `COUNT(*)` là 1, không bao giờ bằng 0. Kết quả rỗng; phải dùng `COUNT(oi.order_id)`.\n- Phương án 3: `JOIN` thường chỉ giữ sản phẩm có khớp, rồi lại đòi cột khớp là NULL: không dòng nào thỏa, kết quả rỗng.\n- Phương án 4: điều kiện `IS NULL` đặt trong `ON` chỉ làm phép nối không khớp; `LEFT JOIN` vẫn giữ mọi sản phẩm nên trả về cả bảng `products`.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d28-06",
+      "topic": "EXISTS và JOIN",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Liệt kê khách có ít nhất một đơn `delivered`, **mỗi khách đúng một dòng** (cột `customer_id`, `full_name`). Câu nào đúng?",
+      "options": [
+        "```sql\nSELECT c.customer_id, c.full_name\nFROM customers c\nWHERE EXISTS (\n  SELECT 1 FROM orders o\n  WHERE o.customer_id = c.customer_id\n    AND o.status = 'delivered');\n```",
+        "```sql\nSELECT c.customer_id, c.full_name\nFROM customers c\nJOIN orders o\n  ON o.customer_id = c.customer_id\nWHERE o.status = 'delivered';\n```",
+        "```sql\nSELECT c.customer_id, c.full_name\nFROM customers c\nWHERE c.customer_id IN (\n  SELECT customer_id FROM orders\n  WHERE status <> 'delivered');\n```",
+        "```sql\nSELECT c.customer_id, c.full_name\nFROM customers c\nWHERE EXISTS (\n  SELECT 1 FROM orders o\n  WHERE o.status = 'delivered');\n```"
+      ],
+      "answer": 0,
+      "explanation": "Chỉ cần kiểm tra tồn tại thì dùng `EXISTS`: mỗi khách xuất hiện một lần, có 16 khách.\n- `JOIN` nhân dòng: khách có nhiều đơn `delivered` xuất hiện nhiều lần, tổng 33 dòng thay vì 16. Muốn dùng phải thêm `DISTINCT`.\n- `IN (... status <> 'delivered')` đảo điều kiện: lấy khách có đơn chưa giao.\n- Câu cuối quên điều kiện tương quan `o.customer_id = c.customer_id`: chỉ cần tồn tại đơn `delivered` bất kỳ là cả 18 khách đều được chọn.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d28-07",
+      "topic": "NOT EXISTS và NOT IN",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Tìm nhân viên chưa từng phụ trách đơn nào. Chú ý `orders.employee_id` là NULL với đơn online. Câu nào đúng?",
+      "options": [
+        "```sql\nSELECT e.employee_id, e.full_name\nFROM employees e\nWHERE e.employee_id NOT IN (\n  SELECT employee_id FROM orders);\n```",
+        "```sql\nSELECT e.employee_id, e.full_name\nFROM employees e\nWHERE NOT EXISTS (\n  SELECT 1 FROM orders o\n  WHERE o.employee_id = e.employee_id);\n```",
+        "```sql\nSELECT e.employee_id, e.full_name\nFROM employees e\nJOIN orders o\n  ON o.employee_id <> e.employee_id;\n```",
+        "```sql\nSELECT e.employee_id, e.full_name\nFROM employees e\nWHERE NOT EXISTS (\n  SELECT 1 FROM orders);\n```"
+      ],
+      "answer": 1,
+      "explanation": "`NOT EXISTS` với điều kiện tương quan cho đúng 4 nhân viên (mã 1, 2, 3, 7) và an toàn với NULL.\n- `NOT IN (subquery)`: danh sách có NULL (đơn online), nên `x NOT IN (..., NULL)` không bao giờ là TRUE và kết quả rỗng. Đây là bẫy kinh điển, cũng là lý do nên tránh `NOT IN`.\n- `JOIN ... <>` ghép mỗi nhân viên với mọi đơn của người khác, ra rất nhiều dòng lặp.\n- `NOT EXISTS (SELECT 1 FROM orders)` thiếu tương quan: bảng `orders` có dòng nên điều kiện luôn FALSE, kết quả rỗng.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d28-08",
+      "topic": "Tích Descartes",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "DSC Shop có 18 khách và 40 đơn. Truy vấn dưới đây (quên điều kiện nối) trả về bao nhiêu?",
+      "code": "SELECT COUNT(*)\nFROM customers c, orders o;",
+      "codeLang": "sql",
+      "options": [
+        "18",
+        "40",
+        "58",
+        "720"
+      ],
+      "answer": 3,
+      "explanation": "Liệt kê hai bảng bằng dấu phẩy mà không có điều kiện nối thì mỗi khách ghép với mỗi đơn: 18 x 40 = 720 dòng vô nghĩa.\n- 18 và 40 là số dòng của từng bảng, không phải của phép ghép.\n- 58 sai vì lấy tổng thay vì nhân.\nĐiểm đáng nhớ: dấu phẩy không làm chậm hơn `JOIN ... ON` (cùng plan khi có điều kiện nối). Nên chọn `JOIN ... ON` vì dễ đọc và khó quên điều kiện nối.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d28-09",
+      "topic": "Phân trang keyset",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Danh sách sản phẩm sắp theo `price DESC, product_id DESC`, mỗi trang 5 dòng. Dòng cuối trang 1 là `iPhone 15 128GB` (`product_id` 10, giá 19.990.000). Câu nào lấy đúng trang 2 theo kiểu keyset?",
+      "options": [
+        "```sql\nSELECT product_id, name, price FROM products\nWHERE price < 19990000 AND product_id < 10\nORDER BY price DESC, product_id DESC\nLIMIT 5;\n```",
+        "```sql\nSELECT product_id, name, price FROM products\nWHERE (price, product_id) > (19990000, 10)\nORDER BY price DESC, product_id DESC\nLIMIT 5;\n```",
+        "```sql\nSELECT product_id, name, price FROM products\nWHERE price <= 19990000\nORDER BY price DESC, product_id DESC\nLIMIT 5;\n```",
+        "```sql\nSELECT product_id, name, price FROM products\nWHERE (price, product_id) < (19990000, 10)\nORDER BY price DESC, product_id DESC\nLIMIT 5;\n```"
+      ],
+      "answer": 3,
+      "explanation": "So sánh hàng `(price, product_id) < (19990000, 10)` đúng thứ tự từ điển và cùng chiều với `ORDER BY ... DESC`, nên trả đúng 5 dòng sau iPhone: mã 11, 4, 14, 6, 9.\n- Phương án 1 dùng hai điều kiện `AND` riêng: loại cả sản phẩm giá thấp hơn nhưng `product_id` lớn hơn 10 (như mã 11, 14), nên sai trang.\n- Phương án 2 đảo chiều dấu so sánh: lấy các dòng đứng trước, chỉ ra 4 dòng của trang 1.\n- Phương án 3 dùng `<=` nên lặp lại chính `iPhone 15` ở đầu trang 2.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d28-10",
+      "topic": "LEFT JOIN thay subquery tương quan",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Viết lại truy vấn đếm số đơn của **mỗi** khách (kể cả khách chưa có đơn, ra 0) bằng `JOIN` + `GROUP BY`. Câu nào cho kết quả đúng?",
+      "options": [
+        "```sql\nSELECT c.customer_id, c.full_name,\n  COUNT(o.order_id) AS so_don\nFROM customers c\nLEFT JOIN orders o\n  ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;\n```",
+        "```sql\nSELECT c.customer_id, c.full_name,\n  COUNT(*) AS so_don\nFROM customers c\nLEFT JOIN orders o\n  ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;\n```",
+        "```sql\nSELECT c.customer_id, c.full_name,\n  COUNT(o.order_id) AS so_don\nFROM customers c\nJOIN orders o\n  ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;\n```",
+        "```sql\nSELECT c.customer_id, c.full_name,\n  COUNT(o.order_id) AS so_don\nFROM orders o\nLEFT JOIN customers c\n  ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;\n```"
+      ],
+      "answer": 0,
+      "explanation": "`LEFT JOIN` từ `customers` giữ cả khách chưa có đơn; `COUNT(o.order_id)` bỏ qua NULL nên khách 16 và 17 ra 0.\n- `COUNT(*)` đếm dòng: khách chưa có đơn vẫn có một dòng (cột của `orders` là NULL), nên bị đếm thành 1.\n- `JOIN` thường (INNER) loại luôn khách chưa mua, thiếu 2 dòng.\n- `FROM orders LEFT JOIN customers` đảo bảng: giữ mọi đơn thay vì mọi khách, cũng không có khách chưa mua.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d28-11",
+      "topic": "Covering index và Index Only Scan",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Có index `CREATE INDEX idx ON perf.orders (order_date) INCLUDE (total_amount)`. Truy vấn nào có thể đạt Index Only Scan (không phải mở bảng, giả sử bảng đã được VACUUM)?",
+      "options": [
+        "```sql\nSELECT *\nFROM perf.orders\nWHERE order_date >= '2026-09-01'\n  AND order_date < '2026-10-01';\n```",
+        "```sql\nSELECT order_date, status\nFROM perf.orders\nWHERE order_date >= '2026-09-01'\n  AND order_date < '2026-10-01';\n```",
+        "```sql\nSELECT order_date, total_amount\nFROM perf.orders\nWHERE order_date >= '2026-09-01'\n  AND order_date < '2026-10-01';\n```",
+        "```sql\nSELECT order_date, total_amount\nFROM perf.orders\nWHERE status = 'paid';\n```"
+      ],
+      "answer": 2,
+      "explanation": "Index Only Scan cần mọi cột mà truy vấn dùng (cả trong `SELECT` lẫn `WHERE`) đều có trong index. Câu 3 chỉ dùng `order_date` và `total_amount`, đều có sẵn.\n- `SELECT *` đòi cả `status`, `customer_id`...: không có trong index nên vẫn phải mở bảng. Đây là lý do `SELECT *` chặn Index Only Scan.\n- `SELECT order_date, status`: thiếu `status` trong index.\n- Câu cuối lọc theo `status`, cột không có trong index, nên index này không hỗ trợ điều kiện lọc.",
+      "kind": "theory"
+    },
+    {
+      "id": "sql-d28-12",
+      "topic": "LIKE tiền tố và hậu tố",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Database dùng collation `en_US.utf8`. Phát biểu nào về `LIKE` và index B-tree là đúng?",
+      "options": [
+        "Index B-tree thường dùng được cho cả `LIKE 'abc%'` lẫn `LIKE '%abc'`",
+        "`LIKE 'abc%'` dùng được index nếu index tạo với `varchar_pattern_ops` (hoặc `text_pattern_ops`); `LIKE '%abc'` thì không dùng được B-tree",
+        "`LIKE '%abc'` dùng được index `varchar_pattern_ops` vì index sắp xếp theo từng ký tự",
+        "Không có cách nào để `LIKE` dùng index trong PostgreSQL"
+      ],
+      "answer": 1,
+      "explanation": "Với collation không phải `C`, B-tree thường không sắp theo thứ tự byte nên không giúp `LIKE`. Index có operator class `*_pattern_ops` sắp theo từng ký tự: `LIKE 'abc%'` được đổi thành khoảng `>= 'abc' AND < 'abd'` để tra.\n- Phương án 1 sai: ngay cả tiền tố cũng cần operator class phù hợp, còn hậu tố thì không.\n- Phương án 3 sai: ký tự đại diện ở đầu chuỗi nên không có khoảng nào để tra, vẫn Seq Scan.\n- Phương án 4 sai: tiền tố có `pattern_ops`; chuỗi con còn có GIN với `pg_trgm`.",
+      "kind": "theory"
+    },
+    {
+      "id": "sql-d28-13",
+      "topic": "Vấn đề N+1",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Trang \"50 đơn mới nhất\" chạy một câu lấy 50 đơn, rồi trong vòng lặp gọi thêm một câu `SELECT full_name FROM customers WHERE customer_id = ...` cho từng đơn. Mỗi câu riêng lẻ chỉ 0,05 ms. Cách xử lý nào hợp lý nhất?",
+      "options": [
+        "Gộp thành một câu `JOIN` lấy luôn tên khách (hoặc dùng eager loading của ORM), vì cái giá nằm ở 51 lượt đi về chứ không ở từng câu",
+        "Tạo thêm index trên `customers.full_name` để từng câu chạy nhanh hơn",
+        "Dùng `EXPLAIN ANALYZE` từng câu trong vòng lặp để tìm câu chậm nhất",
+        "Thêm `DISTINCT` vào mỗi câu để giảm số dòng trả về"
+      ],
+      "answer": 0,
+      "explanation": "N+1 nằm ở cách ứng dụng gọi SQL: 1 câu lấy đơn cộng N câu lấy khách là 51 lượt đi về qua mạng. Một câu `JOIN` chỉ cần 1 lượt.\n- Index trên `full_name` vô ích: câu tra theo `customer_id` (khóa chính) vốn đã nhanh.\n- `EXPLAIN ANALYZE` từng câu sẽ báo rất nhanh, không lộ ra vấn đề. Phải nhìn số lượng câu trong log.\n- `DISTINCT` chỉ khử dòng trùng trong kết quả, không giảm số lần gọi, mà cái giá nằm ở số lần gọi.",
+      "kind": "theory"
+    },
+    {
+      "id": "sql-d28-14",
+      "topic": "Materialized view cho báo cáo",
+      "source": "Ngày 28 - Tối ưu truy vấn",
+      "question": "Báo cáo doanh thu theo tháng đọc phần lớn bảng 1 triệu đơn, được mở hàng trăm lần mỗi ngày, dữ liệu cũ không đổi. Bạn tạo materialized view cho nó. Phát biểu nào đúng?",
+      "options": [
+        "View tự cập nhật ngay khi có đơn mới được thêm vào bảng gốc",
+        "Index trên bảng gốc là cách duy nhất giúp báo cáo nhanh hơn",
+        "Mỗi lần mở báo cáo chỉ đọc kết quả đã tính sẵn (rất ít dòng), nhưng phải chạy `REFRESH MATERIALIZED VIEW` định kỳ và số liệu có thể cũ giữa hai lần làm mới",
+        "Materialized view luôn nhanh hơn truy vấn gốc nên nên dùng cho mọi báo cáo, kể cả số liệu theo thời gian thực"
+      ],
+      "answer": 2,
+      "explanation": "Materialized view lưu sẵn kết quả: đọc chỉ vài chục dòng thay vì quét cả triệu đơn. Cái giá là phải `REFRESH` (tốn ngang truy vấn gốc) và dữ liệu chỉ mới tới lần làm mới gần nhất.\n- Phương án 1 sai: materialized view không tự cập nhật, khác với view thường.\n- Phương án 2 sai: truy vấn cần phần lớn bảng nên index giúp rất ít.\n- Phương án 4 sai: số liệu tức thời (ví dụ doanh thu theo từng phút) không hợp vì bị cũ giữa các lần làm mới.",
+      "kind": "theory"
+    }
+  ]
+}

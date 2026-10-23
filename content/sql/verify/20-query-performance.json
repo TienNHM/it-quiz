@@ -1,0 +1,52 @@
+[
+  {
+    "id": "sql-d20-01",
+    "kind": "predict",
+    "query": "EXPLAIN ANALYZE DELETE FROM payments WHERE method = 'cash'",
+    "probe": "SELECT COUNT(*) FROM payments",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d20-02",
+    "kind": "choose-query",
+    "options": [
+      "EXPLAIN DELETE FROM payments WHERE method = 'cash'",
+      "EXPLAIN ANALYZE DELETE FROM payments WHERE method = 'cash'",
+      "EXPLAIN (ANALYZE) DELETE FROM payments WHERE method = 'cash'",
+      "EXPLAIN (ANALYZE, BUFFERS) DELETE FROM payments WHERE method = 'cash'"
+    ],
+    "probe": "SELECT COUNT(*) FROM payments"
+  },
+  {
+    "id": "sql-d20-03",
+    "kind": "find-error",
+    "options": [
+      "EXPLAIN UPDATE products SET price = -1 WHERE product_id = 1",
+      "EXPLAIN ANALYZE SELECT * FROM products WHERE price = -1",
+      "EXPLAIN ANALYZE UPDATE products SET price = -1 WHERE product_id = 1",
+      "EXPLAIN ANALYZE UPDATE products SET price = price + 1 WHERE product_id = 1"
+    ]
+  },
+  {
+    "id": "sql-d20-04",
+    "kind": "find-error",
+    "options": [
+      "EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM orders WHERE order_id = 1",
+      "EXPLAIN ANALYZE SELECT * FROM orders WHERE order_id = 1",
+      "EXPLAIN (ANALYZE true, COSTS off) SELECT * FROM orders WHERE order_id = 1",
+      "EXPLAIN ANALYZE, BUFFERS SELECT * FROM orders WHERE order_id = 1"
+    ]
+  },
+  {
+    "id": "sql-d20-05",
+    "kind": "predict",
+    "query": "ANALYZE orders; SELECT reltuples::int FROM pg_class WHERE oid = 'orders'::regclass",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d20-06",
+    "kind": "predict",
+    "query": "SELECT (1161 * 1 + 100000 * 0.01 + 100000 * 0.0025)::int",
+    "format": "scalar"
+  }
+]

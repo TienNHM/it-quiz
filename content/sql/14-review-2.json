@@ -1,0 +1,257 @@
+{
+  "id": "sql-d14",
+  "title": "Ngày 14: Ôn tập 2 - Báo cáo trên DSC Shop",
+  "description": "Ôn chặng 2: hàm tổng hợp, GROUP BY/HAVING, JOIN, subquery/CTE, tập hợp và CASE qua các báo cáo của DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d14-01",
+      "topic": "AVG theo mức đơn",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Tính **giá trị trung bình mỗi đơn** (bỏ qua chiết khấu, tính mọi đơn) của kênh `online`, làm tròn. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT ROUND(AVG(oi.quantity * oi.unit_price))\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.channel = 'online';\n```",
+        "```sql\nWITH t AS (SELECT o.order_id,\n  SUM(oi.quantity * oi.unit_price) AS s\n  FROM orders o JOIN order_items oi USING (order_id)\n  WHERE o.channel = 'online' GROUP BY o.order_id)\nSELECT ROUND(AVG(s)) FROM t;\n```",
+        "```sql\nSELECT ROUND(AVG(SUM(oi.quantity * oi.unit_price)))\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.channel = 'online';\n```",
+        "```sql\nSELECT ROUND(SUM(oi.quantity * oi.unit_price)\n  / (SELECT COUNT(*) FROM orders))\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.channel = 'online';\n```"
+      ],
+      "answer": 1,
+      "explanation": "Mỗi đơn có nhiều dòng hàng, nên muốn trung bình **theo đơn** phải cộng các dòng thành tổng của đơn trước (CTE), rồi mới `AVG`. Kết quả đúng là 14.987.480.\n- Truy vấn `AVG` thẳng trên bảng JOIN chạy được nhưng cho trung bình mỗi **dòng hàng** (10.126.676), một con số khác hẳn.\n- Truy vấn lồng `AVG(SUM(...))` báo lỗi vì hàm tổng hợp không lồng nhau được.\n- Truy vấn chia tổng online cho `COUNT(*)` của **mọi kênh** cho 9.367.175: mẫu số quá lớn."
+    },
+    {
+      "id": "sql-d14-02",
+      "topic": "COUNT(*) với LEFT JOIN",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Khách 16 **chưa từng đặt đơn nào**. Truy vấn sau trả về giá trị nào?",
+      "code": "SELECT COUNT(*)\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nWHERE c.customer_id = 16;",
+      "codeLang": "sql",
+      "options": [
+        "1",
+        "0",
+        "2",
+        "NULL"
+      ],
+      "answer": 0,
+      "explanation": "`LEFT JOIN` luôn giữ lại dòng của bảng trái. Khách 16 không có đơn nên được ghép với một dòng toàn `NULL` của `orders`, và `COUNT(*)` đếm **dòng**, không quan tâm giá trị, nên ra **1**.\n- 0 là kết quả của `COUNT(o.order_id)`: hàm này bỏ qua `NULL`. Đây là cách sửa đúng khi muốn đếm số đơn thật.\n- 2 không có căn cứ vì chỉ có đúng một khách 16.\n- `NULL` sai vì `COUNT` không bao giờ trả `NULL`, tối đa là 0."
+    },
+    {
+      "id": "sql-d14-03",
+      "topic": "WHERE và hàm tổng hợp",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Truy vấn nào **báo lỗi** khi chạy?",
+      "options": [
+        "```sql\nSELECT customer_id, COUNT(*) FROM orders\nGROUP BY customer_id\nHAVING COUNT(*) >= 3;\n```",
+        "```sql\nSELECT customer_id, COUNT(*) FROM orders\nWHERE COUNT(*) >= 3\nGROUP BY customer_id;\n```",
+        "```sql\nSELECT customer_id, COUNT(*) FROM orders\nWHERE status <> 'cancelled'\nGROUP BY customer_id HAVING COUNT(*) >= 3;\n```",
+        "```sql\nSELECT customer_id, COUNT(*) AS so_don FROM orders\nGROUP BY customer_id\nHAVING COUNT(*) >= 3 ORDER BY so_don DESC;\n```"
+      ],
+      "answer": 1,
+      "explanation": "`WHERE` chạy **trước** `GROUP BY`, lúc đó chưa có nhóm nào để đếm, nên PostgreSQL báo `aggregate functions are not allowed in WHERE`.\n- Điều kiện trên hàm tổng hợp phải đặt ở `HAVING`, như hai truy vấn dùng `HAVING COUNT(*) >= 3`.\n- Truy vấn dùng cả `WHERE status <> 'cancelled'` lẫn `HAVING` cũng hợp lệ: `WHERE` lọc từng dòng (bỏ đơn hủy), `HAVING` lọc từng nhóm.\n- `ORDER BY` được phép dùng alias `so_don` vì nó chạy sau `SELECT`."
+    },
+    {
+      "id": "sql-d14-04",
+      "topic": "NOT EXISTS và NOT IN",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Liệt kê mã và tên **nhân viên chưa từng bán đơn nào** (cột `orders.employee_id` có `NULL` ở các đơn online). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT employee_id, full_name FROM employees e\nWHERE NOT EXISTS (SELECT 1 FROM orders o\n  WHERE o.employee_id = e.employee_id);\n```",
+        "```sql\nSELECT employee_id, full_name FROM employees\nWHERE employee_id NOT IN\n  (SELECT employee_id FROM orders);\n```",
+        "```sql\nSELECT e.employee_id, e.full_name\nFROM employees e LEFT JOIN orders o\n  ON o.employee_id = e.employee_id\nWHERE o.order_id IS NOT NULL;\n```",
+        "```sql\nSELECT DISTINCT e.employee_id, e.full_name\nFROM employees e, orders o\nWHERE e.employee_id <> o.employee_id;\n```"
+      ],
+      "answer": 0,
+      "explanation": "`NOT EXISTS` kiểm tra \"không có dòng nào khớp\" nên không bị ảnh hưởng bởi `NULL`, cho đúng 4 nhân viên chưa bán đơn (mã 1, 2, 3, 7).\n- `NOT IN` gặp `NULL` trong danh sách con thì `x NOT IN (..., NULL)` không bao giờ đúng, nên trả 0 dòng.\n- `LEFT JOIN ... IS NOT NULL` đảo điều kiện: cho ra những nhân viên **đã** bán, đúng là điều ngược lại. Muốn tìm người chưa bán phải dùng `IS NULL`.\n- Tích Descartes lọc bằng `<>`: nhân viên nào cũng thỏa với đơn của người khác, nên ra cả bảng nhân viên, kể cả người đã bán."
+    },
+    {
+      "id": "sql-d14-05",
+      "topic": "EXTRACT(MONTH) gộp nhiều năm",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Dữ liệu có đơn từ tháng 1/2025 đến tháng 10/2026. Truy vấn tính doanh thu \"tháng 1\" của các đơn đã thanh toán. Kết quả là bao nhiêu? (Doanh thu tháng 1/2025 là 27.689.000 và tháng 1/2026 là 34.030.500.)",
+      "code": "SELECT ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount)))\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nWHERE o.status NOT IN ('pending', 'cancelled')\n  AND EXTRACT(MONTH FROM o.order_date) = 1;",
+      "codeLang": "sql",
+      "options": [
+        "27689000",
+        "34030500",
+        "49661000",
+        "61719500"
+      ],
+      "answer": 3,
+      "explanation": "`EXTRACT(MONTH ...)` chỉ lấy số tháng, không lấy năm, nên tháng 1/2025 và tháng 1/2026 bị cộng chung: 27.689.000 + 34.030.500 = **61.719.500**.\n- 27.689.000 và 34.030.500 là doanh thu của từng tháng 1 riêng lẻ, chỉ có được khi lọc thêm năm.\n- 49.661.000 là doanh thu tháng 12/2025, không liên quan.\n- Muốn tách theo tháng của từng năm, nhóm theo `DATE_TRUNC('month', order_date)`."
+    },
+    {
+      "id": "sql-d14-06",
+      "topic": "Lọc khoảng thời gian",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Cột `order_date` kiểu `TIMESTAMPTZ`. Cách nào lọc **cả năm 2025** an toàn và đúng nguyên tắc nhất?",
+      "options": [
+        "`BETWEEN '2025-01-01' AND '2025-12-31'`, vì `BETWEEN` lấy cả hai đầu",
+        "`order_date LIKE '2025%'`, vì chuỗi ngày bắt đầu bằng 2025",
+        "`order_date >= '2025-01-01' AND order_date < '2026-01-01'`",
+        "`order_date <= '2025-12-31'` là đủ, vì dữ liệu bắt đầu từ năm 2025"
+      ],
+      "answer": 2,
+      "explanation": "Khoảng **nửa mở** `>=` ngày đầu kỳ và `<` ngày đầu kỳ sau luôn đúng với mọi kiểu ngày giờ, và không phụ thuộc vào phần giờ.\n- `BETWEEN ... AND '2025-12-31'` hiểu cận trên là 00:00 ngày 31/12 nên bỏ sót các đơn sau giờ đó trong ngày cuối năm (dữ liệu mẫu tình cờ không có đơn nào ngày 31/12, nhưng dữ liệu thật thì có).\n- `LIKE` không dùng được với `TIMESTAMPTZ`: PostgreSQL báo `operator does not exist`.\n- `<= '2025-12-31'` cũng cắt cụt ngày 31/12, và dựa vào giả định \"dữ liệu bắt đầu từ 2025\" mà báo cáo không nên phụ thuộc."
+    },
+    {
+      "id": "sql-d14-07",
+      "topic": "HAVING và lọc nhóm",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Liệt kê các **tháng** (đầu tháng) có doanh thu (`quantity * unit_price`, bỏ qua chiết khấu) **từ 44 triệu trở lên**, chỉ tính đơn đã thanh toán (không `pending`, không `cancelled`). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT DATE_TRUNC('month', o.order_date)::date\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE SUM(oi.quantity * oi.unit_price) >= 44000000\n  AND o.status NOT IN ('pending', 'cancelled')\nGROUP BY 1;\n```",
+        "```sql\nSELECT DATE_TRUNC('month', o.order_date)::date\nFROM orders o JOIN order_items oi USING (order_id)\nGROUP BY 1\nHAVING SUM(oi.quantity * oi.unit_price) >= 44000000;\n```",
+        "```sql\nSELECT DATE_TRUNC('month', o.order_date)::date\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.status NOT IN ('pending', 'cancelled')\nGROUP BY 1 HAVING SUM(oi.quantity * oi.unit_price) >= 44000000;\n```",
+        "```sql\nSELECT DATE_TRUNC('month', o.order_date)::date\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.status NOT IN ('pending', 'cancelled')\nGROUP BY 1 HAVING COUNT(*) >= 44000000;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Trạng thái đơn lọc **từng dòng** nên ở `WHERE`; tổng doanh thu lọc **từng nhóm** nên ở `HAVING`. Kết quả đúng là 3 tháng: 6/2025, 9/2025 và 12/2025.\n- Truy vấn đặt `SUM` trong `WHERE` báo lỗi vì lúc đó chưa có nhóm.\n- Truy vấn bỏ điều kiện trạng thái thì đơn `pending`/`cancelled` cũng được cộng, và thêm tháng 10/2026 (44.870.000) vào kết quả.\n- Truy vấn dùng `COUNT(*)` (số dòng) thay vì `SUM`: không tháng nào có tới 44 triệu dòng nên ra 0 dòng."
+    },
+    {
+      "id": "sql-d14-08",
+      "topic": "INTERSECT",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Truy vấn sau cho **bao nhiêu dòng**?",
+      "code": "SELECT customer_id FROM orders\nWHERE channel = 'online' AND status <> 'cancelled'\nINTERSECT\nSELECT customer_id FROM orders\nWHERE channel = 'offline' AND status <> 'cancelled';",
+      "codeLang": "sql",
+      "options": [
+        "9",
+        "11",
+        "13",
+        "16"
+      ],
+      "answer": 1,
+      "explanation": "`INTERSECT` giữ các `customer_id` có mặt ở **cả hai** vế và tự loại trùng, nên mỗi khách chỉ hiện một dòng: có 11 khách mua được ở cả hai kênh.\n- 13 là kết quả nếu **không** loại đơn hủy: khách 5 và 12 có đơn offline và một đơn online đã hủy, nên bị tính thêm.\n- 16 là số khách đã từng đặt đơn (kênh nào cũng được), còn 9 không ứng với cách đếm hợp lý nào.\n- `INTERSECT` trả về khách chứ không phải số đơn, nên một khách có nhiều đơn vẫn chỉ một dòng."
+    },
+    {
+      "id": "sql-d14-09",
+      "topic": "Nhân dòng khi JOIN rồi SUM",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Đơn 12 có **2 dòng hàng** và **2 lần thanh toán** (trả góp), tổng đã trả đúng bằng tiền hàng là 31.880.000. Truy vấn sau cộng số tiền thanh toán sau khi JOIN cả hai bảng. Kết quả là bao nhiêu?",
+      "code": "SELECT SUM(pm.amount)\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nJOIN payments pm    ON pm.order_id = o.order_id\nWHERE o.order_id = 12;",
+      "codeLang": "sql",
+      "options": [
+        "31880000",
+        "15940000",
+        "95640000",
+        "63760000"
+      ],
+      "answer": 3,
+      "explanation": "Đơn 12 có 2 dòng hàng và 2 lần thanh toán, nên JOIN ra 2 × 2 = 4 dòng. Mỗi khoản thanh toán xuất hiện 2 lần (một lần cho mỗi dòng hàng), vì vậy tổng bị nhân đôi: **63.760.000**.\n- 31.880.000 là số đúng nhưng chỉ có khi tổng hợp bảng `payments` riêng trước khi JOIN.\n- 15.940.000 là một nửa số đúng, 95.640.000 là gấp ba: đều không phải kết quả của phép JOIN này.\n- Cách sửa: `SUM` từng bảng con theo `order_id` trong CTE, rồi mới JOIN các CTE với nhau."
+    },
+    {
+      "id": "sql-d14-10",
+      "topic": "LEFT JOIN: ON và WHERE",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Với **mỗi khách**, đếm số đơn **không bị hủy**. Khách chưa có đơn hợp lệ nào vẫn phải hiện với số 0. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT c.customer_id, COUNT(o.order_id)\nFROM customers c LEFT JOIN orders o\n  ON o.customer_id = c.customer_id\nWHERE o.status <> 'cancelled'\nGROUP BY c.customer_id;\n```",
+        "```sql\nSELECT c.customer_id, COUNT(*)\nFROM customers c LEFT JOIN orders o\n  ON o.customer_id = c.customer_id\n AND o.status <> 'cancelled'\nGROUP BY c.customer_id;\n```",
+        "```sql\nSELECT c.customer_id, COUNT(o.order_id)\nFROM customers c LEFT JOIN orders o\n  ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;\n```",
+        "```sql\nSELECT c.customer_id, COUNT(o.order_id)\nFROM customers c LEFT JOIN orders o\n  ON o.customer_id = c.customer_id\n AND o.status <> 'cancelled'\nGROUP BY c.customer_id;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Điều kiện về đơn hủy phải nằm trong `ON` để `LEFT JOIN` vẫn giữ khách không có đơn hợp lệ, và phải dùng `COUNT(o.order_id)` để dòng `NULL` không được đếm.\n- Điều kiện đặt ở `WHERE`: dòng `NULL` của khách chưa mua bị loại, `LEFT JOIN` thành `INNER JOIN` và mất khách 16, 17.\n- Điều kiện trong `ON` nhưng dùng `COUNT(*)`: khách chưa mua ra 1 thay vì 0.\n- Truy vấn không có điều kiện trạng thái đếm cả đơn đã hủy nên khách 4, 5, 12 bị đếm dư."
+    },
+    {
+      "id": "sql-d14-11",
+      "topic": "GROUP BY thiếu cột",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Truy vấn nào **báo lỗi** khi chạy?",
+      "options": [
+        "```sql\nSELECT customer_id, COUNT(*) FROM orders\nGROUP BY customer_id;\n```",
+        "```sql\nSELECT customer_id, status, COUNT(*) FROM orders\nGROUP BY customer_id, status;\n```",
+        "```sql\nSELECT customer_id, status, COUNT(*) FROM orders\nGROUP BY customer_id;\n```",
+        "```sql\nSELECT customer_id, MAX(status), COUNT(*) FROM orders\nGROUP BY customer_id;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Mọi cột trong `SELECT` không nằm trong hàm tổng hợp đều phải có trong `GROUP BY`. Truy vấn chọn `status` nhưng chỉ nhóm theo `customer_id` thì lỗi: một khách có nhiều trạng thái, PostgreSQL không biết lấy giá trị nào.\n- Thêm `status` vào `GROUP BY` thì hợp lệ (mỗi cặp khách, trạng thái một dòng).\n- Bọc `status` trong `MAX` cũng hợp lệ vì đã là hàm tổng hợp.\n- Truy vấn chỉ có cột nhóm và hàm tổng hợp thì hiển nhiên đúng."
+    },
+    {
+      "id": "sql-d14-12",
+      "topic": "Self JOIN so với tháng trước",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Tính tăng trưởng doanh thu từng tháng của **năm 2026** so với tháng trước bằng CTE `theo_thang` rồi `JOIN` chính nó (`tr.thang = t.thang - INTERVAL '1 month'`). Nên đặt điều kiện `thang >= '2026-01-01'` ở đâu để tháng 1/2026 vẫn so được với tháng 12/2025?",
+      "options": [
+        "trong CTE `theo_thang`, để chỉ tính dữ liệu năm 2026 cho nhanh",
+        "ở `WHERE` của truy vấn ngoài, **sau** khi đã JOIN với chính CTE",
+        "trong điều kiện `ON` của self JOIN, thay cho điều kiện tháng trước",
+        "ở `HAVING`, vì doanh thu đã được `SUM`"
+      ],
+      "answer": 1,
+      "explanation": "CTE phải giữ **cả năm 2025** để làm \"tháng trước\"; chỉ sau khi JOIN mới lọc các dòng của tháng hiện tại thuộc 2026.\n- Lọc trong CTE thì bảng bên phải (`tr`) cũng mất tháng 12/2025, nên tháng 1/2026 có `thang_truoc` là `NULL`.\n- Đặt vào `ON` thay điều kiện tháng trước thì phép JOIN không còn ghép đúng tháng.\n- `HAVING` lọc theo nhóm sau `GROUP BY`; truy vấn ngoài không có `GROUP BY`, và lọc theo tháng là lọc dòng nên thuộc `WHERE`."
+    },
+    {
+      "id": "sql-d14-13",
+      "topic": "Quy ước doanh thu",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Báo cáo doanh thu của DSC Shop dùng `order_items.unit_price` thay vì `products.price`. Lý do đúng là gì?",
+      "options": [
+        "`unit_price` là giá lúc khách mua, còn `products.price` là giá hiện tại và có thể đã đổi",
+        "`unit_price` đã trừ sẵn chiết khấu nên không cần dùng cột `discount`",
+        "`unit_price` tiết kiệm một phép JOIN nên chạy nhanh hơn, kết quả vẫn như nhau",
+        "`products.price` chỉ có giá trị với sản phẩm chưa bán được"
+      ],
+      "answer": 0,
+      "explanation": "Giá bán có thể thay đổi theo thời gian. Bảng `order_items` lưu `unit_price` **tại thời điểm mua**, nên doanh thu lịch sử tính từ đó không đổi dù sản phẩm sau này tăng hay giảm giá.\n- `unit_price` **chưa** trừ chiết khấu: công thức doanh thu vẫn là `quantity * unit_price * (1 - discount)`.\n- Tránh JOIN thêm bảng là lợi ích phụ, nhưng kết quả **không** như nhau khi giá đã đổi, nên đây không phải lý do chính.\n- `products.price` luôn có giá trị với mọi sản phẩm; nó chỉ phản ánh giá hiện tại."
+    },
+    {
+      "id": "sql-d14-14",
+      "topic": "Đếm đơn theo ngưỡng tổng tiền",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Truy vấn sau đếm các đơn đã thanh toán có tổng tiền (đã chiết khấu) từ 20 triệu trở lên. Kết quả là bao nhiêu?",
+      "code": "SELECT COUNT(*) FROM (\n  SELECT o.order_id FROM orders o\n  JOIN order_items oi ON oi.order_id = o.order_id\n  WHERE o.status NOT IN ('pending', 'cancelled')\n  GROUP BY o.order_id\n  HAVING SUM(oi.quantity * oi.unit_price * (1 - oi.discount)) >= 20000000\n) t;",
+      "codeLang": "sql",
+      "options": [
+        "7",
+        "18",
+        "11",
+        "36"
+      ],
+      "answer": 2,
+      "explanation": "Truy vấn trong gom theo `order_id` (mỗi đơn một dòng) và `HAVING` giữ đơn có tổng từ 20 triệu; truy vấn ngoài đếm số đơn đó: **11**.\n- 36 là tổng số đơn đã thanh toán, tức chưa lọc theo ngưỡng.\n- 7 là số đơn dưới 5 triệu và 18 là số đơn từ 5 đến dưới 20 triệu: hai nhóm khác trong báo cáo phân bố đơn theo giá trị.\n- Nếu đếm thẳng trên bảng JOIN mà không `GROUP BY`, bạn đếm **dòng hàng** chứ không phải đơn."
+    },
+    {
+      "id": "sql-d14-15",
+      "topic": "EXCEPT",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Tìm mã khách có đơn `online` (không hủy) nhưng **chưa từng có** đơn `offline` (không hủy). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT customer_id FROM orders\nWHERE channel = 'online' AND status <> 'cancelled'\nEXCEPT\nSELECT customer_id FROM orders\nWHERE channel = 'offline' AND status <> 'cancelled';\n```",
+        "```sql\nSELECT customer_id FROM orders\nWHERE channel = 'offline' AND status <> 'cancelled'\nEXCEPT\nSELECT customer_id FROM orders\nWHERE channel = 'online' AND status <> 'cancelled';\n```",
+        "```sql\nSELECT customer_id FROM orders\nWHERE channel = 'online' AND status <> 'cancelled'\nINTERSECT\nSELECT customer_id FROM orders\nWHERE channel = 'offline' AND status <> 'cancelled';\n```",
+        "```sql\nSELECT customer_id FROM orders\nWHERE channel = 'online' AND status <> 'cancelled'\nEXCEPT\nSELECT customer_id FROM orders WHERE status <> 'cancelled';\n```"
+      ],
+      "answer": 0,
+      "explanation": "`A EXCEPT B` giữ dòng có ở A mà không có ở B, nên **vế đầu là online, vế sau là offline**. Kết quả đúng là khách 13, 14, 15.\n- Đảo thứ tự hai vế cho ra khách chỉ mua offline (5 và 12), ngược yêu cầu.\n- Dùng `INTERSECT` ra khách mua cả hai kênh (11 khách), không phải khách chỉ mua online.\n- Vế sau không lọc kênh sẽ trừ đi mọi khách có đơn không hủy, kể cả chính khách online, nên kết quả rỗng.\n- Thứ tự hai vế của `EXCEPT` quyết định kết quả."
+    },
+    {
+      "id": "sql-d14-16",
+      "topic": "HAVING và đơn bị hủy",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Bảng `orders` có cả đơn đã hủy. Truy vấn sau trả về **bao nhiêu dòng**?",
+      "code": "SELECT customer_id\nFROM orders\nGROUP BY customer_id\nHAVING COUNT(*) >= 3;",
+      "codeLang": "sql",
+      "options": [
+        "4",
+        "3",
+        "6",
+        "5"
+      ],
+      "answer": 3,
+      "explanation": "Truy vấn đếm **mọi** đơn của khách, kể cả đơn đã hủy, nên có 5 khách đạt từ 3 đơn trở lên (mã 1, 2, 3, 4 và 6).\n- 4 là kết quả khi loại đơn hủy bằng `WHERE status <> 'cancelled'`: khách 4 có một đơn bị hủy nên chỉ còn 2 đơn hợp lệ và rớt khỏi danh sách.\n- 3 và 6 không ứng với cách đếm nào trong dữ liệu.\n- Đề \"có từ 3 đơn\" chưa nói rõ có tính đơn hủy hay không; khi làm báo cáo thật, hãy hỏi lại và ghi định nghĩa vào báo cáo."
+    },
+    {
+      "id": "sql-d14-17",
+      "topic": "FILTER và CASE (pivot)",
+      "source": "Ngày 14 - Ôn tập 2",
+      "question": "Muốn một dòng duy nhất gồm hai cột: số đơn `online` và số đơn `offline`, chỉ tính đơn **không bị hủy**. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT COUNT(CASE WHEN channel='online' THEN 1 ELSE 0 END),\n COUNT(CASE WHEN channel='offline' THEN 1 ELSE 0 END)\nFROM orders WHERE status <> 'cancelled';\n```",
+        "```sql\nSELECT COUNT(*) FILTER (WHERE channel = 'online') AS don_on,\n  COUNT(*) FILTER (WHERE channel = 'offline')\nFROM orders;\n```",
+        "```sql\nSELECT channel, COUNT(*) FROM orders\nWHERE status <> 'cancelled'\nGROUP BY channel;\n```",
+        "```sql\nSELECT COUNT(*) FILTER (WHERE channel = 'online') AS don_on,\n  COUNT(*) FILTER (WHERE channel = 'offline')\nFROM orders WHERE status <> 'cancelled';\n```"
+      ],
+      "answer": 3,
+      "explanation": "`COUNT(*) FILTER (WHERE ...)` đếm riêng từng điều kiện trong cùng một lần quét, còn `WHERE status <> 'cancelled'` loại đơn hủy trước. Kết quả: 22 đơn online và 15 đơn offline.\n- `COUNT(CASE WHEN ... THEN 1 ELSE 0 END)` là lỗi kinh điển: `COUNT` đếm mọi giá trị khác `NULL`, kể cả số 0, nên cả hai cột đều ra 37 (tổng đơn). Phải bỏ `ELSE 0` hoặc dùng `SUM`.\n- Truy vấn không có `WHERE` loại đơn hủy đếm dư, ra 25 online và 15 offline.\n- Truy vấn `GROUP BY channel` đúng số liệu nhưng ra **hai dòng**, không phải một dòng hai cột."
+    }
+  ]
+}

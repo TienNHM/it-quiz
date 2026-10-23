@@ -1,0 +1,96 @@
+[
+  {
+    "id": "sql-d99-01",
+    "kind": "choose-query",
+    "options": [
+      "SELECT full_name FROM employees\nWHERE employee_id NOT IN\n  (SELECT employee_id FROM orders);",
+      "SELECT DISTINCT e.full_name FROM employees e\nLEFT JOIN orders o ON o.employee_id = e.employee_id\nWHERE o.order_id IS NOT NULL;",
+      "SELECT full_name FROM employees e\nWHERE NOT EXISTS (SELECT 1 FROM orders o\n  WHERE o.employee_id = e.employee_id);",
+      "SELECT e.full_name FROM employees e\nJOIN orders o ON o.employee_id = e.employee_id\nWHERE o.order_id IS NULL;"
+    ]
+  },
+  {
+    "id": "sql-d99-02",
+    "kind": "choose-query",
+    "options": [
+      "SELECT customer_id\nFROM orders JOIN order_items i USING (order_id)\nWHERE status NOT IN ('pending', 'cancelled')\nGROUP BY customer_id\nHAVING SUM(quantity*unit_price*(1-discount)) > 45000000;",
+      "SELECT customer_id\nFROM orders JOIN order_items i USING (order_id)\nGROUP BY customer_id\nHAVING SUM(quantity*unit_price*(1-discount)) > 45000000;",
+      "SELECT customer_id\nFROM orders JOIN order_items i USING (order_id)\nWHERE status = 'delivered'\nGROUP BY customer_id\nHAVING SUM(quantity*unit_price*(1-discount)) > 45000000;",
+      "SELECT customer_id\nFROM orders JOIN order_items i USING (order_id)\nWHERE status NOT IN ('pending', 'cancelled')\nGROUP BY customer_id\nHAVING SUM(quantity*unit_price) > 45000000;"
+    ]
+  },
+  {
+    "id": "sql-d99-03",
+    "kind": "predict",
+    "query": "WITH t AS (SELECT customer_id, COUNT(*) AS n FROM orders GROUP BY customer_id), r AS (SELECT customer_id, RANK() OVER (ORDER BY n DESC) AS hang FROM t) SELECT hang FROM r WHERE customer_id = 5",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d99-04",
+    "kind": "predict",
+    "query": "SELECT COUNT(*) FROM products WHERE attributes @> '{\"wireless\": true}'",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d99-05",
+    "kind": "find-error",
+    "options": [
+      "SELECT name FROM products\nWHERE (attributes ->> 'ram_gb')::int >= 16;",
+      "SELECT name FROM products\nWHERE attributes ->> 'ram_gb' >= '16';",
+      "SELECT name FROM products\nWHERE attributes -> 'ram_gb' >= '16';",
+      "SELECT name FROM products\nWHERE attributes ->> 'ram_gb' >= 16;"
+    ]
+  },
+  {
+    "id": "sql-d99-07",
+    "kind": "find-error",
+    "options": [
+      "INSERT INTO customers (full_name, email)\nVALUES ('Khách A', NULL), ('Khách B', NULL);",
+      "INSERT INTO customers (full_name, email)\nVALUES ('Khách C', 'an.nguyen@gmail.com');",
+      "INSERT INTO customers (full_name)\nVALUES ('Khách D');",
+      "INSERT INTO customers (full_name, email)\nVALUES ('Khách E', 'AN.NGUYEN@gmail.com');"
+    ]
+  },
+  {
+    "id": "sql-d99-08",
+    "kind": "choose-query",
+    "options": [
+      "SELECT category_id FROM categories\nWHERE parent_id = 1 OR category_id = 1;",
+      "WITH RECURSIVE t AS (\n  SELECT * FROM categories WHERE name = 'Máy tính'\n  UNION ALL SELECT c.* FROM categories c\n  JOIN t ON c.category_id = t.parent_id)\nSELECT category_id FROM t;",
+      "SELECT category_id FROM categories\nWHERE name LIKE '%Laptop%';",
+      "WITH RECURSIVE t AS (\n  SELECT category_id FROM categories WHERE name = 'Máy tính'\n  UNION ALL SELECT c.category_id FROM categories c\n  JOIN t ON c.parent_id = t.category_id)\nSELECT category_id FROM t;"
+    ]
+  },
+  {
+    "id": "sql-d99-09",
+    "kind": "predict",
+    "query": "SELECT COUNT(*) FROM customers c LEFT JOIN orders o ON o.customer_id = c.customer_id AND o.status = 'cancelled'",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d99-12",
+    "kind": "choose-query",
+    "options": [
+      "SELECT ROUND(100 * COUNT(*) FILTER\n  (WHERE channel = 'online') / COUNT(*), 1)\nFROM orders;",
+      "SELECT ROUND(100.0 * COUNT(*) FILTER\n  (WHERE channel = 'online') / COUNT(*), 1)\nFROM orders;",
+      "SELECT ROUND(COUNT(*) FILTER\n  (WHERE channel = 'online') / COUNT(*) * 100, 1)\nFROM orders;",
+      "SELECT ROUND(100.0 * COUNT(*) FILTER\n  (WHERE channel = 'online') / COUNT(*) FILTER\n  (WHERE channel = 'offline'), 1) FROM orders;"
+    ]
+  },
+  {
+    "id": "sql-d99-15",
+    "kind": "choose-query",
+    "options": [
+      "SELECT DATE_TRUNC('month', order_date)::date AS thang,\n  COUNT(*) AS so_don,\n  ROUND(SUM(quantity*unit_price*(1-discount))) AS dt\nFROM orders JOIN order_items USING (order_id)\nWHERE status NOT IN ('pending','cancelled')\nGROUP BY 1;",
+      "SELECT DATE_TRUNC('month', order_date)::date AS thang,\n  COUNT(DISTINCT order_id) AS so_don,\n  ROUND(SUM(quantity*unit_price)) AS dt\nFROM orders JOIN order_items USING (order_id)\nWHERE status NOT IN ('pending','cancelled')\nGROUP BY 1;",
+      "SELECT DATE_TRUNC('month', order_date)::date AS thang,\n  COUNT(DISTINCT order_id) AS so_don,\n  ROUND(SUM(quantity*unit_price*(1-discount))) AS dt\nFROM orders JOIN order_items USING (order_id)\nWHERE status NOT IN ('pending','cancelled')\nGROUP BY 1;",
+      "SELECT DATE_TRUNC('month', order_date)::date AS thang,\n  COUNT(DISTINCT order_id) AS so_don,\n  ROUND(SUM(quantity*unit_price*(1-discount))) AS dt\nFROM orders JOIN order_items USING (order_id)\nGROUP BY 1;"
+    ]
+  },
+  {
+    "id": "sql-d99-16",
+    "kind": "predict",
+    "query": "WITH m AS (SELECT DATE_TRUNC('month', order_date)::date AS thang, COUNT(*) AS n FROM orders GROUP BY 1) SELECT SUM(n) OVER (ORDER BY thang) AS luy_ke FROM m WHERE thang = '2026-03-01'",
+    "format": "scalar"
+  }
+]

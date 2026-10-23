@@ -1,0 +1,112 @@
+[
+  {
+    "id": "sql-d02-01",
+    "kind": "predict",
+    "query": "SELECT 0.1::FLOAT8 + 0.2::FLOAT8 = 0.3::FLOAT8",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d02-02",
+    "kind": "find-error",
+    "options": [
+      "SELECT 9.994::NUMERIC(3,2);",
+      "SELECT 0.999::NUMERIC(3,2);",
+      "SELECT 9.996::NUMERIC(3,2);",
+      "SELECT 1234567::NUMERIC(12,0);"
+    ]
+  },
+  {
+    "id": "sql-d02-03",
+    "kind": "choose-query",
+    "probe": "SELECT column_name, data_type, numeric_precision, numeric_scale FROM information_schema.columns WHERE table_name = 'refunds' ORDER BY ordinal_position",
+    "ordered": true,
+    "options": [
+      "CREATE TABLE refunds (refund_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, amount NUMERIC(12,0) NOT NULL, refunded_at TIMESTAMPTZ NOT NULL);",
+      "CREATE TABLE refunds (refund_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, amount FLOAT8 NOT NULL, refunded_at TIMESTAMPTZ NOT NULL);",
+      "CREATE TABLE refunds (refund_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, amount NUMERIC(12,0) NOT NULL, refunded_at TIMESTAMP NOT NULL);",
+      "CREATE TABLE refunds (refund_id INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY, amount NUMERIC(12,0) NOT NULL, refunded_at DATE NOT NULL);"
+    ]
+  },
+  {
+    "id": "sql-d02-04",
+    "kind": "find-error",
+    "options": [
+      "INSERT INTO categories (name) VALUES ('Loa');",
+      "INSERT INTO categories (name, parent_id) VALUES ('Loa', NULL);",
+      "INSERT INTO categories (category_id, name) OVERRIDING SYSTEM VALUE VALUES (100, 'Loa');",
+      "INSERT INTO categories (category_id, name) VALUES (100, 'Loa');"
+    ]
+  },
+  {
+    "id": "sql-d02-06",
+    "kind": "find-error",
+    "options": [
+      "CREATE TABLE \"KhachHang\" (\"MaKH\" INT); SELECT * FROM KhachHang;",
+      "CREATE TABLE SanPham (MaSP INT); SELECT * FROM sanpham;",
+      "CREATE TABLE \"KhachHang\" (\"MaKH\" INT); SELECT * FROM \"KhachHang\";",
+      "CREATE TABLE SanPham (MaSP INT); SELECT masp FROM SANPHAM;"
+    ]
+  },
+  {
+    "id": "sql-d02-07",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "CREATE TABLE ton_kho (sku VARCHAR(20), so_luong INT CHECK (so_luong > 0)); INSERT INTO ton_kho VALUES ('A', 5); INSERT INTO ton_kho VALUES ('B', NULL); SELECT COUNT(*) FROM ton_kho;"
+  },
+  {
+    "id": "sql-d02-08",
+    "kind": "find-error",
+    "options": [
+      "INSERT INTO customers (full_name, email) VALUES ('Lê An', NULL), ('Vũ Bình', NULL);",
+      "INSERT INTO customers (full_name) VALUES ('Nguyễn Văn An');",
+      "INSERT INTO customers (full_name, email) VALUES ('Lê An', 'an@mail.vn');",
+      "INSERT INTO customers (full_name, email) VALUES ('Lê An', 'x@y.vn'), ('Vũ Bình', 'x@y.vn');"
+    ]
+  },
+  {
+    "id": "sql-d02-09",
+    "kind": "find-error",
+    "options": [
+      "DELETE FROM order_items WHERE order_id = 31;",
+      "DELETE FROM orders WHERE order_id = 31;",
+      "DELETE FROM orders WHERE order_id = 15;",
+      "DELETE FROM payments WHERE order_id = 31;"
+    ]
+  },
+  {
+    "id": "sql-d02-10",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "CREATE TABLE vouchers (voucher_id INT PRIMARY KEY, code VARCHAR(20)); CREATE TABLE carts (cart_id INT PRIMARY KEY, voucher_id INT REFERENCES vouchers (voucher_id) ON DELETE SET NULL); INSERT INTO vouchers VALUES (1, 'A'), (2, 'B'); INSERT INTO carts VALUES (1, 1), (2, 1), (3, 2); DELETE FROM vouchers WHERE voucher_id = 1; SELECT COUNT(*) FROM carts WHERE voucher_id IS NULL;"
+  },
+  {
+    "id": "sql-d02-11",
+    "kind": "choose-query",
+    "ordered": true,
+    "probe": "SELECT MIN(warranty_months), (SELECT is_nullable FROM information_schema.columns WHERE table_name = 'products' AND column_name = 'warranty_months') FROM products",
+    "options": [
+      "ALTER TABLE products ADD COLUMN warranty_months INT NOT NULL;",
+      "ALTER TABLE products ADD COLUMN warranty_months INT DEFAULT 12;",
+      "ALTER TABLE products ADD COLUMN warranty_months INT NOT NULL DEFAULT 12;",
+      "ALTER TABLE products ADD COLUMN warranty_months INT NOT NULL DEFAULT 0;"
+    ]
+  },
+  {
+    "id": "sql-d02-12",
+    "kind": "choose-query",
+    "ordered": true,
+    "probe": "SELECT confdeltype FROM pg_constraint WHERE conrelid = 'wishlists'::regclass AND contype = 'f'",
+    "options": [
+      "CREATE TABLE wishlists (customer_id INT NOT NULL REFERENCES customers (customer_id));",
+      "CREATE TABLE wishlists (customer_id INT NOT NULL REFERENCES customers (customer_id) ON DELETE SET NULL);",
+      "CREATE TABLE wishlists (customer_id INT NOT NULL REFERENCES customers (customer_id) ON DELETE RESTRICT);",
+      "CREATE TABLE wishlists (customer_id INT NOT NULL REFERENCES customers (customer_id) ON DELETE CASCADE);"
+    ]
+  },
+  {
+    "id": "sql-d02-13",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "CREATE TABLE moc (ts TIMESTAMP, tstz TIMESTAMPTZ); INSERT INTO moc VALUES ('2026-10-17 09:00:00', '2026-10-17 09:00:00'); SET TIME ZONE 'UTC'; SELECT to_char(ts, 'HH24') || '/' || to_char(tstz, 'HH24') FROM moc;"
+  }
+]

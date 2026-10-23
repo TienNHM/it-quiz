@@ -1,0 +1,269 @@
+{
+  "id": "sql-d21",
+  "title": "Ngày 21: Ôn tập 3 (Ngày 15 đến 20)",
+  "description": "Ôn lại index, transaction, function và procedure, trigger, view và cách đọc plan EXPLAIN trên DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d21-01",
+      "topic": "Index",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 15)",
+      "question": "Bảng `categories` có 13 dòng. Bạn tạo index trên `categories (name)` rồi chạy `EXPLAIN SELECT * FROM categories WHERE name = 'Laptop'`, plan vẫn là `Seq Scan`. Giải thích nào đúng?",
+      "options": [
+        "index bị hỏng, phải chạy `REINDEX` thì planner mới dùng",
+        "bình thường: bảng nhỏ nằm gọn trong một trang, đọc cả bảng rẻ hơn đi qua index",
+        "PostgreSQL không bao giờ dùng index trên cột `VARCHAR`",
+        "phải khởi động lại server thì index mới có hiệu lực"
+      ],
+      "answer": 1,
+      "explanation": "Planner so chi phí ước lượng và chọn cách rẻ hơn. Bảng 13 dòng chỉ chiếm một trang dữ liệu, đọc thẳng nó rẻ hơn đi qua index rồi mới đọc bảng. Index chỉ có lợi khi bảng đủ lớn và điều kiện lọc ra một phần nhỏ số dòng.\n- Index vừa tạo không bị hỏng, không cần `REINDEX`.\n- Index B-tree dùng được trên `VARCHAR` bình thường.\n- Index có hiệu lực ngay sau khi tạo, không cần khởi động lại."
+    },
+    {
+      "id": "sql-d21-02",
+      "topic": "Index nhiều cột",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 15)",
+      "question": "Có index `(customer_id, order_date)` trên `perf.orders`. Xét ba truy vấn: (a) `WHERE customer_id = 4242`, (b) `WHERE order_date >= '2025-06-15' AND order_date < '2025-06-16'`, (c) `WHERE customer_id = 4242 AND order_date >= '2025-01-01'`. Nhận định nào đúng?",
+      "options": [
+        "(a) và (c) dùng index hiệu quả; (b) thường quay về Seq Scan vì thiếu tiền tố `customer_id`",
+        "(b) và (c) dùng index hiệu quả; (a) thì không",
+        "chỉ (c) dùng được index, vì index nhiều cột đòi đủ mọi cột",
+        "cả ba dùng index hiệu quả như nhau"
+      ],
+      "answer": 0,
+      "explanation": "Index nhiều cột xếp theo `customer_id` trước, trong cùng một khách mới xếp theo `order_date`, giống danh bạ xếp theo họ rồi mới tới tên (quy tắc tiền tố trái).\n- (a) chạm cột đầu nên nhảy thẳng tới đoạn của khách 4242; (c) còn thu hẹp thêm theo ngày.\n- (b) chỉ có `order_date`: đơn của một ngày nằm rải rác trong đoạn của từng khách, không có đoạn liền để nhảy tới, nên thường là Seq Scan.\n- Không cần đủ mọi cột: chỉ cần điều kiện chạm các cột đầu liên tiếp."
+    },
+    {
+      "id": "sql-d21-03",
+      "topic": "Khoảng thời gian nửa mở",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 20)",
+      "question": "Lấy `order_id` của mọi đơn đặt **trong ngày 11/11/2025** (cột `order_date` kiểu `TIMESTAMPTZ`). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT order_id FROM orders\nWHERE order_date = '2025-11-11';\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE order_date BETWEEN '2025-11-11'\n  AND '2025-11-11';\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE order_date >= '2025-11-11'\n  AND order_date < '2025-11-12';\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE order_date >= '2025-11-11'\n  AND order_date <= '2025-11-11 23:00';\n```"
+      ],
+      "answer": 2,
+      "explanation": "Khoảng nửa mở `>= đầu ngày AND < đầu ngày sau` lấy trọn mọi thời điểm trong ngày. Kết quả thật là đơn 21 (19:00) và đơn 22 (23:30).\n- `= '2025-11-11'` được hiểu là đúng 00:00:00, không đơn nào trùng nên trả 0 dòng.\n- `BETWEEN '2025-11-11' AND '2025-11-11'` cũng chỉ là đúng 00:00:00, trả 0 dòng.\n- Cận trên `'2025-11-11 23:00'` làm rơi đơn 22 lúc 23:30, chỉ còn đơn 21."
+    },
+    {
+      "id": "sql-d21-04",
+      "topic": "BETWEEN với cột thời gian",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 20)",
+      "question": "Truy vấn dưới đây trả về bao nhiêu? (Có hai đơn đặt ngày 11/11/2025, lúc 19:00 và 23:30.)",
+      "code": "SELECT COUNT(*) FROM orders\nWHERE order_date BETWEEN '2025-11-01'\n                     AND '2025-11-11';",
+      "codeLang": "sql",
+      "options": [
+        "2",
+        "3",
+        "1",
+        "0"
+      ],
+      "answer": 3,
+      "explanation": "`'2025-11-11'` được hiểu là `2025-11-11 00:00:00`, nên cả hai đơn ngày 11/11 (19:00 và 23:30) nằm sau cận trên và bị loại. Trong cả tháng 11 trước đó không có đơn nào khác, nên kết quả thật là 0.\n- 2 là con số bạn mong đợi nếu `BETWEEN` tính trọn ngày 11/11, nhưng với kiểu thời gian thì không.\n- Muốn lấy hai đơn đó phải viết `order_date < '2025-11-12'`."
+    },
+    {
+      "id": "sql-d21-05",
+      "topic": "CHECK và transaction",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 16)",
+      "question": "Trong một transaction đặt hàng, câu `UPDATE` nào dưới đây gây **lỗi** khi chạy trên dữ liệu gốc? (Bảng `products` có `CHECK (stock_quantity >= 0)`; `LAP-003` còn 0 cái, `LAP-002` còn 3 cái.)",
+      "options": [
+        "```sql\nUPDATE products\nSET stock_quantity = stock_quantity - 1\nWHERE sku = 'ACC-001';\n```",
+        "```sql\nUPDATE products\nSET stock_quantity = stock_quantity - 1\nWHERE sku = 'LAP-003';\n```",
+        "```sql\nUPDATE products\nSET stock_quantity = stock_quantity + 1\nWHERE sku = 'LAP-003';\n```",
+        "```sql\nUPDATE products\nSET stock_quantity = stock_quantity - 2\nWHERE sku = 'LAP-002';\n```"
+      ],
+      "answer": 1,
+      "explanation": "`LAP-003` hết hàng (0), trừ 1 thành -1 vi phạm `products_stock_quantity_check`, nên lệnh báo lỗi và transaction chứa nó bị hỏng.\n- `ACC-001` còn 60, trừ 1 còn 59, hợp lệ.\n- Cộng 1 cho `LAP-003` làm tồn kho thành 1, hợp lệ.\n- `LAP-002` còn 3, trừ 2 còn 1, vẫn không âm."
+    },
+    {
+      "id": "sql-d21-06",
+      "topic": "Transaction bị hủy",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 16)",
+      "question": "Trong một transaction, lệnh thứ nhất `INSERT` thành công, lệnh thứ hai vi phạm `CHECK` và báo lỗi. Bạn gõ tiếp một lệnh `SELECT`, rồi `COMMIT`. Điều gì xảy ra?",
+      "options": [
+        "lệnh đọc báo lỗi, nhưng `COMMIT` vẫn lưu lệnh thứ nhất",
+        "lệnh đọc chạy bình thường và `COMMIT` lưu lệnh thứ nhất, PostgreSQL chỉ bỏ lệnh lỗi",
+        "lệnh đọc báo transaction đã bị hủy; `COMMIT` thực chất là `ROLLBACK`, lệnh thứ nhất cũng mất",
+        "transaction tự bắt đầu lại từ lệnh đọc, nên `COMMIT` chỉ lưu lệnh đọc"
+      ],
+      "answer": 2,
+      "explanation": "Sau một lỗi, transaction ở trạng thái hỏng: mọi lệnh tiếp theo báo `current transaction is aborted, commands ignored until end of transaction block`. Gõ `COMMIT` lúc này thực chất thực hiện `ROLLBACK`, nên cả lệnh `INSERT` đầu cũng không được lưu.\n- PostgreSQL không tự bỏ riêng lệnh lỗi rồi cho đi tiếp, trừ khi bạn dùng `SAVEPOINT`.\n- Transaction không tự bắt đầu lại; nó kéo dài tới `COMMIT` hoặc `ROLLBACK`.\n- Muốn giữ phần đã làm trước chỗ lỗi, đặt `SAVEPOINT` và `ROLLBACK TO SAVEPOINT`."
+    },
+    {
+      "id": "sql-d21-07",
+      "topic": "Lost update",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 16)",
+      "question": "Hai nhân viên cùng bán chiếc laptop cuối cùng (`stock_quantity = 1`). Mỗi người chạy `SELECT stock_quantity` thấy 1, rồi chạy `UPDATE products SET stock_quantity = 0`. Kho bán ra 2 cái mà chỉ trừ 1. Cách sửa nào đúng?",
+      "options": [
+        "chỉ cần đặt lệnh đọc và lệnh ghi vào cùng một transaction là đủ, không cần khóa thêm",
+        "tạo index trên `stock_quantity`",
+        "thêm trigger ghi log sau mỗi lần trừ kho",
+        "khóa dòng khi đọc trong transaction, hoặc trừ trực tiếp `stock_quantity - 1` trong một lệnh và để `CHECK` chặn"
+      ],
+      "answer": 3,
+      "explanation": "Đây là lost update: hai người đọc cùng giá trị cũ rồi ghi đè nhau. Cách sửa là buộc người thứ hai thấy kết quả của người thứ nhất.\n- `FOR UPDATE` khóa dòng, người thứ hai chờ rồi đọc được 0.\n- Hoặc trừ trực tiếp trong một lệnh `UPDATE`; lần bán thứ hai làm tồn kho thành -1 và `CHECK (stock_quantity >= 0)` chặn lại.\n- Chỉ gom đọc và ghi vào một transaction chưa đủ: `SELECT` thường không khóa dòng, nên hai transaction vẫn cùng đọc 1 rồi cùng ghi 0.\n- Index không liên quan tới việc đọc-rồi-ghi.\n- Trigger ghi log chỉ ghi lại sự cố, không ngăn nó xảy ra."
+    },
+    {
+      "id": "sql-d21-08",
+      "topic": "Function và procedure",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 17)",
+      "question": "Function và procedure trong PostgreSQL khác nhau thế nào?",
+      "options": [
+        "function trả giá trị và gọi ngay trong truy vấn; procedure gọi bằng `CALL`, hợp với quy trình nhiều bước ghi dữ liệu",
+        "function gọi bằng `CALL`, còn procedure gọi ngay trong truy vấn",
+        "function không đọc được bảng, chỉ procedure mới đọc được dữ liệu",
+        "procedure bắt buộc phải trả về một bảng, function thì không"
+      ],
+      "answer": 0,
+      "explanation": "Function trả về một giá trị (hoặc bảng với `RETURNS TABLE`) và được dùng ngay trong câu SQL, ví dụ `SELECT monthly_revenue(2025, 11)`. Procedure được gọi bằng `CALL`, có thể `COMMIT`/`ROLLBACK` bên trong, nên hợp với quy trình như đặt hàng.\n- Hai cách gọi ở phương án thứ hai bị đảo ngược.\n- Function đọc bảng bình thường (`monthly_revenue` đọc `orders`).\n- Procedure không có kiểu trả về như function; nó không bị bắt buộc trả bảng."
+    },
+    {
+      "id": "sql-d21-09",
+      "topic": "View nhiều bảng",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 19)",
+      "question": "View `order_lines` gộp `orders` và `order_items`, mỗi dòng là một dòng hàng. Truy vấn cuối trả về bao nhiêu? (Khách 2 có 4 đơn.)",
+      "code": "CREATE VIEW order_lines AS\nSELECT o.order_id, o.customer_id,\n       oi.product_id, oi.quantity\nFROM orders AS o\nJOIN order_items AS oi\n  ON oi.order_id = o.order_id;\n\nSELECT COUNT(*) FROM order_lines\nWHERE customer_id = 2;",
+      "codeLang": "sql",
+      "options": [
+        "4",
+        "7",
+        "3",
+        "14"
+      ],
+      "answer": 1,
+      "explanation": "View chỉ là câu `SELECT` được đặt tên, mỗi dòng của nó ứng với một dòng hàng chứ không phải một đơn. Bốn đơn của khách 2 gộp lại có 7 dòng hàng, nên `COUNT(*)` ra 7.\n- 4 là số đơn, bạn sẽ được con số này nếu đếm `COUNT(DISTINCT order_id)`.\n- Không có phép nhân đôi nào xảy ra vì `JOIN` khớp theo `order_id`."
+    },
+    {
+      "id": "sql-d21-10",
+      "topic": "Doanh thu theo tháng",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 19, 20)",
+      "question": "Tính doanh thu (`quantity * unit_price`) của **tháng 8/2025**, bỏ các đơn `pending` và `cancelled`. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT SUM(oi.quantity * oi.unit_price)\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE order_date >= '2025-08-01'\n  AND order_date < '2025-09-01';\n```",
+        "```sql\nSELECT SUM(oi.quantity * oi.unit_price)\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE status NOT IN ('pending', 'cancelled')\n  AND order_date BETWEEN '2025-08-01'\n                     AND '2025-08-16';\n```",
+        "```sql\nSELECT SUM(oi.quantity * oi.unit_price)\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE status NOT IN ('pending', 'cancelled')\n  AND order_date >= '2025-08-01'\n  AND order_date < '2025-09-01';\n```",
+        "```sql\nSELECT SUM(oi.quantity * oi.unit_price)\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE status NOT IN ('pending', 'cancelled')\n  AND order_date >= '2025-08-01'\n   OR order_date < '2025-09-01';\n```"
+      ],
+      "answer": 2,
+      "explanation": "Cần cả hai: lọc trạng thái và khoảng nửa mở của tháng. Kết quả thật là 8.980.000 (chỉ đơn 16).\n- Thiếu lọc trạng thái thì cộng nhầm đơn 15 đã hủy (2.690.000).\n- `BETWEEN ... AND '2025-08-16'` coi cận trên là 00:00 ngày 16, làm rơi đơn 16 lúc 10:10, kết quả là NULL.\n- `AND` kết hợp với `OR` không có ngoặc: `OR` thành điều kiện độc lập nên mọi đơn trước 1/9/2025 đều lọt vào, doanh thu phình lên hàng trăm triệu."
+    },
+    {
+      "id": "sql-d21-11",
+      "topic": "Expression index",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 15, 20)",
+      "question": "Lệnh `CREATE INDEX` nào gây **lỗi** khi chạy? (`order_date` có kiểu `TIMESTAMPTZ`.)",
+      "options": [
+        "```sql\nCREATE INDEX i1 ON orders\n    (customer_id, order_date);\n```",
+        "```sql\nCREATE INDEX i2 ON orders (order_date)\nWHERE status = 'pending';\n```",
+        "```sql\nCREATE INDEX i3 ON customers\n    (LOWER(email));\n```",
+        "```sql\nCREATE INDEX i4 ON orders\n    (DATE_TRUNC('day', order_date));\n```"
+      ],
+      "answer": 3,
+      "explanation": "Với `TIMESTAMPTZ`, `DATE_TRUNC('day', ...)` phụ thuộc múi giờ của phiên nên không phải `IMMUTABLE`, và PostgreSQL từ chối đưa vào index: `functions in index expression must be marked IMMUTABLE`.\n- `(customer_id, order_date)` là index nhiều cột bình thường.\n- `WHERE status = 'pending'` tạo partial index, hợp lệ.\n- `LOWER(email)` là hàm IMMUTABLE nên làm expression index được.\nThay vì index trên hàm, hãy viết điều kiện dạng khoảng trên chính cột `order_date`."
+    },
+    {
+      "id": "sql-d21-12",
+      "topic": "Trigger trừ kho hai lần",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 18)",
+      "question": "Trigger dưới đây tự trừ kho sau mỗi `INSERT` vào `order_items`. Code ứng dụng cũng tự `UPDATE` trừ kho. Tồn kho `ACC-001` (ban đầu 60) sau khi chạy đoạn này là bao nhiêu?",
+      "code": "CREATE FUNCTION trg_stock() RETURNS TRIGGER\nLANGUAGE plpgsql AS $$\nBEGIN\n  UPDATE products\n  SET stock_quantity = stock_quantity - NEW.quantity\n  WHERE product_id = NEW.product_id;\n  RETURN NEW;\nEND; $$;\n\nCREATE TRIGGER items_stock AFTER INSERT\nON order_items FOR EACH ROW\nEXECUTE FUNCTION trg_stock();\n\nINSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (40, 16, 3, 399000);\n\nUPDATE products\nSET stock_quantity = stock_quantity - 3\nWHERE sku = 'ACC-001';\n\nSELECT stock_quantity FROM products\nWHERE sku = 'ACC-001';",
+      "codeLang": "sql",
+      "options": [
+        "54",
+        "57",
+        "60",
+        "51"
+      ],
+      "answer": 0,
+      "explanation": "Mua 3 cái mà kho giảm 6: trigger trừ 3 (60 xuống 57) khi chèn dòng hàng, rồi lệnh `UPDATE` của ứng dụng trừ thêm 3 (57 xuống 54). Không có lỗi nào được báo, nên bug này rất khó thấy.\n- 57 là kết quả nếu chỉ một trong hai nơi trừ kho.\n- 60 là khi không nơi nào trừ.\n- 51 không có cách tính nào khớp.\nCách sửa: mỗi quy tắc nghiệp vụ chỉ nằm ở một nơi, hoặc ở trigger hoặc ở procedure."
+    },
+    {
+      "id": "sql-d21-13",
+      "topic": "WITH CHECK OPTION",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 19)",
+      "question": "Cho view bên dưới. Câu lệnh nào gây **lỗi** khi chạy?",
+      "code": "CREATE VIEW active_products AS\nSELECT * FROM products\nWHERE is_active\nWITH CHECK OPTION;",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nUPDATE active_products\nSET price = price + 1\nWHERE sku = 'LAP-001';\n```",
+        "```sql\nUPDATE active_products\nSET is_active = FALSE\nWHERE sku = 'LAP-001';\n```",
+        "```sql\nUPDATE active_products\nSET stock_quantity = 0\nWHERE sku = 'PHN-004';\n```",
+        "```sql\nSELECT sku FROM active_products\nWHERE stock_quantity = 0;\n```"
+      ],
+      "answer": 1,
+      "explanation": "`WITH CHECK OPTION` chặn mọi thay đổi làm dòng không còn thỏa điều kiện của view. Đặt `is_active = FALSE` khiến dòng rơi khỏi view, nên báo `new row violates check option for view`.\n- Tăng `price` vẫn giữ `is_active` là TRUE, hợp lệ.\n- `PHN-004` đã ngừng kinh doanh nên không nằm trong view; lệnh không khớp dòng nào, chạy xong với 0 dòng bị ảnh hưởng và không lỗi.\n- `SELECT` trên view luôn đọc được bình thường."
+    },
+    {
+      "id": "sql-d21-14",
+      "topic": "Đọc EXPLAIN ANALYZE",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 20)",
+      "question": "Một nút trong output `EXPLAIN ANALYZE` có dạng `Parallel Seq Scan on orders (cost=0.00..13405.33 rows=4014 ...) (actual time=... rows=3287 loops=3)`. Tổng số dòng thực tế nút này đã trả ra xấp xỉ bao nhiêu?",
+      "options": [
+        "khoảng 3287 dòng, vì `rows` là tổng của cả nút",
+        "khoảng 4014 dòng, vì đó là số dòng thực tế",
+        "khoảng 9860 dòng: mỗi lần chạy trả 3287 dòng, nhân với `loops=3`",
+        "khoảng 13405 dòng, vì đó là `cost`"
+      ],
+      "answer": 2,
+      "explanation": "Trong `actual`, `rows` là số dòng **trung bình mỗi lần** chạy nút, còn `loops` là số lần nút chạy (ở đây 3: hai worker song song cộng tiến trình chính). Tổng xấp xỉ 3287 x 3, khoảng 9860.\n- 4014 là số dòng **ước lượng** (phần chưa `actual`), không phải số thật.\n- 13405 là chi phí ước lượng (`cost`), đơn vị tùy ý, không phải số dòng.\n- Lệch nhẹ giữa ước lượng và thực tế là bình thường; nếu lệch hàng chục, hàng trăm lần, hãy chạy `ANALYZE` để cập nhật thống kê rồi xem lại plan."
+    },
+    {
+      "id": "sql-d21-15",
+      "topic": "View và materialized view",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 19)",
+      "question": "Báo cáo doanh thu theo tháng trên 1 triệu đơn mất khoảng 150 ms. Bạn tạo một view thường cho nó. Nhận định nào đúng?",
+      "options": [
+        "báo cáo không nhanh hơn, vì view thường chỉ lưu câu truy vấn; muốn nhanh dùng materialized view, đổi lại số liệu chỉ mới tới lần `REFRESH` gần nhất",
+        "báo cáo nhanh hơn rõ rệt vì view đã lưu sẵn kết quả",
+        "báo cáo nhanh hơn vì view tự có index trên các cột",
+        "báo cáo không nhanh hơn, và materialized view cũng vậy vì vẫn chạy lại truy vấn mỗi lần đọc"
+      ],
+      "answer": 0,
+      "explanation": "View thường chỉ là câu `SELECT` được đặt tên: mỗi lần đọc, PostgreSQL vẫn chạy lại truy vấn gốc trên cả triệu đơn.\n- View không lưu kết quả, cũng không tự có index.\n- Materialized view lưu sẵn kết quả nên đọc rất nhanh, nhưng số liệu chỉ cập nhật khi `REFRESH`, và mỗi lần `REFRESH` phải chạy lại truy vấn gốc.\n- Phương án cuối nhầm: chính vì materialized view không chạy lại truy vấn khi đọc nên mới nhanh."
+    },
+    {
+      "id": "sql-d21-16",
+      "topic": "Function và COALESCE",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 17)",
+      "question": "Function dưới đây trả về gì khi gọi `SELECT monthly_revenue(2024, 1)`? (Dữ liệu DSC Shop không có đơn nào trong tháng 1/2024.)",
+      "code": "CREATE FUNCTION monthly_revenue(p_year INT, p_month INT)\nRETURNS NUMERIC LANGUAGE sql STABLE AS $$\n  SELECT COALESCE(ROUND(SUM(oi.quantity\n           * oi.unit_price * (1 - oi.discount))), 0)\n  FROM orders AS o\n  JOIN order_items AS oi ON oi.order_id = o.order_id\n  WHERE o.status NOT IN ('pending', 'cancelled')\n    AND o.order_date >= make_date(p_year, p_month, 1)\n    AND o.order_date < make_date(p_year, p_month, 1)\n                       + INTERVAL '1 month';\n$$;\n\nSELECT monthly_revenue(2024, 1);",
+      "codeLang": "sql",
+      "options": [
+        "NULL",
+        "không trả dòng nào",
+        "báo lỗi vì không có đơn",
+        "0"
+      ],
+      "answer": 3,
+      "explanation": "Hàm gộp không có `GROUP BY` luôn trả đúng một dòng, kể cả khi không có dòng nào khớp. `SUM` trên tập rỗng cho `NULL`, và `COALESCE(..., 0)` đổi `NULL` đó thành 0.\n- `NULL` sẽ là kết quả nếu thiếu `COALESCE`.\n- Không bị \"không trả dòng nào\": `SELECT` gọi function luôn ra một dòng.\n- Không có lỗi nào: tháng không có đơn là chuyện bình thường, không phải ngoại lệ."
+    },
+    {
+      "id": "sql-d21-17",
+      "topic": "Lấy mã đơn vừa tạo",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 16)",
+      "question": "Trong transaction đặt hàng, sau khi `INSERT` đơn mới, cần lấy đúng mã đơn vừa tạo để chèn dòng hàng. Cách nào an toàn nhất khi nhiều người đặt hàng cùng lúc?",
+      "options": [
+        "dùng mệnh đề `RETURNING` của chính lệnh chèn đơn (hoặc `currval` của phiên hiện tại)",
+        "lấy mã lớn nhất đang có trong bảng `orders`, vì đó luôn là đơn mới nhất của bạn",
+        "đếm số đơn hiện có rồi cộng một, vì mã đơn bằng số đơn cộng một",
+        "tự đặt mã cố định trong code ứng dụng, ví dụ luôn là 41"
+      ],
+      "answer": 0,
+      "explanation": "`RETURNING order_id` và `currval(...)` đều trả mã mà **phiên của bạn** vừa được cấp, nên không bị ảnh hưởng bởi người khác.\n- `MAX(order_id)` có thể là đơn của người khác vừa chèn xen vào giữa.\n- `COUNT(*) + 1` sai ngay khi có đơn bị xóa, hoặc khi `ROLLBACK` làm bỏ trống một số mã (IDENTITY không lùi lại).\n- Mã cố định chắc chắn trùng hoặc lệch khi dữ liệu thay đổi."
+    },
+    {
+      "id": "sql-d21-18",
+      "topic": "Partial index",
+      "source": "Ngày 21 - Ôn tập 3 (Ngày 15)",
+      "question": "Có index `CREATE INDEX idx_pending ON orders (order_date) WHERE status = 'pending'`. Truy vấn nào có thể dùng index này?",
+      "options": [
+        "`WHERE status = 'shipped' ORDER BY order_date DESC LIMIT 20`",
+        "`WHERE status = 'pending' ORDER BY order_date DESC LIMIT 20`",
+        "`WHERE customer_id = 5 ORDER BY order_date DESC LIMIT 20`",
+        "`WHERE status <> 'pending' ORDER BY order_date LIMIT 20`"
+      ],
+      "answer": 1,
+      "explanation": "Partial index chỉ chứa các dòng thỏa `WHERE` của nó, ở đây là đơn `pending`, và đã xếp sẵn theo `order_date`. Truy vấn có cùng điều kiện `status = 'pending'` đọc được thẳng từ index và dừng sau 20 dòng.\n- `status = 'shipped'` cần các dòng không có trong index.\n- `customer_id = 5` không giới hạn ở đơn `pending`, nên index không chứa đủ dòng cần tìm.\n- `status <> 'pending'` là đúng phần dòng bị loại khỏi index."
+    }
+  ]
+}

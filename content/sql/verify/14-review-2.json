@@ -1,0 +1,118 @@
+[
+  {
+    "id": "sql-d14-01",
+    "kind": "choose-query",
+    "options": [
+      "SELECT ROUND(AVG(oi.quantity * oi.unit_price))\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.channel = 'online';",
+      "WITH t AS (SELECT o.order_id,\n  SUM(oi.quantity * oi.unit_price) AS s\n  FROM orders o JOIN order_items oi USING (order_id)\n  WHERE o.channel = 'online' GROUP BY o.order_id)\nSELECT ROUND(AVG(s)) FROM t;",
+      "SELECT ROUND(AVG(SUM(oi.quantity * oi.unit_price)))\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.channel = 'online';",
+      "SELECT ROUND(SUM(oi.quantity * oi.unit_price)\n  / (SELECT COUNT(*) FROM orders))\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.channel = 'online';"
+    ]
+  },
+  {
+    "id": "sql-d14-02",
+    "kind": "predict",
+    "query": "SELECT COUNT(*) FROM customers c LEFT JOIN orders o ON o.customer_id = c.customer_id WHERE c.customer_id = 16",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d14-03",
+    "kind": "find-error",
+    "options": [
+      "SELECT customer_id, COUNT(*) FROM orders\nGROUP BY customer_id\nHAVING COUNT(*) >= 3;",
+      "SELECT customer_id, COUNT(*) FROM orders\nWHERE COUNT(*) >= 3\nGROUP BY customer_id;",
+      "SELECT customer_id, COUNT(*) FROM orders\nWHERE status <> 'cancelled'\nGROUP BY customer_id HAVING COUNT(*) >= 3;",
+      "SELECT customer_id, COUNT(*) AS so_don FROM orders\nGROUP BY customer_id\nHAVING COUNT(*) >= 3 ORDER BY so_don DESC;"
+    ]
+  },
+  {
+    "id": "sql-d14-04",
+    "kind": "choose-query",
+    "options": [
+      "SELECT employee_id, full_name FROM employees e\nWHERE NOT EXISTS (SELECT 1 FROM orders o\n  WHERE o.employee_id = e.employee_id);",
+      "SELECT employee_id, full_name FROM employees\nWHERE employee_id NOT IN\n  (SELECT employee_id FROM orders);",
+      "SELECT e.employee_id, e.full_name\nFROM employees e LEFT JOIN orders o\n  ON o.employee_id = e.employee_id\nWHERE o.order_id IS NOT NULL;",
+      "SELECT DISTINCT e.employee_id, e.full_name\nFROM employees e, orders o\nWHERE e.employee_id <> o.employee_id;"
+    ]
+  },
+  {
+    "id": "sql-d14-05",
+    "kind": "predict",
+    "query": "SELECT ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount))) FROM orders o JOIN order_items oi ON oi.order_id = o.order_id WHERE o.status NOT IN ('pending', 'cancelled') AND EXTRACT(MONTH FROM o.order_date) = 1",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d14-07",
+    "kind": "choose-query",
+    "options": [
+      "SELECT DATE_TRUNC('month', o.order_date)::date\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE SUM(oi.quantity * oi.unit_price) >= 44000000\n  AND o.status NOT IN ('pending', 'cancelled')\nGROUP BY 1;",
+      "SELECT DATE_TRUNC('month', o.order_date)::date\nFROM orders o JOIN order_items oi USING (order_id)\nGROUP BY 1\nHAVING SUM(oi.quantity * oi.unit_price) >= 44000000;",
+      "SELECT DATE_TRUNC('month', o.order_date)::date\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.status NOT IN ('pending', 'cancelled')\nGROUP BY 1 HAVING SUM(oi.quantity * oi.unit_price) >= 44000000;",
+      "SELECT DATE_TRUNC('month', o.order_date)::date\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.status NOT IN ('pending', 'cancelled')\nGROUP BY 1 HAVING COUNT(*) >= 44000000;"
+    ]
+  },
+  {
+    "id": "sql-d14-08",
+    "kind": "predict",
+    "query": "SELECT customer_id FROM orders WHERE channel = 'online' AND status <> 'cancelled' INTERSECT SELECT customer_id FROM orders WHERE channel = 'offline' AND status <> 'cancelled'",
+    "format": "rowcount"
+  },
+  {
+    "id": "sql-d14-09",
+    "kind": "predict",
+    "query": "SELECT SUM(pm.amount) FROM orders o JOIN order_items oi ON oi.order_id = o.order_id JOIN payments pm ON pm.order_id = o.order_id WHERE o.order_id = 12",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d14-10",
+    "kind": "choose-query",
+    "options": [
+      "SELECT c.customer_id, COUNT(o.order_id)\nFROM customers c LEFT JOIN orders o\n  ON o.customer_id = c.customer_id\nWHERE o.status <> 'cancelled'\nGROUP BY c.customer_id;",
+      "SELECT c.customer_id, COUNT(*)\nFROM customers c LEFT JOIN orders o\n  ON o.customer_id = c.customer_id\n AND o.status <> 'cancelled'\nGROUP BY c.customer_id;",
+      "SELECT c.customer_id, COUNT(o.order_id)\nFROM customers c LEFT JOIN orders o\n  ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;",
+      "SELECT c.customer_id, COUNT(o.order_id)\nFROM customers c LEFT JOIN orders o\n  ON o.customer_id = c.customer_id\n AND o.status <> 'cancelled'\nGROUP BY c.customer_id;"
+    ]
+  },
+  {
+    "id": "sql-d14-11",
+    "kind": "find-error",
+    "options": [
+      "SELECT customer_id, COUNT(*) FROM orders\nGROUP BY customer_id;",
+      "SELECT customer_id, status, COUNT(*) FROM orders\nGROUP BY customer_id, status;",
+      "SELECT customer_id, status, COUNT(*) FROM orders\nGROUP BY customer_id;",
+      "SELECT customer_id, MAX(status), COUNT(*) FROM orders\nGROUP BY customer_id;"
+    ]
+  },
+  {
+    "id": "sql-d14-14",
+    "kind": "predict",
+    "query": "SELECT COUNT(*) FROM (SELECT o.order_id FROM orders o JOIN order_items oi ON oi.order_id = o.order_id WHERE o.status NOT IN ('pending', 'cancelled') GROUP BY o.order_id HAVING SUM(oi.quantity * oi.unit_price * (1 - oi.discount)) >= 20000000) t",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d14-15",
+    "kind": "choose-query",
+    "options": [
+      "SELECT customer_id FROM orders\nWHERE channel = 'online' AND status <> 'cancelled'\nEXCEPT\nSELECT customer_id FROM orders\nWHERE channel = 'offline' AND status <> 'cancelled';",
+      "SELECT customer_id FROM orders\nWHERE channel = 'offline' AND status <> 'cancelled'\nEXCEPT\nSELECT customer_id FROM orders\nWHERE channel = 'online' AND status <> 'cancelled';",
+      "SELECT customer_id FROM orders\nWHERE channel = 'online' AND status <> 'cancelled'\nINTERSECT\nSELECT customer_id FROM orders\nWHERE channel = 'offline' AND status <> 'cancelled';",
+      "SELECT customer_id FROM orders\nWHERE channel = 'online' AND status <> 'cancelled'\nEXCEPT\nSELECT customer_id FROM orders WHERE status <> 'cancelled';"
+    ]
+  },
+  {
+    "id": "sql-d14-16",
+    "kind": "predict",
+    "query": "SELECT customer_id FROM orders GROUP BY customer_id HAVING COUNT(*) >= 3",
+    "format": "rowcount"
+  },
+  {
+    "id": "sql-d14-17",
+    "kind": "choose-query",
+    "options": [
+      "SELECT COUNT(CASE WHEN channel='online' THEN 1 ELSE 0 END),\n COUNT(CASE WHEN channel='offline' THEN 1 ELSE 0 END)\nFROM orders WHERE status <> 'cancelled';",
+      "SELECT COUNT(*) FILTER (WHERE channel = 'online') AS don_on,\n  COUNT(*) FILTER (WHERE channel = 'offline')\nFROM orders;",
+      "SELECT channel, COUNT(*) FROM orders\nWHERE status <> 'cancelled'\nGROUP BY channel;",
+      "SELECT COUNT(*) FILTER (WHERE channel = 'online') AS don_on,\n  COUNT(*) FILTER (WHERE channel = 'offline')\nFROM orders WHERE status <> 'cancelled';"
+    ]
+  }
+]

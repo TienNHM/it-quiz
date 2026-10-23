@@ -1,0 +1,112 @@
+[
+  {
+    "id": "sql-d11-01",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku FROM products WHERE price > AVG(price)",
+      "SELECT sku FROM products WHERE price > (SELECT AVG(price) FROM products)",
+      "SELECT sku FROM products WHERE price > (SELECT MAX(price) FROM products)",
+      "SELECT sku FROM products WHERE price > (SELECT AVG(price) FROM products WHERE category_id = 3)"
+    ]
+  },
+  {
+    "id": "sql-d11-02",
+    "kind": "find-error",
+    "options": [
+      "SELECT sku FROM products WHERE price = (SELECT MAX(price) FROM products WHERE category_id = 3)",
+      "SELECT sku FROM products WHERE price IN (SELECT price FROM products WHERE category_id = 3)",
+      "SELECT sku FROM products WHERE price = ANY (SELECT price FROM products WHERE category_id = 3)",
+      "SELECT sku FROM products WHERE price = (SELECT price FROM products WHERE category_id = 3)"
+    ]
+  },
+  {
+    "id": "sql-d11-03",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT COUNT(*) FROM products WHERE price > ALL (SELECT price FROM products WHERE category_id = 99)"
+  },
+  {
+    "id": "sql-d11-04",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT COUNT(*) FROM employees WHERE employee_id NOT IN (SELECT employee_id FROM orders)"
+  },
+  {
+    "id": "sql-d11-05",
+    "kind": "choose-query",
+    "options": [
+      "SELECT employee_id FROM employees WHERE employee_id NOT IN (SELECT employee_id FROM orders)",
+      "SELECT e.employee_id FROM employees e WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.employee_id = e.employee_id)",
+      "SELECT DISTINCT e.employee_id FROM employees e JOIN orders o ON o.employee_id = e.employee_id",
+      "SELECT employee_id FROM employees WHERE employee_id <> ALL (SELECT employee_id FROM orders)"
+    ]
+  },
+  {
+    "id": "sql-d11-06",
+    "kind": "choose-query",
+    "options": [
+      "SELECT customer_id FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.order_date >= '2026-07-01')",
+      "SELECT customer_id FROM customers c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id AND o.order_date >= '2026-07-01')",
+      "SELECT customer_id FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id AND o.order_date >= '2026-07-01')",
+      "SELECT customer_id FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id AND o.order_date <= '2026-07-01')"
+    ]
+  },
+  {
+    "id": "sql-d11-07",
+    "kind": "predict",
+    "format": "rowcount",
+    "query": "SELECT p.sku FROM products p WHERE p.price < (SELECT AVG(p2.price) FROM products p2 WHERE p2.category_id = p.category_id)"
+  },
+  {
+    "id": "sql-d11-08",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku, category_id, price FROM products WHERE price = (SELECT MAX(price) FROM products WHERE category_id = category_id)",
+      "SELECT p.sku, p.category_id, p.price FROM products p WHERE p.price >= (SELECT AVG(p2.price) FROM products p2 WHERE p2.category_id = p.category_id)",
+      "SELECT sku, category_id, MAX(price) FROM products GROUP BY category_id",
+      "SELECT p.sku, p.category_id, p.price FROM products p WHERE p.price = (SELECT MAX(p2.price) FROM products p2 WHERE p2.category_id = p.category_id)"
+    ]
+  },
+  {
+    "id": "sql-d11-09",
+    "kind": "choose-query",
+    "options": [
+      "SELECT c.customer_id FROM customers c WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id AND o.channel = 'offline')",
+      "SELECT DISTINCT c.customer_id FROM customers c JOIN orders o ON o.customer_id = c.customer_id WHERE o.channel = 'online'",
+      "SELECT c.customer_id FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id) AND NOT EXISTS (SELECT 1 FROM orders WHERE channel = 'offline')",
+      "SELECT c.customer_id FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id) AND NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id AND o.channel = 'offline')"
+    ]
+  },
+  {
+    "id": "sql-d11-10",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT ROUND(AVG(so_don), 2) FROM (SELECT customer_id, COUNT(*) AS so_don FROM orders GROUP BY customer_id) AS t"
+  },
+  {
+    "id": "sql-d11-11",
+    "kind": "choose-query",
+    "options": [
+      "WITH t AS (SELECT customer_id, COUNT(*) AS n FROM orders GROUP BY customer_id) SELECT customer_id FROM t WHERE n > (SELECT AVG(n) FROM t)",
+      "WITH t AS (SELECT customer_id, COUNT(*) AS n FROM orders GROUP BY customer_id) SELECT customer_id FROM t WHERE n > AVG(n)",
+      "WITH t AS (SELECT customer_id, COUNT(*) AS n FROM orders GROUP BY customer_id) SELECT customer_id FROM t WHERE n < (SELECT AVG(n) FROM t)",
+      "WITH t AS (SELECT customer_id, COUNT(*) AS n FROM orders GROUP BY customer_id) SELECT customer_id FROM t WHERE n > (SELECT MAX(n) FROM t)"
+    ]
+  },
+  {
+    "id": "sql-d11-13",
+    "kind": "predict",
+    "format": "rowcount",
+    "query": "SELECT full_name FROM customers WHERE customer_id IN (SELECT customer_id FROM orders WHERE channel = 'online')"
+  },
+  {
+    "id": "sql-d11-14",
+    "kind": "find-error",
+    "options": [
+      "SELECT sku FROM products p WHERE price > (SELECT AVG(p2.price) FROM products p2 WHERE p2.category_id = p.category_id)",
+      "SELECT sku FROM products p WHERE EXISTS (SELECT 1 FROM order_items oi WHERE oi.product_id = p.product_id)",
+      "SELECT AVG(p2.price) FROM products p2 WHERE p2.category_id = p.category_id",
+      "SELECT sku, (SELECT AVG(price) FROM products WHERE category_id = p.category_id) FROM products p"
+    ]
+  }
+]

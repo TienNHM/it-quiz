@@ -394,3 +394,21 @@ pre code { background: none; padding: 0; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; }
 }
+
+/* ---------- Tô màu SQL (nền code thường tối; Paper sáng có bản riêng) ---------- */
+:root { --sql-k: #e6c885; --sql-t: #9ec1ff; --sql-f: #b9a7ff; --sql-s: #7ee0b0; --sql-n: #f0a070; --sql-c: #8f93ab; --sql-i: #f1ece0; }
+:root[data-style='paper']:not([data-mode='dark']) { --sql-k: #9a3412; --sql-t: #1d4ed8; --sql-f: #6d28d9; --sql-s: #15803d; --sql-n: #b45309; --sql-c: #6b6b66; --sql-i: #1a1a1a; }
+.sql-k { color: var(--sql-k); font-weight: 600; }
+.sql-t { color: var(--sql-t); }
+.sql-f { color: var(--sql-f); }
+.sql-s { color: var(--sql-s); }
+.sql-n { color: var(--sql-n); }
+.sql-c { color: var(--sql-c); font-style: italic; }
+.sql-i { color: var(--sql-i); }
+/* SQL nằm trong phương án trả lời: gọn hơn, không viền riêng */
+.q-opt pre { margin: 0; flex: 1; min-width: 0; background: transparent; border: 0; padding: 0; box-shadow: none; font-size: 0.82rem; line-height: 1.5; }
+.q-opt pre, .q-opt pre code { color: var(--text); }
+.q-opt pre { --sql-i: var(--text); }
+:root[data-mode='light'] .q-opt pre { --sql-k: #9a3412; --sql-t: #1d4ed8; --sql-f: #6d28d9; --sql-s: #15803d; --sql-n: #b45309; --sql-c: #6b6b66; }
+/* Phương án SQL: xuống dòng thay vì cuộn ngang trong nút (cuộn ngang dễ nhầm với chạm để chọn) */
+.q-opt pre { white-space: pre-wrap; overflow-wrap: anywhere; overflow-x: visible; }

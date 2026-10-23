@@ -1,0 +1,239 @@
+{
+  "id": "sql-d99",
+  "title": "Ngày 99: Tổng kết khóa SQL",
+  "description": "Ôn tổng hợp bốn chặng: anti-join, HAVING, window function, JSONB, ràng buộc, CTE đệ quy, sargable và bảo mật.",
+  "questions": [
+    {
+      "id": "sql-d99-01",
+      "topic": "NOT IN và NULL",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Liệt kê **nhân viên chưa từng bán đơn nào** (cột `orders.employee_id` có NULL ở các đơn online). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT full_name FROM employees\nWHERE employee_id NOT IN\n  (SELECT employee_id FROM orders);\n```",
+        "```sql\nSELECT DISTINCT e.full_name FROM employees e\nLEFT JOIN orders o ON o.employee_id = e.employee_id\nWHERE o.order_id IS NOT NULL;\n```",
+        "```sql\nSELECT full_name FROM employees e\nWHERE NOT EXISTS (SELECT 1 FROM orders o\n  WHERE o.employee_id = e.employee_id);\n```",
+        "```sql\nSELECT e.full_name FROM employees e\nJOIN orders o ON o.employee_id = e.employee_id\nWHERE o.order_id IS NULL;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Nhân viên chưa bán đơn nào là các mã 1, 2, 3 và 7. `NOT EXISTS` xử lý đúng vì chỉ hỏi \"có dòng khớp hay không\", NULL không làm hỏng phép so sánh.\n- Phương án 0: `NOT IN` gặp NULL trong danh sách con nên mọi biểu thức thành \"không xác định\", kết quả **0 dòng**. Đây là bẫy kinh điển của anti-join.\n- Phương án 1: lọc `IS NOT NULL` nên lấy ra chính những người **đã bán** (ngược yêu cầu).\n- Phương án 3: `JOIN` thường không bao giờ cho dòng có `o.order_id IS NULL`, nên kết quả rỗng. Muốn giữ người không có đơn phải dùng `LEFT JOIN`."
+    },
+    {
+      "id": "sql-d99-02",
+      "topic": "GROUP BY + HAVING",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Tìm khách có **tổng chi tiêu trên 45 triệu**. Tổng chi tiêu tính trên các đơn đã thanh toán (mọi trạng thái trừ `pending` và `cancelled`), **sau chiết khấu**. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT customer_id\nFROM orders JOIN order_items i USING (order_id)\nWHERE status NOT IN ('pending', 'cancelled')\nGROUP BY customer_id\nHAVING SUM(quantity*unit_price*(1-discount)) > 45000000;\n```",
+        "```sql\nSELECT customer_id\nFROM orders JOIN order_items i USING (order_id)\nGROUP BY customer_id\nHAVING SUM(quantity*unit_price*(1-discount)) > 45000000;\n```",
+        "```sql\nSELECT customer_id\nFROM orders JOIN order_items i USING (order_id)\nWHERE status = 'delivered'\nGROUP BY customer_id\nHAVING SUM(quantity*unit_price*(1-discount)) > 45000000;\n```",
+        "```sql\nSELECT customer_id\nFROM orders JOIN order_items i USING (order_id)\nWHERE status NOT IN ('pending', 'cancelled')\nGROUP BY customer_id\nHAVING SUM(quantity*unit_price) > 45000000;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Điều kiện trên tổng phải đặt ở `HAVING`, còn điều kiện trên từng dòng (trạng thái đơn) đặt ở `WHERE` trước khi nhóm. Kết quả đúng gồm khách 1, 2, 10, 14, 15 và 18.\n- Phương án 1: quên loại đơn `pending`/`cancelled`, nên khách 4 (có đơn huỷ 32,99 triệu) bị lọt vào danh sách.\n- Phương án 2: chỉ lấy `delivered` nên bỏ sót khách 1 và 15, những người có đơn `shipped`/`paid` đã thanh toán.\n- Phương án 3: bỏ chiết khấu nên tổng bị phình lên, khách 6 (42,0 triệu thật) vượt ngưỡng một cách sai."
+    },
+    {
+      "id": "sql-d99-03",
+      "topic": "RANK và hạng đồng điểm",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Số đơn của mỗi khách: khách 1 có 5 đơn, khách 2 có 4 đơn, ba khách 3, 4, 6 cùng có 3 đơn, các khách còn lại có 2 đơn hoặc ít hơn (khách 5 có 2 đơn). Truy vấn sau trả về giá trị nào?",
+      "code": "WITH t AS (\n  SELECT customer_id, COUNT(*) AS n\n  FROM orders GROUP BY customer_id\n), r AS (\n  SELECT customer_id,\n         RANK() OVER (ORDER BY n DESC) AS hang\n  FROM t\n)\nSELECT hang FROM r WHERE customer_id = 5;",
+      "codeLang": "sql",
+      "options": [
+        "6",
+        "4",
+        "9",
+        "5"
+      ],
+      "answer": 0,
+      "explanation": "`RANK()` cho các dòng đồng điểm cùng một hạng rồi **nhảy cách**: ba khách cùng hạng 3 chiếm các vị trí 3, 4, 5, nên người kế tiếp là hạng 6.\n- 4 là kết quả của `DENSE_RANK()`, không nhảy cách.\n- 5 sẽ đúng nếu chỉ có hai khách đồng hạng 3.\n- 9 không liên quan thứ tự nào của bảng xếp hạng này.\nCâu ôn tập cuối khóa dùng `RANK()` để in kèm hạng, hãy chọn hàm phù hợp với cách bạn muốn đánh số sau khi đồng hạng."
+    },
+    {
+      "id": "sql-d99-04",
+      "topic": "JSONB @>",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Cột `products.attributes` là JSONB. Một số sản phẩm có `\"wireless\": true`, một số có `\"wireless\": false` (Logitech G102), một số không có khóa này. Truy vấn sau trả về bao nhiêu sản phẩm?",
+      "code": "SELECT COUNT(*)\nFROM products\nWHERE attributes @> '{\"wireless\": true}';",
+      "codeLang": "sql",
+      "options": [
+        "4",
+        "5",
+        "6",
+        "7"
+      ],
+      "answer": 1,
+      "explanation": "`@>` kiểm tra JSONB bên trái **chứa** JSONB bên phải, nên chỉ những dòng có đúng cặp `wireless: true` mới được đếm: 5 sản phẩm. Dòng `attributes` NULL hoặc không có khóa này tự bị loại.\n- 6 là kết quả của `attributes ? 'wireless'`: toán tử `?` chỉ kiểm tra khóa **tồn tại**, nên cả chuột G102 (`false`) cũng được tính.\n- 4 và 7 không khớp cách đếm nào của dữ liệu này."
+    },
+    {
+      "id": "sql-d99-05",
+      "topic": "JSONB ->> và ép kiểu",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Lọc sản phẩm có RAM từ 16 GB trở lên từ cột JSONB `attributes`. Câu lệnh nào **gây lỗi** khi chạy?",
+      "options": [
+        "```sql\nSELECT name FROM products\nWHERE (attributes ->> 'ram_gb')::int >= 16;\n```",
+        "```sql\nSELECT name FROM products\nWHERE attributes ->> 'ram_gb' >= '16';\n```",
+        "```sql\nSELECT name FROM products\nWHERE attributes -> 'ram_gb' >= '16';\n```",
+        "```sql\nSELECT name FROM products\nWHERE attributes ->> 'ram_gb' >= 16;\n```"
+      ],
+      "answer": 3,
+      "explanation": "`->>` luôn trả về **text**, mà PostgreSQL không so sánh trực tiếp `text >= integer`, nên phương án 3 báo lỗi \"operator does not exist\".\n- Phương án 0 là cách đúng: ép sang `int` rồi so sánh số.\n- Phương án 1 chạy được nhưng so sánh **chuỗi** (\"8\" lớn hơn \"16\" vì ký tự đầu \"8\" lớn hơn \"1\"), nên cho kết quả sai âm thầm.\n- Phương án 2 so sánh hai giá trị JSONB (so số với số), chạy được nhưng dễ gây hiểu nhầm.\nChạy được chưa chắc là đúng, nhưng ở đây chỉ phương án 3 dừng ngay với lỗi."
+    },
+    {
+      "id": "sql-d99-06",
+      "topic": "ROLLBACK và sequence",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Bảng `orders` đang có đơn lớn nhất là 40. Bạn chạy `BEGIN`, `INSERT` một đơn mới (nhận `order_id` = 41), rồi `ROLLBACK`. Sau đó bạn `INSERT` thêm một đơn khác và `COMMIT`. `order_id` của đơn này là bao nhiêu?",
+      "options": [
+        "41",
+        "42",
+        "40",
+        "báo lỗi vì id 41 đã được dùng"
+      ],
+      "answer": 1,
+      "explanation": "`ROLLBACK` huỷ dòng dữ liệu đã thêm, nhưng **sequence/identity không quay lui**: giá trị 41 đã được cấp và coi như đã tiêu, nên đơn kế tiếp nhận 42.\n- 41 sai vì giả định `ROLLBACK` trả cả bộ đếm về như cũ.\n- 40 là id của đơn cũ, bảng không thể cấp lại.\n- Không có lỗi: dòng 41 chưa bao giờ được lưu, chỉ là số id bị \"nhảy\".\nHệ quả thực tế: đừng dựa vào id liên tục để đếm đơn, hãy dùng `COUNT(*)`."
+    },
+    {
+      "id": "sql-d99-07",
+      "topic": "UNIQUE với NULL",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Cột `customers.email` có ràng buộc `UNIQUE`, và khách số 1 đã dùng email `an.nguyen@gmail.com`. Câu `INSERT` nào **gây lỗi**?",
+      "options": [
+        "```sql\nINSERT INTO customers (full_name, email)\nVALUES ('Khách A', NULL), ('Khách B', NULL);\n```",
+        "```sql\nINSERT INTO customers (full_name, email)\nVALUES ('Khách C', 'an.nguyen@gmail.com');\n```",
+        "```sql\nINSERT INTO customers (full_name)\nVALUES ('Khách D');\n```",
+        "```sql\nINSERT INTO customers (full_name, email)\nVALUES ('Khách E', 'AN.NGUYEN@gmail.com');\n```"
+      ],
+      "answer": 1,
+      "explanation": "Phương án 1 trùng đúng từng ký tự với email đã có, vi phạm `UNIQUE` nên báo lỗi.\n- Phương án 0 chạy được: trong `UNIQUE`, hai giá trị NULL **không** bị coi là trùng nhau (NULL không bằng NULL).\n- Phương án 2 chạy được: cột `email` không có `NOT NULL`, bỏ trống thì nhận NULL.\n- Phương án 3 chạy được: `UNIQUE` so sánh phân biệt hoa thường, nên `AN.NGUYEN@...` là giá trị khác. Muốn chặn cả trường hợp này phải dùng index trên `lower(email)`."
+    },
+    {
+      "id": "sql-d99-08",
+      "topic": "CTE đệ quy",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Danh mục `categories` là cây (`parent_id` trỏ về cha). Lấy mã của danh mục **\"Máy tính\" và mọi danh mục con, cháu của nó** (bao nhiêu cấp cũng được). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT category_id FROM categories\nWHERE parent_id = 1 OR category_id = 1;\n```",
+        "```sql\nWITH RECURSIVE t AS (\n  SELECT * FROM categories WHERE name = 'Máy tính'\n  UNION ALL SELECT c.* FROM categories c\n  JOIN t ON c.category_id = t.parent_id)\nSELECT category_id FROM t;\n```",
+        "```sql\nSELECT category_id FROM categories\nWHERE name LIKE '%Laptop%';\n```",
+        "```sql\nWITH RECURSIVE t AS (\n  SELECT category_id FROM categories WHERE name = 'Máy tính'\n  UNION ALL SELECT c.category_id FROM categories c\n  JOIN t ON c.parent_id = t.category_id)\nSELECT category_id FROM t;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Phần neo lấy \"Máy tính\", phần đệ quy nối `c.parent_id = t.category_id` để đi **xuống** từng cấp con, kết quả gồm các mã 1, 2, 3, 4, 5.\n- Phương án 0: chỉ đi được một cấp, bỏ sót \"Laptop gaming\" và \"Laptop văn phòng\" (cấp cháu).\n- Phương án 1: nối ngược `c.category_id = t.parent_id` nên đi **lên** phía cha, chỉ ra đúng một dòng.\n- Phương án 2: lọc theo tên chỉ lấy các danh mục có chữ Laptop, bỏ sót \"Máy tính\" và \"PC & Màn hình\", đồng thời không liên quan gì đến cấu trúc cây."
+    },
+    {
+      "id": "sql-d99-09",
+      "topic": "LEFT JOIN, điều kiện ở ON",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Bảng `customers` có 18 khách. Chỉ có 3 đơn `cancelled` trong cả bảng `orders` (thuộc 3 khách khác nhau). Truy vấn sau trả về bao nhiêu?",
+      "code": "SELECT COUNT(*)\nFROM customers c\nLEFT JOIN orders o\n  ON o.customer_id = c.customer_id\n AND o.status = 'cancelled';",
+      "codeLang": "sql",
+      "options": [
+        "18",
+        "3",
+        "21",
+        "40"
+      ],
+      "answer": 0,
+      "explanation": "Điều kiện `status = 'cancelled'` nằm trong `ON`, nên nó chỉ quyết định dòng nào của `orders` được ghép. `LEFT JOIN` vẫn giữ **mọi** khách: 3 khách có một đơn huỷ được ghép đúng một dòng, 15 khách còn lại ghép với NULL. Tổng 18 dòng.\n- Nếu đưa điều kiện sang `WHERE o.status = 'cancelled'` thì các dòng NULL bị loại và còn 3 (LEFT JOIN biến thành INNER JOIN).\n- 21 là phép cộng sai (18 + 3); 40 là tổng số đơn hàng."
+    },
+    {
+      "id": "sql-d99-10",
+      "topic": "Điều kiện sargable",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Bảng `orders` rất lớn, có index B-tree trên `order_date` (kiểu `TIMESTAMPTZ`). Cách viết điều kiện nào lấy **đúng mọi đơn năm 2025** mà vẫn dùng được index?",
+      "options": [
+        "```sql\nWHERE EXTRACT(YEAR FROM order_date) = 2025\n```",
+        "```sql\nWHERE order_date::date <= '2025-12-31'\n  AND order_date::date >= '2025-01-01'\n```",
+        "```sql\nWHERE order_date BETWEEN '2025-01-01'\n  AND '2025-12-31'\n```",
+        "```sql\nWHERE order_date >= '2025-01-01'\n  AND order_date < '2026-01-01'\n```"
+      ],
+      "answer": 3,
+      "explanation": "Khoảng nửa mở `>= đầu năm` và `< đầu năm sau` đặt thẳng trên cột nên planner dùng được index, lại không bỏ sót đơn nào trong ngày cuối năm.\n- Phương án 0 và 1 bọc hàm hoặc ép kiểu quanh cột nên index trên `order_date` không còn áp dụng được, buộc đọc toàn bảng.\n- Phương án 2 dùng được index nhưng **sai kết quả**: `BETWEEN` tới `2025-12-31 00:00`, nên đơn đặt lúc 15 giờ ngày 31/12 bị bỏ sót."
+    },
+    {
+      "id": "sql-d99-11",
+      "topic": "SQL injection",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "API tìm khách theo email nhận chuỗi `email` từ người dùng. Cách nào **ngăn được** SQL injection?",
+      "options": [
+        "gửi câu SQL có chỗ trống (placeholder) và dữ liệu tách riêng, tức là truy vấn tham số hóa",
+        "ghép chuỗi nhưng xóa hết dấu nháy đơn trong dữ liệu nhập",
+        "kiểm tra dữ liệu nhập bằng JavaScript ở trình duyệt rồi ghép chuỗi ở server",
+        "ghép chuỗi nhưng chỉ cấp cho user kết nối quyền đọc dữ liệu"
+      ],
+      "answer": 0,
+      "explanation": "Truy vấn tham số hóa gửi câu SQL và dữ liệu **tách nhau**, nên dữ liệu không bao giờ bị hiểu thành lệnh, bất kể nó chứa gì.\n- Xóa dấu nháy đơn là chặn theo danh sách đen: dễ sót cách tấn công khác và làm hỏng dữ liệu hợp lệ (ví dụ họ O'Connor).\n- Kiểm tra ở trình duyệt có thể bị bỏ qua hoàn toàn bằng cách gọi thẳng API.\n- Quyền tối thiểu rất nên có, nhưng chỉ **giảm thiệt hại**; kẻ tấn công vẫn đọc được mọi bảng mà user đó được SELECT."
+    },
+    {
+      "id": "sql-d99-12",
+      "topic": "Chia nguyên và FILTER",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Tính **tỷ lệ phần trăm đơn kênh online** trên tổng số đơn, làm tròn 1 chữ số thập phân (25 trên 40 đơn, kết quả mong muốn là 62.5). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT ROUND(100 * COUNT(*) FILTER\n  (WHERE channel = 'online') / COUNT(*), 1)\nFROM orders;\n```",
+        "```sql\nSELECT ROUND(100.0 * COUNT(*) FILTER\n  (WHERE channel = 'online') / COUNT(*), 1)\nFROM orders;\n```",
+        "```sql\nSELECT ROUND(COUNT(*) FILTER\n  (WHERE channel = 'online') / COUNT(*) * 100, 1)\nFROM orders;\n```",
+        "```sql\nSELECT ROUND(100.0 * COUNT(*) FILTER\n  (WHERE channel = 'online') / COUNT(*) FILTER\n  (WHERE channel = 'offline'), 1) FROM orders;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Nhân với `100.0` (số thập phân) trước khi chia để phép chia là chia thập phân, `FILTER` đếm riêng đơn online: 100.0 * 25 / 40 = 62.5.\n- Phương án 0: `100 * 25 / 40` toàn số nguyên nên cắt phần lẻ còn 62, `ROUND` không cứu được.\n- Phương án 2: `25 / 40` chia nguyên ra 0 trước, nhân 100 vẫn là 0.\n- Phương án 3: chia cho số đơn **offline** (15) thay vì tổng số đơn, ra 166.7."
+    },
+    {
+      "id": "sql-d99-13",
+      "topic": "Quan hệ n-n và 3NF",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Đề thư viện: một đầu sách có thể có nhiều tác giả, một tác giả viết nhiều sách. Thiết kế nào đúng nguyên tắc chuẩn hóa?",
+      "options": [
+        "cột `author_ids` trong `books`, lưu các id cách nhau bằng dấu phẩy",
+        "ba cột `author1`, `author2`, `author3` trong `books`",
+        "bảng `book_authors(book_id, author_id)` có khóa chính ghép và hai khóa ngoại",
+        "cột `book_id` trong `authors`, mỗi tác giả gắn với một sách"
+      ],
+      "answer": 2,
+      "explanation": "Quan hệ nhiều-nhiều luôn tách thành **bảng trung gian**, mỗi dòng là một cặp (sách, tác giả); khóa chính ghép chặn trùng cặp và khóa ngoại giữ toàn vẹn.\n- Phương án 0 vi phạm 1NF (nhiều giá trị trong một ô), không dùng được khóa ngoại và JOIN.\n- Phương án 1 giới hạn cứng ba tác giả, nhiều cột NULL và truy vấn \"sách của tác giả X\" phải xét cả ba cột.\n- Phương án 3 chỉ cho mỗi tác giả một sách, tức là biến quan hệ thành 1-n, sai nghiệp vụ."
+    },
+    {
+      "id": "sql-d99-14",
+      "topic": "Lưu mật khẩu",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Một API đăng nhập cần lưu và kiểm tra mật khẩu người dùng. Cách làm nào đúng?",
+      "options": [
+        "lưu mật khẩu rõ, kiểm tra bằng `WHERE password = %s` cho nhanh",
+        "lưu MD5 không salt, vì chuỗi băm không thể đảo ngược",
+        "mã hóa Base64 rồi lưu, đủ để người khác không đọc được",
+        "lưu hash có salt (bcrypt, argon2), lấy hash theo username rồi so sánh ở ứng dụng"
+      ],
+      "answer": 3,
+      "explanation": "Hash có salt dùng thuật toán chậm chuyên cho mật khẩu (bcrypt, argon2): lộ cơ sở dữ liệu cũng khó tìm lại mật khẩu gốc. Ứng dụng lấy hash theo `username` bằng truy vấn tham số hóa rồi so sánh.\n- Lưu mật khẩu rõ: lộ dữ liệu là lộ toàn bộ tài khoản (và mật khẩu người dùng dùng lại ở nơi khác).\n- MD5 không salt: tính cực nhanh và có sẵn bảng tra, bị dò ngược hàng loạt.\n- Base64 chỉ là cách **biểu diễn**, ai cũng giải ngược được, không phải mã hóa bảo mật."
+    },
+    {
+      "id": "sql-d99-15",
+      "topic": "COUNT DISTINCT và doanh thu theo tháng",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Thống kê **mỗi tháng**: số đơn và doanh thu (sau chiết khấu) của các đơn đã thanh toán, tức mọi trạng thái trừ `pending` và `cancelled`. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT DATE_TRUNC('month', order_date)::date AS thang,\n  COUNT(*) AS so_don,\n  ROUND(SUM(quantity*unit_price*(1-discount))) AS dt\nFROM orders JOIN order_items USING (order_id)\nWHERE status NOT IN ('pending','cancelled')\nGROUP BY 1;\n```",
+        "```sql\nSELECT DATE_TRUNC('month', order_date)::date AS thang,\n  COUNT(DISTINCT order_id) AS so_don,\n  ROUND(SUM(quantity*unit_price)) AS dt\nFROM orders JOIN order_items USING (order_id)\nWHERE status NOT IN ('pending','cancelled')\nGROUP BY 1;\n```",
+        "```sql\nSELECT DATE_TRUNC('month', order_date)::date AS thang,\n  COUNT(DISTINCT order_id) AS so_don,\n  ROUND(SUM(quantity*unit_price*(1-discount))) AS dt\nFROM orders JOIN order_items USING (order_id)\nWHERE status NOT IN ('pending','cancelled')\nGROUP BY 1;\n```",
+        "```sql\nSELECT DATE_TRUNC('month', order_date)::date AS thang,\n  COUNT(DISTINCT order_id) AS so_don,\n  ROUND(SUM(quantity*unit_price*(1-discount))) AS dt\nFROM orders JOIN order_items USING (order_id)\nGROUP BY 1;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Sau `JOIN` với `order_items`, một đơn có nhiều dòng hàng xuất hiện nhiều lần, nên phải đếm `COUNT(DISTINCT order_id)`; doanh thu lấy `quantity*unit_price*(1-discount)`, và lọc trạng thái ở `WHERE` trước khi nhóm.\n- Phương án 0: `COUNT(*)` đếm **dòng hàng** chứ không đếm đơn nên `so_don` phình lên (bẫy nhân dòng).\n- Phương án 1: bỏ `(1-discount)` nên doanh thu cao hơn thực tế ở các đơn có giảm giá.\n- Phương án 3: quên loại đơn `pending`/`cancelled`, nên doanh thu và số đơn tính cả những đơn chưa thu được tiền."
+    },
+    {
+      "id": "sql-d99-16",
+      "topic": "Window function chạy sau WHERE",
+      "source": "Ngày 99 - Tổng kết",
+      "question": "Bảng `orders` có 1 đơn trong tháng 03/2026; cộng dồn từ đầu đến hết tháng đó là 30 đơn. Truy vấn sau trả về giá trị nào?",
+      "code": "WITH m AS (\n  SELECT DATE_TRUNC('month', order_date)::date AS thang,\n         COUNT(*) AS n\n  FROM orders GROUP BY 1\n)\nSELECT SUM(n) OVER (ORDER BY thang) AS luy_ke\nFROM m\nWHERE thang = '2026-03-01';",
+      "codeLang": "sql",
+      "options": [
+        "30",
+        "25",
+        "1",
+        "40"
+      ],
+      "answer": 2,
+      "explanation": "Thứ tự xử lý là `WHERE` trước, window function sau. Khi window chạy thì chỉ còn đúng một dòng (tháng 03/2026), nên `SUM(n) OVER (ORDER BY thang)` chỉ cộng dòng đó và ra **1**.\n- 30 là con số bạn mong đợi nếu window nhìn thấy các tháng trước, nhưng chúng đã bị `WHERE` loại.\n- 25 là số đơn lũy kế đến hết năm 2025, không liên quan truy vấn này.\n- 40 là tổng mọi đơn, chỉ có khi không lọc tháng.\nMuốn lấy lũy kế rồi mới lọc tháng, hãy tính window trong CTE/subquery bên trong, và đặt `WHERE` ở truy vấn ngoài."
+    }
+  ]
+}

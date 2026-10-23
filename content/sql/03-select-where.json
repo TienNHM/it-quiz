@@ -1,0 +1,209 @@
+{
+  "id": "sql-d03",
+  "title": "Ngày 3: SELECT và WHERE",
+  "description": "Chọn cột, lọc dòng bằng điều kiện, LIKE, BETWEEN và bẫy NULL trong logic ba trị.",
+  "questions": [
+    {
+      "id": "sql-d03-01",
+      "topic": "Alias và dấu nháy",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Bạn muốn đặt tên cột hiển thị là \"Tên sản phẩm\" (có dấu cách và tiếng Việt). Câu lệnh nào gây lỗi trong PostgreSQL?",
+      "options": [
+        "```sql\nSELECT name AS \"Tên sản phẩm\"\nFROM products;\n```",
+        "```sql\nSELECT name AS 'Tên sản phẩm'\nFROM products;\n```",
+        "```sql\nSELECT name AS ten\nFROM products;\n```",
+        "```sql\nSELECT price * 1.1 AS gia_co_vat\nFROM products;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Trong PostgreSQL, ngoặc đơn `'...'` là giá trị chuỗi, ngoặc kép `\"...\"` là tên (cột, bảng, alias). Vì vậy `AS 'Tên sản phẩm'` báo `syntax error at or near \"'Tên sản phẩm'\"`.\n- `AS \"Tên sản phẩm\"` đúng chuẩn: alias có dấu cách và tiếng Việt phải bọc ngoặc kép.\n- `AS ten` hợp lệ vì alias đơn giản không cần ngoặc.\n- `price * 1.1 AS gia_co_vat` hợp lệ: cột tính toán có alias không dấu.\nLưu ý MySQL chấp nhận `AS 'Tên'` nên dễ nhầm khi chuyển sang PostgreSQL."
+    },
+    {
+      "id": "sql-d03-02",
+      "topic": "Chuỗi và tên cột",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Câu lệnh nào gây lỗi khi chạy trên bảng `customers`?",
+      "options": [
+        "```sql\nSELECT full_name\nFROM customers\nWHERE city = 'Hà Nội';\n```",
+        "```sql\nSELECT full_name\nFROM customers\nWHERE \"city\" = 'Hà Nội';\n```",
+        "```sql\nSELECT full_name\nFROM customers\nWHERE city = \"Hà Nội\";\n```",
+        "```sql\nSELECT full_name\nFROM customers\nWHERE city ILIKE 'hà nội';\n```"
+      ],
+      "answer": 2,
+      "explanation": "Câu `city = \"Hà Nội\"` viết giá trị bằng ngoặc kép nên PostgreSQL tìm một **cột** tên `Hà Nội` và báo `column \"Hà Nội\" does not exist`.\n- `city = 'Hà Nội'` đúng: giá trị chuỗi dùng ngoặc đơn.\n- `\"city\" = 'Hà Nội'` vẫn chạy: bọc tên cột bằng ngoặc kép là hợp lệ (cột tên chữ thường).\n- `city ILIKE 'hà nội'` chạy được, chỉ khác là không phân biệt hoa thường."
+    },
+    {
+      "id": "sql-d03-03",
+      "topic": "Thứ tự AND, OR và ngoặc",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Liệt kê `sku`, `name` của sản phẩm thuộc nhóm 7 hoặc nhóm 8, có giá dưới 10 triệu **và** còn hàng (`stock_quantity > 0`). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT sku, name\nFROM products\nWHERE category_id IN (7, 8)\n  AND price < 10000000\n  AND stock_quantity > 0;\n```",
+        "```sql\nSELECT sku, name\nFROM products\nWHERE category_id = 7 OR category_id = 8\n  AND price < 10000000\n  AND stock_quantity > 0;\n```",
+        "```sql\nSELECT sku, name\nFROM products\nWHERE category_id IN (7, 8)\n  AND price < 10000000\n   OR stock_quantity > 0;\n```",
+        "```sql\nSELECT sku, name\nFROM products\nWHERE category_id IN (7, 8)\n  AND price <= 10000000\n  AND stock_quantity >= 0;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng gom nhóm bằng `IN (7, 8)` rồi nối các điều kiện bằng `AND`, cho 2 dòng.\n- Dạng `category_id = 7 OR category_id = 8 AND ...` (không ngoặc): `AND` được tính trước `OR`, nên hiểu thành `category_id = 7 OR (category_id = 8 AND ...)`. Mọi điện thoại (nhóm 7) lọt vào dù đắt hay hết hàng, ra 5 dòng.\n- Dạng `... AND price < 10000000 OR stock_quantity > 0` làm mọi sản phẩm còn hàng lọt vào, ra 22 dòng.\n- Dạng `<=` và `>= 0`: đổi `<` thành `<=` và `> 0` thành `>= 0` nên sai ngưỡng, ra 3 dòng.\nQuy tắc: trộn `AND` với `OR` thì đặt ngoặc, hoặc dùng `IN`."
+    },
+    {
+      "id": "sql-d03-04",
+      "topic": "IS NULL",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Tìm các khách hàng chưa có số điện thoại (cột `phone` là `NULL`). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT full_name, phone\nFROM customers\nWHERE phone = NULL;\n```",
+        "```sql\nSELECT full_name, phone\nFROM customers\nWHERE phone = '';\n```",
+        "```sql\nSELECT full_name, phone\nFROM customers\nWHERE phone IS NOT NULL;\n```",
+        "```sql\nSELECT full_name, phone\nFROM customers\nWHERE phone IS NULL;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Chỉ `IS NULL` kiểm tra được giá trị chưa biết, cho 4 khách.\n- `phone = NULL`: so sánh với `NULL` luôn cho `UNKNOWN`, `WHERE` chỉ giữ dòng `TRUE` nên ra 0 dòng (không báo lỗi).\n- `phone = ''`: so với chuỗi rỗng, khác hẳn `NULL` (không biết), cũng ra 0 dòng.\n- `phone IS NOT NULL`: lấy đúng 14 khách ngược lại."
+    },
+    {
+      "id": "sql-d03-05",
+      "topic": "BETWEEN với ngày giờ",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Lấy `order_id`, `order_date` của các đơn đặt trong ngày 11/11/2025 (cột `order_date` kiểu `TIMESTAMPTZ`, có cả giờ). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT order_id, order_date\nFROM orders\nWHERE order_date BETWEEN '2025-11-11'\n  AND '2025-11-11';\n```",
+        "```sql\nSELECT order_id, order_date\nFROM orders\nWHERE order_date >= '2025-11-11'\n  AND order_date < '2025-11-12';\n```",
+        "```sql\nSELECT order_id, order_date\nFROM orders\nWHERE order_date = '2025-11-11';\n```",
+        "```sql\nSELECT order_id, order_date\nFROM orders\nWHERE order_date >= '2025-11-11'\n  AND order_date < '2025-11-11 23:00';\n```"
+      ],
+      "answer": 1,
+      "explanation": "Với cột ngày giờ, dùng khoảng nửa mở `>= đầu ngày AND < đầu ngày hôm sau`, cho 2 đơn (19:00 và 23:30).\n- `BETWEEN ... AND ...` cùng một ngày: `'2025-11-11'` được hiểu là 00:00:00 nên chỉ khớp đúng nửa đêm, ra 0 dòng.\n- `order_date = '2025-11-11'`: cũng chỉ khớp đúng 00:00:00, ra 0 dòng.\n- Cận trên `23:00` cắt mất đơn lúc 23:30, chỉ ra 1 dòng."
+    },
+    {
+      "id": "sql-d03-06",
+      "topic": "Toán tử <> và NULL",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Bảng `customers` có 18 khách, trong đó 4 người ở Hà Nội và 2 người có `city` là `NULL`. Truy vấn dưới trả về bao nhiêu dòng?",
+      "code": "SELECT customer_id\nFROM customers\nWHERE city <> 'Hà Nội';",
+      "codeLang": "sql",
+      "options": [
+        "14",
+        "4",
+        "12",
+        "18"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là **12**: 18 trừ 4 khách ở Hà Nội trừ 2 khách có `city` là `NULL`.\n- 14 là kết quả nếu quên mất `NULL`: nhưng `NULL <> 'Hà Nội'` cho `UNKNOWN` nên 2 dòng này bị `WHERE` loại.\n- 4 là số khách Hà Nội, đúng là kết quả của `city = 'Hà Nội'` chứ không phải `<>`.\n- 18 là toàn bộ bảng, bỏ qua điều kiện lọc.\nMuốn lấy 14 dòng, viết `city IS DISTINCT FROM 'Hà Nội'` hoặc thêm `OR city IS NULL`."
+    },
+    {
+      "id": "sql-d03-07",
+      "topic": "NOT LIKE và NULL",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Bảng `customers` có 18 khách: 10 người dùng email đuôi `@gmail.com`, 2 người có `email` là `NULL`, còn lại dùng email khác. Truy vấn dưới trả về bao nhiêu dòng?",
+      "code": "SELECT customer_id\nFROM customers\nWHERE email NOT LIKE '%@gmail.com';",
+      "codeLang": "sql",
+      "options": [
+        "6",
+        "8",
+        "10",
+        "2"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng là **6**: 18 trừ 10 người dùng Gmail trừ 2 người có `email` là `NULL`.\n- 8 là kết quả nếu tưởng `NOT LIKE` giữ cả dòng `NULL`: nhưng `NULL NOT LIKE '...'` cho `UNKNOWN` nên 2 dòng này bị `WHERE` loại. Muốn có 8 phải thêm `OR email IS NULL`.\n- 10 là số khách dùng Gmail, tức kết quả của `LIKE` chứ không phải `NOT LIKE`.\n- 2 là số khách chưa có email, không liên quan tới điều kiện này."
+    },
+    {
+      "id": "sql-d03-08",
+      "topic": "BETWEEN gồm hai đầu",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Bảng `products` có một sản phẩm giá đúng 1.890.000 và một sản phẩm giá đúng 2.690.000. Truy vấn nào cho kết quả giống hệt `WHERE price BETWEEN 1890000 AND 2690000`?",
+      "options": [
+        "```sql\nSELECT sku FROM products\nWHERE price > 1890000\n  AND price < 2690000;\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price >= 1890000\n  AND price < 2690000;\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price >= 1890000\n  AND price <= 2690000;\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price > 1890000\n  AND price <= 2690000;\n```"
+      ],
+      "answer": 2,
+      "explanation": "`BETWEEN a AND b` tương đương `>= a AND <= b`: **gồm cả hai đầu mút**, cho 3 sản phẩm (kể cả hai sản phẩm giá đúng ở biên).\n- `> a AND < b` loại cả hai đầu, chỉ còn 1 dòng.\n- `>= a AND < b` loại đầu trên (2.690.000), còn 2 dòng.\n- `> a AND <= b` loại đầu dưới (1.890.000), cũng còn 2 dòng.\nCột này là số nên dùng `BETWEEN` an toàn; với cột ngày giờ thì không."
+    },
+    {
+      "id": "sql-d03-09",
+      "topic": "IS DISTINCT FROM",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Lấy mọi khách **không ở Hà Nội**, tính cả khách chưa ghi thành phố (`city` là `NULL`), tổng 14 dòng. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT customer_id, city\nFROM customers\nWHERE city <> 'Hà Nội';\n```",
+        "```sql\nSELECT customer_id, city\nFROM customers\nWHERE city IS DISTINCT FROM 'Hà Nội';\n```",
+        "```sql\nSELECT customer_id, city\nFROM customers\nWHERE city NOT IN ('Hà Nội', NULL);\n```",
+        "```sql\nSELECT customer_id, city\nFROM customers\nWHERE city <> 'Hà Nội'\n  AND city IS NULL;\n```"
+      ],
+      "answer": 1,
+      "explanation": "`IS DISTINCT FROM` coi `NULL` là một giá trị bình thường khi so sánh nên trả đủ 14 dòng (tương đương `city <> 'Hà Nội' OR city IS NULL`).\n- `city <> 'Hà Nội'` chỉ ra 12 dòng, vì `NULL <> 'Hà Nội'` là `UNKNOWN`.\n- `NOT IN ('Hà Nội', NULL)` chứa `NULL` trong danh sách, biểu thức không bao giờ `TRUE`, ra 0 dòng.\n- Nối bằng `AND city IS NULL` là lỗi `AND`/`OR`: không dòng nào vừa khác Hà Nội vừa `NULL` (đã `NULL` thì phép `<>` là `UNKNOWN`), ra 0 dòng."
+    },
+    {
+      "id": "sql-d03-10",
+      "topic": "Alias, NULL và điều kiện phủ định",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Rà soát sản phẩm có tiền lãi (`price - cost_price`) **dưới 3 triệu**, cùng với các sản phẩm chưa có giá nhập (`cost_price` là `NULL`). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT sku, name\nFROM products\nWHERE profit < 3000000;\n```",
+        "```sql\nSELECT sku, name\nFROM products\nWHERE price - cost_price < 3000000;\n```",
+        "```sql\nSELECT sku, name\nFROM products\nWHERE price - cost_price < 3000000\n   OR cost_price IS NULL;\n```",
+        "```sql\nSELECT sku, name\nFROM products\nWHERE price - cost_price < 3000000\n  AND cost_price IS NULL;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Phải thêm `OR cost_price IS NULL`, vì với sản phẩm thiếu giá nhập, `price - cost_price` là `NULL` nên điều kiện là `UNKNOWN` và bị loại. Đáp án đúng ra 22 dòng.\n- `WHERE profit < ...`: `profit` chỉ là alias, `WHERE` chạy trước `SELECT` nên báo lỗi `column \"profit\" does not exist`.\n- Chỉ có `price - cost_price < 3000000` ra 20 dòng, thiếu 2 sản phẩm chưa có giá nhập.\n- Nối bằng `AND` ra 0 dòng: dòng `NULL` không thể vừa `UNKNOWN` vừa `TRUE`."
+    },
+    {
+      "id": "sql-d03-11",
+      "topic": "LIKE và hoa thường",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Trong bảng có sản phẩm tên \"MacBook Air M2 13 inch\". Truy vấn dưới trả về bao nhiêu dòng trên PostgreSQL?",
+      "code": "SELECT sku\nFROM products\nWHERE name LIKE '%macbook%';",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "1",
+        "24",
+        "lỗi cú pháp"
+      ],
+      "answer": 0,
+      "explanation": "Trong PostgreSQL, `LIKE` **phân biệt hoa thường**: mẫu `%macbook%` không khớp \"MacBook\", nên kết quả là **0** dòng (không báo lỗi).\n- 1 sẽ là kết quả của `ILIKE '%macbook%'` hoặc `LIKE '%MacBook%'`.\n- 24 là toàn bộ bảng: chỉ đúng nếu mẫu khớp mọi dòng, mà mẫu này đòi chuỗi `macbook` viết thường.\n- \"lỗi cú pháp\" sai: `%` là ký tự đại diện hợp lệ, câu lệnh chạy bình thường."
+    },
+    {
+      "id": "sql-d03-12",
+      "topic": "DISTINCT nhiều cột",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Truy vấn `SELECT DISTINCT status, channel FROM orders;` làm gì?",
+      "options": [
+        "Chỉ bỏ trùng theo cột `status`, còn `channel` lấy giá trị của dòng đầu tiên",
+        "Trả về hai danh sách riêng: các `status` khác nhau và các `channel` khác nhau",
+        "Báo lỗi vì `DISTINCT` chỉ dùng được với một cột",
+        "Trả về mỗi cặp (`status`, `channel`) khác nhau đúng một lần"
+      ],
+      "answer": 3,
+      "explanation": "`DISTINCT` áp dụng cho **cả bộ cột** sau nó: mỗi cặp (`status`, `channel`) khác nhau xuất hiện một lần. Trên dữ liệu thật có 5 trạng thái và 2 kênh nhưng chỉ ra 6 dòng, vì không phải tổ hợp nào cũng tồn tại. Các dòng `NULL` (nếu có) được gom thành một.\n- Bỏ trùng chỉ theo `status` là hiểu sai: `DISTINCT` không chỉ áp lên cột đầu.\n- Kết quả luôn là một bảng các dòng, không tách thành hai danh sách.\n- `DISTINCT` dùng được với nhiều cột, không báo lỗi."
+    },
+    {
+      "id": "sql-d03-13",
+      "topic": "Thứ tự xử lý FROM-WHERE-SELECT",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Vì sao `SELECT price * 2 AS gia_doi FROM products WHERE gia_doi > 1000000;` báo lỗi `column \"gia_doi\" does not exist`?",
+      "options": [
+        "Alias chỉ được phép dùng khi bọc trong ngoặc kép",
+        "`WHERE` không thể so sánh với kết quả của phép nhân",
+        "`price * 2` cho kết quả `NULL` nên không so sánh được",
+        "`WHERE` được xử lý trước bước tính cột, lúc đó alias `gia_doi` chưa tồn tại"
+      ],
+      "answer": 3,
+      "explanation": "Thứ tự xử lý logic là `FROM` -> `WHERE` -> `SELECT`: `WHERE` lọc từng dòng trước khi `SELECT` tính cột và đặt alias, nên alias chưa tồn tại. Cách sửa là lặp lại biểu thức: `WHERE price * 2 > 1000000`.\n- Ngoặc kép chỉ cần cho alias có dấu cách hoặc chữ hoa, không liên quan lỗi này.\n- `WHERE` so sánh được với biểu thức bất kỳ, kể cả phép nhân.\n- `price * 2` chỉ là `NULL` khi `price` là `NULL`, và dù vậy lỗi ở đây là thiếu cột chứ không phải so sánh sai."
+    },
+    {
+      "id": "sql-d03-14",
+      "topic": "Logic ba trị",
+      "source": "Ngày 3 - SELECT và WHERE",
+      "question": "Khi một điều kiện là `UNKNOWN` (do có `NULL`), phát biểu nào về `WHERE` là đúng?",
+      "options": [
+        "`UNKNOWN AND FALSE` cho `UNKNOWN`, nên dòng đó vẫn được giữ lại",
+        "`UNKNOWN OR TRUE` cho `TRUE`, nên dòng đó được giữ lại",
+        "`WHERE` giữ cả dòng `TRUE` lẫn `UNKNOWN`",
+        "`NOT UNKNOWN` cho `TRUE`, nên dòng đó được giữ lại"
+      ],
+      "answer": 1,
+      "explanation": "`TRUE OR UNKNOWN` chắc chắn là `TRUE` dù giá trị chưa biết là gì, nên dòng được giữ. Ví dụ `city <> 'Hà Nội' OR city IS NULL` giữ cả dòng `NULL`.\n- `UNKNOWN AND FALSE` là `FALSE` (chắc chắn sai), không phải `UNKNOWN`, và dòng bị loại.\n- `WHERE` chỉ giữ dòng `TRUE`, dòng `UNKNOWN` bị loại giống `FALSE`.\n- `NOT UNKNOWN` vẫn là `UNKNOWN`, nên dòng bị loại."
+    }
+  ]
+}

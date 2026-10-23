@@ -1,0 +1,245 @@
+{
+  "id": "sql-d30",
+  "title": "Ngày 30: Bảo mật cơ sở dữ liệu",
+  "description": "Role, GRANT/REVOKE theo từng tầng, quyền tối thiểu, RLS, SQL injection, lưu mật khẩu và sao lưu trên DSC Shop.",
+  "questions": [
+    {
+      "topic": "Role, user và nhóm quyền",
+      "question": "Trong PostgreSQL, user và nhóm quyền (group) khác nhau thế nào?",
+      "options": [
+        "là hai loại đối tượng riêng, mỗi loại có danh mục hệ thống riêng",
+        "role không có LOGIN là user, role có LOGIN là nhóm quyền",
+        "chỉ có role: có LOGIN thì đăng nhập được, NOLOGIN thì dùng làm nhóm",
+        "role thuộc từng database, cùng tên ở hai database là hai role khác nhau"
+      ],
+      "answer": 2,
+      "explanation": "PostgreSQL chỉ có **một** khái niệm là role. Thuộc tính `LOGIN` quyết định role đó dùng để đăng nhập (thường gọi là user); role `NOLOGIN` dùng làm nhóm: cấp quyền cho nhóm, rồi `GRANT nhom TO user`. `CREATE USER x` chỉ là cách viết tắt của `CREATE ROLE x LOGIN`.\n- Phương án đầu sai: không có hai loại đối tượng riêng.\n- Phương án hai đảo ngược: có `LOGIN` mới là user.\n- Phương án cuối sai: role thuộc cả **cluster** (cả server), dùng chung cho mọi database; chỉ quyền trên bảng mới gắn với từng database.",
+      "id": "sql-d30-01",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "USAGE trên schema",
+      "question": "Role `report_user` đã được `GRANT SELECT ON shop.products`. Khi chạy `SELECT count(*) FROM products;` nó nhận lỗi `relation \"products\" does not exist`, dù bảng vẫn còn. Role này còn thiếu gì?",
+      "options": [
+        "quyền ghi dữ liệu (insert) trên bảng products",
+        "quyền USAGE trên schema shop",
+        "quyền CONNECT trên bảng products",
+        "quyền tạo bảng trong schema public"
+      ],
+      "answer": 1,
+      "explanation": "Để đọc một bảng cần đủ ba tầng: `CONNECT` trên database, `USAGE` trên schema, `SELECT` trên bảng. Thiếu `USAGE` trên `shop` thì với role này schema như không tồn tại, `search_path` bỏ qua nó nên báo `does not exist` (lỗi dễ gây hiểu nhầm vì bảng vẫn còn đó).\n- `INSERT` không liên quan đến việc đọc.\n- `CONNECT` là quyền trên **database**, không có trên bảng. Đã kết nối được thì mới thấy lỗi này.\n- `CREATE` trên schema `public` là quyền tạo bảng, không giúp thấy bảng trong `shop`.\nCách sửa: `GRANT USAGE ON SCHEMA shop TO report_user;`.",
+      "id": "sql-d30-02",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "GRANT mức cột",
+      "question": "Role `support_staff` (NOLOGIN) đã có `USAGE` trên schema `shop`. Nhân viên chăm sóc khách chỉ được xem `customer_id`, `full_name`, `phone` của bảng `customers`, không được xem `email` hay `birth_date`. Lệnh nào đúng?",
+      "options": [
+        "```sql\nGRANT SELECT (customer_id, full_name, phone)\nON customers TO support_staff;\n```",
+        "```sql\nGRANT SELECT ON customers\nTO support_staff;\n```",
+        "```sql\nGRANT SELECT ON customers\n  (customer_id, full_name, phone)\nTO support_staff;\n```",
+        "```sql\nGRANT SELECT (full_name, phone)\nON customers TO support_staff;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Quyền mức cột viết `GRANT SELECT (cot1, cot2) ON bang TO role`: danh sách cột đứng **ngay sau** quyền, trước `ON`.\n- Phương án hai cấp `SELECT` cả bảng, nên role thấy luôn `email` và `birth_date`.\n- Phương án ba đặt danh sách cột sau tên bảng: sai cú pháp, PostgreSQL báo lỗi.\n- Phương án cuối chạy được nhưng thiếu `customer_id`, nên không đủ ba cột yêu cầu.\nKiểm tra bằng `has_column_privilege(role, bang, cot, 'SELECT')`.",
+      "id": "sql-d30-03",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "Nhóm quyền và thành viên",
+      "question": "Đã có sẵn nhóm `shop_readonly` (NOLOGIN) và user `report_user` (LOGIN), cả hai chưa có quyền gì. Muốn `report_user` đọc được bảng `products` thông qua nhóm, bộ lệnh nào đủ và đúng?",
+      "options": [
+        "```sql\nGRANT SELECT ON products TO shop_readonly;\nGRANT shop_readonly TO report_user;\n```",
+        "```sql\nGRANT USAGE ON SCHEMA shop TO shop_readonly;\nGRANT SELECT ON products TO shop_readonly;\n```",
+        "```sql\nGRANT USAGE ON SCHEMA shop TO shop_readonly;\nGRANT SELECT ON products TO shop_readonly;\nGRANT report_user TO shop_readonly;\n```",
+        "```sql\nGRANT USAGE ON SCHEMA shop TO shop_readonly;\nGRANT SELECT ON products TO shop_readonly;\nGRANT shop_readonly TO report_user;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Cần đủ cả ba việc: `USAGE` trên schema, `SELECT` trên bảng (cấp cho nhóm), và đưa `report_user` vào nhóm bằng `GRANT shop_readonly TO report_user` (thành viên thừa hưởng quyền của nhóm).\n- Phương án đầu thiếu `USAGE`: chạy `SET ROLE report_user` rồi đọc sẽ báo `relation \"products\" does not exist`.\n- Phương án hai thiếu việc thêm thành viên: `report_user` vẫn chưa có quyền gì.\n- Phương án ba **đảo chiều** thành viên: `GRANT report_user TO shop_readonly` làm nhóm là thành viên của user, nên user không thừa hưởng gì.\nKết quả thật với phương án đúng: `count(*)` đọc được 24 sản phẩm.",
+      "id": "sql-d30-04",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "has_column_privilege",
+      "question": "Chạy đoạn sau (bằng superuser). Kết quả của câu `SELECT` cuối là gì?",
+      "code": "CREATE ROLE accountant NOLOGIN;\nGRANT USAGE ON SCHEMA shop TO accountant;\nGRANT SELECT (order_id, status) ON orders TO accountant;\n\nSELECT has_column_privilege('accountant', 'orders', 'status', 'SELECT') AS a,\n       has_column_privilege('accountant', 'orders', 'customer_id', 'SELECT') AS b,\n       has_table_privilege('accountant', 'orders', 'SELECT') AS c;",
+      "codeLang": "sql",
+      "options": [
+        "true | true | true",
+        "true | false | false",
+        "true | false | true",
+        "true | true | false"
+      ],
+      "answer": 1,
+      "explanation": "Kết quả thật: `true | false | false`.\n- `a` là true: cột `status` được cấp.\n- `b` là false: `customer_id` không nằm trong danh sách cột được cấp.\n- `c` là false: quyền mức cột **không** biến thành quyền cả bảng. `has_table_privilege` chỉ true khi có `SELECT` trên toàn bảng.\nCác phương án còn lại đều cho rằng quyền trên hai cột \"lan\" sang cột khác hoặc sang cả bảng, điều PostgreSQL không làm.",
+      "id": "sql-d30-05",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "REVOKE và thừa hưởng từ nhóm",
+      "question": "Chạy đoạn sau bằng superuser. `report_user` có còn quyền `SELECT` trên `orders` không?",
+      "code": "CREATE ROLE shop_readonly NOLOGIN;\nCREATE ROLE report_user LOGIN;\n\nGRANT SELECT ON orders TO shop_readonly;\nGRANT shop_readonly TO report_user;\nREVOKE SELECT ON orders FROM report_user;\n\nSELECT has_table_privilege('report_user', 'orders', 'SELECT');",
+      "codeLang": "sql",
+      "options": [
+        "false",
+        "báo lỗi vì report_user chưa từng có quyền trực tiếp",
+        "true",
+        "NULL"
+      ],
+      "answer": 2,
+      "explanation": "Kết quả thật: `true`. `report_user` có quyền nhờ là **thành viên** của `shop_readonly`, chứ chưa bao giờ được cấp trực tiếp. `REVOKE ... FROM report_user` chỉ gỡ quyền cấp trực tiếp cho role đó, nên không đụng tới quyền của nhóm.\n- `false` là cái bẫy: nghĩ rằng REVOKE gỡ được mọi quyền.\n- Báo lỗi: sai, REVOKE một quyền không tồn tại chỉ không làm gì, không báo lỗi.\n- `NULL`: hàm này luôn trả `true`/`false` khi role và bảng tồn tại.\nMuốn gỡ quyền của user này phải `REVOKE shop_readonly FROM report_user` (bỏ khỏi nhóm) hoặc thu hồi ở nhóm.",
+      "id": "sql-d30-06",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "Quyền tối thiểu cho ứng dụng",
+      "question": "Ứng dụng bán hàng kết nối bằng user `app_user` với các quyền bên dưới. Lệnh nào sẽ **báo lỗi** khi `app_user` chạy?",
+      "code": "GRANT USAGE ON SCHEMA shop TO app_user;\nGRANT SELECT ON categories, products, customers,\n      orders, order_items, payments TO app_user;\nGRANT INSERT ON customers, orders,\n      order_items, payments TO app_user;\nGRANT UPDATE (stock_quantity) ON products TO app_user;\nGRANT UPDATE (status) ON orders TO app_user;",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nDELETE FROM orders\nWHERE order_id = 1;\n```",
+        "```sql\nUPDATE products\nSET stock_quantity = stock_quantity - 1\nWHERE product_id = 16;\n```",
+        "```sql\nUPDATE orders SET status = 'cancelled'\nWHERE order_id = 3;\n```",
+        "```sql\nINSERT INTO orders (customer_id, order_date, channel)\nVALUES (16, now(), 'online');\n```"
+      ],
+      "answer": 0,
+      "explanation": "`app_user` không được cấp `DELETE`, nên `DELETE FROM orders ...` báo `permission denied for table orders`. Thiết kế \"không xóa, chỉ đánh dấu\": hủy đơn là đổi `status` thành `cancelled`.\n- Trừ tồn kho chạy được: chỉ sửa cột `stock_quantity`, có quyền mức cột. `WHERE product_id` chỉ đọc cột khóa, đã có `SELECT`.\n- Đổi `status` đơn chạy được nhờ `UPDATE (status)`.\n- `INSERT` đơn mới chạy được nhờ `INSERT ON orders`; các cột còn lại có giá trị mặc định hoặc tự sinh.\nNếu sửa `price` thì mới bị chặn, vì cột đó không được cấp.",
+      "id": "sql-d30-07",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "Đọc bảng khi chỉ có quyền cột",
+      "question": "Role `support_staff` chỉ được `SELECT` ba cột `customer_id`, `full_name`, `phone` của `customers`. Câu nào bị từ chối?",
+      "options": [
+        "```sql\nSELECT customer_id, full_name\nFROM customers;\n```",
+        "```sql\nSELECT full_name FROM customers\nWHERE phone IS NULL;\n```",
+        "```sql\nSELECT count(*) FROM customers;\n```",
+        "```sql\nSELECT * FROM customers\nLIMIT 1;\n```"
+      ],
+      "answer": 3,
+      "explanation": "`SELECT *` mở rộng thành **mọi** cột, trong đó có `email` và `birth_date` chưa được cấp, nên báo `permission denied for table customers`.\n- Câu đầu chỉ dùng cột được cấp: chạy được.\n- Câu hai dùng `phone` trong `WHERE`: cột dùng để lọc cũng phải được cấp, mà `phone` có trong danh sách nên chạy được (trả về 4 khách chưa có số điện thoại).\n- `count(*)` không đọc cột nào cụ thể, chỉ cần có quyền cột nào đó trên bảng, nên chạy được và trả 18.\nQuy tắc: mọi cột xuất hiện trong câu lệnh (kể cả `WHERE`) đều cần quyền.",
+      "id": "sql-d30-08",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "REVOKE mức cột và mức bảng",
+      "question": "Do cấp dư, `app_user` đang có quyền cả bảng: `GRANT SELECT, UPDATE ON products TO app_user;`. Yêu cầu mới: vẫn đọc được `products`, chỉ được sửa cột `stock_quantity`, không sửa được `price`. Cách nào đúng?",
+      "options": [
+        "```sql\nREVOKE UPDATE (price) ON products\nFROM app_user;\n```",
+        "```sql\nREVOKE UPDATE ON products FROM app_user;\nGRANT UPDATE (stock_quantity)\nON products TO app_user;\n```",
+        "```sql\nREVOKE ALL ON products FROM app_user;\nGRANT UPDATE (stock_quantity)\nON products TO app_user;\n```",
+        "```sql\nREVOKE UPDATE ON products\nFROM app_user;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Phải thu hồi `UPDATE` ở mức **bảng** rồi cấp lại đúng cột cần.\n- `REVOKE UPDATE (price)` chỉ gỡ quyền cấp riêng cho cột; quyền cấp ở mức bảng vẫn còn nên `app_user` vẫn sửa được `price`. Đây là cái bẫy: quyền mức bảng bao trùm mọi cột.\n- `REVOKE ALL` gỡ luôn `SELECT`, `app_user` không còn đọc được `products`.\n- Chỉ `REVOKE UPDATE` mà không cấp lại thì mất luôn quyền trừ tồn kho.\nSau phương án đúng: sửa `price` là false, sửa `stock_quantity` là true, `SELECT` vẫn true.",
+      "id": "sql-d30-09",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "SQL injection: AND và OR",
+      "question": "Trang tra cứu ghép chuỗi: `... WHERE c.email = '<email>' AND o.status = 'delivered'`. Kẻ tấn công nhập email là `x' AND o.status = 'delivered' OR '1'='1`. Câu SQL thật gửi tới server như dưới đây sẽ trả về bao nhiêu đơn (đếm bằng `count(*)`)?",
+      "code": "SELECT count(*)\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE c.email = 'x' AND o.status = 'delivered'\n   OR '1'='1';",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "1",
+        "33",
+        "40"
+      ],
+      "answer": 3,
+      "explanation": "Kết quả thật là **40**, tức toàn bộ đơn của mọi khách. `AND` được tính trước `OR`, nên điều kiện thành `(email = 'x' AND status = 'delivered') OR '1'='1'`. Vế sau luôn đúng nên dòng nào cũng thỏa.\n- `0` là kết quả của vế `AND` (không có khách email `x`): đúng ý định của lập trình viên nhưng không phải thực tế.\n- `33` là số đơn `delivered`: sai vì điều kiện `status` đã bị vô hiệu.\n- `1` không có cơ sở nào.\nBài học: thêm `AND` vào câu không cứu được injection. Phải tham số hóa.",
+      "id": "sql-d30-10",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "Truy vấn tham số hóa",
+      "question": "Câu lệnh tham số hóa bằng `PREPARE` bên dưới được gọi với input tấn công `' OR '1'='1`. Kết quả `EXECUTE` có bao nhiêu dòng?",
+      "code": "PREPARE find_orders(text) AS\n    SELECT o.order_id\n    FROM orders o\n    JOIN customers c ON c.customer_id = o.customer_id\n    WHERE c.email = $1;\n\nEXECUTE find_orders(''' OR ''1''=''1');",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "40",
+        "báo lỗi cú pháp",
+        "1"
+      ],
+      "answer": 0,
+      "explanation": "Kết quả thật: **0 dòng**. Với `PREPARE`, cấu trúc câu lệnh (bảng nào, điều kiện `email = $1`) đã được phân tích và chốt trước khi có giá trị. Chuỗi `' OR '1'='1` chỉ được điền vào `$1` như một email lạ, nên không khớp ai.\n- `40` là kết quả của cách **nối chuỗi**, nơi input trở thành một phần câu lệnh.\n- Không có lỗi cú pháp: dấu nháy trong giá trị chỉ là ký tự dữ liệu (được viết gấp đôi `''` vì nằm trong chuỗi SQL literal).\n- `1` sai: không có email nào bằng đúng chuỗi `' OR '1'='1`.\nDriver như psycopg hay pg làm điều tương tự mỗi khi bạn dùng `%s` hoặc `$1`.",
+      "id": "sql-d30-11",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "Lưu mật khẩu ứng dụng",
+      "question": "Bạn thiết kế bảng `app_users` cho trang web của DSC Shop. Cách lưu mật khẩu người dùng nào đúng?",
+      "options": [
+        "lưu md5 của mật khẩu: nhanh và không dịch ngược được",
+        "mã hóa AES bằng một khóa chung, giải mã khi đăng nhập để so",
+        "lưu mật khẩu rõ, nhưng chỉ cấp quyền đọc cột đó cho app_user",
+        "lưu hash bcrypt hoặc argon2 có salt, kiểm tra bằng hàm của thư viện"
+      ],
+      "answer": 3,
+      "explanation": "Dùng thuật toán băm **được thiết kế cho mật khẩu** (bcrypt, argon2, scrypt): cố ý chậm, có tham số cost và tự sinh **salt** ngẫu nhiên, nên hai người cùng mật khẩu vẫn có hash khác nhau.\n- `md5` quá nhanh (GPU thử hàng tỷ mật khẩu mỗi giây) và không salt: `md5('matkhau123')` lần nào cũng ra cùng một chuỗi, dễ dò bằng bảng tra.\n- AES là mã hóa hai chiều: ai có khóa (hoặc khai thác được ứng dụng) giải ra được toàn bộ mật khẩu.\n- Lưu rõ thì phân quyền cột cũng không cứu được khi backup bị rò hoặc bị injection.\nĐăng nhập: tìm theo `username` (tham số hóa) rồi so bằng `bcrypt.checkpw`, không viết `WHERE password = ...`.",
+      "id": "sql-d30-12",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "Sao lưu và khôi phục",
+      "question": "Bạn sao lưu schema `shop` bằng `pg_dump -n shop -Fc` rồi `pg_restore` vào database mới `shop_restore` để thử khôi phục. Điều nào dưới đây đúng?",
+      "options": [
+        "role app_user và mật khẩu của nó đi theo file dump nên đăng nhập được ngay",
+        "dump có lệnh GRANT nhưng không có role; cần tạo role trước hoặc dùng pg_dumpall --globals-only",
+        "pg_restore -t payments khôi phục bảng kèm đủ khóa chính, khóa ngoại và index",
+        "pg_dump phải dừng ứng dụng, nếu không bản sao không nhất quán"
+      ],
+      "answer": 1,
+      "explanation": "`pg_dump` lưu các lệnh `GRANT` nhưng **không lưu bản thân role** (role thuộc cả cluster). Muốn sao lưu role (kèm hash mật khẩu) dùng `pg_dumpall --globals-only`, hoặc tạo lại role trước khi restore.\n- Phương án đầu sai đúng vì lý do đó: role không đi theo file dump.\n- `pg_restore -t payments` đưa về đủ 37 dòng nhưng **mất** PRIMARY KEY, FOREIGN KEY, index và IDENTITY, vì các mục này là phần riêng trong dump. An toàn hơn: khôi phục cả schema vào database tạm rồi chép dữ liệu sang.\n- `pg_dump` cho bản chụp nhất quán ngay khi database vẫn đang hoạt động, không cần dừng ứng dụng.",
+      "id": "sql-d30-13",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "Row-level security",
+      "question": "Bảng `orders` bật RLS với policy cho nhóm `sales_staff`. Phiên đặt `app.employee_id = '4'`. Câu `SELECT` cuối trả về bao nhiêu?",
+      "code": "CREATE ROLE sales_staff NOLOGIN;\nGRANT USAGE ON SCHEMA shop TO sales_staff;\nGRANT SELECT ON orders TO sales_staff;\n\nALTER TABLE orders ENABLE ROW LEVEL SECURITY;\nCREATE POLICY own_orders ON orders FOR SELECT TO sales_staff\n  USING (employee_id = NULLIF(\n    current_setting('app.employee_id', true), '')::int);\n\nSET ROLE sales_staff;\nSET app.employee_id = '4';\nSELECT count(*) FROM orders;",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "4",
+        "5",
+        "25"
+      ],
+      "answer": 2,
+      "explanation": "Kết quả thật: **5**, đúng số đơn có `employee_id = 4`. Policy `USING` được thêm vào mọi `SELECT` của `sales_staff`, nên chỉ những dòng thỏa điều kiện mới hiện ra.\n- `0` xảy ra khi **không** đặt `app.employee_id`: điều kiện thành NULL nên không dòng nào thỏa (không phải trường hợp này).\n- `4` là số đơn của nhân viên 6, không phải nhân viên 4.\n- `25` là số đơn có `employee_id` NULL (đơn online); `NULL = 4` không bao giờ đúng nên chúng bị loại.\nLưu ý: chủ bảng và superuser mặc định **không** bị RLS giới hạn, nên phải `SET ROLE sales_staff` mới thấy hiệu lực.",
+      "id": "sql-d30-14",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "Bảng tạo sau và GRANT ON ALL TABLES",
+      "question": "Chạy đoạn sau bằng superuser. Kết quả của câu `SELECT` cuối (cột `moi` rồi `cu`) là gì?",
+      "code": "CREATE ROLE r NOLOGIN;\nGRANT USAGE ON SCHEMA shop TO r;\nGRANT SELECT ON ALL TABLES IN SCHEMA shop TO r;\nCREATE TABLE shop.new_t (id int);\n\nSELECT has_table_privilege('r', 'shop.new_t', 'SELECT') AS moi,\n       has_table_privilege('r', 'shop.products', 'SELECT') AS cu;",
+      "codeLang": "sql",
+      "options": [
+        "true | true",
+        "true | false",
+        "false | true",
+        "false | false"
+      ],
+      "answer": 2,
+      "explanation": "Kết quả thật: `false | true`. `GRANT ... ON ALL TABLES IN SCHEMA` chỉ áp dụng cho các bảng **đang có** tại thời điểm chạy lệnh, nên `products` có quyền còn `new_t` tạo sau thì không.\n- `true | true` nhầm rằng lệnh tự phủ cả bảng tương lai.\n- `true | false` đảo ngược: bảng cũ chắc chắn có quyền.\n- `false | false` sai vì `products` đã được cấp.\nMuốn bảng mới tự có quyền, thêm `ALTER DEFAULT PRIVILEGES IN SCHEMA shop GRANT SELECT ON TABLES TO r;` (áp dụng cho bảng do chính role chạy lệnh tạo ra).",
+      "id": "sql-d30-15",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    },
+    {
+      "topic": "Quyền CONNECT mặc định của PUBLIC",
+      "question": "Vừa tạo một database mới, chưa chạy GRANT hay REVOKE nào trên nó. Mặc định ai kết nối được tới database này?",
+      "options": [
+        "mọi role, vì PUBLIC có sẵn quyền CONNECT; muốn siết thì REVOKE CONNECT ... FROM PUBLIC",
+        "chỉ superuser và chủ database, role khác phải được GRANT CONNECT",
+        "chỉ những role đã được GRANT CONNECT một cách tường minh",
+        "mọi role, nhưng chỉ khi role đó có USAGE trên schema public"
+      ],
+      "answer": 0,
+      "explanation": "`PUBLIC` là nhóm ngầm chứa mọi role, và mặc định PostgreSQL cấp cho `PUBLIC` quyền `CONNECT` trên mọi database mới. Vì vậy ai có role cũng kết nối được (vào rồi chưa chắc đọc được bảng nào). Theo nguyên tắc quyền tối thiểu: `REVOKE CONNECT ON DATABASE ... FROM PUBLIC;` rồi chỉ `GRANT CONNECT` cho nhóm cần.\n- Hai phương án giữa mô tả trạng thái **sau khi** đã REVOKE từ PUBLIC, không phải mặc định.\n- Phương án cuối nhầm tầng: `USAGE` trên schema là quyền để thấy đối tượng trong schema, không liên quan tới việc kết nối.",
+      "id": "sql-d30-16",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu"
+    }
+  ]
+}

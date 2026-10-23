@@ -1,0 +1,221 @@
+{
+  "id": "sql-d18",
+  "title": "Ngày 18: Trigger",
+  "description": "Trigger function, BEFORE/AFTER, ROW/STATEMENT, NEW/OLD, WHEN và khi nào không nên dùng trigger trên DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d18-01",
+      "topic": "AFTER không sửa được NEW",
+      "source": "Ngày 18 - Trigger",
+      "question": "Trigger được tạo với AFTER INSERT và sửa `NEW.email` thành chữ thường. Sau khi thêm khách mới, câu SELECT cuối trả về email nào?",
+      "options": [
+        "vy.le@gmail.com",
+        "VY.LE@GMAIL.COM",
+        "NULL",
+        "báo lỗi ở câu INSERT"
+      ],
+      "answer": 1,
+      "explanation": "Trigger AFTER chạy khi dòng đã được ghi, nên gán `NEW.email := ...` không còn tác dụng: dòng trong bảng vẫn là `VY.LE@GMAIL.COM`. Muốn sửa giá trị sắp ghi phải dùng BEFORE.\n- `vy.le@gmail.com` là kết quả nếu trigger là BEFORE INSERT.\n- NULL không có lý do: giá trị người dùng chèn không bị xoá.\n- Không có lỗi: PostgreSQL bỏ qua giá trị trả về của AFTER ROW trigger, gán vào `NEW` ở đó vẫn hợp lệ nhưng vô ích.",
+      "code": "CREATE FUNCTION customers_lower_email()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  NEW.email := lower(NEW.email);\n  RETURN NEW;\nEND $$;\n\nCREATE TRIGGER trg_lower_email\nAFTER INSERT ON customers\nFOR EACH ROW\nEXECUTE FUNCTION customers_lower_email();\n\nINSERT INTO customers (full_name, email)\nVALUES ('Lê Thị Vy', 'VY.LE@GMAIL.COM');\n\nSELECT email FROM customers\nWHERE full_name = 'Lê Thị Vy';",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d18-02",
+      "topic": "Bảng chuyển tiếp (REFERENCING)",
+      "source": "Ngày 18 - Trigger",
+      "question": "Biết hàm `f()` là một trigger function hợp lệ. Câu `CREATE TRIGGER` nào bị PostgreSQL từ chối?",
+      "options": [
+        "```sql\nCREATE TRIGGER t\nBEFORE INSERT ON order_items\nREFERENCING NEW TABLE AS nr\nFOR EACH STATEMENT\nEXECUTE FUNCTION f();\n```",
+        "```sql\nCREATE TRIGGER t\nAFTER INSERT ON order_items\nREFERENCING NEW TABLE AS nr\nFOR EACH STATEMENT\nEXECUTE FUNCTION f();\n```",
+        "```sql\nCREATE TRIGGER t\nAFTER UPDATE ON products\nREFERENCING OLD TABLE AS o NEW TABLE AS n\nFOR EACH STATEMENT\nEXECUTE FUNCTION f();\n```",
+        "```sql\nCREATE TRIGGER t\nAFTER DELETE ON order_items\nREFERENCING OLD TABLE AS o\nFOR EACH STATEMENT\nEXECUTE FUNCTION f();\n```"
+      ],
+      "answer": 0,
+      "explanation": "Bảng chuyển tiếp (`REFERENCING ... TABLE`) chỉ dùng được cho trigger AFTER. Trigger BEFORE chạy trước khi dòng được ghi nên chưa có \"tập dòng đã đổi\" để cho bạn xem; PostgreSQL báo lỗi ngay khi tạo.\n- AFTER INSERT với `NEW TABLE`: hợp lệ, bảng chứa các dòng vừa chèn.\n- AFTER UPDATE với cả `OLD TABLE` và `NEW TABLE`: hợp lệ, so sánh trước/sau được (như Bài 6).\n- AFTER DELETE chỉ khai báo `OLD TABLE`: hợp lệ, vì DELETE không có dòng mới."
+    },
+    {
+      "id": "sql-d18-03",
+      "topic": "BEFORE ROW trả về NULL",
+      "source": "Ngày 18 - Trigger",
+      "question": "Chạy lần lượt các câu lệnh sau trên dữ liệu gốc. Câu SELECT cuối trả về giá trị nào?",
+      "code": "CREATE FUNCTION skip_row() RETURNS trigger LANGUAGE plpgsql\nAS $$ BEGIN RETURN NULL; END $$;\n\nCREATE TRIGGER trg_skip\nBEFORE INSERT ON categories\nFOR EACH ROW EXECUTE FUNCTION skip_row();\n\nINSERT INTO categories (name)\nVALUES ('A'), ('B'), ('C');\n\nSELECT count(*) FROM categories\nWHERE name IN ('A', 'B', 'C');",
+      "codeLang": "sql",
+      "options": [
+        "3",
+        "1",
+        "báo lỗi ở câu INSERT",
+        "0"
+      ],
+      "answer": 3,
+      "explanation": "Trigger BEFORE ROW trả về `NULL` nghĩa là \"bỏ qua dòng này\", và PostgreSQL làm đúng như vậy mà không báo lỗi. Cả ba dòng bị bỏ nên `count(*)` là **0** (câu INSERT báo `INSERT 0 0`).\n- 3 là kết quả nếu hàm `RETURN NEW`.\n- 1 không có cơ sở nào: trigger chạy riêng cho từng dòng và dòng nào cũng bị bỏ như nhau.\n- Không có lỗi: bỏ dòng bằng `RETURN NULL` là hành vi hợp lệ, đó chính là chỗ nguy hiểm. Muốn từ chối dòng phải dùng `RAISE EXCEPTION`."
+    },
+    {
+      "id": "sql-d18-04",
+      "topic": "UPDATE OF và WHEN",
+      "source": "Ngày 18 - Trigger",
+      "question": "Bảng log và hàm ghi log đã có (xem code). Ta chạy 3 câu UPDATE: giảm giá sản phẩm 5, gán lại `price = price` cho sản phẩm 6, đổi tên sản phẩm 7. Câu `CREATE TRIGGER` nào làm log chỉ có đúng một dòng, của sản phẩm 5?",
+      "code": "CREATE TABLE product_price_log (\n  product_id INT,\n  old_price  NUMERIC,\n  new_price  NUMERIC\n);\n\nCREATE FUNCTION log_price_change()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  INSERT INTO product_price_log\n  VALUES (OLD.product_id, OLD.price, NEW.price);\n  RETURN NULL;\nEND $$;",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nCREATE TRIGGER trg_log\nAFTER UPDATE ON products\nFOR EACH ROW\nEXECUTE FUNCTION log_price_change();\n```",
+        "```sql\nCREATE TRIGGER trg_log\nAFTER UPDATE OF price ON products\nFOR EACH ROW\nWHEN (OLD.price IS DISTINCT FROM NEW.price)\nEXECUTE FUNCTION log_price_change();\n```",
+        "```sql\nCREATE TRIGGER trg_log\nAFTER UPDATE OF price ON products\nFOR EACH ROW\nWHEN (OLD.price = NEW.price)\nEXECUTE FUNCTION log_price_change();\n```",
+        "```sql\nCREATE TRIGGER trg_log\nAFTER UPDATE OF price ON products\nFOR EACH STATEMENT\nEXECUTE FUNCTION log_price_change();\n```"
+      ],
+      "answer": 1,
+      "explanation": "Cần hai bộ lọc phối hợp: `UPDATE OF price` loại câu UPDATE không ghi vào cột giá (sản phẩm 7), `WHEN (OLD.price IS DISTINCT FROM NEW.price)` loại câu có ghi giá nhưng giá không đổi (sản phẩm 6).\n- Không có bộ lọc nào: ghi log cả 3 sản phẩm, kể cả đổi tên và giá không đổi.\n- `WHEN (OLD.price = NEW.price)` bị đảo điều kiện: chỉ ghi sản phẩm 6 (giá không đổi) và bỏ sót sản phẩm 5.\n- `FOR EACH STATEMENT`: trigger mức câu lệnh chạy một lần cho câu UPDATE đổi giá nhưng `OLD`/`NEW` lúc đó là NULL, nên log có đúng một dòng toàn NULL thay vì dòng của sản phẩm 5."
+    },
+    {
+      "id": "sql-d18-05",
+      "topic": "BEFORE ROW chuẩn hóa dữ liệu",
+      "source": "Ngày 18 - Trigger",
+      "question": "Ta muốn câu `INSERT` khách \"Lê Thị Vy\" với email `'  Vy.Le@Gmail.COM '` lưu đúng một dòng có email `vy.le@gmail.com`. Trigger BEFORE INSERT đã tạo như trong code, chỉ thiếu thân hàm. Thân hàm nào đúng?",
+      "code": "CREATE FUNCTION customers_normalize_email()\nRETURNS trigger LANGUAGE plpgsql AS $$\n  ...thân hàm...\n$$;\n\nCREATE TRIGGER trg_normalize_email\nBEFORE INSERT ON customers\nFOR EACH ROW\nEXECUTE FUNCTION customers_normalize_email();",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nBEGIN\n  NEW.email := lower(trim(NEW.email));\nEND;\n```",
+        "```sql\nBEGIN\n  NEW.email := lower(trim(NEW.email));\n  RETURN NULL;\nEND;\n```",
+        "```sql\nBEGIN\n  NEW.email := lower(trim(NEW.email));\n  RETURN NEW;\nEND;\n```",
+        "```sql\nBEGIN\n  UPDATE customers SET email = lower(trim(email))\n  WHERE customer_id = NEW.customer_id;\n  RETURN NEW;\nEND;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Trong BEFORE ROW, gán `NEW.email := ...` rồi `RETURN NEW` là cách chuẩn: dòng được ghi với giá trị đã sửa.\n- Thiếu `RETURN`: hàm chạy hết thân mà không trả gì, PostgreSQL báo `control reached end of trigger procedure without RETURN`.\n- `RETURN NULL`: sửa xong nhưng bỏ luôn dòng, INSERT thành `INSERT 0 0` mà không có lỗi.\n- Dùng `UPDATE customers`: ở BEFORE INSERT dòng chưa tồn tại trong bảng, UPDATE không khớp dòng nào, email vẫn được lưu nguyên dạng thô có khoảng trắng và chữ hoa."
+    },
+    {
+      "id": "sql-d18-06",
+      "topic": "Tự điền giá bằng BEFORE ROW",
+      "source": "Ngày 18 - Trigger",
+      "question": "Trigger BEFORE INSERT trên `order_items` phải: nếu `unit_price` để trống (NULL) thì lấy `products.price`; nếu người dùng đã ghi giá thì giữ nguyên (ví dụ 800000 cho sản phẩm 22, giá niêm yết 890000). Thân hàm nào đúng?",
+      "code": "CREATE FUNCTION order_items_fill_price()\nRETURNS trigger LANGUAGE plpgsql AS $$\n  ...thân hàm...\n$$;\n\nCREATE TRIGGER trg_fill_price\nBEFORE INSERT ON order_items\nFOR EACH ROW\nEXECUTE FUNCTION order_items_fill_price();",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nBEGIN\n  NEW.unit_price := coalesce(NEW.unit_price,\n    (SELECT price FROM products p\n     WHERE p.product_id = NEW.product_id));\n  RETURN NEW; END;\n```",
+        "```sql\nBEGIN\n  SELECT price INTO NEW.unit_price FROM products\n  WHERE product_id = NEW.product_id;\n  RETURN NEW; END;\n```",
+        "```sql\nBEGIN\n  NEW.unit_price := coalesce(NEW.unit_price,\n    (SELECT price FROM products p\n     WHERE p.product_id = NEW.product_id));\n  RETURN NULL; END;\n```",
+        "```sql\nDECLARE v NUMERIC;\nBEGIN\n  SELECT price INTO v FROM products\n  WHERE product_id = NEW.product_id;\n  RETURN NEW; END;\n```"
+      ],
+      "answer": 0,
+      "explanation": "`coalesce(NEW.unit_price, giá_từ_products)` chỉ điền khi giá NULL, rồi `RETURN NEW` để ghi dòng. Trigger chạy trước khi kiểm tra `NOT NULL` nên INSERT không bị từ chối.\n- `SELECT price INTO NEW.unit_price ...` không điều kiện: dòng nào cũng bị ghi đè bằng giá niêm yết, sản phẩm 22 thành 890000 thay vì 800000.\n- Cuối hàm là `RETURN NULL`: dòng bị bỏ lặng lẽ, không có dòng nào được chèn.\n- Chỉ `SELECT ... INTO v` vào biến cục bộ rồi không gán lại cho `NEW`: `unit_price` vẫn NULL nên vi phạm `NOT NULL`."
+    },
+    {
+      "id": "sql-d18-07",
+      "topic": "FOR EACH STATEMENT",
+      "source": "Ngày 18 - Trigger",
+      "question": "Ba câu UPDATE lần lượt khớp 3, 0 và 4 dòng. Câu SELECT cuối trả về bao nhiêu?",
+      "code": "CREATE TABLE product_update_log (rows_changed INT);\n\nCREATE FUNCTION log_stmt() RETURNS trigger\nLANGUAGE plpgsql AS $$\nBEGIN\n  INSERT INTO product_update_log\n  SELECT count(*) FROM new_rows;\n  RETURN NULL;\nEND $$;\n\nCREATE TRIGGER trg_stmt\nAFTER UPDATE ON products\nREFERENCING NEW TABLE AS new_rows\nFOR EACH STATEMENT\nEXECUTE FUNCTION log_stmt();\n\nUPDATE products SET stock_quantity = stock_quantity + 1\nWHERE category_id = 11;   -- khớp 3 dòng\nUPDATE products SET stock_quantity = stock_quantity + 1\nWHERE product_id = 999;   -- khớp 0 dòng\nUPDATE products SET stock_quantity = stock_quantity + 1\nWHERE category_id = 10;   -- khớp 4 dòng\n\nSELECT count(*) FROM product_update_log;",
+      "codeLang": "sql",
+      "options": [
+        "7",
+        "2",
+        "3",
+        "4"
+      ],
+      "answer": 2,
+      "explanation": "Trigger mức câu lệnh chạy **một lần cho mỗi câu UPDATE**, kể cả câu không khớp dòng nào (lúc đó `new_rows` rỗng và log ghi `rows_changed = 0`). Ba câu UPDATE nên có 3 dòng log.\n- 7 là tổng số dòng bị sửa (3 + 0 + 4), tức giá trị bạn sẽ thấy nếu cộng cột `rows_changed`, không phải số dòng của bảng log.\n- 2 là số câu có khớp dòng; sai vì câu khớp 0 dòng vẫn kích hoạt trigger.\n- 4 chỉ là số dòng của câu cuối cùng."
+    },
+    {
+      "id": "sql-d18-08",
+      "topic": "OLD và NEW trong WHEN",
+      "source": "Ngày 18 - Trigger",
+      "question": "Biết `f()` là một trigger function hợp lệ. Câu `CREATE TRIGGER` nào gây lỗi?",
+      "options": [
+        "```sql\nCREATE TRIGGER t\nBEFORE UPDATE OF price ON products\nFOR EACH ROW\nWHEN (OLD.price <> NEW.price)\nEXECUTE FUNCTION f();\n```",
+        "```sql\nCREATE TRIGGER t\nAFTER DELETE ON order_items\nFOR EACH ROW\nWHEN (OLD.quantity > 5)\nEXECUTE FUNCTION f();\n```",
+        "```sql\nCREATE TRIGGER t\nAFTER INSERT ON order_items\nFOR EACH ROW\nWHEN (NEW.quantity > 5)\nEXECUTE FUNCTION f();\n```",
+        "```sql\nCREATE TRIGGER t\nBEFORE INSERT ON products\nFOR EACH ROW\nWHEN (OLD.price > 0)\nEXECUTE FUNCTION f();\n```"
+      ],
+      "answer": 3,
+      "explanation": "Trigger INSERT không có dòng cũ, nên điều kiện `WHEN` của nó không được nhắc tới `OLD`; PostgreSQL từ chối ngay khi tạo (`INSERT trigger's WHEN condition cannot reference OLD values`).\n- UPDATE có cả `OLD` và `NEW`, so sánh giá cũ với giá mới là hợp lệ.\n- DELETE chỉ có `OLD`, nên `OLD.quantity` hợp lệ.\n- INSERT chỉ có `NEW`, nên `NEW.quantity > 5` hợp lệ.\nQuy tắc nhớ: INSERT chỉ `NEW`, DELETE chỉ `OLD`, UPDATE có cả hai."
+    },
+    {
+      "id": "sql-d18-09",
+      "topic": "Lỗi trigger hủy cả câu lệnh",
+      "source": "Ngày 18 - Trigger",
+      "question": "Ban đầu có 3 đơn `cancelled`, 2 đơn `paid` và 1 đơn `shipped`. Trigger chỉ cho phép shipped chuyển sang delivered. Khối `DO` bắt lỗi rồi bỏ qua. Câu SELECT cuối trả về bao nhiêu?",
+      "code": "CREATE FUNCTION orders_check_status()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  IF NOT (\n    (OLD.status = 'pending' AND NEW.status IN ('paid', 'cancelled'))\n    OR (OLD.status = 'paid'\n        AND NEW.status IN ('shipped', 'cancelled'))\n    OR (OLD.status = 'shipped' AND NEW.status = 'delivered')\n  ) THEN\n    RAISE EXCEPTION 'chuyển trạng thái không hợp lệ'\n      USING ERRCODE = 'check_violation';\n  END IF;\n  RETURN NEW;\nEND $$;\n\nCREATE TRIGGER trg_orders_check_status\nBEFORE UPDATE OF status ON orders\nFOR EACH ROW\nWHEN (OLD.status IS DISTINCT FROM NEW.status)\nEXECUTE FUNCTION orders_check_status();\n\nDO $$\nBEGIN\n  UPDATE orders SET status = 'cancelled'\n  WHERE status IN ('paid', 'shipped');\nEXCEPTION WHEN check_violation THEN\n  NULL;   -- nuốt lỗi\nEND $$;\n\nSELECT count(*) FROM orders\nWHERE status = 'cancelled';",
+      "codeLang": "sql",
+      "options": [
+        "6",
+        "5",
+        "3",
+        "4"
+      ],
+      "answer": 2,
+      "explanation": "Câu UPDATE định hủy 3 đơn (2 paid + 1 shipped). Đơn shipped chuyển sang cancelled là không hợp lệ nên trigger `RAISE EXCEPTION`, và **cả câu UPDATE bị hủy**, kể cả hai đơn paid vốn hợp lệ. Số đơn `cancelled` giữ nguyên **3**.\n- 6 sẽ đúng nếu trigger không tồn tại.\n- 5 nghĩa là hai đơn paid vẫn được hủy dù đơn thứ ba lỗi; sai vì lỗi trong trigger hủy toàn bộ câu lệnh, không chỉ dòng gây lỗi.\n- 4 không tương ứng với tình huống nào (chỉ một đơn được hủy, không đơn nào có lý do)."
+    },
+    {
+      "id": "sql-d18-10",
+      "topic": "Trừ kho hai lần",
+      "source": "Ngày 18 - Trigger",
+      "question": "Chuột G102 (sản phẩm 16) đang có 60 cái trong kho. Một đơn mua 3 cái. Trigger đã trừ kho khi thêm dòng hàng, nhưng code ứng dụng cũng tự trừ kho một lần nữa. Câu SELECT cuối trả về bao nhiêu?",
+      "code": "CREATE FUNCTION order_items_decrease_stock()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  UPDATE products\n  SET stock_quantity = stock_quantity - NEW.quantity\n  WHERE product_id = NEW.product_id\n    AND stock_quantity >= NEW.quantity;\n  RETURN NULL;\nEND $$;\n\nCREATE TRIGGER trg_decrease_stock\nAFTER INSERT ON order_items\nFOR EACH ROW\nEXECUTE FUNCTION order_items_decrease_stock();\n\n-- Code ứng dụng (cũ) vẫn tự trừ kho\nINSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (40, 16, 3, 399000);\n\nUPDATE products\nSET stock_quantity = stock_quantity - 3\nWHERE product_id = 16;\n\nSELECT stock_quantity FROM products\nWHERE product_id = 16;",
+      "codeLang": "sql",
+      "options": [
+        "54",
+        "57",
+        "60",
+        "51"
+      ],
+      "answer": 0,
+      "explanation": "Kho bị trừ hai lần: trigger trừ 3 khi INSERT dòng hàng (60 thành 57), rồi câu UPDATE của ứng dụng trừ thêm 3 (57 thành **54**). Không có lỗi nào báo ra nên rất khó phát hiện.\n- 57 là kết quả đúng ý muốn (chỉ một nơi trừ kho).\n- 60 là giá trị ban đầu, chỉ đúng nếu cả hai lần trừ bị hủy.\n- 51 nghĩa là trừ ba lần, không có chỗ nào trừ lần thứ ba.\nBài học: mỗi quy tắc nghiệp vụ chỉ nên nằm một chỗ, hoặc trigger hoặc ứng dụng/procedure."
+    },
+    {
+      "id": "sql-d18-11",
+      "topic": "TG_OP",
+      "source": "Ngày 18 - Trigger",
+      "question": "Trigger ghi log dưới đây gắn cho cả INSERT và DELETE trên `categories`. Ta chèn 3 danh mục bằng một câu INSERT, rồi xoá 2 danh mục bằng một câu DELETE. Câu SELECT cuối trả về bao nhiêu?",
+      "options": [
+        "2",
+        "3",
+        "5",
+        "báo lỗi vì không dùng được TG_OP trong VALUES"
+      ],
+      "answer": 2,
+      "explanation": "Trigger `FOR EACH ROW` chạy một lần cho **mỗi dòng**, với cả INSERT lẫn DELETE: 3 dòng chèn cộng 2 dòng xoá là **5** dòng log, trong đó `TG_OP` cho biết thao tác là `'INSERT'` hay `'DELETE'`.\n- 2 là số câu lệnh, kết quả nếu trigger là `FOR EACH STATEMENT`.\n- 3 chỉ đếm các dòng chèn, quên rằng trigger cũng gắn cho DELETE.\n- Không có lỗi: `TG_OP` là biến có sẵn trong mọi trigger function, dùng được ở bất kỳ biểu thức nào.",
+      "code": "CREATE TABLE cat_log (op TEXT);\n\nCREATE FUNCTION cat_audit() RETURNS trigger\nLANGUAGE plpgsql AS $$\nBEGIN\n  INSERT INTO cat_log VALUES (TG_OP);\n  RETURN NULL;\nEND $$;\n\nCREATE TRIGGER trg_cat\nAFTER INSERT OR DELETE ON categories\nFOR EACH ROW\nEXECUTE FUNCTION cat_audit();\n\nINSERT INTO categories (name)\nVALUES ('A'), ('B'), ('C');\nDELETE FROM categories\nWHERE name IN ('A', 'B');\n\nSELECT count(*) FROM cat_log;",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d18-12",
+      "topic": "Trigger hay constraint",
+      "source": "Ngày 18 - Trigger",
+      "question": "Một bảng mới chưa có ràng buộc nào, ta cần đảm bảo cột `price` không bao giờ âm, dù ai sửa dữ liệu bằng cách nào. Cách nào phù hợp nhất?",
+      "options": [
+        "viết trigger before update báo lỗi khi giá âm",
+        "viết procedure kiểm tra và yêu cầu ứng dụng luôn gọi nó",
+        "viết trigger after insert để xóa các dòng có giá âm",
+        "đặt ràng buộc check (price >= 0) trên cột price"
+      ],
+      "answer": 3,
+      "explanation": "Quy tắc chỉ nhìn giá trị trong chính dòng đó thì dùng `CHECK`: đơn giản, nhanh, hiện trong `\\d`, áp dụng cho mọi INSERT và UPDATE.\n- Trigger BEFORE UPDATE làm được nhưng quá nặng, lại bỏ sót INSERT nếu quên khai báo, và logic bị ẩn.\n- Procedure chỉ bảo vệ khi người ta chịu gọi nó; ai gõ thẳng INSERT hoặc UPDATE là qua mặt.\n- Trigger AFTER INSERT dọn dẹp thì dữ liệu sai đã được ghi và đã có người đọc thấy; vẫn bỏ sót UPDATE.\nTrigger dành cho việc `CHECK` không diễn đạt được, như so sánh giá trị cũ và mới."
+    },
+    {
+      "id": "sql-d18-13",
+      "topic": "Thứ tự chạy nhiều trigger",
+      "source": "Ngày 18 - Trigger",
+      "question": "Bảng `order_items` có hai trigger BEFORE INSERT FOR EACH ROW là `trg_b_check` và `trg_a_fill_price`. PostgreSQL chạy chúng theo thứ tự nào?",
+      "options": [
+        "theo thứ tự tên trigger, bảng chữ cái: trg_a_fill_price rồi trg_b_check",
+        "theo thứ tự tạo: trigger nào tạo trước chạy trước",
+        "ngẫu nhiên, mỗi lần chạy có thể khác nhau",
+        "chỉ trigger tạo sau cùng được chạy"
+      ],
+      "answer": 0,
+      "explanation": "Với cùng một bảng, cùng loại sự kiện và thời điểm, PostgreSQL chạy trigger theo **thứ tự tên** (bảng chữ cái). Vì vậy nếu thứ tự quan trọng (điền giá trước, kiểm tra sau), hãy đặt tên có chủ đích như `trg_a_...`, `trg_b_...`.\n- Thứ tự tạo không liên quan; đổi tên mới làm thứ tự thay đổi.\n- Không ngẫu nhiên: thứ tự luôn xác định, nên đặt tên đúng là đủ để kiểm soát.\n- Mọi trigger khớp sự kiện đều chạy, không có chuyện chỉ chạy một trigger."
+    },
+    {
+      "id": "sql-d18-14",
+      "topic": "Lỗi trong trigger và transaction",
+      "source": "Ngày 18 - Trigger",
+      "question": "Trigger AFTER INSERT FOR EACH ROW trừ kho và `RAISE EXCEPTION` khi hết hàng. Câu `INSERT INTO order_items ...` thêm 2 dòng: dòng 1 đủ hàng, dòng 2 hết hàng. Kết quả sau câu lệnh?",
+      "options": [
+        "dòng 1 được ghi và kho đã trừ, chỉ dòng 2 bị bỏ",
+        "dòng 1 được ghi nhưng kho của nó không bị trừ",
+        "không dòng nào được ghi, kho của dòng 1 vẫn như cũ",
+        "cả hai dòng được ghi, chỉ có thêm một cảnh báo"
+      ],
+      "answer": 2,
+      "explanation": "Trigger chạy bên trong câu lệnh. Lỗi ở bất kỳ dòng nào làm **cả câu INSERT bị hủy**, gồm cả dòng 1 và phần kho đã trừ cho nó. Kho trở lại đúng như trước khi chạy.\n- \"Chỉ dòng 2 bị bỏ\" mô tả một INSERT từng dòng độc lập; PostgreSQL không làm vậy với một câu lệnh.\n- \"Dòng 1 được ghi nhưng kho không trừ\" tách hai việc vốn nằm trong cùng một câu lệnh nên không thể xảy ra.\n- `RAISE EXCEPTION` không phải cảnh báo (đó là `RAISE WARNING`), nó dừng và hủy câu lệnh."
+    }
+  ]
+}

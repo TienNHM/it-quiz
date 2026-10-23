@@ -1,0 +1,211 @@
+{
+  "id": "sql-d10",
+  "title": "Ngày 10: Kết hợp nhiều bảng với JOIN",
+  "description": "INNER, LEFT, RIGHT, FULL, CROSS và SELF JOIN trên DSC Shop, anti-join và hai cái bẫy kinh điển: điều kiện ở WHERE và nhân dòng khi SUM.",
+  "questions": [
+    {
+      "id": "sql-d10-01",
+      "topic": "LEFT JOIN + COUNT",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Liệt kê MỌI khách hàng kèm số đơn của họ (khách chưa mua phải hiện số 0, không được mất dòng). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT c.customer_id, c.full_name,\n       COUNT(o.order_id) AS so_don\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;\n```",
+        "```sql\nSELECT c.customer_id, c.full_name,\n       COUNT(o.order_id) AS so_don\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;\n```",
+        "```sql\nSELECT c.customer_id, c.full_name,\n       COUNT(*) AS so_don\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;\n```",
+        "```sql\nSELECT c.full_name,\n       COUNT(o.order_id) AS so_don\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.full_name;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Cần `LEFT JOIN` để giữ khách chưa mua, và đếm bằng `COUNT(o.order_id)` để bỏ qua NULL nên khách 16, 17 ra 0.\n- Truy vấn dùng `INNER JOIN` làm khách 16 và 17 không khớp đơn nào nên biến mất, chỉ còn 16 dòng.\n- Truy vấn dùng `COUNT(*)` sai ở chỗ dòng của khách chưa mua vẫn tồn tại (cột bên phải NULL) nên đếm ra 1 thay vì 0.\n- Truy vấn nhóm theo tên làm hai khách cùng tên `Nguyễn Văn An` bị gộp làm một (17 dòng, An ra 7 đơn). Phải nhóm theo khóa `customer_id`."
+    },
+    {
+      "id": "sql-d10-02",
+      "topic": "Anti-join",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Tìm tên các khách hàng CHƯA từng đặt đơn nào. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT c.full_name\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nWHERE o.order_id IS NULL;\n```",
+        "```sql\nSELECT c.full_name\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nWHERE o.order_id IS NOT NULL;\n```",
+        "```sql\nSELECT c.full_name\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nWHERE o.note IS NULL;\n```",
+        "```sql\nSELECT c.full_name\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nWHERE o.order_id IS NULL;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Anti-join: `LEFT JOIN` rồi giữ các dòng mà cột khóa của bảng bên phải là NULL, tức là không tìm được cặp.\n- Truy vấn dùng `INNER JOIN` thì mọi dòng đều đã có đơn, `order_id IS NULL` không bao giờ đúng nên kết quả rỗng.\n- Truy vấn `o.order_id IS NOT NULL` làm ngược lại: lấy các khách ĐÃ có đơn.\n- Truy vấn kiểm tra `o.note IS NULL` dùng một cột vốn có thể NULL: lẫn cả những đơn có thật nhưng không ghi chú, nên ra 35 dòng thay vì 2.\nNên kiểm tra `IS NULL` trên cột khóa (không bao giờ NULL khi khớp)."
+    },
+    {
+      "id": "sql-d10-03",
+      "topic": "Điều kiện ON và WHERE trong LEFT JOIN",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Đếm số đơn có `status = 'delivered'` của mỗi khách, kể cả khách không có đơn nào đã giao (ghi 0). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT c.customer_id, COUNT(o.order_id)\nFROM customers c\nLEFT JOIN orders o\n       ON o.customer_id = c.customer_id\n      AND o.status = 'delivered'\nGROUP BY c.customer_id;\n```",
+        "```sql\nSELECT c.customer_id, COUNT(o.order_id)\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nWHERE o.status = 'delivered'\nGROUP BY c.customer_id;\n```",
+        "```sql\nSELECT c.customer_id, COUNT(*)\nFROM customers c\nLEFT JOIN orders o\n       ON o.customer_id = c.customer_id\n      AND o.status = 'delivered'\nGROUP BY c.customer_id;\n```",
+        "```sql\nSELECT c.customer_id, COUNT(o.order_id)\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Điều kiện trên bảng bên phải của `LEFT JOIN` phải nằm ở `ON`, để nó là một phần của việc tìm cặp; đếm bằng `COUNT(o.order_id)`.\n- Đặt `status` ở `WHERE`: dòng NULL của khách chưa có đơn giao bị loại (`NULL = 'delivered'` không phải TRUE), LEFT JOIN thành INNER JOIN và 2 khách có số 0 biến mất (còn 16 dòng).\n- Đặt đúng ở `ON` nhưng dùng `COUNT(*)`: khách không có đơn giao ra 1 thay vì 0.\n- Bỏ hẳn điều kiện `status`: đếm cả đơn đã hủy, đang chờ... chứ không chỉ đơn đã giao."
+    },
+    {
+      "id": "sql-d10-04",
+      "topic": "CROSS JOIN",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Bảng `categories` có 13 dòng, bảng `employees` có 8 dòng. Truy vấn sau trả về bao nhiêu dòng?",
+      "code": "SELECT *\nFROM categories\nCROSS JOIN employees;",
+      "codeLang": "sql",
+      "options": [
+        "21",
+        "8",
+        "104",
+        "13"
+      ],
+      "answer": 2,
+      "explanation": "`CROSS JOIN` ghép mỗi dòng bên trái với mọi dòng bên phải, nên số dòng là tích: 13 x 8 = **104**.\n- 21 là phép cộng 13 + 8, nhầm với `UNION`.\n- 8 và 13 là số dòng của một bảng riêng lẻ, chỉ đúng nếu có điều kiện ghép một-một.\nLưu ý: viết `FROM categories, employees` (dấu phẩy, không có `WHERE` nối) cũng ra tích chéo 104 dòng."
+    },
+    {
+      "id": "sql-d10-05",
+      "topic": "Điều kiện ON làm thay đổi số dòng",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Truy vấn sau trả về bao nhiêu dòng? (Có 18 khách, 40 đơn; 33 đơn có status `delivered`, và có 2 khách không có đơn `delivered` nào.)",
+      "code": "SELECT c.customer_id, o.order_id\nFROM customers c\nLEFT JOIN orders o\n       ON o.customer_id = c.customer_id\n      AND o.status = 'delivered';",
+      "codeLang": "sql",
+      "options": [
+        "33",
+        "35",
+        "18",
+        "40"
+      ],
+      "answer": 1,
+      "explanation": "Với `LEFT JOIN`, mỗi cặp khớp cho một dòng (33 đơn đã giao), cộng thêm một dòng cho mỗi khách không khớp với đơn nào: 33 + 2 = **35**.\n- 33 sẽ là kết quả nếu điều kiện `status` nằm ở `WHERE` (mất 2 khách không có đơn giao).\n- 18 chỉ đúng nếu mỗi khách khớp đúng một đơn.\n- 40 là tổng số đơn, chỉ liên quan nếu không lọc `status` (khi đó thành 42 vì thêm 2 khách chưa mua)."
+    },
+    {
+      "id": "sql-d10-06",
+      "topic": "Cột mơ hồ",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Cả `orders` và `customers` đều có cột `customer_id`. Câu lệnh nào GÂY LỖI khi chạy?",
+      "options": [
+        "```sql\nSELECT o.customer_id\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id;\n```",
+        "```sql\nSELECT customer_id\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id;\n```",
+        "```sql\nSELECT o.order_id, c.full_name\nFROM orders o\nJOIN customers c ON o.order_id = c.customer_id;\n```",
+        "```sql\nSELECT o.order_id, customer_id\nFROM orders o\nJOIN employees e ON e.employee_id = o.employee_id;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Câu viết `customer_id` không kèm alias trong khi `orders` và `customers` đều có cột này: PostgreSQL báo `column reference \"customer_id\" is ambiguous`.\n- Câu ghi rõ `o.customer_id` thì không mơ hồ.\n- Câu ghép `o.order_id = c.customer_id` chạy được dù sai ý (đơn 1 ghép khách 1, đơn 2 ghép khách 2...): vô nghĩa nhưng không báo lỗi.\n- Câu chỉ JOIN `employees`, bảng này không có `customer_id` nên cột đó chỉ thuộc `orders`, không mơ hồ.\nLuôn ghi alias trước tên cột để an toàn."
+    },
+    {
+      "id": "sql-d10-07",
+      "topic": "GROUP BY sau JOIN",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Truy vấn nào sau đây GÂY LỖI?",
+      "options": [
+        "```sql\nSELECT c.customer_id, c.full_name, COUNT(*)\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;\n```",
+        "```sql\nSELECT c.customer_id, c.full_name, COUNT(*)\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;\n```",
+        "```sql\nSELECT c.full_name, COUNT(*)\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;\n```",
+        "```sql\nSELECT c.full_name, o.status, COUNT(*)\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Câu chọn `o.status` nhưng chỉ nhóm theo `c.customer_id` bị lỗi: một khách có nhiều đơn với nhiều trạng thái khác nhau, nên cột này không xác định được. PostgreSQL báo `column \"o.status\" must appear in the GROUP BY clause or be used in an aggregate function`.\n- Câu nhóm đủ `customer_id, full_name` chạy bình thường.\n- Hai câu còn lại chỉ nhóm theo `c.customer_id` nhưng vẫn chạy được vì đó là khóa chính của `customers`: mỗi `customer_id` chỉ có một `full_name`, PostgreSQL cho phép chọn các cột phụ thuộc vào khóa chính đã nhóm."
+    },
+    {
+      "id": "sql-d10-08",
+      "topic": "SELF JOIN",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Liệt kê mọi nhân viên kèm tên quản lý trực tiếp của họ (giám đốc không có quản lý, vẫn phải xuất hiện với quản lý là NULL). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT e.full_name, m.full_name AS quan_ly\nFROM employees e\nJOIN employees m ON m.employee_id = e.manager_id;\n```",
+        "```sql\nSELECT e.full_name, m.full_name AS quan_ly\nFROM employees e\nLEFT JOIN employees m ON m.employee_id = e.employee_id;\n```",
+        "```sql\nSELECT e.full_name, m.full_name AS quan_ly\nFROM employees e\nLEFT JOIN employees m ON m.employee_id = e.manager_id;\n```",
+        "```sql\nSELECT e.full_name, m.full_name AS quan_ly\nFROM employees e\nLEFT JOIN employees m ON m.manager_id = e.employee_id;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Khóa ngoại là `manager_id` của vai nhân viên `e` trỏ tới `employee_id` của vai quản lý `m`, và cần `LEFT JOIN` để giữ giám đốc.\n- Dùng `INNER JOIN`: giám đốc (`manager_id` NULL) bị loại, chỉ còn 7 dòng.\n- Ghép `m.employee_id = e.employee_id`: mỗi người thành quản lý của chính mình.\n- Ghép `m.manager_id = e.employee_id`: đảo chiều, `m` là người có quản lý là `e`, tức là cấp dưới, không phải quản lý."
+    },
+    {
+      "id": "sql-d10-09",
+      "topic": "Anti-join",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Tìm các sản phẩm CHƯA bán được lần nào (không có trong `order_items`). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT p.sku, p.name\nFROM products p\nLEFT JOIN order_items oi ON oi.product_id = p.product_id\nWHERE oi.product_id IS NULL;\n```",
+        "```sql\nSELECT p.sku, p.name\nFROM products p\nJOIN order_items oi ON oi.product_id = p.product_id\nWHERE oi.product_id IS NULL;\n```",
+        "```sql\nSELECT p.sku, p.name\nFROM products p\nLEFT JOIN order_items oi ON oi.product_id = p.product_id\nWHERE oi.product_id IS NOT NULL;\n```",
+        "```sql\nSELECT p.sku, p.name\nFROM products p\nLEFT JOIN order_items oi ON oi.product_id = p.product_id\nGROUP BY p.product_id\nHAVING COUNT(*) = 0;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đúng: `LEFT JOIN` từ `products` rồi giữ dòng có khóa bên `order_items` là NULL. Kết quả là `ACC-009 Lót chuột DSC XXL`.\n- `INNER JOIN` rồi lọc `IS NULL` không còn dòng NULL nào: kết quả rỗng.\n- `IS NOT NULL` lấy ngược lại, tức các sản phẩm ĐÃ bán.\n- `HAVING COUNT(*) = 0` không bao giờ đúng: sản phẩm chưa bán vẫn có một dòng (cột bên phải NULL), `COUNT(*)` ra 1 chứ không phải 0. Phải dùng `COUNT(oi.product_id)`."
+    },
+    {
+      "id": "sql-d10-10",
+      "topic": "Nhân dòng khi JOIN hai bảng con",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Đơn 12 có 2 dòng hàng và 2 lần thanh toán (15.000.000 và 16.880.000, tổng đúng là 31.880.000). Truy vấn sau trả về giá trị nào?",
+      "code": "SELECT SUM(p.amount)\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nJOIN payments p     ON p.order_id = o.order_id\nWHERE o.order_id = 12;",
+      "codeLang": "sql",
+      "options": [
+        "31880000",
+        "63760000",
+        "15000000",
+        "127520000"
+      ],
+      "answer": 1,
+      "explanation": "`order_items` và `payments` đều là bảng con của `orders` và không liên quan nhau. JOIN cả hai vào đơn 12 thì mỗi dòng hàng gặp từng lần thanh toán: 2 x 2 = 4 dòng, mỗi `amount` xuất hiện 2 lần, tổng 2 x 31.880.000 = **63760000**.\n- 31880000 là tổng thanh toán đúng của đơn, nhưng câu này đã bị nhân dòng nên không ra số đó.\n- 15000000 chỉ là một lần thanh toán.\n- 127520000 cần nhân dòng gấp 4 lần.\nCách sửa: tổng hợp từng bảng con theo `order_id` trước rồi mới JOIN."
+    },
+    {
+      "id": "sql-d10-11",
+      "topic": "Self JOIN cùng thành phố",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Tìm mọi cặp khách hàng ở cùng thành phố, mỗi cặp chỉ in MỘT lần và không ghép khách với chính họ. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT a.full_name, b.full_name, a.city\nFROM customers a\nJOIN customers b ON a.city = b.city;\n```",
+        "```sql\nSELECT a.full_name, b.full_name, a.city\nFROM customers a\nJOIN customers b ON a.city = b.city\n                AND a.customer_id <> b.customer_id;\n```",
+        "```sql\nSELECT a.full_name, b.full_name, a.city\nFROM customers a\nJOIN customers b ON a.city = b.city\n                AND a.customer_id < b.customer_id;\n```",
+        "```sql\nSELECT a.full_name, b.full_name, a.city\nFROM customers a\nJOIN customers b ON a.city = b.city\n                AND a.customer_id <= b.customer_id;\n```"
+      ],
+      "answer": 2,
+      "explanation": "`a.customer_id < b.customer_id` vừa loại cặp (A, A) vừa chỉ giữ một trong hai chiều (A, B) và (B, A): ra 11 cặp.\n- Chỉ ghép `a.city = b.city` (không có điều kiện id): ghép cả khách với chính mình và in cả hai chiều (38 dòng).\n- Dùng `<>`: loại được cặp (A, A) nhưng mỗi cặp vẫn xuất hiện hai chiều (22 dòng).\n- Dùng `<=`: giữ một chiều nhưng vẫn còn cặp (A, A), tổng 27 dòng.\nKhách có `city` NULL không ghép với ai vì `NULL = NULL` không phải TRUE."
+    },
+    {
+      "id": "sql-d10-12",
+      "topic": "JOIN nhiều bảng",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "In mọi đơn hàng (40 đơn) kèm tên khách và tên nhân viên bán; đơn online không có người bán vẫn phải xuất hiện (tên nhân viên NULL). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT o.order_id, c.full_name, e.full_name\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nLEFT JOIN employees e ON e.employee_id = o.employee_id;\n```",
+        "```sql\nSELECT o.order_id, c.full_name, e.full_name\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN employees e ON e.employee_id = o.employee_id;\n```",
+        "```sql\nSELECT o.order_id, c.full_name, e.full_name\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nLEFT JOIN employees e ON e.employee_id = o.employee_id\nWHERE e.title = 'Nhân viên bán hàng';\n```",
+        "```sql\nSELECT o.order_id, c.full_name, e.full_name\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nLEFT JOIN employees e ON e.employee_id = o.customer_id;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Mỗi đơn có đúng một khách nên `JOIN customers` giữ nguyên 40 đơn; `LEFT JOIN employees` giữ cả đơn online.\n- Dùng `INNER JOIN employees`: đơn online (`employee_id` NULL) bị loại, chỉ còn 15 đơn offline.\n- Dùng `LEFT JOIN` nhưng lọc `e.title` ở `WHERE`: dòng NULL của đơn online bị loại (`NULL = '...'` không phải TRUE), LEFT JOIN thành INNER JOIN, và còn loại thêm đơn của người bán có chức danh khác (chỉ còn 14 dòng).\n- Ghép sai cột trong `ON` (`e.employee_id = o.customer_id`): chạy được nhưng gắn sai người bán cho đơn, kể cả đơn online."
+    },
+    {
+      "id": "sql-d10-13",
+      "topic": "RIGHT JOIN",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Câu `FROM A RIGHT JOIN B ON ...` cho cùng tập dòng với câu nào?",
+      "options": [
+        "`FROM A INNER JOIN B ON ...`",
+        "`FROM A LEFT JOIN B ON ...`",
+        "`FROM A FULL JOIN B ON ...`",
+        "`FROM B LEFT JOIN A ON ...`"
+      ],
+      "answer": 3,
+      "explanation": "`RIGHT JOIN` giữ mọi dòng của bảng bên phải (B), nên `A RIGHT JOIN B` cho cùng các dòng với `B LEFT JOIN A`. Chỉ khác thứ tự cột. Vì vậy hầu hết người viết SQL chỉ dùng `LEFT JOIN` và đặt bảng phải-giữ-hết lên trước cho dễ đọc.\n- `INNER JOIN` bỏ các dòng không khớp của B.\n- `A LEFT JOIN B` giữ dòng của A, không phải của B.\n- `FULL JOIN` giữ cả phần thừa của A lẫn B."
+    },
+    {
+      "id": "sql-d10-14",
+      "topic": "FULL JOIN",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",
+      "question": "Có 8 nhân viên (4 người chưa bán đơn nào), 40 đơn (15 đơn offline có người bán, 25 đơn online không có người bán). Truy vấn sau trả về bao nhiêu dòng?",
+      "code": "SELECT e.full_name, o.order_id\nFROM employees e\nFULL JOIN orders o\n       ON o.employee_id = e.employee_id;",
+      "codeLang": "sql",
+      "options": [
+        "19",
+        "59",
+        "40",
+        "44"
+      ],
+      "answer": 3,
+      "explanation": "`FULL JOIN` giữ cặp khớp và cả phần thừa của hai bên: 15 (cặp khớp) + 4 (nhân viên chưa bán, cột `orders` NULL) + 25 (đơn online, cột `employees` NULL) = **44**.\n- 19 là kết quả của `LEFT JOIN` (15 + 4), thiếu 25 đơn online.\n- 40 là kết quả của `RIGHT JOIN` (15 + 25), thiếu 4 nhân viên chưa bán.\n- 59 là cộng nhầm hai kết quả trên (19 + 40), đếm 15 cặp khớp hai lần."
+    }
+  ]
+}

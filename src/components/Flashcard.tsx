@@ -1,3 +1,4 @@
+import CodeBlock from './CodeBlock';
 import type {PlayQuestion} from '../lib';
 import Mermaid from './Mermaid';
 import RichText from './RichText';
@@ -18,11 +19,7 @@ export default function Flashcard({item, flipped, onFlip}: Props) {
       {q.topic && <span className="chip">{q.topic}</span>}
       <div style={{marginTop: 8}}>
         <RichText text={q.question} />
-        {q.code && (
-          <pre>
-            <code>{q.code}</code>
-          </pre>
-        )}
+        {q.code && <CodeBlock code={q.code} lang={q.codeLang} />}
         {q.diagram && <Mermaid chart={q.diagram} />}
       </div>
       {!flipped ? (

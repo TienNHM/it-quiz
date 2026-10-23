@@ -1,0 +1,103 @@
+[
+  {
+    "id": "sql-d06-01",
+    "kind": "choose-query",
+    "options": [
+      "INSERT INTO customers\nVALUES ('Đoàn Minh Quân', 'quan.doan@gmail.com', 'Huế');",
+      "INSERT INTO customers (full_name, email, city)\nVALUES ('Đoàn Minh Quân', 'quan.doan@gmail.com', 'Huế');",
+      "INSERT INTO customers (full_name, city, email)\nVALUES ('Đoàn Minh Quân', 'quan.doan@gmail.com', 'Huế');",
+      "INSERT INTO customers (customer_id, full_name, email, city)\nVALUES (19, 'Đoàn Minh Quân', 'quan.doan@gmail.com', 'Huế');"
+    ],
+    "probe": "SELECT full_name, email, city FROM customers WHERE full_name = 'Đoàn Minh Quân'"
+  },
+  {
+    "id": "sql-d06-02",
+    "kind": "predict",
+    "query": "UPDATE customers SET city = 'Hà Nội' WHERE email = NULL RETURNING customer_id",
+    "format": "rowcount"
+  },
+  {
+    "id": "sql-d06-03",
+    "kind": "find-error",
+    "options": [
+      "INSERT INTO orders (customer_id, order_date, channel)\nVALUES (2, now(), 'online');",
+      "INSERT INTO products (sku, name, category_id, price)\nVALUES ('ACC-020', 'Cáp USB-C 1m', 12, 0);",
+      "INSERT INTO orders (customer_id, order_date, channel)\nVALUES (3, now(), 'shopee');",
+      "INSERT INTO customers (full_name)\nVALUES ('Khách lẻ');"
+    ]
+  },
+  {
+    "id": "sql-d06-04",
+    "kind": "find-error",
+    "options": [
+      "DELETE FROM order_items WHERE order_id = 1;",
+      "DELETE FROM payments WHERE order_id = 1;",
+      "DELETE FROM orders WHERE order_id = 40;",
+      "DELETE FROM orders WHERE order_id = 1;"
+    ]
+  },
+  {
+    "id": "sql-d06-05",
+    "kind": "choose-query",
+    "options": [
+      "UPDATE products\nSET price = ROUND(products.price * 1.1, -3)\nFROM categories\nWHERE categories.category_id = products.category_id\n  AND categories.name = 'Máy tính bảng';",
+      "UPDATE products\nSET price = ROUND(products.price * 1.1, -3)\nFROM categories\nWHERE categories.name = 'Máy tính bảng';",
+      "UPDATE products\nSET price = ROUND(products.price * 1.1, -3)\nWHERE category_id = 'Máy tính bảng';",
+      "UPDATE products\nSET price = ROUND(products.price * 1.1, -3)\nFROM categories\nWHERE categories.parent_id = products.category_id\n  AND categories.name = 'Máy tính bảng';"
+    ],
+    "probe": "SELECT sku, price FROM products ORDER BY sku"
+  },
+  {
+    "id": "sql-d06-06",
+    "kind": "choose-query",
+    "options": [
+      "INSERT INTO products (sku, name, category_id, price, stock_quantity)\nVALUES ('ACC-001', 'Chuột Logitech G102', 10, 399000, 20)\nON CONFLICT (sku) DO UPDATE\nSET stock_quantity = EXCLUDED.stock_quantity;",
+      "INSERT INTO products (sku, name, category_id, price, stock_quantity)\nVALUES ('ACC-001', 'Chuột Logitech G102', 10, 399000, 20)\nON CONFLICT (sku) DO NOTHING;",
+      "INSERT INTO products (sku, name, category_id, price, stock_quantity)\nVALUES ('ACC-001', 'Chuột Logitech G102', 10, 399000, 20)\nON CONFLICT (sku) DO UPDATE\nSET stock_quantity =\n  products.stock_quantity + EXCLUDED.stock_quantity;",
+      "INSERT INTO products (sku, name, category_id, price, stock_quantity)\nVALUES ('ACC-001', 'Chuột Logitech G102', 10, 399000, 20)\nON CONFLICT (name) DO UPDATE\nSET stock_quantity =\n  products.stock_quantity + EXCLUDED.stock_quantity;"
+    ],
+    "probe": "SELECT stock_quantity FROM products WHERE sku = 'ACC-001'"
+  },
+  {
+    "id": "sql-d06-07",
+    "kind": "predict",
+    "query": "UPDATE products SET is_active = FALSE WHERE stock_quantity = 0 RETURNING sku",
+    "format": "rowcount"
+  },
+  {
+    "id": "sql-d06-08",
+    "kind": "choose-query",
+    "options": [
+      "UPDATE customers SET city = 'Hải Phòng'\nWHERE full_name = 'Nguyễn Văn An';",
+      "UPDATE customers SET city = 'Hải Phòng'\nWHERE customer_id = 15\n   OR full_name = 'Nguyễn Văn An';",
+      "UPDATE customers SET city = 'Hải Phòng'\nWHERE email = 'an.nguyen@gmail.com';",
+      "UPDATE customers SET city = 'Hải Phòng'\nWHERE customer_id = 15;"
+    ],
+    "probe": "SELECT customer_id, city FROM customers ORDER BY customer_id"
+  },
+  {
+    "id": "sql-d06-09",
+    "kind": "predict",
+    "query": "INSERT INTO categories (name) VALUES ('Phụ kiện'), ('Camera') ON CONFLICT (name) DO NOTHING RETURNING name",
+    "format": "rowcount"
+  },
+  {
+    "id": "sql-d06-10",
+    "kind": "predict",
+    "query": "DELETE FROM payments WHERE order_id = 31; DELETE FROM orders WHERE order_id = 31",
+    "format": "scalar",
+    "probe": "SELECT count(*) FROM order_items"
+  },
+  {
+    "id": "sql-d06-11",
+    "kind": "predict",
+    "query": "UPDATE products SET price = ROUND(price * 1.03, -3) WHERE sku = 'ACC-002' RETURNING price",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d06-12",
+    "kind": "predict",
+    "query": "CREATE TABLE t (id INT GENERATED ALWAYS AS IDENTITY, v TEXT); INSERT INTO t (v) VALUES ('a'), ('b'), ('c'); TRUNCATE t; INSERT INTO t (v) VALUES ('x') RETURNING id",
+    "format": "scalar"
+  }
+]

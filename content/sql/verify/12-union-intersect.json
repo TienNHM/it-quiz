@@ -1,0 +1,112 @@
+[
+  {
+    "id": "sql-d12-02",
+    "kind": "predict",
+    "query": "SELECT full_name FROM customers UNION ALL SELECT full_name FROM employees",
+    "format": "rowcount"
+  },
+  {
+    "id": "sql-d12-03",
+    "kind": "choose-query",
+    "options": [
+      "SELECT customer_id FROM orders WHERE channel = 'online' EXCEPT SELECT customer_id FROM orders WHERE channel = 'offline'",
+      "SELECT customer_id FROM orders WHERE channel = 'offline' EXCEPT SELECT customer_id FROM orders WHERE channel = 'online'",
+      "SELECT customer_id FROM orders WHERE channel = 'online' INTERSECT SELECT customer_id FROM orders WHERE channel = 'offline'",
+      "SELECT customer_id FROM orders WHERE channel = 'online' UNION SELECT customer_id FROM orders WHERE channel = 'offline'"
+    ]
+  },
+  {
+    "id": "sql-d12-04",
+    "kind": "find-error",
+    "options": [
+      "SELECT customer_id, full_name FROM customers UNION SELECT employee_id, full_name FROM employees",
+      "SELECT full_name, city FROM customers UNION ALL SELECT full_name, title FROM employees",
+      "SELECT product_id, sku FROM products INTERSECT SELECT product_id, sku FROM products",
+      "SELECT customer_id, full_name FROM customers EXCEPT SELECT employee_id FROM employees"
+    ]
+  },
+  {
+    "id": "sql-d12-05",
+    "kind": "predict",
+    "query": "SELECT x FROM (VALUES (1),(1),(1),(2),(2)) AS a(x) EXCEPT ALL SELECT x FROM (VALUES (2),(2),(2)) AS b(x)",
+    "format": "rowcount"
+  },
+  {
+    "id": "sql-d12-06",
+    "kind": "choose-query",
+    "options": [
+      "SELECT employee_id FROM employees WHERE employee_id NOT IN (SELECT employee_id FROM orders)",
+      "SELECT employee_id FROM orders EXCEPT SELECT employee_id FROM employees",
+      "SELECT DISTINCT e.employee_id FROM employees e JOIN orders o ON o.employee_id = e.employee_id",
+      "SELECT employee_id FROM employees EXCEPT SELECT employee_id FROM orders"
+    ]
+  },
+  {
+    "id": "sql-d12-07",
+    "kind": "find-error",
+    "options": [
+      "SELECT order_date FROM orders UNION SELECT hire_date FROM employees",
+      "SELECT order_date FROM orders UNION SELECT full_name FROM customers",
+      "SELECT price FROM products UNION SELECT salary FROM employees",
+      "SELECT is_active FROM products UNION SELECT TRUE"
+    ]
+  },
+  {
+    "id": "sql-d12-08",
+    "kind": "predict",
+    "query": "SELECT x FROM (VALUES (1),(1),(1),(2)) AS a(x) INTERSECT ALL SELECT x FROM (VALUES (1),(1),(2),(2)) AS b(x) ORDER BY x",
+    "format": "list"
+  },
+  {
+    "id": "sql-d12-10",
+    "kind": "choose-query",
+    "options": [
+      "SELECT full_name, 'KH' AS loai FROM customers UNION ALL SELECT full_name, 'NV' FROM employees ORDER BY full_name LIMIT 4",
+      "(SELECT full_name, 'KH' AS loai FROM customers ORDER BY created_at DESC LIMIT 2) UNION ALL (SELECT full_name, 'NV' FROM employees ORDER BY hire_date DESC LIMIT 2)",
+      "SELECT full_name, 'KH' AS loai FROM customers ORDER BY created_at DESC LIMIT 2 UNION ALL SELECT full_name, 'NV' FROM employees ORDER BY hire_date DESC LIMIT 2",
+      "(SELECT full_name, 'KH' AS loai FROM customers ORDER BY created_at LIMIT 2) UNION ALL (SELECT full_name, 'NV' FROM employees ORDER BY hire_date LIMIT 2)"
+    ]
+  },
+  {
+    "id": "sql-d12-11",
+    "kind": "predict",
+    "query": "SELECT 1 AS n UNION SELECT 2 INTERSECT SELECT 2 ORDER BY n",
+    "format": "list"
+  },
+  {
+    "id": "sql-d12-12",
+    "kind": "find-error",
+    "options": [
+      "SELECT full_name AS ho_ten FROM customers UNION SELECT full_name FROM employees ORDER BY ho_ten",
+      "SELECT full_name AS ho_ten FROM customers UNION SELECT full_name FROM employees ORDER BY 1",
+      "SELECT full_name, 'KH' AS loai FROM customers UNION ALL SELECT full_name, 'NV' FROM employees ORDER BY loai, full_name",
+      "SELECT full_name AS ho_ten FROM customers UNION SELECT full_name AS ten_nv FROM employees ORDER BY ten_nv"
+    ]
+  },
+  {
+    "id": "sql-d12-13",
+    "kind": "choose-query",
+    "options": [
+      "SELECT city FROM customers WHERE city IS NOT NULL UNION SELECT shipping_city FROM orders",
+      "SELECT city FROM customers WHERE city IS NOT NULL UNION SELECT shipping_city FROM orders WHERE shipping_city IS NOT NULL",
+      "SELECT city FROM customers WHERE city IS NOT NULL UNION ALL SELECT shipping_city FROM orders WHERE shipping_city IS NOT NULL",
+      "SELECT city FROM customers WHERE city IS NOT NULL INTERSECT SELECT shipping_city FROM orders WHERE shipping_city IS NOT NULL"
+    ]
+  },
+  {
+    "id": "sql-d12-15",
+    "kind": "choose-query",
+    "options": [
+      "SELECT COUNT(*) FROM (SELECT full_name FROM customers UNION SELECT full_name FROM employees) AS t",
+      "SELECT COUNT(*) FROM customers UNION SELECT COUNT(*) FROM employees",
+      "SELECT COUNT(*) FROM (SELECT full_name FROM customers INTERSECT SELECT full_name FROM employees) AS t",
+      "SELECT COUNT(*) FROM (SELECT full_name FROM customers UNION ALL SELECT full_name FROM employees) AS t"
+    ]
+  },
+  {
+    "id": "sql-d12-16",
+    "kind": "predict",
+    "query": "SELECT x FROM (VALUES (NULL),(NULL),(1)) AS a(x) INTERSECT SELECT x FROM (VALUES (NULL),(1)) AS b(x)",
+    "format": "rowcount"
+  }
+]

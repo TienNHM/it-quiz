@@ -2,6 +2,7 @@ import {Link, Navigate} from 'react-router-dom';
 import {getQuestion, getSubject, useProgress} from '../lib';
 import {Confetti, CountUp, ScoreRing} from '../components/fx';
 import {Icon} from '../components/Icon';
+import CodeBlock from '../components/CodeBlock';
 import RichText from '../components/RichText';
 import Mermaid from '../components/Mermaid';
 import {fmtDuration, pct} from '../components/Quiz/format';
@@ -49,7 +50,7 @@ export default function Result() {
             </summary>
             <div>
               <RichText text={q.question} />
-              {q.code && <pre><code>{q.code}</code></pre>}
+              {q.code && <CodeBlock code={q.code} lang={q.codeLang} />}
               {q.diagram && <Mermaid chart={q.diagram} />}
               <p><strong style={{color: 'var(--danger)'}}>Bạn chọn:</strong></p>
               {a.picked.length ? (

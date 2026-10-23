@@ -1,0 +1,227 @@
+{
+  "id": "sql-d11",
+  "title": "Ngày 11: Truy vấn con (subquery) và CTE",
+  "description": "Subquery vô hướng, IN/EXISTS, subquery tương quan, bẫy NOT IN với NULL và CTE trên DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d11-01",
+      "topic": "Subquery vô hướng",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Liệt kê mã sản phẩm (sku) có giá cao hơn giá trung bình của cả cửa hàng. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT sku FROM products\nWHERE price > AVG(price);\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price > (\n  SELECT AVG(price) FROM products);\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price > (\n  SELECT MAX(price) FROM products);\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price > (\n  SELECT AVG(price) FROM products\n  WHERE category_id = 3);\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là phương án 2: subquery vô hướng `(SELECT AVG(price) FROM products)` trả về đúng một con số (khoảng 10.832.875) để so sánh.\n- Phương án 1 đặt hàm tổng hợp trực tiếp trong `WHERE`, PostgreSQL báo lỗi vì `WHERE` chạy trước khi gom nhóm.\n- Phương án 3 so với giá lớn nhất, không sản phẩm nào đắt hơn chính nó nên ra 0 dòng.\n- Phương án 4 so với trung bình của riêng danh mục 3 (laptop gaming), một mốc khác hẳn nên ra tập dòng khác.\nKhi cần so với con số tính từ bảng, hãy để subquery tính con số đó.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d11-02",
+      "topic": "Subquery trả về nhiều dòng",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Phương án nào gây lỗi khi chạy trên PostgreSQL? (Danh mục 3 có 3 sản phẩm.)",
+      "options": [
+        "```sql\nSELECT sku FROM products\nWHERE price = (SELECT MAX(price)\n  FROM products WHERE category_id = 3);\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price IN (SELECT price\n  FROM products WHERE category_id = 3);\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price = ANY (SELECT price\n  FROM products WHERE category_id = 3);\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price = (SELECT price\n  FROM products WHERE category_id = 3);\n```"
+      ],
+      "answer": 3,
+      "explanation": "Phương án 4 lỗi `more than one row returned by a subquery used as an expression`: toán tử `=` cần đúng một giá trị, mà subquery trả về 3 giá.\n- Phương án 1 dùng `MAX` nên subquery chỉ còn một giá trị, chạy được.\n- Phương án 2 dùng `IN`, so với cả danh sách, chạy được.\n- Phương án 3 dùng `= ANY`, tương đương `IN`, chạy được.\nMuốn so với nhiều giá trị thì dùng `IN`/`ANY`, muốn một giá trị thì dùng hàm tổng hợp.",
+      "kind": "find-error"
+    },
+    {
+      "id": "sql-d11-03",
+      "topic": "ALL với danh sách rỗng",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Truy vấn sau trả về bao nhiêu? (Bảng products có 24 sản phẩm, không có danh mục 99.)",
+      "code": "SELECT COUNT(*)\nFROM products\nWHERE price > ALL (SELECT price\n                   FROM products\n                   WHERE category_id = 99);",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "1",
+        "24",
+        "báo lỗi"
+      ],
+      "answer": 2,
+      "explanation": "Kết quả là 24. `price > ALL (danh sách rỗng)` là TRUE vì không có giá trị nào để vi phạm điều kiện \"lớn hơn mọi giá trị\", nên mọi sản phẩm đều được giữ.\n- 0 là đáp án của người nghĩ rằng danh sách rỗng thì không so sánh được nên không dòng nào qua.\n- 1 sai: không có cơ chế nào chỉ giữ một sản phẩm.\n- Không có lỗi: subquery trả về rỗng hoàn toàn hợp lệ.\nNgược lại, `> ANY` với danh sách rỗng cho FALSE.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d11-04",
+      "topic": "NOT IN gặp NULL",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Truy vấn sau trả về bao nhiêu? (Bảng employees có 8 nhân viên; đơn online có employee_id NULL.)",
+      "code": "SELECT COUNT(*)\nFROM employees\nWHERE employee_id NOT IN (SELECT employee_id\n                          FROM orders);",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "4",
+        "8",
+        "báo lỗi"
+      ],
+      "answer": 0,
+      "explanation": "Kết quả là 0. Danh sách `SELECT employee_id FROM orders` chứa NULL (đơn online), nên `x NOT IN (..., NULL)` luôn là UNKNOWN hoặc FALSE, không bao giờ TRUE, và `WHERE` loại hết mọi dòng.\n- 4 là số nhân viên thật sự chưa bán đơn nào, chỉ ra khi dùng `NOT EXISTS` hoặc lọc `IS NOT NULL` trong subquery.\n- 8 sai vì không dòng nào qua được điều kiện.\n- Không có lỗi: câu lệnh hợp lệ, chỉ cho kết quả sai ý.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d11-05",
+      "topic": "NOT EXISTS",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Tìm mã nhân viên (employee_id) chưa bán được đơn nào. Truy vấn nào cho đúng 4 nhân viên?",
+      "options": [
+        "```sql\nSELECT employee_id FROM employees\nWHERE employee_id NOT IN (\n  SELECT employee_id FROM orders);\n```",
+        "```sql\nSELECT e.employee_id FROM employees e\nWHERE NOT EXISTS (SELECT 1 FROM orders o\n  WHERE o.employee_id = e.employee_id);\n```",
+        "```sql\nSELECT DISTINCT e.employee_id\nFROM employees e\nJOIN orders o\n  ON o.employee_id = e.employee_id;\n```",
+        "```sql\nSELECT employee_id FROM employees\nWHERE employee_id <> ALL (\n  SELECT employee_id FROM orders);\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là `NOT EXISTS` (phương án 2), không bị ảnh hưởng bởi NULL.\n- Phương án 1 dùng `NOT IN`, danh sách có NULL nên ra 0 dòng.\n- Phương án 3 là `JOIN` nên cho đúng nhóm NGƯỢC LẠI: những nhân viên đã bán đơn.\n- Phương án 4 `<> ALL` là cách viết khác của `NOT IN`, vướng cùng bẫy NULL và ra 0 dòng.\nCâu hỏi \"không có\" thì ưu tiên `NOT EXISTS`.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d11-06",
+      "topic": "EXISTS tương quan",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Liệt kê mã khách (customer_id) có đặt hàng từ ngày 2026-07-01 trở đi (đúng 6 khách). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT customer_id FROM customers c\nWHERE EXISTS (SELECT 1 FROM orders o\n  WHERE o.order_date >= '2026-07-01');\n```",
+        "```sql\nSELECT customer_id FROM customers c\nWHERE NOT EXISTS (SELECT 1 FROM orders o\n  WHERE o.customer_id = c.customer_id\n  AND o.order_date >= '2026-07-01');\n```",
+        "```sql\nSELECT customer_id FROM customers c\nWHERE EXISTS (SELECT 1 FROM orders o\n  WHERE o.customer_id = c.customer_id\n  AND o.order_date >= '2026-07-01');\n```",
+        "```sql\nSELECT customer_id FROM customers c\nWHERE EXISTS (SELECT 1 FROM orders o\n  WHERE o.customer_id = c.customer_id\n  AND o.order_date <= '2026-07-01');\n```"
+      ],
+      "answer": 2,
+      "explanation": "Phương án 3 đúng: subquery được nối với khách đang xét qua `o.customer_id = c.customer_id` và lọc đúng ngày.\n- Phương án 1 quên điều kiện tương quan, thành \"có đơn nào từ tháng 7 không?\" luôn TRUE nên chọn cả 18 khách.\n- Phương án 2 là `NOT EXISTS`, ra các khách KHÔNG đặt từ tháng 7 (12 khách).\n- Phương án 4 đổi chiều so sánh thành `<=`, ra 16 khách có đơn trước hoặc đúng ngày đó.\nMỗi khi viết `EXISTS`, kiểm tra subquery đã nhắc tới alias của truy vấn ngoài chưa.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d11-07",
+      "topic": "Subquery tương quan",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Truy vấn sau trả về bao nhiêu dòng? (Bảng products có 24 sản phẩm.)",
+      "code": "SELECT p.sku\nFROM products p\nWHERE p.price < (SELECT AVG(p2.price)\n                 FROM products p2\n                 WHERE p2.category_id = p.category_id);",
+      "codeLang": "sql",
+      "options": [
+        "12",
+        "9",
+        "15",
+        "24"
+      ],
+      "answer": 0,
+      "explanation": "Kết quả là 12 dòng. Mỗi sản phẩm được so với giá trung bình của CHÍNH danh mục của nó, không phải trung bình toàn cửa hàng.\n- 15 là số sản phẩm rẻ hơn trung bình toàn cửa hàng (so với một mốc duy nhất), không phải mốc theo danh mục.\n- 9 là số sản phẩm đắt hơn trung bình toàn cửa hàng.\n- 24 sai vì không thể mọi sản phẩm đều thấp hơn trung bình của nhóm mình.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d11-08",
+      "topic": "Subquery tương quan, trùng tên cột",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Với mỗi danh mục, tìm sản phẩm đắt nhất của danh mục đó (hiện sku, category_id, price). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT sku, category_id, price\nFROM products\nWHERE price = (SELECT MAX(price)\n  FROM products\n  WHERE category_id = category_id);\n```",
+        "```sql\nSELECT p.sku, p.category_id, p.price\nFROM products p\nWHERE p.price >= (SELECT AVG(p2.price)\n  FROM products p2\n  WHERE p2.category_id = p.category_id);\n```",
+        "```sql\nSELECT sku, category_id, MAX(price)\nFROM products\nGROUP BY category_id;\n```",
+        "```sql\nSELECT p.sku, p.category_id, p.price\nFROM products p\nWHERE p.price = (SELECT MAX(p2.price)\n  FROM products p2\n  WHERE p2.category_id = p.category_id);\n```"
+      ],
+      "answer": 3,
+      "explanation": "Phương án 4 đúng: alias `p` và `p2` phân biệt rõ cột của truy vấn ngoài và trong.\n- Phương án 1 viết `category_id = category_id` không alias, cả hai vế đều là cột của bảng bên trong, điều kiện luôn đúng, subquery thành MAX của cả cửa hàng nên chỉ còn một dòng.\n- Phương án 2 lấy sản phẩm không rẻ hơn mức trung bình của nhóm, nhiều hơn mong muốn.\n- Phương án 3 báo lỗi vì `sku` không nằm trong `GROUP BY` cũng không nằm trong hàm tổng hợp.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d11-09",
+      "topic": "EXISTS và NOT EXISTS kết hợp",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Tìm mã khách chỉ mua online: đã có ít nhất một đơn nhưng chưa từng có đơn offline (đúng 3 khách). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT c.customer_id FROM customers c\nWHERE NOT EXISTS (SELECT 1 FROM orders o\n  WHERE o.customer_id = c.customer_id\n  AND o.channel = 'offline');\n```",
+        "```sql\nSELECT DISTINCT c.customer_id\nFROM customers c\nJOIN orders o\n  ON o.customer_id = c.customer_id\nWHERE o.channel = 'online';\n```",
+        "```sql\nSELECT c.customer_id FROM customers c\nWHERE EXISTS (SELECT 1 FROM orders o\n  WHERE o.customer_id = c.customer_id)\nAND NOT EXISTS (SELECT 1 FROM orders\n  WHERE channel = 'offline');\n```",
+        "```sql\nSELECT c.customer_id FROM customers c\nWHERE EXISTS (SELECT 1 FROM orders o\n  WHERE o.customer_id = c.customer_id)\nAND NOT EXISTS (SELECT 1 FROM orders o\n  WHERE o.customer_id = c.customer_id\n  AND o.channel = 'offline');\n```"
+      ],
+      "answer": 3,
+      "explanation": "Phương án 4 đúng: `EXISTS` đầu bảo đảm khách có đơn, `NOT EXISTS` sau (có điều kiện tương quan) loại khách từng mua offline. Kết quả là khách 13, 14, 15.\n- Phương án 1 thiếu vế \"đã có đơn\", nên khách 16 và 17 (chưa mua gì) cũng lọt vào: 5 khách.\n- Phương án 2 chỉ hỏi \"có đơn online\", nên cả khách vừa mua online vừa mua offline cũng được chọn: 16 khách.\n- Phương án 3 quên điều kiện tương quan trong `NOT EXISTS`, thành \"cửa hàng có đơn offline nào không?\" luôn có, nên kết quả là 0 dòng.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d11-10",
+      "topic": "Subquery trong FROM",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Truy vấn sau trả về giá trị nào?",
+      "code": "SELECT ROUND(AVG(so_don), 2)\nFROM (SELECT customer_id, COUNT(*) AS so_don\n      FROM orders\n      GROUP BY customer_id) AS t;",
+      "codeLang": "sql",
+      "options": [
+        "5.00",
+        "2.00",
+        "2.50",
+        "3.00"
+      ],
+      "answer": 2,
+      "explanation": "Kết quả là 2.50. Bước trong đếm đơn của từng khách đã mua, bước ngoài lấy trung bình các con số đó (tổng 40 đơn chia 16 khách).\n- 5.00 là số đơn nhiều nhất của một khách, tức `MAX`, không phải trung bình.\n- 2.00 và 3.00 sai: `ROUND(..., 2)` giữ hai chữ số thập phân nên không làm tròn về số nguyên; hơn nữa giá trị thật là 2.5 chứ không phải 2 hay 3.\nĐây là kiểu tổng hợp hai lần mà một câu `GROUP BY` đơn lẻ không làm được.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d11-11",
+      "topic": "CTE",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Tìm mã khách có số đơn nhiều hơn số đơn trung bình mỗi khách (tính trên các khách đã mua). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nWITH t AS (\n  SELECT customer_id, COUNT(*) AS n\n  FROM orders GROUP BY customer_id)\nSELECT customer_id FROM t\nWHERE n > (SELECT AVG(n) FROM t);\n```",
+        "```sql\nWITH t AS (\n  SELECT customer_id, COUNT(*) AS n\n  FROM orders GROUP BY customer_id)\nSELECT customer_id FROM t\nWHERE n > AVG(n);\n```",
+        "```sql\nWITH t AS (\n  SELECT customer_id, COUNT(*) AS n\n  FROM orders GROUP BY customer_id)\nSELECT customer_id FROM t\nWHERE n < (SELECT AVG(n) FROM t);\n```",
+        "```sql\nWITH t AS (\n  SELECT customer_id, COUNT(*) AS n\n  FROM orders GROUP BY customer_id)\nSELECT customer_id FROM t\nWHERE n > (SELECT MAX(n) FROM t);\n```"
+      ],
+      "answer": 0,
+      "explanation": "Phương án 1 đúng: CTE `t` đếm đơn từng khách một lần, rồi được dùng lại trong subquery vô hướng để lấy trung bình (2.5), cho ra 5 khách.\n- Phương án 2 dùng `AVG(n)` trong `WHERE`, lỗi vì hàm tổng hợp không được đặt ở đó.\n- Phương án 3 đảo dấu, ra 11 khách dưới mức trung bình.\n- Phương án 4 so với giá trị lớn nhất, không ai vượt qua chính mức cao nhất nên ra 0 dòng.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d11-12",
+      "topic": "Subquery tương quan, khái niệm",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Điều nào mô tả đúng subquery tương quan (correlated subquery)?",
+      "options": [
+        "chạy độc lập được và chỉ tính một lần cho cả truy vấn",
+        "luôn bị chạy lại từng dòng, PostgreSQL không thể tối ưu thành JOIN",
+        "tham chiếu cột của truy vấn ngoài, nên không chạy riêng được",
+        "chỉ dùng được với EXISTS, không dùng được với toán tử so sánh"
+      ],
+      "answer": 2,
+      "explanation": "Subquery tương quan nhắc tới cột của truy vấn ngoài (ví dụ `p.category_id`), nên chạy riêng sẽ lỗi vì không biết `p` là gì, và về mặt logic được tính lại cho từng dòng ngoài.\n- Phương án 1 mô tả subquery thường (không tương quan).\n- Phương án 2 sai: \"tính lại từng dòng\" chỉ là cách hiểu kết quả, bộ tối ưu có thể viết lại thành JOIN và kết quả vẫn y như vậy.\n- Phương án 4 sai: subquery tương quan dùng được với `>`, `=` trong `WHERE`, và cả trong `SELECT`, như bài học đã minh họa.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d11-13",
+      "topic": "IN với subquery",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Truy vấn sau trả về bao nhiêu dòng? (Có 18 khách; một số khách có nhiều đơn online.)",
+      "code": "SELECT full_name\nFROM customers\nWHERE customer_id IN (SELECT customer_id\n                      FROM orders\n                      WHERE channel = 'online');",
+      "codeLang": "sql",
+      "options": [
+        "25",
+        "16",
+        "18",
+        "13"
+      ],
+      "answer": 1,
+      "explanation": "Kết quả là 16 dòng: `IN` chỉ hỏi \"có hay không\", nên mỗi khách xuất hiện tối đa một lần dù có nhiều đơn online.\n- 25 là số đơn online (hoặc số dòng nếu dùng `JOIN` thay vì `IN`, khi tên khách bị lặp theo số đơn).\n- 18 là toàn bộ khách, kể cả hai khách chưa từng mua gì.\n- 13 là số khách có đơn offline, nhầm kênh.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d11-14",
+      "topic": "Subquery tương quan, phạm vi",
+      "source": "Ngày 11 - Truy vấn con và CTE",
+      "question": "Phương án nào gây lỗi khi chạy?",
+      "options": [
+        "```sql\nSELECT sku FROM products p\nWHERE price > (SELECT AVG(p2.price)\n  FROM products p2\n  WHERE p2.category_id = p.category_id);\n```",
+        "```sql\nSELECT sku FROM products p\nWHERE EXISTS (SELECT 1 FROM order_items oi\n  WHERE oi.product_id = p.product_id);\n```",
+        "```sql\nSELECT AVG(p2.price)\nFROM products p2\nWHERE p2.category_id = p.category_id;\n```",
+        "```sql\nSELECT sku, (SELECT AVG(price)\n  FROM products\n  WHERE category_id = p.category_id)\nFROM products p;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Phương án 3 lỗi: `p` không tồn tại ở câu lệnh này (không có truy vấn ngoài định nghĩa alias `p`), nên không chạy riêng được.\n- Phương án 1 là subquery tương quan trong `WHERE`, `p` do truy vấn ngoài cung cấp, chạy được.\n- Phương án 2 là `EXISTS` tương quan, chạy được.\n- Phương án 4 là subquery tương quan trong `SELECT`, trả về một giá trị cho mỗi dòng, chạy được.\nSubquery tương quan chỉ hợp lệ khi nằm bên trong truy vấn ngoài chứa alias mà nó tham chiếu.",
+      "kind": "find-error"
+    }
+  ]
+}

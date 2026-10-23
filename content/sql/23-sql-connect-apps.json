@@ -1,0 +1,238 @@
+{
+  "id": "sql-d23",
+  "title": "Ngày 23: Kết nối SQL từ ứng dụng",
+  "description": "Truy vấn tham số hóa, placeholder của driver, connection pool, transaction từ code, thử lại lỗi 40001 và bẫy N+1 trên DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d23-01",
+      "topic": "Truy vấn tham số hóa",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Vì sao truy vấn tham số hóa (`%s`, `$1`) chặn được SQL injection, trong khi nối chuỗi thì không?",
+      "options": [
+        "Driver tự xóa nháy đơn và dấu chấm phẩy khỏi giá trị người dùng nhập",
+        "PostgreSQL từ chối mọi câu có `OR` hoặc `UNION` khi dùng tham số",
+        "Câu SQL và giá trị được gửi riêng; cấu trúc câu đã chốt trước nên giá trị chỉ còn là dữ liệu",
+        "Kết nối có tham số luôn chạy ở chế độ chỉ đọc nên không sửa được dữ liệu"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là phương án 3: driver gửi câu SQL (chứa `$1`) và giá trị thành hai phần riêng. PostgreSQL phân tích cấu trúc câu trước, rồi mới điền giá trị, nên giá trị không thể mọc thêm `OR`, `UNION` hay `;`.\n- Phương án 1 sai: driver không \"lọc\" ký tự nào, giá trị được giữ nguyên, chỉ là nó không bao giờ được hiểu như mã SQL.\n- Phương án 2 sai: PostgreSQL không cấm `OR`/`UNION` trong câu lệnh hợp lệ do lập trình viên viết.\n- Phương án 4 sai: tham số hóa không liên quan đến quyền đọc/ghi của kết nối.\nTự `replace(\"'\", \"''\")` dễ sót, còn tham số hóa đúng trong mọi trường hợp.",
+      "kind": "theory"
+    },
+    {
+      "id": "sql-d23-02",
+      "topic": "SQL injection",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Code Python nối chuỗi nên khi người dùng gõ vào ô email chuỗi `' OR '1'='1`, câu SQL thực sự gửi đi như dưới đây. Bảng customers có 18 khách. Truy vấn trả về bao nhiêu?",
+      "code": "SELECT COUNT(*)\nFROM customers\nWHERE email = '' OR '1'='1';",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "18",
+        "17",
+        "1"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là 18. Sau khi nối chuỗi, điều kiện thành `email = '' OR '1'='1'`, vế `'1'='1'` luôn đúng nên mọi dòng đều thỏa, kể cả khách có email NULL.\n- 0 là kết quả khi dùng tham số hóa, không phải khi nối chuỗi.\n- 17 hay 1 là con số tưởng tượng: điều kiện `OR` đúng với tất cả các dòng chứ không loại bớt dòng nào.\nĐây chính là SQL injection: người dùng đã điều khiển được cấu trúc câu lệnh.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d23-03",
+      "topic": "Bẫy N+1",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Code Python lấy khách ở Hà Nội bằng truy vấn dưới đây, rồi trong vòng lặp chạy thêm một truy vấn đếm đơn cho TỪNG khách. Tổng số truy vấn gửi tới database là bao nhiêu?",
+      "code": "SELECT customer_id, full_name\nFROM customers\nWHERE city = 'Hà Nội';",
+      "codeLang": "sql",
+      "options": [
+        "6",
+        "1",
+        "4",
+        "5"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng là 5: truy vấn đầu trả về 4 khách ở Hà Nội, vòng lặp chạy thêm 4 truy vấn đếm đơn, tổng 1 + 4 = 5. Đây là N+1 (N = 4).\n- 1 là số truy vấn nếu gộp bằng `LEFT JOIN` + `GROUP BY`, không phải cách code vòng lặp này làm.\n- 4 quên mất truy vấn đầu tiên lấy danh sách khách.\n- 6 đếm dư một truy vấn: không có truy vấn nào ngoài 1 truy vấn danh sách và 4 truy vấn trong vòng lặp.\nVới 10.000 khách sẽ là 10.001 lượt đi về qua mạng, nên cần viết lại thành một truy vấn.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d23-04",
+      "topic": "Tên cột động",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Một lập trình viên thử truyền tên cột sắp xếp như một tham số, nên câu SQL cuối cùng DB nhận được có tên cột dưới dạng chuỗi. Phương án nào gây lỗi khi chạy?",
+      "options": [
+        "```sql\nSELECT sku, price FROM products\nORDER BY 'price';\n```",
+        "```sql\nSELECT sku, price FROM products\nORDER BY price;\n```",
+        "```sql\nSELECT sku, price FROM products\nORDER BY \"price\";\n```",
+        "```sql\nSELECT sku, price FROM products\nORDER BY 2;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Phương án 1 lỗi `non-integer constant in ORDER BY`: `'price'` là một hằng chuỗi, không phải tên cột. Tham số chỉ thay được giá trị, nên nếu truyền tên cột bằng `%s` thì DB nhận về một hằng chuỗi như vậy.\n- Phương án 2 là cách viết thông thường, chạy được.\n- Phương án 3 đặt tên cột trong ngoặc kép (identifier), vẫn là cột `price`, chạy được.\n- Phương án 4 sắp theo cột thứ 2 của danh sách SELECT, chạy được.\nMuốn cho người dùng chọn cột, hãy so với whitelist rồi ghép bằng `psycopg.sql.Identifier`.",
+      "kind": "find-error"
+    },
+    {
+      "id": "sql-d23-05",
+      "topic": "= ANY với mảng",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Ứng dụng truyền một mảng id đơn hàng [5, 15, 28] làm MỘT tham số. Truy vấn nào lấy đúng order_id và status của 3 đơn đó?",
+      "options": [
+        "```sql\nSELECT order_id, status FROM orders\nWHERE order_id IN ARRAY[5, 15, 28];\n```",
+        "```sql\nSELECT order_id, status FROM orders\nWHERE order_id = ANY(ARRAY[5, 15, 28]);\n```",
+        "```sql\nSELECT order_id, status FROM orders\nWHERE order_id = ALL(ARRAY[5, 15, 28]);\n```",
+        "```sql\nSELECT order_id, status FROM orders\nWHERE order_id = ARRAY[5, 15, 28];\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là phương án 2: `= ANY(mảng)` nghĩa là bằng một phần tử bất kỳ trong mảng, tương đương `IN (5, 15, 28)` nhưng chỉ cần một tham số.\n- Phương án 1 sai cú pháp: `IN` cần danh sách trong ngoặc hoặc subquery, không nhận `ARRAY[...]` trực tiếp.\n- Phương án 3 chạy được nhưng `= ALL` đòi bằng mọi phần tử cùng lúc, không id nào thỏa nên ra 0 dòng.\n- Phương án 4 so một số nguyên với một mảng nên báo lỗi kiểu dữ liệu.\nTrong Node viết `= ANY($1::int[])` và truyền mảng JavaScript.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d23-06",
+      "topic": "LIKE/ILIKE với tham số",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Code Python gọi `ILIKE %s` với giá trị `f\"%{kw}%\"` và `kw = \"logitech\"`. Câu SQL nào tương đương với những gì DB thực sự xử lý, và cho ra 2 chuột Logitech (sku, name)?",
+      "options": [
+        "```sql\nSELECT sku, name FROM products\nWHERE name LIKE '%logitech%';\n```",
+        "```sql\nSELECT sku, name FROM products\nWHERE name ILIKE 'logitech';\n```",
+        "```sql\nSELECT sku, name FROM products\nWHERE name ILIKE '%logitech%';\n```",
+        "```sql\nSELECT sku, name FROM products\nWHERE name ILIKE '%logitech';\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là phương án 3: dấu `%` nằm trong giá trị tham số, nên DB thấy mẫu `'%logitech%'` và `ILIKE` không phân biệt hoa thường, khớp 'Chuột Logitech G102' và 'Chuột Logitech MX Master 3S'.\n- Phương án 1 dùng `LIKE` phân biệt hoa thường: 'logitech' không khớp 'Logitech' nên ra 0 dòng.\n- Phương án 2 thiếu `%` nên đòi tên đúng bằng 'logitech', ra 0 dòng.\n- Phương án 4 chỉ có `%` ở đầu, đòi tên kết thúc bằng 'logitech', ra 0 dòng.\nDấu `%` phải nằm trong giá trị tham số, không nằm trong câu SQL.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d23-07",
+      "topic": "Bẫy N+1",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Thay vòng lặp N+1 bằng MỘT truy vấn trả về họ tên và số đơn của mọi khách ở Cần Thơ, kể cả khách chưa có đơn nào (số đơn là 0). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT c.full_name, COUNT(o.order_id)\nFROM customers c\nLEFT JOIN orders o\n  ON o.customer_id = c.customer_id\nWHERE c.city = 'Cần Thơ'\nGROUP BY c.customer_id, c.full_name;\n```",
+        "```sql\nSELECT c.full_name, COUNT(*)\nFROM customers c\nLEFT JOIN orders o\n  ON o.customer_id = c.customer_id\nWHERE c.city = 'Cần Thơ'\nGROUP BY c.customer_id, c.full_name;\n```",
+        "```sql\nSELECT c.full_name, COUNT(o.order_id)\nFROM customers c\nJOIN orders o\n  ON o.customer_id = c.customer_id\nWHERE c.city = 'Cần Thơ'\nGROUP BY c.customer_id, c.full_name;\n```",
+        "```sql\nSELECT c.full_name, COUNT(o.order_id)\nFROM customers c\nLEFT JOIN orders o\n  ON o.customer_id = c.customer_id\n AND c.city = 'Cần Thơ'\nGROUP BY c.customer_id, c.full_name;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng là phương án 1: `LEFT JOIN` giữ khách chưa có đơn, `COUNT(o.order_id)` bỏ qua NULL nên khách đó ra 0, còn `WHERE` lọc thành phố.\n- Phương án 2 dùng `COUNT(*)`: dòng NULL do LEFT JOIN vẫn được đếm, Tạ Quang Sơn ra 1 thay vì 0.\n- Phương án 3 dùng `JOIN` thường nên Tạ Quang Sơn (0 đơn) biến mất khỏi kết quả.\n- Phương án 4 đưa điều kiện thành phố vào `ON`: LEFT JOIN vẫn giữ cả 18 khách, mọi thành phố khác hiện ra với 0 đơn.\nMột truy vấn thay cho 1+N lượt đi về qua mạng.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d23-08",
+      "topic": "Trừ kho có điều kiện",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Cần trừ 5 chiếc ở sản phẩm 16 (hiện còn 60), chỉ trừ khi còn đủ hàng và an toàn khi hai request chạy đồng thời. Biết app từng đọc thấy tồn kho là 58 từ trước đó. Câu UPDATE nào đúng?",
+      "options": [
+        "```sql\nUPDATE products\nSET stock_quantity = 53\nWHERE product_id = 16;\n```",
+        "```sql\nUPDATE products\nSET stock_quantity = stock_quantity - 5\nWHERE stock_quantity >= 5;\n```",
+        "```sql\nUPDATE products\nSET stock_quantity = 5\nWHERE product_id = 16 AND stock_quantity >= 5;\n```",
+        "```sql\nUPDATE products\nSET stock_quantity = stock_quantity - 5\nWHERE product_id = 16 AND stock_quantity >= 5;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng là phương án 4: tính trực tiếp từ giá trị hiện tại (`stock_quantity - 5`) và đặt điều kiện đủ hàng ngay trong câu UPDATE, kết quả còn 55. Nếu hết hàng nó chỉ sửa 0 dòng để code kiểm tra `rowcount`.\n- Phương án 1 ghi cứng 53 theo số đọc cũ (58 - 5), bỏ qua thay đổi của phiên khác, đó là lost update, và ghi sai ra 53.\n- Phương án 2 thiếu `product_id = 16` nên trừ 5 ở mọi sản phẩm còn từ 5 trở lên.\n- Phương án 3 gán thẳng `= 5` thay vì trừ, kho còn 5 chứ không phải 55.\nHọc theo nguyên tắc: tính từ giá trị hiện tại và kiểm tra điều kiện trong cùng một câu.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d23-09",
+      "topic": "Bộ lọc tùy chọn",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "API dùng một câu SQL cố định cho cả trường hợp có và không có bộ lọc. Khi client không gửi category_id và max_price, tham số là NULL, câu SQL tương đương như dưới đây. Bảng products có 24 sản phẩm, trong đó 1 sản phẩm ngừng bán (is_active = false). Truy vấn trả về bao nhiêu?",
+      "code": "SELECT COUNT(*)\nFROM products\nWHERE is_active\n  AND (NULL::int IS NULL OR category_id = NULL::int)\n  AND (NULL::numeric IS NULL\n       OR price <= NULL::numeric);",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "24",
+        "23",
+        "1"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là 23. `NULL::int IS NULL` là TRUE nên vế trong ngoặc đúng với mọi dòng, hai bộ lọc tùy chọn bị \"tắt\", chỉ còn điều kiện `is_active` giữ 23 sản phẩm đang bán.\n- 0 sẽ xảy ra nếu hiểu nhầm `category_id = NULL` làm mọi dòng sai, nhưng vế `OR` đã đúng trước đó.\n- 24 quên điều kiện `is_active` đang loại sản phẩm ngừng bán.\n- 1 không có cơ sở.\nMẹo này tránh phải ghép chuỗi SQL khi có bộ lọc tùy chọn.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d23-10",
+      "topic": "Placeholder theo driver",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Bạn chép đoạn `pool.query('SELECT full_name FROM customers WHERE customer_id = ?', [1])` từ một dự án MySQL sang Node.js dùng `pg`. Điều gì xảy ra và sửa thế nào?",
+      "options": [
+        "Chạy bình thường vì pg tự đổi `?` thành `$1`",
+        "Báo lỗi cú pháp (42601); sửa bằng cách đổi `?` thành `$1`",
+        "Báo lỗi cú pháp; sửa bằng cách đổi `?` thành `%s`",
+        "Chạy được nhưng trả mọi khách vì `?` là ký tự đại diện"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là phương án 2: `pg` dùng cú pháp tham số của chính PostgreSQL là `$1`, `$2`; `?` không có nghĩa gì và gây `syntax error`.\n- Phương án 1 sai: `pg` không dịch ký hiệu giữa các hệ.\n- Phương án 3 sai: `%s` là của psycopg (Python), không phải của pg.\n- Phương án 4 sai: `?` không phải ký tự đại diện trong SQL (ký tự đại diện của LIKE là `%` và `_`), và câu lệnh còn không chạy được.\nMỗi driver một kiểu: psycopg `%s`, asyncpg và pg `$1`, mysql2 và JDBC `?`.",
+      "kind": "theory"
+    },
+    {
+      "id": "sql-d23-11",
+      "topic": "Transaction trong Node.js",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Vì sao trong Node.js không nên chạy `BEGIN`, các câu UPDATE và `COMMIT` bằng từng lệnh `pool.query()` riêng?",
+      "options": [
+        "Mỗi `pool.query()` có thể dùng một kết nối khác nhau, nên BEGIN và COMMIT rơi vào hai kết nối",
+        "Vì `pool.query()` luôn tự động COMMIT sau mỗi câu lệnh nên không gom được nhiều câu",
+        "Vì `pg` không hỗ trợ lệnh BEGIN và COMMIT, chỉ có procedure trong database mới làm được",
+        "Vì pool chỉ cho mỗi kết nối chạy đúng một câu lệnh rồi đóng kết nối đó lại"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng là phương án 1: transaction gắn với MỘT kết nối. Pool có thể giao mỗi lần gọi `pool.query()` một kết nối khác, nên các câu lệnh của cùng nghiệp vụ nằm rải rác ở nhiều kết nối và không còn tính nguyên tử.\n- Phương án 2 sai: `BEGIN` mở transaction trên kết nối đó thì các câu sau chưa COMMIT; vấn đề là câu sau có thể đi sang kết nối khác, không phải do tự động COMMIT.\n- Phương án 3 sai: `BEGIN`/`COMMIT` gửi qua `client.query()` hoàn toàn bình thường.\n- Phương án 4 sai: kết nối trong pool được giữ mở để dùng lại nhiều lần.\nNhớ `client.release()` trong `finally`, nếu không pool sẽ cạn kết nối. Cách đúng là `pool.connect()` mượn một client, chạy BEGIN/COMMIT trên đó rồi `release()` trong `finally`.",
+      "kind": "theory"
+    },
+    {
+      "id": "sql-d23-12",
+      "topic": "Kiểm tra rowcount",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Trong hàm đặt hàng, câu UPDATE trừ kho có điều kiện `stock_quantity >= quantity` trả về `rowcount = 0`. Điều đó có nghĩa gì và code cần làm gì?",
+      "options": [
+        "PostgreSQL đã ném exception vì hết hàng, code chỉ cần bắt exception đó là xong",
+        "Câu lệnh sai cú pháp nên không sửa được dòng nào, cần viết lại câu SQL cho đúng",
+        "Kho đã được trừ xong; 0 là số dòng còn lỗi, nên cứ tiếp tục tạo order_items",
+        "Không dòng nào khớp điều kiện và không có lỗi nào được báo; code phải tự kiểm tra rồi ném lỗi"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng là phương án 4: UPDATE có điều kiện không bao giờ báo lỗi khi không dòng nào khớp, nó chỉ sửa 0 dòng (như `UPDATE 0` trong psql). Nếu code không kiểm tra, đơn hàng vẫn được tạo dù kho không bị trừ.\n- Phương án 1 sai: không có exception nào được ném, đó chính là cái bẫy.\n- Phương án 2 sai: sai cú pháp thì báo lỗi, không trả `rowcount = 0`.\n- Phương án 3 sai: 0 nghĩa là chưa trừ gì cả.\nVì vậy kiểm tra `cur.rowcount == 0` (Python) hoặc `rowCount === 0` (Node) rồi ném lỗi bên trong khối transaction.",
+      "kind": "theory"
+    },
+    {
+      "id": "sql-d23-13",
+      "topic": "Thử lại transaction",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Lỗi nào sau đây hợp lý để bắt riêng và thử lại cả transaction (có giới hạn số lần)?",
+      "options": [
+        "23505 unique_violation khi đăng ký email đã tồn tại",
+        "23514 check_violation khi đặt số lượng vượt tồn kho",
+        "40001 serialization_failure ở mức REPEATABLE READ khi phiên khác vừa sửa cùng dòng",
+        "22P02 invalid_text_representation khi gửi chuỗi chữ vào cột số"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là phương án 3: `40001` (và `40P01` deadlock) không do dữ liệu sai; chạy lại nguyên transaction từ đầu, đọc lại dữ liệu mới, thường sẽ thành công.\n- Phương án 1 (email trùng) thử lại bao nhiêu lần cũng trùng, phải báo người dùng.\n- Phương án 2 (vi phạm CHECK) là dữ liệu sai, chạy lại vẫn sai.\n- Phương án 4 (chuỗi không đổi được sang số) cũng là lỗi đầu vào, lặp lại vô ích.\nLưu ý: thử lại cả transaction gồm cả câu SELECT đầu, không chỉ câu UPDATE bị lỗi, và đặt giới hạn số lần cùng thời gian chờ giữa các lần.",
+      "kind": "theory"
+    },
+    {
+      "id": "sql-d23-14",
+      "topic": "Connection pool",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Web server Node.js nên tạo và dùng connection pool như thế nào?",
+      "options": [
+        "Tạo `new Pool(...)` trong mỗi request để mỗi người dùng có kết nối riêng",
+        "Tạo một Pool khi ứng dụng khởi động, mỗi request mượn kết nối rồi trả lại để dùng tiếp",
+        "Không dùng pool mà mở kết nối mới cho mỗi truy vấn cho chắc chắn",
+        "Tạo pool với `max` bằng 10.000 để request nào cũng có kết nối ngay"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là phương án 2: mở kết nối tốn thời gian (bắt tay TCP, xác thực, tạo tiến trình phục vụ), pool giữ sẵn một nhóm kết nối và cho các request dùng lại. Trong bài đo 200 truy vấn, pool nhanh hơn hàng chục lần.\n- Phương án 1 tạo pool mới cho mỗi request nên mất lợi ích và còn làm rò kết nối.\n- Phương án 3 là cách chậm và dễ làm cạn kết nối của server.\n- Phương án 4 vượt `max_connections` mặc định 100 của PostgreSQL, các kết nối thừa sẽ bị từ chối.\nPool tạo một lần, mượn rồi trả cho mỗi request.",
+      "kind": "theory"
+    },
+    {
+      "id": "sql-d23-15",
+      "topic": "Quên COMMIT",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
+      "question": "Đoạn Python sau tự mở kết nối bằng `psycopg.connect(...)` (không dùng `with`), chạy một câu UPDATE trừ kho rồi gọi `conn.close()`, không gọi `commit()`. Kết quả trong database là gì?",
+      "options": [
+        "Thay đổi bị bỏ vì transaction ngầm chưa COMMIT, tồn kho giữ nguyên",
+        "Thay đổi được lưu vì mỗi câu lệnh ghi tự động commit khi chạy xong",
+        "psycopg báo lỗi khi đóng kết nối nên toàn bộ chương trình dừng lại",
+        "Thay đổi được lưu sau vài giây khi PostgreSQL dọn kết nối bị bỏ"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng là phương án 1: psycopg mặc định mở transaction ngầm, câu UPDATE nằm trong đó nhưng chưa được COMMIT; đóng kết nối thì transaction bị hủy (ROLLBACK).\n- Phương án 2 sai: psycopg không tự COMMIT từng câu, trừ khi bật `autocommit=True`.\n- Phương án 3 sai: đóng kết nối mà chưa commit không gây lỗi, chỉ im lặng bỏ thay đổi, đó là điều nguy hiểm.\n- Phương án 4 sai: PostgreSQL không bao giờ tự COMMIT giúp một transaction bị bỏ.\nDùng `with psycopg.connect(...)` hoặc `with conn.transaction():` để khỏi phải nhớ.",
+      "kind": "theory"
+    }
+  ]
+}

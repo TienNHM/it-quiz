@@ -1,0 +1,241 @@
+{
+  "id": "sql-d25",
+  "title": "Ngày 25: SQL và dữ liệu lớn",
+  "description": "Phân vùng bảng RANGE, LIST, HASH, luật khóa chính và cận, DETACH, cắt tỉa phân vùng, cùng replication, sharding, kho dữ liệu cột và TOAST.",
+  "questions": [
+    {
+      "id": "sql-d25-01",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Khóa chính bảng phân vùng",
+      "question": "Trên DSC Shop, câu CREATE TABLE nào gây LỖI khi chạy?",
+      "options": [
+        "```sql\nCREATE TABLE s1 (id INT, d DATE,\n  PRIMARY KEY (id, d))\n  PARTITION BY RANGE (d);\n```",
+        "```sql\nCREATE TABLE s2 (id INT PRIMARY KEY,\n  d DATE)\n  PARTITION BY RANGE (d);\n```",
+        "```sql\nCREATE TABLE s3 (id INT, d DATE)\n  PARTITION BY RANGE (d);\n```",
+        "```sql\nCREATE TABLE s4 (id INT, d DATE,\n  UNIQUE (d, id))\n  PARTITION BY RANGE (d);\n```"
+      ],
+      "answer": 1,
+      "explanation": "Câu 2 lỗi: `unique constraint on partitioned table must include all partitioning columns`. Mỗi phân vùng có index riêng và PostgreSQL chỉ kiểm tra trùng bên trong từng phân vùng, nên khóa phải chứa cột phân vùng `d` thì mới bảo đảm duy nhất trên toàn bảng.\n- Câu 1 chạy được: khóa chính `(id, d)` có chứa `d`.\n- Câu 3 chạy được: bảng phân vùng không bắt buộc phải có khóa chính.\n- Câu 4 chạy được: `UNIQUE (d, id)` cũng chứa `d`, thứ tự cột không quan trọng với luật này."
+    },
+    {
+      "id": "sql-d25-02",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Cận RANGE",
+      "question": "Bảng `sales` được phân vùng RANGE theo `sale_date` với hai phân vùng như bên dưới. Sau khi chèn một dòng có `sale_date = '2025-07-01'`, dòng đó nằm ở phân vùng nào?",
+      "code": "CREATE TABLE sales_h1 PARTITION OF sales\n  FOR VALUES FROM ('2025-01-01') TO ('2025-07-01');\nCREATE TABLE sales_h2 PARTITION OF sales\n  FOR VALUES FROM ('2025-07-01') TO ('2026-01-01');\n\nINSERT INTO sales VALUES (1, '2025-07-01');",
+      "codeLang": "sql",
+      "options": [
+        "sales_h1",
+        "cả hai phân vùng",
+        "sales_h2",
+        "lỗi, không có phân vùng phù hợp"
+      ],
+      "answer": 2,
+      "explanation": "Dòng nằm ở **sales_h2**. Với RANGE, `FROM` bao gồm và `TO` không bao gồm: `2025-07-01` là cận trên (loại trừ) của `sales_h1` nhưng là cận dưới (bao gồm) của `sales_h2`.\n- sales_h1 sai vì `TO ('2025-07-01')` không chứa chính giá trị đó.\n- Cả hai phân vùng sai: các phân vùng không được chồng lấn, mỗi dòng nằm đúng một nơi.\n- Lỗi sai vì hai khoảng nối liền nhau, không có khe hở."
+    },
+    {
+      "id": "sql-d25-03",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Phân vùng HASH",
+      "question": "Bảng `h` được phân vùng HASH theo `id`. Câu tạo phân vùng nào gây LỖI?",
+      "code": "CREATE TABLE h (id INT PRIMARY KEY)\n  PARTITION BY HASH (id);",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nCREATE TABLE h0 PARTITION OF h\n  FOR VALUES WITH\n  (MODULUS 4, REMAINDER 0);\n```",
+        "```sql\nCREATE TABLE h1 PARTITION OF h\n  FOR VALUES WITH\n  (MODULUS 2, REMAINDER 1);\n```",
+        "```sql\nCREATE TABLE h5 PARTITION OF h\n  FOR VALUES WITH\n  (MODULUS 8, REMAINDER 5);\n```",
+        "```sql\nCREATE TABLE hx PARTITION OF h\n  DEFAULT;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Câu 4 lỗi: `a hash-partitioned table may not have a default partition`. HASH chia theo phần dư nên mọi dòng đều có chỗ, miễn là bạn tạo **đủ** các phần dư từ 0 đến MODULUS - 1; PostgreSQL không cho có phân vùng `DEFAULT`.\n- Câu 1 chạy được: phần dư 0 của modulus 4.\n- Câu 2 chạy được: phần dư 1 của modulus 2.\n- Câu 3 chạy được: phần dư 5 nhỏ hơn modulus 8. (Thiếu phân vùng vẫn tạo được, nhưng sau này INSERT vào dòng băm trúng phần dư bị thiếu mới báo lỗi.)"
+    },
+    {
+      "id": "sql-d25-04",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Cận trên RANGE",
+      "question": "Bảng `op` được phân vùng RANGE theo `order_date` (TIMESTAMPTZ) và đã có `op_2026` cùng phân vùng DEFAULT. Câu nào tạo `op_2025` chứa đúng mọi đơn của cả năm 2025 (kể cả lúc 23:59:59,5 ngày 31/12), không chồng lấn với `op_2026`?",
+      "options": [
+        "```sql\nCREATE TABLE op_2025 PARTITION OF op\n  FOR VALUES FROM ('2025-01-01')\n  TO ('2025-12-31');\n```",
+        "```sql\nCREATE TABLE op_2025 PARTITION OF op\n  FOR VALUES FROM ('2025-01-01')\n  TO ('2026-01-01');\n```",
+        "```sql\nCREATE TABLE op_2025 PARTITION OF op\n  FOR VALUES FROM ('2025-01-01')\n  TO ('2025-12-31 23:59:59');\n```",
+        "```sql\nCREATE TABLE op_2025 PARTITION OF op\n  FOR VALUES FROM ('2025-01-01')\n  TO ('2026-01-02');\n```"
+      ],
+      "answer": 1,
+      "explanation": "Câu 2 đúng: cận trên là đầu năm sau, `TO ('2026-01-01')` không bao gồm, nên phủ trọn cả năm 2025 và nối khít với `op_2026`.\n- Câu 1 sai: `TO ('2025-12-31')` loại trừ cả ngày 31/12, các đơn ngày đó rơi vào phân vùng DEFAULT. Thử chèn 3 đơn thì chỉ 1 đơn vào `op_2025`.\n- Câu 3 sai: bỏ sót khoảng từ 23:59:59 tới hết ngày, đơn lúc 23:59:59,5 rơi vào DEFAULT (chỉ 2 đơn vào `op_2025`).\n- Câu 4 lỗi: khoảng chạy sang ngày 01/01/2026 nên chồng lấn với `op_2026`."
+    },
+    {
+      "id": "sql-d25-05",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "DETACH PARTITION",
+      "question": "DSC Shop có 40 đơn: 25 đơn năm 2025 và 15 đơn năm 2026, đã nạp vào `orders_by_year` (phân vùng `oby_2025`, `oby_2026`). Sau lệnh dưới đây, hai truy vấn `SELECT count(*) FROM orders_by_year` và `SELECT count(*) FROM oby_2025` trả về lần lượt?",
+      "code": "ALTER TABLE orders_by_year\n  DETACH PARTITION oby_2025;",
+      "codeLang": "sql",
+      "options": [
+        "15 | 25",
+        "40 | 0",
+        "15 | 0",
+        "25 | 25"
+      ],
+      "answer": 0,
+      "explanation": "Kết quả **15 | 25**. `DETACH PARTITION` chỉ gỡ phân vùng khỏi bảng cha: `oby_2025` trở thành một bảng độc lập, vẫn giữ nguyên 25 dòng; bảng cha chỉ còn 15 dòng của năm 2026.\n- 40 | 0 sai: bảng cha không còn chứa phân vùng đã gỡ nên không thể còn đủ 40 dòng, và `oby_2025` cũng không bị làm rỗng.\n- 15 | 0 sai: đó là kết quả nếu 25 dòng bị `DELETE`; `DETACH` không xóa dòng nào.\n- 25 | 25 sai: bảng cha mất 25 dòng của năm 2025 nên chỉ còn 15, không phải 25."
+    },
+    {
+      "id": "sql-d25-06",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Phân vùng LIST và DEFAULT",
+      "question": "Bảng `orders_by_status` được phân vùng LIST theo `status` như dưới đây rồi nạp toàn bộ 40 đơn của DSC Shop (33 delivered, 3 cancelled, 2 paid, 1 pending, 1 shipped). Phân vùng DEFAULT `os_other` chứa bao nhiêu đơn?",
+      "code": "CREATE TABLE os_done PARTITION OF orders_by_status\n  FOR VALUES IN ('delivered', 'shipped');\nCREATE TABLE os_wait PARTITION OF orders_by_status\n  FOR VALUES IN ('pending');\nCREATE TABLE os_other PARTITION OF orders_by_status\n  DEFAULT;",
+      "codeLang": "sql",
+      "options": [
+        "3",
+        "2",
+        "6",
+        "5"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án **5**: DEFAULT hứng mọi giá trị không thuộc danh sách nào, tức `cancelled` (3 đơn) và `paid` (2 đơn).\n- 3 sai: mới tính `cancelled`, quên `paid`.\n- 2 sai: mới tính `paid`, quên `cancelled`.\n- 6 sai: cộng thừa 1 đơn `pending` hoặc `shipped`; hai trạng thái này đã có phân vùng riêng (`os_wait`, `os_done`) nên không vào DEFAULT."
+    },
+    {
+      "id": "sql-d25-07",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Khóa chính và LIST",
+      "question": "`orders_by_channel` được phân vùng LIST theo `channel` (chỉ có `orders_online` và `orders_offline`, không có DEFAULT), khóa chính `(order_id, channel)`, đã nạp 40 đơn của DSC Shop (đơn số 1 có kênh `online`). Câu INSERT nào gây LỖI?",
+      "options": [
+        "```sql\nINSERT INTO orders_by_channel\nVALUES (41, 1, now(), 'pending', 'online');\n```",
+        "```sql\nINSERT INTO orders_by_channel\nVALUES (1, 1, now(), 'pending', 'offline');\n```",
+        "```sql\nINSERT INTO orders_by_channel\nVALUES (42, 1, now(), 'pending', 'app');\n```",
+        "```sql\nINSERT INTO orders_by_channel\nVALUES (43, 2, now(), 'paid', 'offline');\n```"
+      ],
+      "answer": 2,
+      "explanation": "Câu 3 lỗi: kênh `app` không thuộc phân vùng nào và bảng không có DEFAULT (`no partition of relation ... found for row`).\n- Câu 1 chạy được: đơn mới 41, kênh `online` có phân vùng.\n- Câu 2 cũng chạy được, đây là chỗ dễ nhầm: `order_id = 1` đã tồn tại nhưng với kênh `online`; khóa chính là `(order_id, channel)` nên cặp `(1, 'offline')` chưa trùng. Vì khóa phải chứa cột phân vùng, `order_id` một mình không còn được ràng buộc duy nhất.\n- Câu 4 chạy được: đơn mới 43, kênh `offline`."
+    },
+    {
+      "id": "sql-d25-08",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Cú pháp phân vùng LIST",
+      "question": "`pbm` được phân vùng LIST theo `method` và đã có phân vùng cho `cash`, `card`. Câu nào tạo phân vùng `pbm_transfer` dùng chung cho `momo` và `bank_transfer`, để nạp toàn bộ bảng `payments` (có đủ 4 phương thức) vào `pbm` thành công?",
+      "options": [
+        "```sql\nCREATE TABLE pbm_transfer\n  PARTITION OF pbm\n  FOR VALUES IN ('momo');\n```",
+        "```sql\nCREATE TABLE pbm_transfer\n  PARTITION OF pbm\n  FOR VALUES FROM ('momo') TO ('bank_transfer');\n```",
+        "```sql\nCREATE TABLE pbm_transfer\n  PARTITION OF pbm\n  FOR VALUES ('momo', 'bank_transfer');\n```",
+        "```sql\nCREATE TABLE pbm_transfer\n  PARTITION OF pbm\n  FOR VALUES IN ('momo', 'bank_transfer');\n```"
+      ],
+      "answer": 3,
+      "explanation": "Câu 4 đúng: `FOR VALUES IN (...)` liệt kê mọi giá trị của phân vùng LIST, tách bằng dấu phẩy. Sau đó 22 thanh toán (14 momo + 8 bank_transfer) vào `pbm_transfer`.\n- Câu 1 tạo được phân vùng nhưng thiếu `bank_transfer`: khi nạp, 8 thanh toán chuyển khoản không có chỗ nên INSERT báo lỗi.\n- Câu 2 lỗi: `FROM ... TO ...` là cú pháp của RANGE, không dùng cho bảng LIST.\n- Câu 3 lỗi cú pháp: thiếu từ khóa `IN`."
+    },
+    {
+      "id": "sql-d25-09",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Phân vùng DEFAULT",
+      "question": "Bảng `ev` phân vùng RANGE theo `d` chỉ có phân vùng DEFAULT, và `ev_default` đang chứa một dòng ngày `2027-03-01`. Câu tạo phân vùng nào gây LỖI?",
+      "options": [
+        "```sql\nCREATE TABLE ev_2027 PARTITION OF ev\n  FOR VALUES FROM ('2027-01-01')\n  TO ('2028-01-01');\n```",
+        "```sql\nCREATE TABLE ev_2026 PARTITION OF ev\n  FOR VALUES FROM ('2026-01-01')\n  TO ('2027-01-01');\n```",
+        "```sql\nCREATE TABLE ev_2028 PARTITION OF ev\n  FOR VALUES FROM ('2028-01-01')\n  TO ('2029-01-01');\n```",
+        "```sql\nCREATE TABLE ev_2025 PARTITION OF ev\n  FOR VALUES FROM ('2025-01-01')\n  TO ('2026-01-01');\n```"
+      ],
+      "answer": 0,
+      "explanation": "Câu 1 lỗi: `updated partition constraint for default partition \"ev_default\" would be violated by some row`. Phân vùng mới của năm 2027 sẽ chiếm khoảng chứa dòng `2027-03-01`, mà dòng đó đang nằm ở DEFAULT; PostgreSQL không tự chuyển dòng, bạn phải dời dòng ra trước (chép ra bảng tạm, xóa, tạo phân vùng, chèn lại).\n- Câu 2, 3, 4 chạy được: các năm 2026, 2028, 2025 không có dòng nào trong DEFAULT thuộc khoảng mới.\nBài học: tạo sẵn phân vùng cho kỳ sắp tới thay vì để dữ liệu dồn vào DEFAULT."
+    },
+    {
+      "id": "sql-d25-10",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Partition pruning",
+      "question": "Bảng `orders_by_year` phân vùng RANGE theo năm của `order_date` (2023, 2024, 2025, 2026). Điều kiện WHERE nào cho phép PostgreSQL cắt tỉa, chỉ quét phân vùng 2025?",
+      "options": [
+        "```sql\nWHERE EXTRACT(YEAR FROM order_date)\n      = 2025\n```",
+        "```sql\nWHERE to_char(order_date, 'YYYY')\n      = '2025'\n```",
+        "```sql\nWHERE order_date >= '2025-01-01'\n  AND order_date <  '2026-01-01'\n```",
+        "```sql\nWHERE status = 'delivered'\n  AND customer_id < 100\n```"
+      ],
+      "answer": 2,
+      "explanation": "Câu 3 đúng: so sánh **trực tiếp** cột phân vùng với giá trị, PostgreSQL đối chiếu được với cận của từng phân vùng và chỉ giữ `2025`.\n- Câu 1 sai: bọc cột trong `EXTRACT` nên mất cắt tỉa, plan quét mọi phân vùng (cùng bẫy sargability của index).\n- Câu 2 sai: `to_char` cũng là hàm bọc cột phân vùng.\n- Câu 4 sai: lọc theo cột khác khóa phân vùng, PostgreSQL không biết phân vùng nào có dòng khớp nên phải quét hết."
+    },
+    {
+      "id": "sql-d25-11",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Replication",
+      "question": "DSC Shop mở rộng: lượng lệnh GHI (đơn mới, thanh toán) tăng gấp 10 lần và một máy PostgreSQL không còn kham nổi, trong khi báo cáo vẫn nhẹ. Thêm 3 replica (streaming replication) có giải quyết được vấn đề không?",
+      "options": [
+        "có, mỗi replica nhận một phần lệnh ghi nên tải ghi chia đều cho 4 máy",
+        "không, mọi lệnh ghi vẫn đi qua primary; replica chỉ chia tải đọc và dự phòng",
+        "có, vì replica ghi dữ liệu hai chiều và tự đồng bộ cho nhau",
+        "không, vì replica không đọc được dữ liệu cho tới khi primary hỏng"
+      ],
+      "answer": 1,
+      "explanation": "Replication **không tăng sức ghi**: primary nhận mọi lệnh ghi, replica chỉ áp dụng lại WAL từ primary, nên cả bốn máy vẫn phải xử lý lượng ghi đó. Replica giúp chia tải đọc (báo cáo) và dự phòng khi primary hỏng.\n- Phương án 1 sai: replica không nhận lệnh ghi riêng.\n- Phương án 3 sai: streaming replication là một chiều, từ primary sang replica.\n- Phương án 4 sai: replica đọc được bình thường (có thể trễ vài mili giây tới vài giây). Muốn tăng sức ghi cần sharding."
+    },
+    {
+      "id": "sql-d25-12",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Sharding",
+      "question": "DSC Shop phải sharding bảng `orders` sang 4 máy. Shard key nào hợp lý nhất, để đơn, dòng hàng và thanh toán của cùng một khách nằm chung một máy và tải chia đều?",
+      "options": [
+        "băm `customer_id` rồi lấy phần dư khi chia cho 4",
+        "`order_date` chia theo khoảng, mỗi máy giữ một giai đoạn",
+        "`status`, mỗi trạng thái một máy",
+        "`channel`, kênh online một máy, kênh offline một máy"
+      ],
+      "answer": 0,
+      "explanation": "Băm `customer_id` chia khách đều ra các máy, và mọi dữ liệu của một khách cùng shard nên truy vấn \"lịch sử đơn của tôi\" chỉ hỏi một máy, JOIN không phải xuyên máy.\n- `order_date` theo khoảng sai: đơn mới luôn dồn vào máy của giai đoạn hiện tại (điểm nóng) và dữ liệu một khách bị chia rải rác.\n- `status` sai: chỉ 5 giá trị, lệch rất mạnh (phần lớn là delivered) và một đơn đổi trạng thái phải chuyển máy.\n- `channel` sai: chỉ 2 giá trị nên tối đa 2 máy, không chia được 4 máy."
+    },
+    {
+      "id": "sql-d25-13",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Kho dữ liệu cột",
+      "question": "Báo cáo \"tổng `total_amount` theo tháng\" chạy trên bảng 2 tỷ đơn hàng gồm 30 cột. Vì sao kho dữ liệu lưu theo cột (ClickHouse, DuckDB, BigQuery...) thường nhanh hơn kho lưu theo dòng như PostgreSQL cho truy vấn này?",
+      "options": [
+        "vì kho cột không dùng SQL nên không tốn thời gian phân tích câu lệnh",
+        "vì kho cột lưu mọi cột của một dòng liền nhau nên đọc một dòng chỉ cần một lần",
+        "vì chỉ đọc hai cột cần dùng (ngày và số tiền), và dữ liệu cùng cột nén tốt hơn",
+        "vì kho cột cập nhật từng dòng nhanh hơn nên dữ liệu luôn mới nhất"
+      ],
+      "answer": 2,
+      "explanation": "Truy vấn chỉ cần 2 trong 30 cột. Kho cột đặt mọi giá trị của một cột cạnh nhau, nên chỉ đọc đúng các cột đó (khoảng 2/30 lượng dữ liệu) và các giá trị cùng kiểu, hay lặp nên nén rất tốt.\n- Phương án 1 sai: hầu hết kho cột vẫn dùng SQL.\n- Phương án 2 sai: lưu liền nhau theo dòng là cách của PostgreSQL, hợp OLTP; kho cột làm ngược lại.\n- Phương án 4 sai: kho cột cập nhật từng dòng chậm, đó là cái giá phải trả, nên chúng dành cho phân tích (OLAP) chứ không phải cho hệ thống bán hàng."
+    },
+    {
+      "id": "sql-d25-14",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "TOAST và nén",
+      "question": "Cột `mo_ta TEXT` của bảng sản phẩm được đặt `ALTER COLUMN mo_ta SET STORAGE EXTERNAL`. Điều gì đúng về cột này?",
+      "options": [
+        "giá trị lớn được đưa ra ngoài dòng nhưng không bị nén",
+        "giá trị được nén mạnh nhất có thể, luôn giữ trong dòng",
+        "giá trị được nén và cố giữ trong dòng, chỉ chuyển ra ngoài khi không còn cách nào khác",
+        "cột bị tắt cơ chế TOAST, giá trị lớn luôn nằm nguyên trong dòng"
+      ],
+      "answer": 0,
+      "explanation": "`EXTERNAL` nghĩa là đưa giá trị lớn ra bảng TOAST ngoài dòng nhưng **không nén**, đổi lại đọc một đoạn con của chuỗi dài (ví dụ `substring`) nhanh hơn vì không phải giải nén.\n- Phương án 2 sai: EXTERNAL tắt nén chứ không tăng nén, và giá trị lớn vẫn có thể ra ngoài dòng.\n- Phương án 3 sai: nén và cố giữ trong dòng là kiểu `MAIN`, không phải `EXTERNAL`.\n- Phương án 4 sai: giá trị quá lớn vẫn được chuyển ra ngoài dòng; mặc định `EXTENDED` mới là vừa nén vừa chuyển ra ngoài khi cần."
+    },
+    {
+      "id": "sql-d25-15",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "Cắt tỉa với HASH",
+      "question": "Bảng `customers_h` được phân vùng HASH theo `customer_id` thành 4 phân vùng (MODULUS 4). Điều kiện WHERE nào cho phép PostgreSQL chỉ quét đúng một phân vùng?",
+      "options": [
+        "```sql\nWHERE customer_id < 100\n```",
+        "```sql\nWHERE customer_id\n      BETWEEN 4242 AND 4243\n```",
+        "```sql\nWHERE city = 'Hà Nội'\n```",
+        "```sql\nWHERE customer_id = 4242\n```"
+      ],
+      "answer": 3,
+      "explanation": "Câu 4 đúng: HASH chỉ cắt tỉa được với phép `=` trên khóa phân vùng; PostgreSQL băm 4242 ra phần dư và đi thẳng vào một phân vùng (plan chỉ có một `Index Scan`).\n- Câu 1 sai: điều kiện khoảng, các giá trị dưới 100 băm rải đều ra cả 4 phân vùng nên phải quét hết.\n- Câu 2 sai: `BETWEEN` là khoảng, dù chỉ có hai giá trị nhưng PostgreSQL không biến nó thành `=`, nên vẫn quét cả 4 phân vùng.\n- Câu 3 sai: `city` không phải khóa phân vùng."
+    },
+    {
+      "id": "sql-d25-16",
+      "source": "Ngày 25 - SQL và dữ liệu lớn",
+      "topic": "ATTACH PARTITION",
+      "question": "Bảng độc lập `x` có cùng cột với `ev` (phân vùng RANGE theo `d`). Bạn chèn đúng một dòng vào `x` rồi gắn `x` vào `ev` như đoạn code. Dòng nào khiến lệnh ATTACH gây LỖI?",
+      "code": "-- (1) chèn một dòng vào x (xem phương án)\n-- (2) rồi chạy:\nALTER TABLE ev ATTACH PARTITION x\n  FOR VALUES FROM ('2025-01-01')\n  TO ('2026-01-01');",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nINSERT INTO x\nVALUES (1, '2025-01-01');\n```",
+        "```sql\nINSERT INTO x\nVALUES (2, '2026-01-01');\n```",
+        "```sql\nINSERT INTO x\nVALUES (3, '2025-12-31');\n```",
+        "```sql\nINSERT INTO x\nVALUES (4, '2025-06-15');\n```"
+      ],
+      "answer": 1,
+      "explanation": "Câu 2 lỗi: khi ATTACH, PostgreSQL kiểm tra mọi dòng của `x` nằm trong khoảng, mà `2026-01-01` là cận trên **không bao gồm** nên dòng này nằm ngoài (`partition constraint of relation \"x\" is violated by some row`).\n- Câu 1 chạy được: `2025-01-01` là cận dưới, được bao gồm.\n- Câu 3 chạy được: `2025-12-31` vẫn nhỏ hơn cận trên.\n- Câu 4 chạy được: nằm giữa khoảng."
+    }
+  ]
+}

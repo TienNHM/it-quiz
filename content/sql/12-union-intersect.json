@@ -1,0 +1,243 @@
+{
+  "id": "sql-d12",
+  "title": "Ngày 12: UNION, INTERSECT và EXCEPT",
+  "description": "Gộp, giao và trừ kết quả truy vấn: UNION/UNION ALL, INTERSECT, EXCEPT và các quy tắc về cột, kiểu, ORDER BY.",
+  "questions": [
+    {
+      "id": "sql-d12-01",
+      "topic": "UNION vs UNION ALL",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Bạn gộp danh sách khách hàng và nhân viên thành một danh bạ. Hai nguồn có thể có tên trùng nhau, và mỗi dòng đều là một người thật cần giữ lại. Nên dùng gì?",
+      "options": [
+        "`UNION`, vì loại trùng giúp danh bạ gọn hơn",
+        "`UNION ALL`, vì nó giữ nguyên mọi dòng và không tốn công loại trùng",
+        "`INTERSECT`, vì nó giữ các dòng của cả hai bảng",
+        "`EXCEPT`, vì nó nối hai bảng lại với nhau"
+      ],
+      "answer": 1,
+      "explanation": "`UNION ALL` chỉ nối hai danh sách, không kiểm tra trùng nên không bao giờ làm mất dòng. Khi mỗi dòng là dữ liệu thật thì đây là lựa chọn mặc định.\n- `UNION` loại trùng trên toàn bộ kết quả: hai khách khác nhau cùng tên `Nguyễn Văn An` sẽ bị gộp thành một dòng mà không có cảnh báo.\n- `INTERSECT` chỉ giữ dòng có ở cả hai vế, không phải để gộp danh sách.\n- `EXCEPT` lấy dòng của vế trái mà vế phải không có, cũng không phải để nối."
+    },
+    {
+      "id": "sql-d12-02",
+      "topic": "UNION ALL",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Bảng `customers` có 18 dòng, bảng `employees` có 8 dòng. Truy vấn dưới trả về bao nhiêu dòng?",
+      "code": "SELECT full_name FROM customers\nUNION ALL\nSELECT full_name FROM employees;",
+      "codeLang": "sql",
+      "options": [
+        "18",
+        "25",
+        "26",
+        "8"
+      ],
+      "answer": 2,
+      "explanation": "`UNION ALL` không loại trùng nên số dòng bằng tổng hai vế: 18 + 8 = **26**.\n- 25 là kết quả nếu dùng `UNION`: hai khách khác nhau cùng tên `Nguyễn Văn An` chỉ còn một dòng.\n- 18 và 8 chỉ là số dòng của từng bảng riêng lẻ, còn phép toán tập hợp xếp chồng cả hai."
+    },
+    {
+      "id": "sql-d12-03",
+      "topic": "EXCEPT",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Muốn tìm các khách (customer_id) từng đặt đơn **online** nhưng chưa từng đặt đơn **offline**. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT customer_id FROM orders\nWHERE channel = 'online'\nEXCEPT\nSELECT customer_id FROM orders\nWHERE channel = 'offline'\n```",
+        "```sql\nSELECT customer_id FROM orders\nWHERE channel = 'offline'\nEXCEPT\nSELECT customer_id FROM orders\nWHERE channel = 'online'\n```",
+        "```sql\nSELECT customer_id FROM orders\nWHERE channel = 'online'\nINTERSECT\nSELECT customer_id FROM orders\nWHERE channel = 'offline'\n```",
+        "```sql\nSELECT customer_id FROM orders\nWHERE channel = 'online'\nUNION\nSELECT customer_id FROM orders\nWHERE channel = 'offline'\n```"
+      ],
+      "answer": 0,
+      "explanation": "`EXCEPT` lấy các dòng của vế trái rồi bỏ những dòng cũng có ở vế phải. Câu hỏi \"online nhưng chưa offline\" thì vế online đứng trước. Kết quả thật: 3 khách.\n- Đảo vế (offline `EXCEPT` online) là câu hỏi khác hẳn, và trên dữ liệu này trả về 0 dòng vì khách nào mua offline cũng từng mua online.\n- `INTERSECT` cho khách mua ở cả hai kênh (13 khách).\n- `UNION` cho khách mua ở ít nhất một kênh (16 khách)."
+    },
+    {
+      "id": "sql-d12-04",
+      "topic": "Quy tắc số cột",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Câu lệnh nào báo lỗi khi chạy?",
+      "options": [
+        "```sql\nSELECT customer_id, full_name\nFROM customers\nUNION\nSELECT employee_id, full_name\nFROM employees\n```",
+        "```sql\nSELECT full_name, city\nFROM customers\nUNION ALL\nSELECT full_name, title\nFROM employees\n```",
+        "```sql\nSELECT product_id, sku FROM products\nINTERSECT\nSELECT product_id, sku FROM products\n```",
+        "```sql\nSELECT customer_id, full_name\nFROM customers\nEXCEPT\nSELECT employee_id\nFROM employees\n```"
+      ],
+      "answer": 3,
+      "explanation": "Phương án cuối có vế trái 2 cột, vế phải 1 cột. Hai vế của phép toán tập hợp phải **cùng số cột**, nên PostgreSQL báo `each EXCEPT query must have the same number of columns`.\n- Ba phương án còn lại đều có 2 cột ở mỗi vế, cột cùng vị trí cùng kiểu (số với số, chuỗi với chuỗi) nên chạy được.\n- Tên cột khác nhau giữa hai vế (`city` và `title`) không gây lỗi: PostgreSQL ghép theo vị trí và lấy tên cột từ vế đầu."
+    },
+    {
+      "id": "sql-d12-05",
+      "topic": "EXCEPT ALL",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Truy vấn sau trả về bao nhiêu dòng?",
+      "code": "SELECT x FROM (VALUES (1),(1),(1),(2),(2)) AS a(x)\nEXCEPT ALL\nSELECT x FROM (VALUES (2),(2),(2)) AS b(x);",
+      "codeLang": "sql",
+      "options": [
+        "1",
+        "2",
+        "3",
+        "5"
+      ],
+      "answer": 2,
+      "explanation": "`EXCEPT ALL` đếm số lần xuất hiện: một dòng có m lần bên trái và n lần bên phải thì còn lại max(m - n, 0) lần.\n- Giá trị 1: max(3 - 0, 0) = 3 lần.\n- Giá trị 2: max(2 - 3, 0) = 0 lần.\nTổng cộng **3** dòng (ba dòng `1`).\n- Đáp án 1 là kết quả của `EXCEPT` thường (loại trùng, chỉ còn một giá trị 1).\n- 2 và 5 là cách đếm sai: không theo công thức max(m - n, 0)."
+    },
+    {
+      "id": "sql-d12-06",
+      "topic": "EXCEPT và NULL",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Cột `orders.employee_id` có giá trị `NULL` với đơn online. Truy vấn nào liệt kê đúng các nhân viên chưa từng lập đơn nào?",
+      "options": [
+        "```sql\nSELECT employee_id FROM employees\nWHERE employee_id NOT IN (\n  SELECT employee_id FROM orders)\n```",
+        "```sql\nSELECT employee_id FROM orders\nEXCEPT\nSELECT employee_id FROM employees\n```",
+        "```sql\nSELECT DISTINCT e.employee_id\nFROM employees e\nJOIN orders o\n  ON o.employee_id = e.employee_id\n```",
+        "```sql\nSELECT employee_id FROM employees\nEXCEPT\nSELECT employee_id FROM orders\n```"
+      ],
+      "answer": 3,
+      "explanation": "Vế trái là mọi nhân viên, vế phải là những nhân viên có xuất hiện trong `orders`; `EXCEPT` giữ phần còn lại. Dòng `NULL` ở vế phải không ảnh hưởng gì đến các id thật.\n- `NOT IN` là bẫy: trong danh sách con có `NULL` nên `x NOT IN (...)` không bao giờ đúng, kết quả rỗng dù có nhân viên chưa lập đơn.\n- Đảo vế cho ra câu hỏi khác: chỉ còn dòng `NULL` (đơn không gắn nhân viên).\n- `JOIN` liệt kê các nhân viên **đã** lập đơn, ngược với yêu cầu."
+    },
+    {
+      "id": "sql-d12-07",
+      "topic": "Quy tắc kiểu dữ liệu",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Câu lệnh nào báo lỗi khi chạy?",
+      "options": [
+        "```sql\nSELECT order_date FROM orders\nUNION\nSELECT hire_date FROM employees\n```",
+        "```sql\nSELECT order_date FROM orders\nUNION\nSELECT full_name FROM customers\n```",
+        "```sql\nSELECT price FROM products\nUNION\nSELECT salary FROM employees\n```",
+        "```sql\nSELECT is_active FROM products\nUNION\nSELECT TRUE\n```"
+      ],
+      "answer": 1,
+      "explanation": "Cột `order_date` là thời gian (`timestamptz`) còn `full_name` là chuỗi, hai kiểu không ghép được nên có lỗi dạng `UNION types timestamp with time zone and character varying cannot be matched`. Muốn ghép phải ép kiểu rõ ràng, ví dụ `order_date::text`.\n- `timestamptz` với `date` (ngày vào làm) là hai kiểu thời gian, PostgreSQL tự chuyển được.\n- `price` và `salary` đều là số (`NUMERIC`), cùng kiểu.\n- `is_active` là boolean và `TRUE` cũng boolean."
+    },
+    {
+      "id": "sql-d12-08",
+      "topic": "INTERSECT ALL",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Truy vấn sau trả về danh sách nào (theo thứ tự dòng)?",
+      "code": "SELECT x FROM (VALUES (1),(1),(1),(2)) AS a(x)\nINTERSECT ALL\nSELECT x FROM (VALUES (1),(1),(2),(2)) AS b(x)\nORDER BY x;",
+      "codeLang": "sql",
+      "options": [
+        "1, 1, 2",
+        "1, 2",
+        "1, 1, 1, 2",
+        "1, 1, 2, 2"
+      ],
+      "answer": 0,
+      "explanation": "`INTERSECT ALL` giữ min(m, n) lần cho mỗi giá trị.\n- Giá trị 1: bên trái 3 lần, bên phải 2 lần, giữ min(3, 2) = 2 lần.\n- Giá trị 2: bên trái 1 lần, bên phải 2 lần, giữ min(1, 2) = 1 lần.\nKết quả **1, 1, 2**.\n- `1, 2` là kết quả của `INTERSECT` thường (loại trùng).\n- `1, 1, 1, 2` và `1, 1, 2, 2` lần lượt lấy số lần của vế trái hoặc vế phải thay vì giá trị nhỏ hơn."
+    },
+    {
+      "id": "sql-d12-09",
+      "topic": "Ghép cột theo vị trí",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Hai cột `full_name` và `email` đều là chuỗi. Điều gì xảy ra khi chạy truy vấn sau?",
+      "code": "SELECT full_name, email FROM customers\nUNION ALL\nSELECT email, full_name FROM customers;",
+      "codeLang": "sql",
+      "options": [
+        "Báo lỗi vì tên cột hai vế không khớp nhau",
+        "PostgreSQL tự ghép theo tên cột nên kết quả vẫn đúng",
+        "Chạy được, nhưng ở nửa sau email nằm trong cột `full_name` và tên nằm trong cột `email`",
+        "Chạy được và chỉ trả 18 dòng vì hai vế lấy cùng dữ liệu"
+      ],
+      "answer": 2,
+      "explanation": "PostgreSQL ghép cột theo **vị trí**, không theo tên. Cột 1 của vế sau (`email`) được xếp xuống dưới cột 1 của vế đầu (`full_name`); cả hai cùng kiểu chuỗi nên không có lỗi nào, chỉ có dữ liệu sai chỗ.\n- Không báo lỗi vì tên cột không quan trọng, chỉ số cột và kiểu theo vị trí mới quan trọng.\n- Không có chuyện tự ghép theo tên.\n- `UNION ALL` không loại trùng nên trả đủ 36 dòng (18 + 18), không phải 18.\nVì vậy luôn viết các cột theo cùng thứ tự ở mọi vế."
+    },
+    {
+      "id": "sql-d12-10",
+      "topic": "ORDER BY và LIMIT trong từng vế",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Muốn lấy 2 khách đăng ký **mới nhất** và 2 nhân viên vào làm **gần đây nhất** (tổng 4 dòng, cột `loai` là `KH` hoặc `NV`). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT full_name, 'KH' AS loai\nFROM customers\nUNION ALL\nSELECT full_name, 'NV'\nFROM employees\nORDER BY full_name LIMIT 4\n```",
+        "```sql\n(SELECT full_name, 'KH' AS loai\n FROM customers\n ORDER BY created_at DESC LIMIT 2)\nUNION ALL\n(SELECT full_name, 'NV'\n FROM employees\n ORDER BY hire_date DESC LIMIT 2)\n```",
+        "```sql\nSELECT full_name, 'KH' AS loai\nFROM customers\nORDER BY created_at DESC LIMIT 2\nUNION ALL\nSELECT full_name, 'NV'\nFROM employees\nORDER BY hire_date DESC LIMIT 2\n```",
+        "```sql\n(SELECT full_name, 'KH' AS loai\n FROM customers\n ORDER BY created_at LIMIT 2)\nUNION ALL\n(SELECT full_name, 'NV'\n FROM employees\n ORDER BY hire_date LIMIT 2)\n```"
+      ],
+      "answer": 1,
+      "explanation": "Muốn sắp xếp và cắt từng vế riêng thì phải **bọc từng vế trong ngoặc**; khi đó `ORDER BY ... LIMIT 2` chỉ áp dụng cho vế đó.\n- Phương án đầu: `ORDER BY`/`LIMIT` ở cuối áp dụng cho cả kết quả gộp, nên chỉ lấy 4 người đầu theo bảng chữ cái, không phải mới nhất.\n- Phương án thứ ba: `ORDER BY` đặt giữa hai vế khi không có ngoặc là lỗi cú pháp (`syntax error at or near \"UNION\"`).\n- Phương án cuối có ngoặc đúng nhưng thiếu `DESC`, nên lấy 2 khách và 2 nhân viên **cũ nhất**."
+    },
+    {
+      "id": "sql-d12-11",
+      "topic": "Thứ tự ưu tiên phép toán",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Truy vấn sau trả về danh sách nào? (PostgreSQL ưu tiên `INTERSECT` trước `UNION`)",
+      "code": "SELECT 1 AS n\nUNION\nSELECT 2\nINTERSECT\nSELECT 2\nORDER BY n;",
+      "codeLang": "sql",
+      "options": [
+        "1, 2",
+        "2",
+        "1",
+        "(không có dòng nào)"
+      ],
+      "answer": 0,
+      "explanation": "`INTERSECT` được tính trước: `SELECT 2 INTERSECT SELECT 2` ra tập `{2}`. Sau đó `SELECT 1 UNION {2}` cho `1, 2`.\n- Nếu đọc từ trái sang phải mới ra `(1 UNION 2) INTERSECT 2` = `2`, đó là cách hiểu sai về thứ tự ưu tiên.\n- `1` và rỗng không phải kết quả của bất kỳ cách đọc nào.\nHễ trộn hai loại phép toán, hãy thêm ngoặc cho rõ để người đọc không phải nhớ quy tắc này."
+    },
+    {
+      "id": "sql-d12-12",
+      "topic": "ORDER BY sau UNION",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Câu lệnh nào báo lỗi khi chạy?",
+      "options": [
+        "```sql\nSELECT full_name AS ho_ten\nFROM customers\nUNION\nSELECT full_name\nFROM employees\nORDER BY ho_ten\n```",
+        "```sql\nSELECT full_name AS ho_ten\nFROM customers\nUNION\nSELECT full_name\nFROM employees\nORDER BY 1\n```",
+        "```sql\nSELECT full_name, 'KH' AS loai\nFROM customers\nUNION ALL\nSELECT full_name, 'NV'\nFROM employees\nORDER BY loai, full_name\n```",
+        "```sql\nSELECT full_name AS ho_ten\nFROM customers\nUNION\nSELECT full_name AS ten_nv\nFROM employees\nORDER BY ten_nv\n```"
+      ],
+      "answer": 3,
+      "explanation": "Tên cột của kết quả gộp lấy từ câu `SELECT` **đầu tiên**, và `ORDER BY` ở cuối chỉ nhìn thấy các tên đó. Alias `ten_nv` đặt ở vế thứ hai không dùng được, PostgreSQL báo `column \"ten_nv\" does not exist`.\n- `ORDER BY ho_ten` dùng đúng tên cột của vế đầu.\n- `ORDER BY 1` sắp theo số thứ tự cột nên luôn hợp lệ.\n- `ORDER BY loai, full_name` cũng hợp lệ vì cả hai đều là tên cột của vế đầu."
+    },
+    {
+      "id": "sql-d12-13",
+      "topic": "UNION loại trùng và NULL",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Lập danh sách thành phố **không lặp** gồm cả `customers.city` và `orders.shipping_city`, bỏ giá trị `NULL`, trả về một cột. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT city FROM customers\nWHERE city IS NOT NULL\nUNION\nSELECT shipping_city FROM orders\n```",
+        "```sql\nSELECT city FROM customers\nWHERE city IS NOT NULL\nUNION\nSELECT shipping_city FROM orders\nWHERE shipping_city IS NOT NULL\n```",
+        "```sql\nSELECT city FROM customers\nWHERE city IS NOT NULL\nUNION ALL\nSELECT shipping_city FROM orders\nWHERE shipping_city IS NOT NULL\n```",
+        "```sql\nSELECT city FROM customers\nWHERE city IS NOT NULL\nINTERSECT\nSELECT shipping_city FROM orders\nWHERE shipping_city IS NOT NULL\n```"
+      ],
+      "answer": 1,
+      "explanation": "Cần `UNION` (loại trùng) và điều kiện `IS NOT NULL` ở **cả hai** vế. Kết quả có 9 thành phố.\n- Phương án đầu chỉ lọc `NULL` ở vế trái; vế `orders` vẫn mang `NULL` vào, và khi loại trùng các `NULL` được coi là bằng nhau nên còn đúng một dòng `NULL` (10 dòng).\n- `UNION ALL` không loại trùng nên trả hàng chục dòng lặp lại.\n- `INTERSECT` chỉ giữ thành phố có ở cả hai bảng, thiếu những nơi chỉ xuất hiện ở một bên."
+    },
+    {
+      "id": "sql-d12-14",
+      "topic": "Đảo vế phép toán tập hợp",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Với hai câu `SELECT` A và B cùng số cột, cùng kiểu, phép toán nào cho **tập dòng** khác nhau khi đổi chỗ A và B?",
+      "options": [
+        "`UNION`",
+        "`INTERSECT`",
+        "`EXCEPT`",
+        "`UNION ALL`"
+      ],
+      "answer": 2,
+      "explanation": "`EXCEPT` là phép duy nhất phụ thuộc thứ tự: \"A có mà B không\" khác \"B có mà A không\".\n- `UNION` và `INTERSECT` có tính giao hoán: tập dòng ở ít nhất một vế hoặc ở cả hai vế không đổi khi đảo vế.\n- `UNION ALL` vẫn chứa đúng các dòng đó, đảo vế chỉ làm đổi thứ tự dòng (khi không có `ORDER BY`).\nVì vậy với `EXCEPT`, hãy đọc to câu hỏi: vế đứng trước chữ \"nhưng không\" là vế trái."
+    },
+    {
+      "id": "sql-d12-15",
+      "topic": "UNION làm mất dòng",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Muốn đếm **tổng số người** trong hệ thống (mỗi khách hàng và mỗi nhân viên là một người, kể cả trùng tên). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT COUNT(*) FROM (\n  SELECT full_name FROM customers\n  UNION\n  SELECT full_name FROM employees\n) AS t\n```",
+        "```sql\nSELECT COUNT(*) FROM customers\nUNION\nSELECT COUNT(*) FROM employees\n```",
+        "```sql\nSELECT COUNT(*) FROM (\n  SELECT full_name FROM customers\n  INTERSECT\n  SELECT full_name FROM employees\n) AS t\n```",
+        "```sql\nSELECT COUNT(*) FROM (\n  SELECT full_name FROM customers\n  UNION ALL\n  SELECT full_name FROM employees\n) AS t\n```"
+      ],
+      "answer": 3,
+      "explanation": "`UNION ALL` giữ mọi dòng nên đếm ra đúng 18 + 8 = **26** người.\n- `UNION` loại trùng theo `full_name`: hai khách khác nhau cùng tên `Nguyễn Văn An` bị nhập làm một, kết quả 25 (sai).\n- Phương án thứ hai gộp hai con số đếm, trả về hai dòng (18 và 8) chứ không phải một tổng.\n- `INTERSECT` chỉ giữ tên có ở cả hai bảng, trên dữ liệu này là 0."
+    },
+    {
+      "id": "sql-d12-16",
+      "topic": "NULL khi loại trùng",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
+      "question": "Truy vấn sau trả về bao nhiêu dòng?",
+      "code": "SELECT x FROM (VALUES (NULL),(NULL),(1)) AS a(x)\nINTERSECT\nSELECT x FROM (VALUES (NULL),(1)) AS b(x);",
+      "codeLang": "sql",
+      "options": [
+        "2",
+        "1",
+        "3",
+        "0"
+      ],
+      "answer": 0,
+      "explanation": "Khi loại trùng, `UNION`, `INTERSECT`, `EXCEPT` và `DISTINCT` coi các `NULL` là \"giống nhau\" (khác với phép so sánh `=`). Hai `NULL` bên trái gộp làm một và khớp với `NULL` bên phải, cộng với giá trị `1`: kết quả có **2** dòng (`NULL` và `1`).\n- 1 là đáp án nếu nghĩ `NULL` không bao giờ khớp `NULL` (chỉ còn giá trị `1`).\n- 3 là đếm cả hai `NULL` bên trái: sai vì `INTERSECT` loại trùng.\n- 0 là nghĩ hai vế không có dòng chung nào."
+    }
+  ]
+}

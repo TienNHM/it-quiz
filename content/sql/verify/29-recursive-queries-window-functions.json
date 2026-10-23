@@ -1,0 +1,100 @@
+[
+  {
+    "id": "sql-d29-02",
+    "kind": "predict",
+    "format": "list",
+    "query": "SELECT r FROM (SELECT x, RANK() OVER (ORDER BY x DESC) AS r FROM (VALUES (90),(85),(85),(70)) t(x)) s ORDER BY x DESC"
+  },
+  {
+    "id": "sql-d29-03",
+    "kind": "predict",
+    "format": "rowcount",
+    "query": "SELECT g, v FROM (SELECT g, v, RANK() OVER (PARTITION BY g ORDER BY v DESC) AS r FROM (VALUES ('a',100),('a',90),('a',90),('a',80),('b',50)) t(g,v)) s WHERE r <= 2"
+  },
+  {
+    "id": "sql-d29-04",
+    "kind": "find-error",
+    "options": [
+      "SELECT * FROM (SELECT name, ROW_NUMBER() OVER (ORDER BY price DESC) rn FROM products) t WHERE rn <= 3",
+      "SELECT name FROM products ORDER BY RANK() OVER (ORDER BY price DESC) LIMIT 3",
+      "WITH r AS (SELECT name, DENSE_RANK() OVER (ORDER BY price) k FROM products) SELECT name FROM r WHERE k <= 3",
+      "SELECT name FROM products WHERE ROW_NUMBER() OVER (ORDER BY price DESC) <= 3"
+    ]
+  },
+  {
+    "id": "sql-d29-05",
+    "kind": "choose-query",
+    "options": [
+      "SELECT category_id, name, price FROM products ORDER BY price DESC LIMIT 1",
+      "SELECT category_id, name, price FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY category_id ORDER BY price DESC) rn FROM products) t WHERE rn = 1",
+      "SELECT category_id, name, price FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY category_id ORDER BY price) rn FROM products) t WHERE rn = 1",
+      "SELECT category_id, name, MAX(price) FROM products GROUP BY category_id, name"
+    ]
+  },
+  {
+    "id": "sql-d29-06",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT s FROM (SELECT id, SUM(v) OVER (ORDER BY d) AS s FROM (VALUES (1, DATE '2025-01-01', 10),(2, DATE '2025-01-02', 20),(3, DATE '2025-01-02', 30),(4, DATE '2025-01-03', 40)) t(id, d, v)) x WHERE id = 2"
+  },
+  {
+    "id": "sql-d29-07",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT l FROM (SELECT x, LAST_VALUE(x) OVER (ORDER BY x) AS l FROM (VALUES (5),(8),(3)) t(x)) s WHERE x = 5"
+  },
+  {
+    "id": "sql-d29-08",
+    "kind": "predict",
+    "format": "list",
+    "query": "SELECT l FROM (SELECT x, LAG(x, 2, 0) OVER (ORDER BY x) AS l FROM (VALUES (5),(8),(3),(9)) t(x)) s ORDER BY x"
+  },
+  {
+    "id": "sql-d29-09",
+    "kind": "choose-query",
+    "options": [
+      "SELECT o.customer_id, MIN(p.payment_id), SUM(p.amount) FROM payments p JOIN orders o USING (order_id) GROUP BY o.customer_id",
+      "SELECT o.customer_id, p.payment_id, SUM(p.amount) OVER (ORDER BY p.paid_at, p.payment_id) FROM payments p JOIN orders o USING (order_id)",
+      "SELECT o.customer_id, p.payment_id, SUM(p.amount) OVER (PARTITION BY o.customer_id ORDER BY p.paid_at, p.payment_id) AS luy_ke FROM payments p JOIN orders o USING (order_id)",
+      "SELECT o.customer_id, p.payment_id, SUM(p.amount) OVER (PARTITION BY o.customer_id) FROM payments p JOIN orders o USING (order_id)"
+    ]
+  },
+  {
+    "id": "sql-d29-10",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT s FROM (SELECT id, SUM(v) OVER () AS s FROM (VALUES (1,10),(2,20),(3,30),(4,40)) t(id,v) WHERE v > 10) x WHERE id = 2"
+  },
+  {
+    "id": "sql-d29-11",
+    "kind": "choose-query",
+    "options": [
+      "WITH RECURSIVE t AS (SELECT * FROM employees WHERE employee_id = 2 UNION ALL SELECT e.* FROM employees e JOIN t ON e.employee_id = t.manager_id) SELECT employee_id FROM t",
+      "WITH RECURSIVE t AS (SELECT * FROM employees WHERE employee_id = 2 UNION ALL SELECT e.* FROM employees e JOIN t ON e.manager_id = t.employee_id) SELECT employee_id FROM t",
+      "SELECT employee_id FROM employees WHERE employee_id = 2 OR manager_id = 2",
+      "WITH RECURSIVE t AS (SELECT * FROM employees WHERE manager_id = 2 UNION ALL SELECT e.* FROM employees e JOIN t ON e.manager_id = t.employee_id) SELECT employee_id FROM t"
+    ]
+  },
+  {
+    "id": "sql-d29-12",
+    "kind": "find-error",
+    "options": [
+      "WITH RECURSIVE t AS (SELECT 1 AS n UNION ALL SELECT n + 1 FROM t WHERE n < 3) SELECT n FROM t",
+      "WITH RECURSIVE t AS (SELECT category_id AS id, name::text AS p FROM categories WHERE parent_id IS NULL UNION ALL SELECT c.category_id, t.p || c.name FROM categories c JOIN t ON c.parent_id = t.id) SELECT p FROM t",
+      "WITH RECURSIVE t AS (SELECT 1 AS n UNION SELECT n + 1 FROM t WHERE n < 3) SELECT n FROM t",
+      "WITH RECURSIVE t AS (SELECT category_id AS id, name AS p FROM categories WHERE parent_id IS NULL UNION ALL SELECT c.category_id, t.p || c.name FROM categories c JOIN t ON c.parent_id = t.id) SELECT p FROM t"
+    ]
+  },
+  {
+    "id": "sql-d29-13",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "WITH RECURSIVE t(n) AS (VALUES (10) UNION ALL SELECT n - 3 FROM t WHERE n > 0) SELECT COUNT(*) FROM t"
+  },
+  {
+    "id": "sql-d29-15",
+    "kind": "predict",
+    "format": "list",
+    "query": "SELECT ROUND(AVG(v) OVER (ORDER BY m ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)) AS a FROM (VALUES (1,30),(2,60),(3,90),(4,120)) t(m,v) ORDER BY m"
+  }
+]

@@ -1,0 +1,241 @@
+{
+  "id": "sql-d04",
+  "title": "Ngày 4: ORDER BY và LIMIT",
+  "description": "Sắp xếp kết quả, xử lý NULL, lấy top N, phân trang bằng OFFSET và keyset.",
+  "questions": [
+    {
+      "id": "sql-d04-01",
+      "topic": "ORDER BY, LIMIT",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Lấy 3 sản phẩm rẻ nhất của DSC Shop (cột sku, price). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT sku, price FROM products\nORDER BY price DESC\nLIMIT 3;\n```",
+        "```sql\nSELECT sku, price FROM products\nORDER BY price\nLIMIT 3;\n```",
+        "```sql\nSELECT sku, price FROM products\nLIMIT 3 ORDER BY price;\n```",
+        "```sql\nSELECT sku, price FROM products\nLIMIT 3;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: `ORDER BY price` (mặc định ASC, rẻ trước) rồi `LIMIT 3`.\n- `ORDER BY price DESC` sắp từ đắt đến rẻ nên trả về 3 sản phẩm **đắt** nhất.\n- `LIMIT 3 ORDER BY price` sai thứ tự mệnh đề, PostgreSQL báo lỗi cú pháp (`ORDER BY` phải đứng trước `LIMIT`).\n- Chỉ `LIMIT 3` không có `ORDER BY` lấy 3 dòng bất kỳ, thực tế ra id 1, 2, 3 (LAP-001, LAP-002, LAP-003), không phải 3 món rẻ nhất."
+    },
+    {
+      "id": "sql-d04-02",
+      "topic": "OFFSET",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Bảng products có 24 dòng. Truy vấn dưới đây trả về bao nhiêu dòng?",
+      "code": "SELECT sku\nFROM products\nORDER BY price\nLIMIT 5 OFFSET 22;",
+      "codeLang": "sql",
+      "options": [
+        "5",
+        "22",
+        "2",
+        "0"
+      ],
+      "answer": 2,
+      "explanation": "`OFFSET 22` bỏ qua 22 dòng đầu, còn lại 24 - 22 = **2** dòng. `LIMIT 5` chỉ là mức trần: còn ít hơn 5 dòng thì trả về bấy nhiêu, không báo lỗi.\n- 5: nhầm `LIMIT` luôn trả đủ số dòng.\n- 22: nhầm `OFFSET` là số dòng trả về.\n- 0: nhầm là khi offset lớn thì không còn gì. Chỉ khi `OFFSET` từ 24 trở lên mới ra 0 dòng."
+    },
+    {
+      "id": "sql-d04-03",
+      "topic": "NULL khi sắp DESC",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Truy vấn dưới đây trả về tên khách nào? (Ba khách id 5, 13, 17 chưa khai ngày sinh; khách id 10 sinh năm 2005, trẻ nhất trong số đã khai.)",
+      "code": "SELECT full_name\nFROM customers\nORDER BY birth_date DESC, customer_id DESC\nLIMIT 1;",
+      "codeLang": "sql",
+      "options": [
+        "Châu Ngọc Trâm",
+        "Dương Minh Khoa",
+        "Bùi Văn Hùng",
+        "Hoàng Thị Em"
+      ],
+      "answer": 0,
+      "explanation": "PostgreSQL coi `NULL` lớn hơn mọi giá trị nên khi `DESC` các `NULL` đứng **đầu**. Ba khách có `birth_date` NULL (id 5, 13, 17) hòa nhau, `customer_id DESC` phá hòa nên id 17, **Châu Ngọc Trâm**, đứng đầu.\n- Dương Minh Khoa là người trẻ nhất trong số đã khai, nhưng chỉ đứng đầu nếu `NULL` bị đẩy xuống cuối (`NULLS LAST`).\n- Bùi Văn Hùng (sinh 1985) là người lớn tuổi nhất, sẽ đứng đầu nếu sắp `ASC`.\n- Hoàng Thị Em (id 5) cũng NULL nhưng id nhỏ hơn 17, nên bị xếp sau."
+    },
+    {
+      "id": "sql-d04-04",
+      "topic": "ORDER BY với DISTINCT",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Câu lệnh nào dưới đây gây LỖI khi chạy trên PostgreSQL?",
+      "options": [
+        "```sql\nSELECT city FROM customers\nORDER BY 1;\n```",
+        "```sql\nSELECT full_name FROM customers\nORDER BY created_at DESC;\n```",
+        "```sql\nSELECT price * 2 AS gia FROM products\nORDER BY gia DESC;\n```",
+        "```sql\nSELECT DISTINCT city\nFROM customers\nORDER BY created_at;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Lỗi ở câu dùng `SELECT DISTINCT city ... ORDER BY created_at`: khi có `DISTINCT`, cột trong `ORDER BY` phải nằm trong danh sách `SELECT` (nhiều khách cùng thành phố có `created_at` khác nhau nên không biết lấy giá trị nào để sắp).\n- `ORDER BY 1` chạy được (sắp theo cột thứ nhất của `SELECT`), chỉ là cách viết dễ sai.\n- Sắp theo cột không có trong `SELECT` là hợp lệ khi không có `DISTINCT`.\n- `ORDER BY` chạy sau `SELECT` nên dùng được alias `gia`."
+    },
+    {
+      "id": "sql-d04-05",
+      "topic": "NULLS LAST",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Xếp hạng 5 sản phẩm lãi nhiều nhất trên mỗi chiếc (price - cost_price), sản phẩm chưa có giá nhập không được lọt vào top; đồng hạng thì xếp theo sku. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT sku, price - cost_price AS profit\nFROM products\nORDER BY profit DESC, sku\nLIMIT 5;\n```",
+        "```sql\nSELECT sku, price - cost_price AS profit\nFROM products\nORDER BY profit NULLS LAST, sku\nLIMIT 5;\n```",
+        "```sql\nSELECT sku, price - cost_price AS profit\nFROM products\nORDER BY profit DESC NULLS LAST, sku\nLIMIT 5;\n```",
+        "```sql\nSELECT sku, price - cost_price AS profit\nFROM products\nORDER BY profit DESC LAST NULLS, sku\nLIMIT 5;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng dùng `DESC NULLS LAST`: lãi giảm dần và đẩy `NULL` (HP Pavilion, Lót chuột chưa có giá nhập) xuống cuối.\n- Thiếu `NULLS LAST`: khi `DESC`, `NULL` đứng đầu nên hai sản phẩm chưa có giá nhập chiếm 2 suất đầu.\n- `ORDER BY profit NULLS LAST` là `ASC`: lấy 5 sản phẩm lãi **ít** nhất.\n- `LAST NULLS` viết ngược cú pháp, PostgreSQL báo lỗi (đúng là `NULLS LAST`)."
+    },
+    {
+      "id": "sql-d04-06",
+      "topic": "Phân trang OFFSET",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Trang sản phẩm xếp theo giá giảm dần (đồng giá xếp theo sku), mỗi trang 5 sản phẩm. Truy vấn nào lấy đúng trang 4?",
+      "options": [
+        "```sql\nSELECT sku, price FROM products\nORDER BY price DESC, sku\nLIMIT 5 OFFSET 15;\n```",
+        "```sql\nSELECT sku, price FROM products\nORDER BY price DESC, sku\nLIMIT 5 OFFSET 20;\n```",
+        "```sql\nSELECT sku, price FROM products\nORDER BY price DESC, sku\nLIMIT 5 OFFSET 4;\n```",
+        "```sql\nSELECT sku, price FROM products\nORDER BY price DESC, sku\nLIMIT 15 OFFSET 5;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Công thức: `OFFSET = (trang - 1) * cỡ_trang = (4 - 1) * 5 = 15`, kèm `LIMIT 5`.\n- `OFFSET 20` là trang 5 (= 4 * 5): nhầm bằng số trang nhân cỡ trang.\n- `OFFSET 4` lấy số trang trừ 1 mà quên nhân cỡ trang, chỉ bỏ 4 dòng đầu.\n- `LIMIT 15 OFFSET 5` đảo hai con số: bỏ 5 dòng, lấy 15 dòng."
+    },
+    {
+      "id": "sql-d04-07",
+      "topic": "WITH TIES",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Tìm sản phẩm (cột sku) có tồn kho ít nhất; nếu nhiều sản phẩm cùng mức tồn kho thấp nhất thì lấy hết. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT sku FROM products\nORDER BY stock_quantity\nLIMIT 1;\n```",
+        "```sql\nSELECT sku FROM products\nORDER BY stock_quantity\nFETCH FIRST 1 ROWS WITH TIES;\n```",
+        "```sql\nSELECT sku FROM products\nFETCH FIRST 1 ROWS WITH TIES;\n```",
+        "```sql\nSELECT sku FROM products\nORDER BY stock_quantity DESC\nFETCH FIRST 1 ROWS WITH TIES;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Có 3 sản phẩm hết hàng (LAP-003, PHN-004, ACC-006, tồn kho 0). `ORDER BY stock_quantity` đặt chúng lên đầu, `FETCH FIRST 1 ROWS WITH TIES` lấy dòng đầu cộng mọi dòng đồng hạng nên ra **3** dòng.\n- `LIMIT 1` chỉ trả đúng 1 trong 3 sản phẩm, và chọn cái nào là tùy may rủi.\n- `WITH TIES` mà thiếu `ORDER BY` thì PostgreSQL báo lỗi vì không có thứ hạng để xét đồng hạng.\n- `DESC` lấy sản phẩm tồn kho **nhiều** nhất (ACC-008, 200 chiếc)."
+    },
+    {
+      "id": "sql-d04-08",
+      "topic": "WITH TIES",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Danh mục 12 có 2 sản phẩm, danh mục 11 có 3 sản phẩm, các danh mục còn lại đều nhỏ hơn 11. Truy vấn dưới đây trả về bao nhiêu dòng?",
+      "code": "SELECT sku\nFROM products\nORDER BY category_id DESC\nFETCH FIRST 3 ROWS WITH TIES;",
+      "codeLang": "sql",
+      "options": [
+        "3",
+        "4",
+        "2",
+        "5"
+      ],
+      "answer": 3,
+      "explanation": "Sắp `category_id` giảm dần: 2 sản phẩm của danh mục 12, rồi các sản phẩm danh mục 11. Dòng thứ 3 (dòng cuối trong 3 dòng đầu) thuộc danh mục 11, nên `WITH TIES` lấy thêm **mọi** dòng cùng `category_id = 11`: tổng 2 + 3 = **5** dòng.\n- 3: kết quả của `ONLY` (hoặc `LIMIT 3`), bỏ qua đồng hạng.\n- 4 và 2: đếm thiếu, không khớp nhóm đồng hạng nào cả."
+    },
+    {
+      "id": "sql-d04-09",
+      "topic": "NULL khi sắp ASC",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Truy vấn dưới đây trả về tên khách nào? (Có 3 khách chưa khai ngày sinh.)",
+      "code": "SELECT full_name\nFROM customers\nORDER BY birth_date\nLIMIT 1;",
+      "codeLang": "sql",
+      "options": [
+        "Hoàng Thị Em",
+        "Dương Minh Khoa",
+        "Bùi Văn Hùng",
+        "Châu Ngọc Trâm"
+      ],
+      "answer": 2,
+      "explanation": "Mặc định `ASC` và PostgreSQL coi `NULL` lớn nhất nên `NULL` đứng **cuối**. Đứng đầu là người sinh sớm nhất trong số đã khai ngày sinh: **Bùi Văn Hùng** (1985-04-18).\n- Hoàng Thị Em và Châu Ngọc Trâm có `birth_date` NULL, chỉ lên đầu nếu viết `NULLS FIRST`.\n- Dương Minh Khoa (2005) là người trẻ nhất, sẽ đứng đầu nếu sắp `DESC NULLS LAST`."
+    },
+    {
+      "id": "sql-d04-10",
+      "topic": "Thứ tự xử lý",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Vì sao `ORDER BY profit` dùng được alias `profit` (khai báo ở SELECT: `price - cost_price AS profit`), còn `WHERE profit > 0` thì báo lỗi?",
+      "options": [
+        "`ORDER BY` chạy sau bước chọn cột nên đã thấy alias; `WHERE` chạy trước bước đó nên alias chưa tồn tại",
+        "Alias chỉ dùng được cho cột kiểu số nguyên, còn `WHERE` đòi kiểu khác",
+        "`WHERE` bị cấm dùng mọi phép trừ giữa hai cột",
+        "Cả hai đều chạy trước bước chọn cột, nhưng PostgreSQL ưu tiên `ORDER BY` hơn"
+      ],
+      "answer": 0,
+      "explanation": "Thứ tự xử lý logic là `FROM` → `WHERE` → `SELECT` → `ORDER BY` → `LIMIT`/`OFFSET`. Alias được tạo ở bước `SELECT`, nên `ORDER BY` (sau đó) dùng được, còn `WHERE` (trước đó) thì chưa biết `profit` là gì. Muốn lọc theo lãi, viết lại biểu thức: `WHERE price - cost_price > 0`.\n- Alias không liên quan kiểu dữ liệu, và `WHERE` dùng phép trừ bình thường.\n- Không có chuyện \"ưu tiên\": hai mệnh đề đứng ở hai vị trí khác nhau trong thứ tự xử lý."
+    },
+    {
+      "id": "sql-d04-11",
+      "topic": "Phân trang ổn định",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Phân trang khách hàng bằng `ORDER BY city LIMIT 4 OFFSET ...`. Vì sao có khách xuất hiện ở cả hai trang liên tiếp, còn khách khác không xuất hiện ở trang nào?",
+      "options": [
+        "Công thức OFFSET sai, phải dùng `OFFSET = trang * cỡ_trang`",
+        "`LIMIT` luôn trả dư một dòng ở cuối mỗi trang",
+        "Cột `city` có kiểu chữ nên `ORDER BY` bỏ qua dòng trùng giá trị",
+        "Nhiều khách hòa nhau về `city` nên thứ tự giữa họ không xác định và có thể khác nhau giữa các lần chạy; cần thêm cột duy nhất như `customer_id` vào cuối `ORDER BY`"
+      ],
+      "answer": 3,
+      "explanation": "Bốn khách Hà Nội hòa nhau về `city`, nên mỗi câu truy vấn được xếp họ theo thứ tự bất kỳ; hai câu với `OFFSET` khác nhau có thể xếp khác nhau. Kết quả thật trong bài: id 7 xuất hiện ở cả trang 2 lẫn trang 3, còn id 13 không có ở trang nào. Sửa: `ORDER BY city, customer_id`.\n- Công thức đúng là `(trang - 1) * cỡ_trang`, và nó không gây lặp dòng.\n- `LIMIT n` trả tối đa đúng n dòng, không dư.\n- `ORDER BY` không bỏ dòng nào, chỉ xếp thứ tự."
+    },
+    {
+      "id": "sql-d04-12",
+      "topic": "Keyset vs OFFSET",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Ứng dụng bảng tin cuộn vô hạn, bảng có hàng chục triệu dòng, mỗi lần tải 20 dòng mới nhất tiếp theo. Cách nào hợp lý nhất?",
+      "options": [
+        "Tăng dần `OFFSET` thêm 20 mỗi lần tải, vì `OFFSET` luôn chạy nhanh như nhau",
+        "Nhớ giá trị khóa của dòng cuối trang trước, rồi dùng `WHERE khóa < giá_trị_đó ORDER BY khóa DESC LIMIT 20`",
+        "Lấy toàn bộ bảng về ứng dụng rồi cắt từng trang ở phía ứng dụng",
+        "Dùng `LIMIT` không cần `ORDER BY` để PostgreSQL tự chọn dòng"
+      ],
+      "answer": 1,
+      "explanation": "Phân trang keyset dùng `WHERE` trên cột khóa có index, nên PostgreSQL nhảy thẳng tới vị trí cần và chỉ đọc 20 dòng, bất kể đang ở trang sâu đến đâu.\n- `OFFSET` lớn phải đọc rồi vứt mọi dòng phía trước, trang càng sâu càng chậm (trong bài: ~60-90 ms so với dưới 0,5 ms ở trang 90.001).\n- Tải cả bảng về là lãng phí băng thông và bộ nhớ.\n- `LIMIT` không có `ORDER BY` chọn dòng bất kỳ, không có khái niệm \"trang tiếp theo\"."
+    },
+    {
+      "id": "sql-d04-13",
+      "topic": "LIMIT không ORDER BY",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Truy vấn `SELECT order_id FROM orders LIMIT 5;` cho kết quả như thế nào?",
+      "options": [
+        "5 dòng bất kỳ; không có ORDER BY thì không có gì bảo đảm đó là 5 dòng nào, hay thứ tự ra sao",
+        "5 đơn hàng mới nhất, vì PostgreSQL mặc định sắp ngày giảm dần",
+        "Luôn là 5 đơn có order_id nhỏ nhất, vì khóa chính tự sắp xếp bảng",
+        "Báo lỗi vì `LIMIT` bắt buộc phải đi kèm `ORDER BY`"
+      ],
+      "answer": 0,
+      "explanation": "Bảng giống một cái túi đựng dòng, không có thứ tự được bảo đảm. `LIMIT` không có `ORDER BY` vẫn chạy bình thường nhưng \"5 dòng đầu\" chỉ là 5 dòng bất kỳ; hôm nay có thể ra đơn 1 đến 5, ngày khác (sau khi sửa, xóa dòng, hoặc đổi kế hoạch thực thi) có thể khác. Muốn \"mới nhất\" phải viết `ORDER BY order_date DESC`.\n- PostgreSQL không có thứ tự mặc định theo ngày.\n- Khóa chính tạo index chứ không sắp xếp lại bảng.\n- Chỉ `WITH TIES` mới bắt buộc `ORDER BY`; `LIMIT` thì không."
+    },
+    {
+      "id": "sql-d04-14",
+      "topic": "Keyset pagination",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Đơn hàng được tải cuộn vô hạn theo order_id giảm dần, mỗi lần 4 đơn. Lần tải trước kết thúc ở đơn order_id = 30. Truy vấn keyset nào lấy đúng lần tải tiếp theo?",
+      "options": [
+        "```sql\nSELECT order_id, status FROM orders\nWHERE order_id > 30\nORDER BY order_id DESC\nLIMIT 4;\n```",
+        "```sql\nSELECT order_id, status FROM orders\nWHERE order_id <= 30\nORDER BY order_id DESC\nLIMIT 4;\n```",
+        "```sql\nSELECT order_id, status FROM orders\nWHERE order_id < 30\nORDER BY order_id DESC\nLIMIT 4;\n```",
+        "```sql\nSELECT order_id, status FROM orders\nWHERE order_id < 30\nORDER BY order_id\nLIMIT 4;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Sắp **giảm dần** thì trang tiếp theo gồm các giá trị **nhỏ hơn** giá trị cuối: `order_id < 30`, rồi `ORDER BY order_id DESC LIMIT 4` cho đơn 29, 28, 27, 26.\n- `order_id > 30` lấy phía bên kia: ra 40, 39, 38, 37 (các đơn đã hiển thị từ trước).\n- `order_id <= 30` lặp lại đơn 30 ở đầu trang mới.\n- Thiếu `DESC`: sắp tăng dần nên ra đơn 1, 2, 3, 4, lệch hẳn khỏi vị trí đang đọc."
+    },
+    {
+      "id": "sql-d04-15",
+      "topic": "ORDER BY nhiều cột",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Liệt kê 6 sản phẩm đầu tiên (sku, category_id, price) với yêu cầu: danh mục tăng dần, trong mỗi danh mục thì giá cao trước, cùng giá thì xếp theo sku. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT sku, category_id, price FROM products\nORDER BY category_id DESC, price, sku\nLIMIT 6;\n```",
+        "```sql\nSELECT sku, category_id, price FROM products\nORDER BY price DESC, category_id, sku\nLIMIT 6;\n```",
+        "```sql\nSELECT sku, category_id, price FROM products\nORDER BY category_id, price, sku\nLIMIT 6;\n```",
+        "```sql\nSELECT sku, category_id, price FROM products\nORDER BY category_id, price DESC, sku\nLIMIT 6;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Mỗi cột trong `ORDER BY` có `ASC`/`DESC` riêng, cột sau chỉ phá hòa khi cột trước bằng nhau. Đáp án đúng: `category_id` (tăng) rồi `price DESC` rồi `sku`.\n- `category_id DESC, price` đảo cả hai chiều: danh mục lớn trước, giá thấp trước.\n- `price DESC, category_id, sku` sắp theo giá toàn bảng trước, danh mục chỉ phá hòa, nên các danh mục bị xen lẫn nhau.\n- `category_id, price, sku` đúng chiều danh mục nhưng quên `DESC` ở giá: trong mỗi danh mục ra món rẻ trước."
+    },
+    {
+      "id": "sql-d04-16",
+      "topic": "LIMIT và OFFSET",
+      "source": "Ngày 4 - ORDER BY và LIMIT",
+      "question": "Truy vấn dưới đây trả về sku nào?",
+      "code": "SELECT sku\nFROM products\nORDER BY price DESC\nLIMIT 1 OFFSET 2;",
+      "codeLang": "sql",
+      "options": [
+        "LAP-001",
+        "LAP-002",
+        "LAP-005",
+        "LAP-003"
+      ],
+      "answer": 2,
+      "explanation": "Xếp giá giảm dần: LAP-001 (32,99 triệu), LAP-002 (29,99 triệu), LAP-005 (24,99 triệu), LAP-003... `OFFSET 2` bỏ 2 dòng đầu, `LIMIT 1` lấy dòng tiếp theo, tức hạng 3: **LAP-005**.\n- LAP-001: hạng 1, chỉ ra khi `OFFSET 0`.\n- LAP-002: hạng 2, ra khi `OFFSET 1`.\n- LAP-003: hạng 4, ra khi `OFFSET 3` (nhầm offset là số thứ hạng cộng 1)."
+    }
+  ]
+}

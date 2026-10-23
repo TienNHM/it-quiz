@@ -1,0 +1,6 @@
+{
+  "id": "sql",
+  "title": "SQL",
+  "icon": "database",
+  "description": "Lộ trình 30 ngày học SQL trên PostgreSQL: từ SELECT, JOIN đến index, transaction, window function và bảo mật."
+}

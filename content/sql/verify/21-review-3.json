@@ -1,0 +1,36 @@
+[
+  {"id": "sql-d21-03", "kind": "choose-query", "options": [
+    "SELECT order_id FROM orders WHERE order_date = '2025-11-11'",
+    "SELECT order_id FROM orders WHERE order_date BETWEEN '2025-11-11' AND '2025-11-11'",
+    "SELECT order_id FROM orders WHERE order_date >= '2025-11-11' AND order_date < '2025-11-12'",
+    "SELECT order_id FROM orders WHERE order_date >= '2025-11-11' AND order_date <= '2025-11-11 23:00'"
+  ]},
+  {"id": "sql-d21-04", "kind": "predict", "query": "SELECT COUNT(*) FROM orders WHERE order_date BETWEEN '2025-11-01' AND '2025-11-11'", "format": "scalar"},
+  {"id": "sql-d21-05", "kind": "find-error", "options": [
+    "UPDATE products SET stock_quantity = stock_quantity - 1 WHERE sku = 'ACC-001'",
+    "UPDATE products SET stock_quantity = stock_quantity - 1 WHERE sku = 'LAP-003'",
+    "UPDATE products SET stock_quantity = stock_quantity + 1 WHERE sku = 'LAP-003'",
+    "UPDATE products SET stock_quantity = stock_quantity - 2 WHERE sku = 'LAP-002'"
+  ]},
+  {"id": "sql-d21-09", "kind": "predict", "query": "CREATE VIEW order_lines AS SELECT o.order_id, o.customer_id, oi.product_id, oi.quantity FROM orders AS o JOIN order_items AS oi ON oi.order_id = o.order_id; SELECT COUNT(*) FROM order_lines WHERE customer_id = 2;", "format": "scalar"},
+  {"id": "sql-d21-10", "kind": "choose-query", "options": [
+    "SELECT SUM(oi.quantity * oi.unit_price) FROM orders o JOIN order_items oi USING (order_id) WHERE order_date >= '2025-08-01' AND order_date < '2025-09-01'",
+    "SELECT SUM(oi.quantity * oi.unit_price) FROM orders o JOIN order_items oi USING (order_id) WHERE status NOT IN ('pending', 'cancelled') AND order_date BETWEEN '2025-08-01' AND '2025-08-16'",
+    "SELECT SUM(oi.quantity * oi.unit_price) FROM orders o JOIN order_items oi USING (order_id) WHERE status NOT IN ('pending', 'cancelled') AND order_date >= '2025-08-01' AND order_date < '2025-09-01'",
+    "SELECT SUM(oi.quantity * oi.unit_price) FROM orders o JOIN order_items oi USING (order_id) WHERE status NOT IN ('pending', 'cancelled') AND order_date >= '2025-08-01' OR order_date < '2025-09-01'"
+  ]},
+  {"id": "sql-d21-11", "kind": "find-error", "options": [
+    "CREATE INDEX i1 ON orders (customer_id, order_date)",
+    "CREATE INDEX i2 ON orders (order_date) WHERE status = 'pending'",
+    "CREATE INDEX i3 ON customers (LOWER(email))",
+    "CREATE INDEX i4 ON orders (DATE_TRUNC('day', order_date))"
+  ]},
+  {"id": "sql-d21-12", "kind": "predict", "query": "CREATE FUNCTION trg_stock() RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN UPDATE products SET stock_quantity = stock_quantity - NEW.quantity WHERE product_id = NEW.product_id; RETURN NEW; END; $$; CREATE TRIGGER items_stock AFTER INSERT ON order_items FOR EACH ROW EXECUTE FUNCTION trg_stock(); INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (40, 16, 3, 399000); UPDATE products SET stock_quantity = stock_quantity - 3 WHERE sku = 'ACC-001'; SELECT stock_quantity FROM products WHERE sku = 'ACC-001';", "format": "scalar"},
+  {"id": "sql-d21-16", "kind": "predict", "query": "CREATE FUNCTION monthly_revenue(p_year INT, p_month INT) RETURNS NUMERIC LANGUAGE sql STABLE AS $$ SELECT COALESCE(ROUND(SUM(oi.quantity * oi.unit_price * (1 - oi.discount))), 0) FROM orders AS o JOIN order_items AS oi ON oi.order_id = o.order_id WHERE o.status NOT IN ('pending', 'cancelled') AND o.order_date >= make_date(p_year, p_month, 1) AND o.order_date < make_date(p_year, p_month, 1) + INTERVAL '1 month'; $$; SELECT monthly_revenue(2024, 1);", "format": "scalar"},
+  {"id": "sql-d21-13", "kind": "find-error", "options": [
+    "CREATE VIEW active_products AS SELECT * FROM products WHERE is_active WITH CHECK OPTION; UPDATE active_products SET price = price + 1 WHERE sku = 'LAP-001'",
+    "CREATE VIEW active_products AS SELECT * FROM products WHERE is_active WITH CHECK OPTION; UPDATE active_products SET is_active = FALSE WHERE sku = 'LAP-001'",
+    "CREATE VIEW active_products AS SELECT * FROM products WHERE is_active WITH CHECK OPTION; UPDATE active_products SET stock_quantity = 0 WHERE sku = 'PHN-004'",
+    "CREATE VIEW active_products AS SELECT * FROM products WHERE is_active WITH CHECK OPTION; SELECT sku FROM active_products WHERE stock_quantity = 0"
+  ]}
+]

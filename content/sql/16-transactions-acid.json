@@ -1,0 +1,259 @@
+{
+  "id": "sql-d16",
+  "title": "Ngày 16: Transaction và ACID",
+  "description": "BEGIN/COMMIT/ROLLBACK, SAVEPOINT, lost update, isolation level, khóa dòng và deadlock trên dữ liệu DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d16-01",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "Autocommit",
+      "question": "Trong psql, không gõ BEGIN, bạn chạy ba lệnh dưới đây. Giá gốc của MacBook Air M2 (sản phẩm 5) là 24990000. Lệnh SELECT cuối trả về giá nào?",
+      "code": "UPDATE products SET price = 22990000 WHERE product_id = 5;\nROLLBACK;\nSELECT price FROM products WHERE product_id = 5;",
+      "codeLang": "sql",
+      "options": [
+        "24990000, vì ROLLBACK hủy câu lệnh sửa giá trước đó",
+        "22990000, vì câu sửa giá đã tự COMMIT ở chế độ autocommit",
+        "NULL, vì ROLLBACK xóa giá của dòng đó",
+        "Báo lỗi, vì ROLLBACK chỉ dùng được sau BEGIN"
+      ],
+      "answer": 1,
+      "explanation": "Không có `BEGIN` thì mỗi câu lệnh là một transaction riêng và tự COMMIT ngay khi chạy xong (autocommit). Khi tới `ROLLBACK`, không còn gì để hủy.\n- 24990000 chỉ đúng nếu UPDATE nằm trong transaction mở bằng `BEGIN`.\n- `ROLLBACK` không xóa hay đặt NULL cho dữ liệu nào.\n- PostgreSQL không báo lỗi, chỉ in cảnh báo `there is no transaction in progress`; giá đã đổi thật thành **22990000**."
+    },
+    {
+      "id": "sql-d16-02",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "SAVEPOINT lồng nhau",
+      "question": "Giá MacBook Air M2 (sản phẩm 5) đang là 24990000. Sau khi chạy đoạn dưới, SELECT cuối trả về giá nào?",
+      "code": "BEGIN;\nUPDATE products SET price = price - 1000000 WHERE product_id = 5;\nSAVEPOINT a;\nUPDATE products SET price = price - 1000000 WHERE product_id = 5;\nSAVEPOINT b;\nUPDATE products SET price = price - 1000000 WHERE product_id = 5;\nROLLBACK TO SAVEPOINT a;\nUPDATE products SET price = price - 500000 WHERE product_id = 5;\nCOMMIT;\nSELECT price FROM products WHERE product_id = 5;",
+      "codeLang": "sql",
+      "options": [
+        "23490000",
+        "22490000",
+        "24490000",
+        "21490000"
+      ],
+      "answer": 0,
+      "explanation": "`ROLLBACK TO SAVEPOINT a` hủy mọi thay đổi **sau** điểm `a`, tức là cả lần trừ thứ hai lẫn thứ ba (savepoint `b` cũng mất theo). Còn lại lần trừ đầu: 24990000 - 1000000 = 23990000, rồi trừ thêm 500000 sau khi lùi và COMMIT: **23490000**.\n- 22490000 là khi lùi về `b` (chỉ hủy lần trừ thứ ba) chứ không phải về `a`.\n- 24490000 tưởng lùi về `a` hủy cả lần trừ đầu, trong khi nó nằm trước `a`.\n- 21490000 là khi không có ROLLBACK nào: trừ cả ba lần rồi thêm 500000."
+    },
+    {
+      "id": "sql-d16-03",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "Transaction bị aborted",
+      "question": "Trong một transaction (không có SAVEPOINT), câu UPDATE vi phạm `CHECK (stock_quantity >= 0)` và báo lỗi. Bạn gõ tiếp một câu SELECT bình thường. Điều gì xảy ra?",
+      "options": [
+        "Câu đọc chạy bình thường, vì lỗi chỉ hủy riêng câu lệnh sửa dữ liệu",
+        "PostgreSQL tự rollback rồi mở transaction mới nên câu đọc chạy bình thường",
+        "Câu đọc bị từ chối: current transaction is aborted, phải rollback mới dùng tiếp được",
+        "Câu đọc chạy nhưng chỉ thấy dữ liệu từ trước khi bắt đầu transaction"
+      ],
+      "answer": 2,
+      "explanation": "Trong PostgreSQL, một câu lệnh lỗi đưa cả transaction vào trạng thái **aborted**. Mọi câu sau đều bị từ chối với `current transaction is aborted, commands ignored until end of transaction block`, cho tới khi `ROLLBACK` (hoặc `ROLLBACK TO SAVEPOINT`).\n- Chỉ hủy riêng câu lỗi rồi chạy tiếp là hành vi mặc định của MySQL và SQL Server, không phải PostgreSQL.\n- PostgreSQL không tự ROLLBACK và mở transaction mới giúp bạn.\n- SELECT không được chạy, nên cũng không có chuyện nó thấy dữ liệu cũ."
+    },
+    {
+      "id": "sql-d16-04",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "UPDATE 0",
+      "question": "Sản phẩm 1 (ASUS ROG Strix G16) đang tồn kho 5. Kết quả của SELECT cuối là gì?",
+      "code": "BEGIN;\nUPDATE products SET stock_quantity = stock_quantity - 10\nWHERE product_id = 1 AND stock_quantity >= 10;\nUPDATE products SET stock_quantity = stock_quantity - 2\nWHERE product_id = 1;\nSELECT stock_quantity FROM products WHERE product_id = 1;",
+      "codeLang": "sql",
+      "options": [
+        "5",
+        "4",
+        "Lỗi: transaction bị hủy vì câu sửa đầu tiên không tìm thấy dòng",
+        "3"
+      ],
+      "answer": 3,
+      "explanation": "Câu UPDATE đầu có điều kiện `stock_quantity >= 10` không đúng với dòng nào nên cho `UPDATE 0`. Đó là câu chạy thành công, **không phải lỗi**, nên transaction vẫn bình thường.\n- Câu UPDATE thứ hai trừ 2: 5 - 2 = **3**.\n- 5 sẽ đúng nếu cả hai câu đều không trúng dòng nào.\n- 4 không có phép tính nào cho ra.\n- Lỗi chỉ xảy ra khi vi phạm ràng buộc hay sai cú pháp; vì vậy ứng dụng phải tự kiểm tra số dòng bị ảnh hưởng."
+    },
+    {
+      "id": "sql-d16-05",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "SAVEPOINT",
+      "question": "Tồn kho ban đầu của sản phẩm 16 là 60 và sản phẩm 22 là 40. Sau khi chạy đoạn dưới, SELECT trả về tồn kho của sản phẩm 16 rồi 22 là gì?",
+      "code": "BEGIN;\nUPDATE products SET stock_quantity = stock_quantity - 3\nWHERE product_id = 16;\nSAVEPOINT s1;\nUPDATE products SET stock_quantity = stock_quantity - 5\nWHERE product_id = 22;\nROLLBACK TO SAVEPOINT s1;\nSELECT stock_quantity FROM products\nWHERE product_id IN (16, 22) ORDER BY product_id;",
+      "codeLang": "sql",
+      "options": [
+        "57, 35",
+        "57, 40",
+        "60, 40",
+        "60, 35"
+      ],
+      "answer": 1,
+      "explanation": "`ROLLBACK TO SAVEPOINT s1` chỉ hủy những gì xảy ra **sau** điểm đánh dấu.\n- Lần trừ 3 ở sản phẩm 16 nằm trước `SAVEPOINT` nên được giữ: 60 - 3 = 57.\n- Lần trừ 5 ở sản phẩm 22 nằm sau savepoint nên bị hủy: vẫn 40.\n- `57, 35` quên rằng phần sau savepoint bị hủy; `60, 40` tưởng cả transaction bị hủy; `60, 35` đảo ngược hoàn toàn."
+    },
+    {
+      "id": "sql-d16-06",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "IDENTITY không quay lui",
+      "question": "Bảng `orders` hiện có 40 đơn (order_id lớn nhất là 40). Đoạn dưới chạy đúng như viết. order_id mà câu INSERT cuối trả về là bao nhiêu?",
+      "code": "BEGIN;\nINSERT INTO orders (customer_id, order_date, status, channel)\nVALUES (16, '2026-10-17 09:00+07', 'pending', 'online');\nROLLBACK;\n\nBEGIN;\nINSERT INTO orders (customer_id, order_date, status, channel)\nVALUES (16, '2026-10-17 09:00+07', 'pending', 'online')\nRETURNING order_id;\nCOMMIT;",
+      "codeLang": "sql",
+      "options": [
+        "41",
+        "40",
+        "42",
+        "Lỗi trùng khóa chính"
+      ],
+      "answer": 2,
+      "explanation": "Bộ sinh số IDENTITY không quay lui khi ROLLBACK. Lần INSERT đầu đã lấy số 41 rồi bị hủy, số đó không được dùng lại, nên lần sau nhận **42**.\n- 41 là suy nghĩ \"ROLLBACK trả mọi thứ về như cũ\", đúng với dữ liệu nhưng không đúng với sequence.\n- 40 là id đã có.\n- Không có lỗi trùng khóa vì dòng 41 chưa từng được lưu.\n- Hệ quả: dãy id có thể bị \"lủng lỗ\", đừng dựa vào id liên tục."
+    },
+    {
+      "id": "sql-d16-07",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "Câu lệnh gây lỗi trong transaction",
+      "question": "Sản phẩm 3 đang hết hàng (tồn kho 0), sản phẩm 2 còn 3. Đoạn nào gây lỗi khi chạy?",
+      "options": [
+        "```sql\nBEGIN;\nUPDATE products SET stock_quantity = stock_quantity - 1\nWHERE product_id = 3;\nCOMMIT;\n```",
+        "```sql\nBEGIN;\nUPDATE products SET stock_quantity = stock_quantity - 1\nWHERE product_id = 3 AND stock_quantity >= 1;\nCOMMIT;\n```",
+        "```sql\nBEGIN;\nUPDATE products SET stock_quantity = stock_quantity - 1\nWHERE product_id = 999;\nCOMMIT;\n```",
+        "```sql\nBEGIN;\nUPDATE products SET stock_quantity = stock_quantity - 1\nWHERE product_id = 2;\nCOMMIT;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đoạn đầu trừ 1 từ tồn kho 0 nên ra -1, vi phạm `CHECK (stock_quantity >= 0)`: đây là lỗi thật (transaction bị aborted và `COMMIT` cuối chỉ nhận về `ROLLBACK`).\n- Đoạn 2 có điều kiện `stock_quantity >= 1` nên không trúng dòng nào: `UPDATE 0`, không lỗi.\n- Đoạn 3 trỏ vào sản phẩm 999 không tồn tại: cũng chỉ `UPDATE 0`.\n- Đoạn 4 trừ từ 3 xuống 2, hợp lệ."
+    },
+    {
+      "id": "sql-d16-08",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "Trừ kho an toàn",
+      "question": "Sản phẩm 9 chỉ còn 2 cái trong kho nhưng một khách đặt mua 3. Chọn lệnh trừ kho an toàn: không làm kho âm, không báo lỗi, không đụng sản phẩm khác, và cho ứng dụng biết hết hàng qua `UPDATE 0`.",
+      "options": [
+        "```sql\nUPDATE products\nSET stock_quantity = stock_quantity - 3\nWHERE product_id = 9;\n```",
+        "```sql\nUPDATE products\nSET stock_quantity = stock_quantity - 3\nWHERE stock_quantity >= 3;\n```",
+        "```sql\nUPDATE products\nSET stock_quantity = stock_quantity - 3\nWHERE product_id = 9 AND stock_quantity > 0;\n```",
+        "```sql\nUPDATE products\nSET stock_quantity = stock_quantity - 3\nWHERE product_id = 9 AND stock_quantity >= 3;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Phép trừ nằm trong UPDATE và điều kiện `stock_quantity >= 3` được kiểm tra ngay trên dòng bị khóa. Kho chỉ còn 2 nên không trúng dòng nào: `UPDATE 0`, kho giữ nguyên.\n- Không có điều kiện: 2 - 3 = -1, vi phạm CHECK và báo lỗi.\n- Thiếu `product_id = 9`: trừ 3 của mọi sản phẩm còn từ 3 cái trở lên.\n- `stock_quantity > 0` vẫn đúng với kho còn 2, nên vẫn trừ ra -1 và báo lỗi: kiểm tra phải so với **số lượng cần mua**, không phải với 0."
+    },
+    {
+      "id": "sql-d16-09",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "UPDATE 0 khi chuyển tiền",
+      "question": "Bảng `wallets` có ví khách 1: 1000000, khách 2: 500000, khách 3: 0 (tổng 1500000). Bạn chuyển 200000 cho một khách không có ví. Tổng số dư của cả bảng sau khi chạy đoạn dưới là bao nhiêu?",
+      "code": "BEGIN;\nUPDATE wallets SET balance = balance - 200000\nWHERE customer_id = 1;\nUPDATE wallets SET balance = balance + 200000\nWHERE customer_id = 99;\nCOMMIT;\nSELECT sum(balance) FROM wallets;",
+      "codeLang": "sql",
+      "options": [
+        "1500000",
+        "1300000",
+        "1700000",
+        "Lỗi vì khách 99 không tồn tại"
+      ],
+      "answer": 1,
+      "explanation": "Câu UPDATE thứ hai không trúng dòng nào (`UPDATE 0`), đó **không phải lỗi**, nên `COMMIT` vẫn lưu câu trừ tiền: tổng còn 1500000 - 200000 = **1300000**. Tiền đã biến mất.\n- 1500000 chỉ đúng nếu transaction tự hủy khi một câu không trúng dòng nào; database không làm vậy.\n- 1700000 là cộng nhầm thay vì trừ.\n- Không có lỗi: UPDATE lên dòng không tồn tại chỉ cho `UPDATE 0`.\n- Vì vậy ứng dụng phải kiểm tra số dòng bị ảnh hưởng rồi tự `ROLLBACK`."
+    },
+    {
+      "id": "sql-d16-10",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "Lost update",
+      "question": "Hai phiên READ COMMITTED cùng đọc tồn kho ASUS ROG Strix G16 = 5. Mỗi phiên tính ở ứng dụng 5 - 1 = 4, rồi chạy `UPDATE products SET stock_quantity = 4 WHERE product_id = 1` và COMMIT. Kết quả cuối cùng?",
+      "options": [
+        "Tồn kho là 3, vì PostgreSQL cộng dồn hai lần trừ",
+        "Phiên thứ hai bị lỗi 40001 và phải thử lại",
+        "Tồn kho là 4 dù đã bán 2 máy (lost update)",
+        "Tồn kho là 5, vì phiên thứ hai bị ROLLBACK"
+      ],
+      "answer": 2,
+      "explanation": "Cả hai phiên đều ghi một **con số tính sẵn** (4) chứ không phải \"trừ đi 1\". Lần ghi của phiên B đè lên A, và cả hai đều COMMIT thành công: bán 2 máy mà kho chỉ giảm 1. Đây là lost update.\n- PostgreSQL không đoán ý bạn để cộng dồn; nó chỉ ghi giá trị bạn đưa.\n- Lỗi 40001 chỉ xuất hiện ở REPEATABLE READ hoặc SERIALIZABLE, không phải READ COMMITTED mặc định.\n- Không có lý do gì để phiên B bị ROLLBACK.\n- Cách đúng: `SET stock_quantity = stock_quantity - 1 WHERE ... AND stock_quantity >= 1`, hoặc `SELECT ... FOR UPDATE` trước."
+    },
+    {
+      "id": "sql-d16-11",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "REPEATABLE READ",
+      "question": "Dữ liệu có 1 đơn `pending`. Phiên A mở `BEGIN ISOLATION LEVEL REPEATABLE READ` và đếm đơn pending (ra 1). Sau đó phiên B (autocommit) thêm một đơn pending mới. Phiên A đếm lại lần nữa trong cùng transaction. Kết quả lần đếm thứ hai?",
+      "options": [
+        "1, vì REPEATABLE READ dùng một ảnh chụp dữ liệu lấy từ câu lệnh đầu tiên",
+        "2, vì phantom read vẫn xảy ra ở REPEATABLE READ của PostgreSQL",
+        "Báo lỗi 40001 ngay ở lần đếm thứ hai",
+        "Phiên A bị chặn, phải chờ B COMMIT rồi mới đếm lại được"
+      ],
+      "answer": 0,
+      "explanation": "Ở REPEATABLE READ, PostgreSQL cho cả transaction nhìn một snapshot cố định, nên đơn mới của B không hiện ra: vẫn **1**. Đây là lý do mức này hợp với báo cáo nhiều câu cần số liệu khớp nhau.\n- Ra 2 là kết quả của READ COMMITTED (mỗi câu thấy dữ liệu đã COMMIT mới nhất). PostgreSQL còn chặt hơn chuẩn SQL: không có phantom ở REPEATABLE READ.\n- Lỗi 40001 chỉ xuất hiện khi A cố **ghi** vào dòng mà phiên khác đã sửa, không phải khi đọc.\n- SELECT thường không bao giờ bị chặn và cũng không chặn ai; việc B thêm dòng không làm A phải chờ."
+    },
+    {
+      "id": "sql-d16-12",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "SET TRANSACTION",
+      "question": "Trong PostgreSQL, bạn chạy đoạn dưới rồi xem mức cô lập. Kết quả hiển thị là gì?",
+      "code": "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE;\nBEGIN;\nSHOW transaction_isolation;\nCOMMIT;",
+      "codeLang": "sql",
+      "options": [
+        "serializable, vì SET TRANSACTION áp dụng cho transaction kế tiếp",
+        "Lỗi, câu lệnh bị từ chối nên BEGIN không chạy",
+        "serializable, vì lệnh SET được ghi nhớ cho cả phiên làm việc",
+        "read committed: có cảnh báo, lệnh SET bị bỏ qua"
+      ],
+      "answer": 3,
+      "explanation": "Trong PostgreSQL, `SET TRANSACTION` chỉ dùng được **bên trong** transaction. Viết trước `BEGIN` thì chỉ in cảnh báo `SET TRANSACTION can only be used in transaction blocks` và bị bỏ qua; transaction sau đó vẫn là **read committed**.\n- Hành vi \"áp dụng cho transaction kế tiếp\" là của MySQL, đừng mang sang đây.\n- Không có lỗi nên BEGIN vẫn chạy bình thường.\n- `SET TRANSACTION` không phải cài đặt cho cả phiên; nó chỉ có tác dụng với transaction đang mở.\n- Cách đúng: `BEGIN ISOLATION LEVEL SERIALIZABLE;` hoặc `SET TRANSACTION` ngay sau `BEGIN`."
+    },
+    {
+      "id": "sql-d16-13",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "Deadlock",
+      "question": "Hai đơn hàng cùng trừ kho sản phẩm 1 và 2 nhưng theo thứ tự ngược nhau, thỉnh thoảng gặp `deadlock detected`. Cách xử lý gốc rễ là gì?",
+      "options": [
+        "Tăng deadlock_timeout để hai phiên chờ nhau lâu hơn",
+        "Chuyển sang READ UNCOMMITTED để khỏi bị khóa",
+        "Mọi đơn khóa các dòng theo cùng một thứ tự, ví dụ product_id tăng dần",
+        "Chuyển cả hai phiên sang SERIALIZABLE, khi đó không còn deadlock"
+      ],
+      "answer": 2,
+      "explanation": "Deadlock là chờ vòng tròn: A giữ dòng 1 chờ dòng 2, B giữ dòng 2 chờ dòng 1. Nếu mọi transaction đều khóa theo cùng thứ tự (ví dụ `product_id` tăng dần), chờ vòng tròn không thể hình thành; đơn đến sau chỉ phải chờ.\n- Tăng `deadlock_timeout` chỉ làm bạn chờ lâu hơn rồi vẫn bị hủy.\n- PostgreSQL coi READ UNCOMMITTED như READ COMMITTED, và ghi vẫn khóa dòng như thường.\n- SERIALIZABLE không loại bỏ deadlock: UPDATE vẫn khóa dòng như thường, hai phiên vẫn chờ nhau theo vòng tròn.\n- Ứng dụng vẫn nên bắt lỗi `40P01` để thử lại."
+    },
+    {
+      "id": "sql-d16-14",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "Dirty read",
+      "question": "Phiên A đã UPDATE giá sản phẩm 5 lên 23990000 nhưng chưa COMMIT (giá đã COMMIT là 24990000). Phiên B mở `BEGIN ISOLATION LEVEL READ UNCOMMITTED` rồi SELECT giá. Trong PostgreSQL 16, B thấy gì?",
+      "options": [
+        "23990000, vì READ UNCOMMITTED cho phép dirty read",
+        "24990000: PostgreSQL xử lý READ UNCOMMITTED như READ COMMITTED",
+        "Câu đọc bị chặn cho tới khi A COMMIT hoặc ROLLBACK",
+        "Lỗi, PostgreSQL không có mức READ UNCOMMITTED"
+      ],
+      "answer": 1,
+      "explanation": "PostgreSQL chấp nhận cú pháp `READ UNCOMMITTED` nhưng thực chất chạy như READ COMMITTED, nên **không có dirty read**: B chỉ thấy giá đã COMMIT là 24990000.\n- Thấy 23990000 là dirty read, chuẩn SQL cho phép nhưng PostgreSQL thì không.\n- SELECT thường không bao giờ bị chặn bởi UPDATE của phiên khác.\n- Mức này vẫn hợp lệ, chỉ là không khác READ COMMITTED."
+    },
+    {
+      "id": "sql-d16-15",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "ACID: Durability",
+      "question": "DSC Shop nhận được thông báo COMMIT thành công cho một đơn hàng, và máy chủ mất điện ngay sau đó. Khi bật lại, đơn vẫn còn. Tính chất ACID nào bảo đảm điều này?",
+      "options": [
+        "Atomicity: đơn được lưu trọn vẹn hoặc không lưu gì",
+        "Consistency: dữ liệu luôn thỏa mọi ràng buộc đã khai báo",
+        "Isolation: các transaction chạy song song không thấy nửa chừng của nhau",
+        "Durability: PostgreSQL ghi nhật ký WAL xuống đĩa trước khi báo COMMIT"
+      ],
+      "answer": 3,
+      "explanation": "Đã COMMIT thì không mất, kể cả khi mất điện ngay sau đó: đó là **Durability** (bền vững). PostgreSQL ghi nhật ký WAL xuống đĩa trước khi báo COMMIT thành công, nên có thể phục hồi sau sự cố.\n- Atomicity nói về \"được cả hoặc mất cả\" khi transaction đang chạy hoặc bị lỗi, không nói về chuyện sống sót sau mất điện.\n- Consistency chỉ giữ các ràng buộc bạn đã khai báo (như `CHECK`, khóa ngoại).\n- Isolation nói về việc các transaction song song thấy gì của nhau, không liên quan tới sự cố phần cứng."
+    },
+    {
+      "id": "sql-d16-16",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "Serialization failure",
+      "question": "Phiên B mở `BEGIN ISOLATION LEVEL REPEATABLE READ` và đọc tồn kho ASUS (sản phẩm 1) = 5. Sau đó phiên A sửa dòng này rồi COMMIT. Phiên B chạy `UPDATE products SET stock_quantity = 4 WHERE product_id = 1`. Điều gì xảy ra?",
+      "options": [
+        "Lỗi could not serialize access due to concurrent update (40001), B phải thử lại cả transaction",
+        "B ghi đè thành công giá trị của A (lost update)",
+        "B chờ mãi mãi cho tới khi hết thời gian",
+        "Lỗi deadlock detected (40P01), vì hai phiên khóa chéo nhau"
+      ],
+      "answer": 0,
+      "explanation": "B đang dùng snapshot cũ, mà dòng đã bị transaction khác sửa và COMMIT sau snapshot đó. PostgreSQL từ chối thay vì để B ghi đè: lỗi **40001** (serialization failure). Ứng dụng phải chạy lại cả transaction từ đầu, lần sau B sẽ đọc được giá trị mới.\n- Ghi đè trót lọt là hành vi của READ COMMITTED, không phải REPEATABLE READ.\n- A đã COMMIT nên không còn khóa nào để B chờ.\n- Deadlock cần hai bên chờ nhau theo vòng tròn; ở đây chỉ có một chiều, và mã lỗi deadlock là `40P01`, khác với `40001`."
+    },
+    {
+      "id": "sql-d16-17",
+      "source": "Ngày 16 - Transaction và ACID",
+      "topic": "SELECT ... FOR UPDATE",
+      "question": "Phiên A chạy `BEGIN;` rồi `SELECT stock_quantity FROM products WHERE product_id = 1 FOR UPDATE;` và chưa COMMIT. Lệnh nào ở phiên B sẽ bị chặn, phải đứng chờ?",
+      "options": [
+        "```sql\nSELECT stock_quantity FROM products\nWHERE product_id = 1;\n```",
+        "```sql\nSELECT stock_quantity FROM products\nWHERE product_id = 1 FOR UPDATE;\n```",
+        "```sql\nSELECT stock_quantity FROM products\nWHERE product_id = 2 FOR UPDATE;\n```",
+        "```sql\nUPDATE products SET stock_quantity = 0\nWHERE product_id = 2;\n```"
+      ],
+      "answer": 1,
+      "explanation": "`FOR UPDATE` khóa dòng sản phẩm 1 giống như đã UPDATE nó. Phiên B muốn khóa chính dòng đó (`FOR UPDATE`) phải **chờ** tới khi A COMMIT hoặc ROLLBACK.\n- SELECT thường không bao giờ bị chặn và cũng không chặn ai, nên vẫn đọc được ngay (đó là lý do cách đọc rồi ghi không an toàn).\n- `FOR UPDATE` trên sản phẩm 2 khóa dòng khác, không đụng tới dòng A giữ.\n- UPDATE sản phẩm 2 cũng chỉ động vào dòng khác nên chạy bình thường."
+    }
+  ]
+}

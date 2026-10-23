@@ -1,0 +1,253 @@
+{
+  "id": "sql-d19",
+  "title": "Ngày 19: View và materialized view",
+  "description": "Tạo, sửa, xóa view, ghi dữ liệu qua view, WITH CHECK OPTION và materialized view trên DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d19-01",
+      "topic": "View lưu gì",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Bạn chạy `CREATE VIEW order_totals AS SELECT ...`. PostgreSQL lưu gì trong database cho view thường này?",
+      "options": [
+        "bản sao dữ liệu tại lúc tạo, cần REFRESH để cập nhật",
+        "bản sao dữ liệu, tự cập nhật khi bảng gốc đổi",
+        "chỉ câu truy vấn đã viết, mỗi lần đọc view lại chạy trên bảng gốc",
+        "kết quả truy vấn gần nhất, kèm index để đọc nhanh"
+      ],
+      "answer": 2,
+      "explanation": "View thường không chứa dòng dữ liệu nào, chỉ lưu câu `SELECT`. Mỗi lần bạn đọc view, PostgreSQL thay tên view bằng câu `SELECT` đó rồi chạy trên bảng gốc.\n- Vì vậy dữ liệu luôn mới nhất và view **không làm truy vấn nhanh hơn**: JOIN và GROUP BY bên dưới vẫn chạy lại từ đầu.\n- Phương án đầu và cuối mô tả **materialized view** (lưu kết quả ra đĩa, phải `REFRESH`), không phải view thường.\n- Phương án \"tự cập nhật\" không có cơ chế nào như vậy: không có bản sao thì không có gì để cập nhật."
+    },
+    {
+      "id": "sql-d19-02",
+      "topic": "CREATE VIEW với điều kiện",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Tạo view `phone_tablet` gồm `sku`, `name`, `price` của sản phẩm **đang kinh doanh** thuộc danh mục 7 (Điện thoại) hoặc 8 (Máy tính bảng). Câu `CREATE VIEW` nào đúng?",
+      "options": [
+        "```sql\nCREATE VIEW phone_tablet AS\nSELECT sku, name, price\nFROM products\nWHERE is_active AND category_id IN (7, 8);\n```",
+        "```sql\nCREATE VIEW phone_tablet AS\nSELECT sku, name, price\nFROM products\nWHERE category_id = 7 OR category_id = 8\n  AND is_active;\n```",
+        "```sql\nCREATE VIEW phone_tablet AS\nSELECT sku, name, price\nFROM products\nWHERE is_active AND category_id = 7\n  AND category_id = 8;\n```",
+        "```sql\nCREATE VIEW phone_tablet AS\nSELECT sku, name, price\nFROM products\nWHERE is_active = NULL\n   OR category_id IN (7, 8);\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng gom hai danh mục bằng `IN (7, 8)` và kết hợp `AND is_active` nên chỉ giữ sản phẩm đang bán.\n- `category_id = 7 OR category_id = 8 AND is_active`: `AND` được tính trước `OR`, nên điều kiện `is_active` chỉ áp cho danh mục 8. Nokia 105 4G (danh mục 7, đã ngừng bán) lọt vào view.\n- `category_id = 7 AND category_id = 8`: một dòng không thể thuộc hai danh mục cùng lúc, view rỗng.\n- `is_active = NULL OR ...`: `= NULL` luôn UNKNOWN, chỉ còn vế `IN`, nên view lại lấy cả sản phẩm ngừng bán."
+    },
+    {
+      "id": "sql-d19-03",
+      "topic": "CREATE OR REPLACE VIEW",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Cho view đã tạo như dưới đây. Câu `CREATE OR REPLACE VIEW product_prices` nào **báo lỗi** khi chạy?",
+      "code": "CREATE VIEW product_prices AS\nSELECT sku, name, price FROM products;",
+      "options": [
+        "```sql\nCREATE OR REPLACE VIEW product_prices AS\nSELECT sku, name, price, stock_quantity\nFROM products;\n```",
+        "```sql\nCREATE OR REPLACE VIEW product_prices AS\nSELECT sku, name, price\nFROM products\nWHERE is_active;\n```",
+        "```sql\nCREATE OR REPLACE VIEW product_prices AS\nSELECT sku, name, price,\n       price - cost_price AS margin\nFROM products;\n```",
+        "```sql\nCREATE OR REPLACE VIEW product_prices AS\nSELECT sku, price, name\nFROM products;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng đổi thứ tự cột `price` và `name`. PostgreSQL báo `cannot change name of view column \"name\" to \"price\"`: `CREATE OR REPLACE VIEW` phải giữ nguyên tên, thứ tự và kiểu các cột cũ.\n- Thêm `stock_quantity` hoặc `margin` **ở cuối** thì được, vì không động tới cột cũ.\n- Chỉ thêm `WHERE is_active` thì danh sách cột không đổi, câu chạy bình thường (chỉ lọc bớt dòng).\n- Muốn đổi thứ tự, bỏ cột hoặc đổi kiểu thì phải `DROP VIEW` rồi `CREATE VIEW` lại.",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d19-04",
+      "topic": "DROP VIEW và phụ thuộc",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Hai view dưới đây đã được tạo, `customer_spending` dựa trên `order_totals`. Chạy riêng từng lệnh, lệnh nào **báo lỗi**?",
+      "code": "CREATE VIEW order_totals AS\nSELECT o.order_id, o.customer_id, o.status,\n       ROUND(SUM(oi.quantity * oi.unit_price\n             * (1 - oi.discount))) AS total_amount\nFROM orders AS o\nJOIN order_items AS oi ON oi.order_id = o.order_id\nGROUP BY o.order_id, o.customer_id, o.status;\n\nCREATE VIEW customer_spending AS\nSELECT customer_id, SUM(total_amount) AS total_spent\nFROM order_totals\nGROUP BY customer_id;",
+      "options": [
+        "```sql\nDROP VIEW customer_spending;\n```",
+        "```sql\nDROP VIEW IF EXISTS no_such_view;\n```",
+        "```sql\nDROP VIEW order_totals;\n```",
+        "```sql\nDROP VIEW order_totals CASCADE;\n```"
+      ],
+      "answer": 2,
+      "explanation": "`DROP VIEW order_totals;` lỗi: `cannot drop view order_totals because other objects depend on it` (view `customer_spending` đang dựa vào nó).\n- Xóa `customer_spending` thì được, vì không ai phụ thuộc vào nó.\n- `DROP VIEW IF EXISTS` trên view không tồn tại chỉ cho một thông báo, không lỗi.\n- `DROP VIEW order_totals CASCADE` xóa cả `order_totals` lẫn `customer_spending`. Chạy được, nhưng hãy đọc kỹ danh sách phụ thuộc trước khi dùng `CASCADE`.",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d19-05",
+      "topic": "View cập nhật được",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "View `customer_directory` đọc từ một bảng duy nhất, không JOIN, không GROUP BY. Lệnh nào **báo lỗi** khi ghi qua view?",
+      "code": "CREATE VIEW customer_directory AS\nSELECT customer_id, full_name, city,\n       SUBSTRING(email, 1, 3) || '***' AS email_hint,\n       EXTRACT(YEAR FROM birth_date) AS birth_year\nFROM customers;",
+      "options": [
+        "```sql\nUPDATE customer_directory\nSET city = 'Huế'\nWHERE customer_id = 1;\n```",
+        "```sql\nUPDATE customer_directory\nSET birth_year = 2000\nWHERE customer_id = 1;\n```",
+        "```sql\nDELETE FROM customer_directory\nWHERE customer_id = 17;\n```",
+        "```sql\nUPDATE customer_directory\nSET full_name = UPPER(full_name);\n```"
+      ],
+      "answer": 1,
+      "explanation": "View đủ đơn giản (một bảng, không JOIN/GROUP BY/DISTINCT) nên PostgreSQL tự cho `UPDATE` và `DELETE` qua view. Chỉ có **cột tính toán** là không ghi được.\n- `birth_year` là `EXTRACT(YEAR FROM birth_date)`, không ứng với cột thật nào, nên `SET birth_year = ...` báo lỗi `cannot update column \"birth_year\"`.\n- `city` và `full_name` là cột thẳng của `customers`, sửa bình thường (kể cả dùng hàm như `UPPER`).\n- `DELETE` qua view xóa dòng thật của `customers` (khách 17 chưa có đơn nên không vướng khóa ngoại).",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d19-06",
+      "topic": "WITH CHECK OPTION",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Sạc Anker 65W (`ACC-007`, giá 890.000) nằm trong view; Tai nghe Sony (`ACC-004`, giá 7.990.000) thì không. Lệnh nào **báo lỗi**?",
+      "code": "CREATE VIEW cheap_products AS\nSELECT product_id, sku, name, price\nFROM products\nWHERE price < 1000000\nWITH CHECK OPTION;",
+      "options": [
+        "```sql\nUPDATE cheap_products\nSET price = 790000\nWHERE sku = 'ACC-007';\n```",
+        "```sql\nUPDATE cheap_products\nSET price = 1290000\nWHERE sku = 'ACC-004';\n```",
+        "```sql\nUPDATE cheap_products\nSET price = price - 50000\nWHERE sku = 'ACC-008';\n```",
+        "```sql\nUPDATE cheap_products\nSET price = 1290000\nWHERE sku = 'ACC-007';\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng đẩy giá Anker lên 1.290.000, dòng mới không còn thỏa `price < 1000000`, nên `WITH CHECK OPTION` chặn: `new row violates check option for view \"cheap_products\"`.\n- Sửa Anker thành 790.000, hoặc giảm giá cáp từ 150.000 xuống 100.000, vẫn dưới 1 triệu nên hợp lệ.\n- Lệnh nhắm `ACC-004` không báo lỗi: Sony không nằm trong view nên `UPDATE` qua view không \"thấy\" dòng đó, kết quả `UPDATE 0`. Dễ nhầm đây là lỗi, nhưng check option chỉ kiểm tra các dòng thật sự bị ghi.",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d19-07",
+      "topic": "Dòng biến mất khỏi view",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Trước khi sửa, view `cheap_products` có 5 dòng (Sạc Anker 890.000 là một trong số đó). View **không** có `WITH CHECK OPTION`. Truy vấn cuối trả về bao nhiêu?",
+      "code": "CREATE VIEW cheap_products AS\nSELECT product_id, sku, name, price\nFROM products\nWHERE price < 1000000;\n\nUPDATE cheap_products\nSET price = 1290000\nWHERE sku = 'ACC-007';\n\nSELECT COUNT(*) FROM cheap_products;",
+      "options": [
+        "5",
+        "4",
+        "3",
+        "báo lỗi"
+      ],
+      "answer": 1,
+      "explanation": "Kết quả là **4**. Không có `WITH CHECK OPTION`, `UPDATE` qua view vẫn chạy thành công (`UPDATE 1`). Giá Anker thành 1.290.000 nên dòng này không còn thỏa `price < 1000000` và biến mất khỏi view.\n- 5 sẽ đúng nếu không có lệnh `UPDATE` hoặc nếu nó bị hoàn tác.\n- 3 không có cơ sở: chỉ một dòng bị sửa.\n- Không có lỗi: view một bảng, không JOIN/GROUP BY nên cập nhật được. Thêm `WITH CHECK OPTION` mới chặn kiểu \"dòng trốn khỏi view\" này.",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d19-08",
+      "topic": "View tổng hợp với LEFT JOIN",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Tạo view `customer_orders` cho biết số đơn của **mọi** khách hàng, kể cả khách chưa mua gì (số đơn là 0). Câu `CREATE VIEW` nào đúng?",
+      "options": [
+        "```sql\nCREATE VIEW customer_orders AS\nSELECT c.customer_id, COUNT(o.order_id) AS order_count\nFROM customers AS c\nJOIN orders AS o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;\n```",
+        "```sql\nCREATE VIEW customer_orders AS\nSELECT c.customer_id, COUNT(*) AS order_count\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;\n```",
+        "```sql\nCREATE VIEW customer_orders AS\nSELECT c.customer_id, COUNT(o.order_id) AS order_count\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;\n```",
+        "```sql\nCREATE VIEW customer_orders AS\nSELECT c.customer_id, COUNT(o.order_id) AS order_count\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.customer_id\nWHERE o.status <> 'cancelled'\nGROUP BY c.customer_id;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Cần `LEFT JOIN` để giữ khách chưa có đơn và `COUNT(o.order_id)` để đếm đúng: khách chưa mua có `o.order_id` NULL nên đếm ra 0.\n- `JOIN` thường: khách 16 và 17 (chưa mua) biến mất khỏi view.\n- `COUNT(*)`: dòng ghép NULL của khách chưa mua vẫn được đếm là 1, nên khách 16 và 17 có `order_count = 1` thay vì 0.\n- `LEFT JOIN` rồi `WHERE o.status <> 'cancelled'`: với dòng ghép NULL, điều kiện là UNKNOWN nên khách chưa mua vẫn bị loại, LEFT JOIN thành INNER JOIN. Muốn lọc theo trạng thái phải đặt vào `ON`."
+    },
+    {
+      "id": "sql-d19-09",
+      "topic": "SELECT * trong view",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Bảng `customers` ban đầu có 7 cột. Truy vấn cuối trả về bao nhiêu cột?",
+      "code": "CREATE VIEW all_customers AS\nSELECT * FROM customers;\n\nALTER TABLE customers\nADD COLUMN vip BOOLEAN DEFAULT FALSE;\n\nSELECT * FROM all_customers;",
+      "options": [
+        "7",
+        "8",
+        "6",
+        "báo lỗi vì cột của view không còn khớp bảng"
+      ],
+      "answer": 0,
+      "explanation": "Kết quả là **7** cột. Khi tạo view, PostgreSQL thay `*` bằng danh sách cột có lúc đó. Cột `vip` thêm sau không tự xuất hiện trong view.\n- 8 là cách hiểu `*` được tính lại mỗi lần truy vấn; thực tế danh sách cột đã cố định lúc tạo view.\n- 6 không có cơ sở: không cột nào bị mất.\n- Không có lỗi: thêm cột vào bảng gốc không làm hỏng view. Muốn view thấy cột mới, hãy liệt kê cột rõ ràng và tạo lại view khi cần.",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d19-10",
+      "topic": "Materialized view và dữ liệu cũ",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Bảng `orders` đang có 40 đơn. Truy vấn cuối trả về gì?",
+      "code": "CREATE MATERIALIZED VIEW order_stats AS\nSELECT COUNT(*) AS order_count\nFROM orders;\n\nINSERT INTO orders (customer_id, order_date, channel)\nVALUES (16, now(), 'online');\n\nSELECT order_count FROM order_stats;",
+      "options": [
+        "41",
+        "0",
+        "báo lỗi",
+        "40"
+      ],
+      "answer": 3,
+      "explanation": "Kết quả là **40**. Materialized view chạy truy vấn một lần lúc tạo và lưu kết quả ra đĩa; thêm đơn vào `orders` sau đó không làm nó đổi.\n- 41 là kết quả của view **thường** (luôn tính lại). Với materialized view, chỉ sau `REFRESH MATERIALIZED VIEW order_stats` mới ra 41.\n- 0 sai vì materialized view được nạp dữ liệu ngay lúc tạo (trừ khi dùng `WITH NO DATA`).\n- Không có lỗi: `INSERT` vào bảng gốc vẫn bình thường, và việc materialized view cũ đi không báo gì cả.",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d19-11",
+      "topic": "REFRESH CONCURRENTLY",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Cho materialized view `city_stats` vừa được tạo (chưa có index nào). Chạy độc lập từng đoạn, đoạn nào **báo lỗi**?",
+      "code": "CREATE MATERIALIZED VIEW city_stats AS\nSELECT city, COUNT(*) AS n\nFROM customers\nWHERE city IS NOT NULL\nGROUP BY city;",
+      "options": [
+        "```sql\nREFRESH MATERIALIZED VIEW CONCURRENTLY city_stats;\n```",
+        "```sql\nREFRESH MATERIALIZED VIEW city_stats;\n```",
+        "```sql\nCREATE UNIQUE INDEX ON city_stats (city);\nREFRESH MATERIALIZED VIEW CONCURRENTLY city_stats;\n```",
+        "```sql\nCREATE INDEX ON city_stats (n);\nREFRESH MATERIALIZED VIEW city_stats;\n```"
+      ],
+      "answer": 0,
+      "explanation": "`REFRESH MATERIALIZED VIEW CONCURRENTLY` đòi materialized view phải có một **UNIQUE index** không có `WHERE`. View chưa có index nào nên báo `cannot refresh materialized view ... concurrently` (kèm gợi ý tạo unique index).\n- `REFRESH` thường không cần index, chỉ khóa view trong lúc làm mới.\n- Tạo `UNIQUE INDEX` trên `city` (mỗi thành phố một dòng nhờ `GROUP BY`) rồi `CONCURRENTLY` thì chạy được.\n- Index thường trên `n` (không unique) chỉ giúp truy vấn nhanh, `REFRESH` đi sau vẫn là loại thường nên không lỗi.",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d19-12",
+      "topic": "Chọn view hay materialized view",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Dashboard doanh thu theo tháng tính trên hàng triệu đơn, được mở hàng nghìn lần mỗi ngày, và chấp nhận số liệu trễ đến sáng hôm sau. Nên chọn gì?",
+      "options": [
+        "view thường, vì luôn mới nên đọc nhanh hơn",
+        "view thường kèm index tạo trên chính view",
+        "materialized view, làm mới theo lịch (vd mỗi đêm)",
+        "materialized view, PostgreSQL tự làm mới khi bảng gốc đổi"
+      ],
+      "answer": 2,
+      "explanation": "Báo cáo nặng, đọc nhiều, chấp nhận số liệu trễ là đúng đất của **materialized view**: tính một lần, đọc như bảng nhỏ, và gọi `REFRESH` theo lịch (cron, `pg_cron`, job ứng dụng).\n- View thường luôn mới nhưng không nhanh hơn: mỗi lần mở dashboard vẫn quét lại cả triệu đơn.\n- Không tạo index được trên view thường (index chỉ có trên bảng và materialized view).\n- PostgreSQL **không** tự `REFRESH` materialized view; phải có người hoặc job ra lệnh."
+    },
+    {
+      "id": "sql-d19-13",
+      "topic": "View và phân quyền",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Bạn muốn bạn thực tập đọc được tên và thành phố khách nhưng không thấy email. Bạn tạo view `customer_directory` không chứa cột email. Điều gì thật sự giữ email an toàn?",
+      "options": [
+        "chỉ cần tạo view, email trong bảng gốc tự bị ẩn",
+        "cấp quyền đọc trên view, không cấp quyền nào trên bảng customers",
+        "dùng materialized view thay cho view thường",
+        "thêm check option vào view"
+      ],
+      "answer": 1,
+      "explanation": "View chỉ là lớp bảo vệ khi đi kèm **phân quyền**: cấp `SELECT` trên view cho tài khoản đó và không cấp gì trên bảng `customers`. PostgreSQL kiểm tra quyền bảng gốc theo chủ sở hữu view, nên người đó đọc được view mà không đọc được bảng.\n- Tạo view không đổi gì ở bảng gốc: ai có quyền đọc `customers` vẫn đọc thẳng email.\n- Materialized view chỉ lưu bản sao kết quả; bảng `customers` vẫn nguyên email và ai có quyền đọc bảng vẫn đọc được, nên không thay được phân quyền.\n- `WITH CHECK OPTION` chỉ kiểm tra dữ liệu **ghi** qua view, không hạn chế việc đọc cột nào."
+    },
+    {
+      "id": "sql-d19-14",
+      "topic": "LOCAL CHECK OPTION",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Sạc Anker 65W (`ACC-007`, giá 890.000) nằm trong cả hai view. Lệnh nào **báo lỗi**?",
+      "code": "CREATE VIEW cheap_products AS\nSELECT product_id, sku, price\nFROM products\nWHERE price < 1000000;\n\nCREATE VIEW mid_products AS\nSELECT * FROM cheap_products\nWHERE price > 500000\nWITH LOCAL CHECK OPTION;",
+      "options": [
+        "```sql\nUPDATE mid_products\nSET price = 790000\nWHERE sku = 'ACC-007';\n```",
+        "```sql\nUPDATE mid_products\nSET price = 1290000\nWHERE sku = 'ACC-007';\n```",
+        "```sql\nUPDATE mid_products\nSET sku = 'ACC-007B'\nWHERE sku = 'ACC-007';\n```",
+        "```sql\nUPDATE mid_products\nSET price = 300000\nWHERE sku = 'ACC-007';\n```"
+      ],
+      "answer": 3,
+      "explanation": "Với `WITH LOCAL CHECK OPTION`, PostgreSQL chỉ kiểm tra điều kiện của view hiện tại (`price > 500000`). Giá 300.000 vi phạm điều kiện đó nên bị chặn: `new row violates check option for view \"mid_products\"`.\n- Giá 790.000 thỏa cả hai điều kiện, chạy được.\n- Giá 1.290.000 vi phạm `price < 1000000` của `cheap_products`, nhưng view này không có check option và `LOCAL` không kiểm tra view bên dưới, nên lệnh vẫn thành công (dòng \"trốn\" khỏi cả hai view). Dùng `CASCADED` (mặc định khi chỉ viết `WITH CHECK OPTION`) mới chặn được.\n- Đổi `sku` không đụng tới điều kiện giá nào.",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d19-15",
+      "topic": "View cập nhật được",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Hai view dưới đây đã được tạo. Chạy riêng từng lệnh, lệnh nào **báo lỗi**?",
+      "code": "CREATE VIEW active_products AS\nSELECT product_id, sku, name, price, stock_quantity\nFROM products\nWHERE is_active;\n\nCREATE VIEW category_prices AS\nSELECT category_id, MAX(price) AS max_price\nFROM products\nGROUP BY category_id;",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nUPDATE category_prices\nSET max_price = 0\nWHERE category_id = 7;\n```",
+        "```sql\nUPDATE active_products\nSET stock_quantity = stock_quantity + 5\nWHERE sku = 'PHN-003';\n```",
+        "```sql\nDELETE FROM active_products\nWHERE sku = 'PHN-004';\n```",
+        "```sql\nUPDATE active_products\nSET price = price * 1.1\nWHERE sku = 'ACC-007';\n```"
+      ],
+      "answer": 0,
+      "explanation": "`category_prices` có `GROUP BY` và hàm tổng hợp `MAX`, một dòng của view gộp từ nhiều dòng `products`, nên PostgreSQL báo `cannot update view \"category_prices\"` (Views containing GROUP BY are not automatically updatable). Muốn ghi qua view này phải viết trigger `INSTEAD OF`.\n- `active_products` đọc từ một bảng, không JOIN/GROUP BY nên cập nhật được: tăng `stock_quantity` hay nhân giá với 1.1 (cột `price` là cột thẳng, vế phải dùng biểu thức vẫn được) đều chạy bình thường.\n- `DELETE` nhắm Nokia 105 4G (đã ngừng kinh doanh, không nằm trong view) không báo lỗi, chỉ trả `DELETE 0` vì view không \"thấy\" dòng đó."
+    },
+    {
+      "id": "sql-d19-16",
+      "topic": "INSERT qua view",
+      "source": "Ngày 19 - View và materialized view",
+      "question": "Bảng `products` có `category_id` là `NOT NULL` không có `DEFAULT`; `stock_quantity` và `is_active` đều có `DEFAULT`. Với hai view dưới đây, lệnh nào **báo lỗi**?",
+      "code": "CREATE VIEW product_full AS\nSELECT sku, name, category_id, price\nFROM products;\n\nCREATE VIEW product_names AS\nSELECT sku, name, price\nFROM products;",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nINSERT INTO product_full (sku, name, category_id, price)\nVALUES ('ACC-011', 'Giá đỡ laptop', 9, 350000);\n```",
+        "```sql\nINSERT INTO product_names (sku, name, price)\nVALUES ('ACC-011', 'Giá đỡ laptop', 350000);\n```",
+        "```sql\nINSERT INTO product_full (sku, name, category_id, price)\nVALUES ('ACC-011', 'Giá đỡ laptop', 9, 350000),\n       ('ACC-012', 'Hub USB 4 cổng', 9, 290000);\n```",
+        "```sql\nUPDATE product_names\nSET price = 100000\nWHERE sku = 'ACC-009';\n```"
+      ],
+      "answer": 1,
+      "explanation": "`product_names` không có cột `category_id`, nên `INSERT` qua view không có giá trị nào để điền vào cột `NOT NULL` đó. PostgreSQL báo `null value in column \"category_id\" violates not-null constraint`.\n- `product_full` có đủ `category_id`; các cột còn thiếu (`stock_quantity`, `is_active`, `created_at`) nhận `DEFAULT` của bảng, nên `INSERT` một hay nhiều dòng đều chạy được.\n- `UPDATE product_names` chỉ sửa `price`, không cần cột nào bị thiếu, nên không lỗi.\n- Muốn cho phép `INSERT` qua một view bỏ cột, mọi cột bị bỏ phải nullable hoặc có `DEFAULT`."
+    }
+  ]
+}

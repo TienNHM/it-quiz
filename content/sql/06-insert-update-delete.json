@@ -1,0 +1,217 @@
+{
+  "id": "sql-d06",
+  "title": "Ngày 6: Thêm, sửa, xóa dữ liệu (INSERT, UPDATE, DELETE)",
+  "description": "INSERT, RETURNING, UPDATE, DELETE, UPSERT, TRUNCATE và quy trình sửa dữ liệu an toàn trên DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d06-01",
+      "topic": "INSERT một dòng",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Thêm khách mới Đoàn Minh Quân, email quan.doan@gmail.com, thành phố Huế (không có số điện thoại, ngày sinh). Câu lệnh nào đúng?",
+      "options": [
+        "```sql\nINSERT INTO customers\nVALUES ('Đoàn Minh Quân', 'quan.doan@gmail.com', 'Huế');\n```",
+        "```sql\nINSERT INTO customers (full_name, email, city)\nVALUES ('Đoàn Minh Quân', 'quan.doan@gmail.com', 'Huế');\n```",
+        "```sql\nINSERT INTO customers (full_name, city, email)\nVALUES ('Đoàn Minh Quân', 'quan.doan@gmail.com', 'Huế');\n```",
+        "```sql\nINSERT INTO customers (customer_id, full_name, email, city)\nVALUES (19, 'Đoàn Minh Quân', 'quan.doan@gmail.com', 'Huế');\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng ghi rõ danh sách cột và giá trị theo đúng thứ tự đó; `customer_id`, `created_at` tự sinh, `phone` và `birth_date` nhận NULL.\n- Không có danh sách cột: PostgreSQL ghép giá trị từ cột đầu tiên là `customer_id` (kiểu số), nên báo lỗi `invalid input syntax for type integer`.\n- Đổi chỗ `city` và `email` trong danh sách cột nhưng giữ nguyên thứ tự giá trị: lệnh vẫn chạy, nhưng email thành \"Huế\" và city thành địa chỉ email. Sai dữ liệu mà không có lỗi, nguy hiểm nhất.\n- Tự gán `customer_id`: cột là `GENERATED ALWAYS AS IDENTITY` nên bị chặn (`cannot insert a non-DEFAULT value`)."
+    },
+    {
+      "id": "sql-d06-02",
+      "topic": "So sánh với NULL",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Truy vấn sau trả về bao nhiêu dòng (số dòng RETURNING)? Trong bảng có 2 khách chưa có email.",
+      "code": "UPDATE customers\nSET city = 'Hà Nội'\nWHERE email = NULL\nRETURNING customer_id;",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "2",
+        "18",
+        "báo lỗi cú pháp"
+      ],
+      "answer": 0,
+      "explanation": "`email = NULL` cho kết quả UNKNOWN với mọi dòng, nên không dòng nào được chọn: 0 dòng, không báo lỗi gì.\n- 2 là số khách thiếu email, chỉ đúng khi viết `WHERE email IS NULL`.\n- 18 là toàn bộ bảng, chỉ xảy ra khi quên `WHERE`.\n- Cú pháp hoàn toàn hợp lệ nên không có lỗi cú pháp; vì vậy phải nhìn số dòng bị sửa (`UPDATE 0`) để phát hiện sai sót."
+    },
+    {
+      "id": "sql-d06-03",
+      "topic": "Vi phạm ràng buộc CHECK",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Câu INSERT nào bị lỗi khi chạy trên dữ liệu gốc của DSC Shop?",
+      "options": [
+        "```sql\nINSERT INTO orders (customer_id, order_date, channel)\nVALUES (2, now(), 'online');\n```",
+        "```sql\nINSERT INTO products (sku, name, category_id, price)\nVALUES ('ACC-020', 'Cáp USB-C 1m', 12, 0);\n```",
+        "```sql\nINSERT INTO orders (customer_id, order_date, channel)\nVALUES (3, now(), 'shopee');\n```",
+        "```sql\nINSERT INTO customers (full_name)\nVALUES ('Khách lẻ');\n```"
+      ],
+      "answer": 2,
+      "explanation": "Cột `channel` có `CHECK (channel IN ('online', 'offline'))` nên giá trị 'shopee' bị từ chối: `violates check constraint \"orders_channel_check\"`.\n- `channel = 'online'` hợp lệ; `status` lấy DEFAULT 'pending'.\n- `price = 0` thỏa `CHECK (price >= 0)` (chỉ giá âm mới bị chặn); `cost_price` và `stock_quantity` lấy NULL/DEFAULT.\n- `customers` chỉ bắt buộc `full_name`; `email` UNIQUE nhưng NULL được phép nên không lỗi."
+    },
+    {
+      "id": "sql-d06-04",
+      "topic": "Khóa ngoại khi DELETE",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Câu DELETE nào bị lỗi vì khóa ngoại trên dữ liệu gốc? Đơn 1 đã thanh toán; đơn 40 đang pending, chưa có thanh toán.",
+      "options": [
+        "```sql\nDELETE FROM order_items WHERE order_id = 1;\n```",
+        "```sql\nDELETE FROM payments WHERE order_id = 1;\n```",
+        "```sql\nDELETE FROM orders WHERE order_id = 40;\n```",
+        "```sql\nDELETE FROM orders WHERE order_id = 1;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đơn 1 vẫn còn dòng trong `payments` tham chiếu tới, và `payments.order_id` không khai báo `ON DELETE`, nên mặc định là chặn: `violates foreign key constraint \"payments_order_id_fkey\"`.\n- Xóa dòng trong `order_items` hoặc `payments` thì được, vì không bảng nào tham chiếu ngược tới chúng.\n- Xóa đơn 40 được: nó chưa có thanh toán, còn `order_items.order_id` là `ON DELETE CASCADE` nên dòng hàng bị xóa lan theo."
+    },
+    {
+      "id": "sql-d06-05",
+      "topic": "UPDATE ... FROM",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Tăng giá 10% (làm tròn đến nghìn) cho mọi sản phẩm thuộc danh mục tên \"Máy tính bảng\", khi chưa biết category_id. Câu lệnh nào đúng?",
+      "options": [
+        "```sql\nUPDATE products\nSET price = ROUND(products.price * 1.1, -3)\nFROM categories\nWHERE categories.category_id = products.category_id\n  AND categories.name = 'Máy tính bảng';\n```",
+        "```sql\nUPDATE products\nSET price = ROUND(products.price * 1.1, -3)\nFROM categories\nWHERE categories.name = 'Máy tính bảng';\n```",
+        "```sql\nUPDATE products\nSET price = ROUND(products.price * 1.1, -3)\nWHERE category_id = 'Máy tính bảng';\n```",
+        "```sql\nUPDATE products\nSET price = ROUND(products.price * 1.1, -3)\nFROM categories\nWHERE categories.parent_id = products.category_id\n  AND categories.name = 'Máy tính bảng';\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng nối `products` với `categories` bằng `category_id` rồi lọc theo tên danh mục.\n- Thiếu điều kiện nối: mỗi sản phẩm ghép với danh mục \"Máy tính bảng\" nên điều kiện tên luôn đúng, và TẤT CẢ sản phẩm bị tăng giá.\n- `category_id = 'Máy tính bảng'` so số với chuỗi, báo lỗi `invalid input syntax for type integer`.\n- Nối nhầm `parent_id` với `category_id` của sản phẩm: không có sản phẩm nào nằm trực tiếp ở danh mục cha (id 6), nên 0 dòng bị sửa mà không có lỗi."
+    },
+    {
+      "id": "sql-d06-06",
+      "topic": "UPSERT (ON CONFLICT)",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Nhập thêm 20 chiếc ACC-001 (hiện tồn 60). Nếu mã đã có thì cộng dồn tồn kho, nếu chưa có thì thêm sản phẩm mới. Mệnh đề nào thay cho dấu ba chấm?",
+      "code": "INSERT INTO products\n  (sku, name, category_id, price, stock_quantity)\nVALUES\n  ('ACC-001', 'Chuột Logitech G102', 10, 399000, 20)\n...;",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nON CONFLICT (sku) DO UPDATE\nSET stock_quantity = EXCLUDED.stock_quantity\n```",
+        "```sql\nON CONFLICT (sku) DO NOTHING\n```",
+        "```sql\nON CONFLICT (sku) DO UPDATE\nSET stock_quantity =\n  products.stock_quantity + EXCLUDED.stock_quantity\n```",
+        "```sql\nON CONFLICT (name) DO UPDATE\nSET stock_quantity =\n  products.stock_quantity + EXCLUDED.stock_quantity\n```"
+      ],
+      "answer": 2,
+      "explanation": "Trong nhánh `DO UPDATE`, `products.stock_quantity` là giá trị đang có (60) và `EXCLUDED.stock_quantity` là giá trị định chèn (20), nên `60 + 20 = 80`.\n- `SET stock_quantity = EXCLUDED.stock_quantity` ghi đè: tồn kho thành 20, mất 60 chiếc cũ.\n- `DO NOTHING` bỏ qua dòng trùng: tồn vẫn 60, không cộng gì.\n- `ON CONFLICT (name)`: cột `name` không có ràng buộc UNIQUE nên PostgreSQL báo lỗi `no unique or exclusion constraint matching the ON CONFLICT specification`."
+    },
+    {
+      "id": "sql-d06-07",
+      "topic": "UPDATE ... RETURNING",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Trong bảng products có 3 sản phẩm hết hàng (stock_quantity = 0), trong đó 1 sản phẩm vốn đã is_active = FALSE. Lệnh sau trả về bao nhiêu dòng?",
+      "options": [
+        "0",
+        "3",
+        "2",
+        "24"
+      ],
+      "answer": 1,
+      "explanation": "`UPDATE` sửa (và `RETURNING` trả về) mọi dòng thỏa `WHERE`, kể cả dòng đã có sẵn giá trị đó: cả 3 sản phẩm hết hàng đều được tính.\n- 2 là kết quả nếu bạn nhầm rằng dòng đã `is_active = FALSE` bị bỏ qua; muốn vậy phải thêm điều kiện `AND is_active`.\n- 0 là trường hợp điều kiện luôn sai (ví dụ so sánh `= NULL`).\n- 24 là toàn bộ bảng, chỉ xảy ra khi quên `WHERE`.",
+      "code": "UPDATE products\nSET is_active = FALSE\nWHERE stock_quantity = 0\nRETURNING sku;",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d06-08",
+      "topic": "Lọc theo khóa chính",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "DSC Shop có hai khách tên Nguyễn Văn An: id 1 ở TP. Hồ Chí Minh (an.nguyen@gmail.com) và id 15 ở Hà Nội. Chuyển CHỈ khách id 15 sang Hải Phòng, câu lệnh nào đúng?",
+      "options": [
+        "```sql\nUPDATE customers SET city = 'Hải Phòng'\nWHERE full_name = 'Nguyễn Văn An';\n```",
+        "```sql\nUPDATE customers SET city = 'Hải Phòng'\nWHERE customer_id = 15\n   OR full_name = 'Nguyễn Văn An';\n```",
+        "```sql\nUPDATE customers SET city = 'Hải Phòng'\nWHERE email = 'an.nguyen@gmail.com';\n```",
+        "```sql\nUPDATE customers SET city = 'Hải Phòng'\nWHERE customer_id = 15;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Khóa chính chỉ khớp đúng một dòng, nên `WHERE customer_id = 15` là cách an toàn nhất.\n- Lọc theo `full_name` sửa cả hai người trùng tên (`UPDATE 2`).\n- `customer_id = 15 OR full_name = ...` vẫn chọn cả khách id 1, vì OR mở rộng điều kiện chứ không thu hẹp.\n- Email `an.nguyen@gmail.com` là của khách id 1 (khách 15 dùng `an.nguyenvan@gmail.com`), nên sửa nhầm người."
+    },
+    {
+      "id": "sql-d06-09",
+      "topic": "ON CONFLICT DO NOTHING",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Danh mục \"Phụ kiện\" đã có sẵn (UNIQUE trên name), \"Camera\" thì chưa. Lệnh sau trả về bao nhiêu dòng?",
+      "code": "INSERT INTO categories (name)\nVALUES ('Phụ kiện'), ('Camera')\nON CONFLICT (name) DO NOTHING\nRETURNING name;",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "1",
+        "2",
+        "báo lỗi duplicate key, không thêm gì"
+      ],
+      "answer": 1,
+      "explanation": "`DO NOTHING` chỉ bỏ qua dòng bị xung đột: \"Phụ kiện\" bị bỏ qua, \"Camera\" được thêm. `RETURNING` chỉ trả về dòng thực sự được thêm nên có đúng 1 dòng (`Camera`).\n- 0 sẽ đúng nếu cả hai tên đều đã tồn tại.\n- 2 sai vì `RETURNING` không liệt kê dòng bị bỏ qua.\n- Báo lỗi chỉ xảy ra khi bỏ `ON CONFLICT`; có nó thì xung đột được xử lý êm, và dòng hợp lệ vẫn vào bảng."
+    },
+    {
+      "id": "sql-d06-10",
+      "topic": "ON DELETE CASCADE",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Bảng order_items ban đầu có 60 dòng. Đơn 31 đã có 1 thanh toán và gồm 3 dòng hàng. Sau khi chạy hai lệnh DELETE sau, order_items còn bao nhiêu dòng?",
+      "code": "DELETE FROM payments WHERE order_id = 31;\nDELETE FROM orders WHERE order_id = 31;",
+      "codeLang": "sql",
+      "options": [
+        "60",
+        "59",
+        "57",
+        "56"
+      ],
+      "answer": 2,
+      "explanation": "Sau khi xóa thanh toán, không còn gì chặn việc xóa đơn 31. Khóa ngoại `order_items.order_id` là `ON DELETE CASCADE` nên cả 3 dòng hàng của đơn bị xóa theo: `60 - 3 = 57`.\n- 60 sai vì cho rằng order_items không bị đụng tới.\n- 59 sai vì chỉ tính một dòng (con số `DELETE 1` của psql chỉ đếm dòng trong `orders`, không đếm dòng xóa lan).\n- 56 sai vì trừ thêm một dòng không hề bị xóa."
+    },
+    {
+      "id": "sql-d06-11",
+      "topic": "ROUND với số âm",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Giá ACC-002 hiện là 2.490.000. Sau lệnh sau, RETURNING trả về giá nào?",
+      "code": "UPDATE products\nSET price = ROUND(price * 1.03, -3)\nWHERE sku = 'ACC-002'\nRETURNING price;",
+      "codeLang": "sql",
+      "options": [
+        "2564700",
+        "2564000",
+        "2490000",
+        "2565000"
+      ],
+      "answer": 3,
+      "explanation": "Vế phải của `SET` dùng giá trị cũ của chính dòng: `2490000 * 1.03 = 2564700`. `ROUND(x, -3)` làm tròn tới hàng nghìn: 2.564.700 gần 2.565.000 nhất.\n- 2564700 là kết quả của phép nhân, chưa làm tròn đến nghìn.\n- 2564000 sai vì cắt bớt thay vì làm tròn.\n- 2490000 là giá cũ, chỉ đúng nếu `UPDATE` không khớp dòng nào."
+    },
+    {
+      "id": "sql-d06-12",
+      "topic": "TRUNCATE và IDENTITY",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Bảng t có id sinh tự động. Lệnh INSERT cuối cùng trả về id bằng bao nhiêu?",
+      "code": "CREATE TABLE t (\n  id INT GENERATED ALWAYS AS IDENTITY,\n  v  TEXT\n);\nINSERT INTO t (v) VALUES ('a'), ('b'), ('c');\nTRUNCATE t;\nINSERT INTO t (v) VALUES ('x') RETURNING id;",
+      "codeLang": "sql",
+      "options": [
+        "1",
+        "3",
+        "4",
+        "5"
+      ],
+      "answer": 2,
+      "explanation": "Trong PostgreSQL, `TRUNCATE` mặc định KHÔNG đặt lại bộ đếm IDENTITY. Ba dòng đầu đã dùng 1, 2, 3 nên dòng mới nhận 4.\n- 1 chỉ đúng khi viết `TRUNCATE t RESTART IDENTITY`.\n- 3 là nhầm giữa \"số dòng đã xóa\" với số tiếp theo của bộ đếm.\n- 5 sai vì không có số nào bị tiêu thêm; chỉ khi có lệnh INSERT lỗi hoặc nhánh xung đột mới tiêu hao id."
+    },
+    {
+      "id": "sql-d06-13",
+      "topic": "TRUNCATE",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Phát biểu nào đúng về TRUNCATE trong PostgreSQL?",
+      "options": [
+        "Nếu chạy trong BEGIN rồi ROLLBACK thì dữ liệu được khôi phục",
+        "Có thể kèm WHERE để chỉ xóa một phần bảng",
+        "Mặc định luôn đặt lại bộ đếm IDENTITY về 1",
+        "Có RETURNING để xem các dòng vừa bị xóa"
+      ],
+      "answer": 0,
+      "explanation": "Khác với MySQL, `TRUNCATE` của PostgreSQL nằm trong transaction được nên `ROLLBACK` hoàn tác nó như `DELETE`.\n- `TRUNCATE` luôn xóa cả bảng, không có `WHERE`; muốn xóa một phần phải dùng `DELETE`.\n- Bộ đếm IDENTITY chỉ được đặt lại khi thêm `RESTART IDENTITY`.\n- `TRUNCATE` không có `RETURNING`; chỉ `INSERT`, `UPDATE`, `DELETE` mới có."
+    },
+    {
+      "id": "sql-d06-14",
+      "topic": "Transaction bị hủy",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",
+      "question": "Trong một khối BEGIN, lệnh UPDATE đầu tiên vi phạm ràng buộc CHECK và báo lỗi. Bạn gõ tiếp một lệnh UPDATE thứ hai hoàn toàn hợp lệ (chưa ROLLBACK). Điều gì xảy ra?",
+      "options": [
+        "Lệnh thứ hai chạy bình thường, chỉ lệnh thứ nhất bị bỏ qua",
+        "Lệnh thứ hai bị từ chối cho tới khi bạn ROLLBACK",
+        "PostgreSQL tự COMMIT phần đã chạy được rồi mới báo lỗi",
+        "PostgreSQL tự ROLLBACK và mở sẵn transaction mới"
+      ],
+      "answer": 1,
+      "explanation": "Một lệnh lỗi làm cả transaction ở trạng thái \"aborted\": mọi lệnh sau bị từ chối với `current transaction is aborted, commands ignored until end of transaction block`, cho đến khi bạn gõ `ROLLBACK`.\n- Lệnh thứ hai không chạy được dù hợp lệ.\n- PostgreSQL không tự COMMIT phần nào; mọi thay đổi trong khối vẫn là tạm.\n- Không có transaction mới nào được mở sẵn; bạn phải tự ROLLBACK rồi bắt đầu lại từ `BEGIN`."
+    }
+  ]
+}

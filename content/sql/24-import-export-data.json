@@ -1,0 +1,239 @@
+{
+  "id": "sql-d24",
+  "title": "Ngày 24: Nhập và xuất dữ liệu với CSV",
+  "description": "COPY và \\copy, định dạng CSV, bảng staging để làm sạch dữ liệu, upsert hàng loạt và xuất báo cáo ra file.",
+  "questions": [
+    {
+      "id": "sql-d24-01",
+      "topic": "COPY và \\copy",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Bạn dùng DBeaver kết nối tới database trên cloud (không có quyền superuser), file CSV nằm trên laptop của bạn. Cách nào nạp được file?",
+      "options": [
+        "chạy `COPY ... FROM` với đường dẫn file trên laptop",
+        "chạy `\\copy ... FROM` trong psql cài trên laptop",
+        "chạy `COPY ... FROM` rồi cấp quyền `pg_read_server_files` cho chính mình",
+        "chạy `\\copy` ngay trong cửa sổ truy vấn SQL của DBeaver"
+      ],
+      "answer": 1,
+      "explanation": "`\\copy` là lệnh của psql: psql đọc file trên máy bạn rồi gửi qua kết nối, chỉ cần quyền INSERT trên bảng.\n- `COPY ... FROM` bắt máy chủ tự mở file, mà máy chủ cloud không thấy laptop của bạn (lỗi `could not open file ... No such file or directory`).\n- Tự cấp quyền `pg_read_server_files` cho mình không làm được khi không phải superuser, và dù có quyền thì file vẫn phải nằm trên máy chủ.\n- Cửa sổ SQL của DBeaver gửi câu SQL thuần cho máy chủ; `\\copy` không phải SQL nên nó không hiểu (chỉ psql có lệnh này)."
+    },
+    {
+      "id": "sql-d24-02",
+      "topic": "Regex làm sạch",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Bước làm sạch giá chỉ bỏ dấu chấm ở những chuỗi đúng mẫu hàng nghìn. Có bao nhiêu giá trị dưới đây khớp mẫu?",
+      "code": "SELECT count(*)\nFROM (VALUES ('1.290.000'), ('12.5'),\n             ('7990000'), ('15.000')) v(p)\nWHERE p ~ '^[0-9]{1,3}(\\.[0-9]{3})+$';",
+      "codeLang": "sql",
+      "options": [
+        "1",
+        "3",
+        "2",
+        "4"
+      ],
+      "answer": 2,
+      "explanation": "Kết quả là **2**: `1.290.000` (1 chữ số, rồi hai nhóm `.ddd`) và `15.000` (2 chữ số, một nhóm `.ddd`).\n- `12.5` không khớp vì sau dấu chấm chỉ có 1 chữ số, không phải đúng 3. Mẫu này chính là để không biến nhầm `12.5` thành `125`.\n- `7990000` không khớp vì không có nhóm `.ddd` nào (dấu `+` yêu cầu ít nhất một nhóm).\n- Đáp án 3 hoặc 4 là đếm nhầm hai chuỗi này."
+    },
+    {
+      "id": "sql-d24-03",
+      "topic": "HEADER true",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Bảng `notes(a TEXT, b TEXT)` nạp từ file CSV có dòng tiêu đề `a,b` bằng `COPY notes FROM ... WITH (FORMAT csv)` (quên `HEADER true`). Điều gì xảy ra?",
+      "options": [
+        "báo lỗi vì dòng đầu không phải dữ liệu",
+        "PostgreSQL tự nhận ra dòng tiêu đề và bỏ qua",
+        "cả lệnh bị hủy vì tên cột không khớp kiểu",
+        "lệnh chạy thành công, dòng `a,b` thành một dòng dữ liệu"
+      ],
+      "answer": 3,
+      "explanation": "Mọi cột đều là `TEXT` nên chữ `a` và `b` nạp vào được như dữ liệu thường: không có lỗi nào, dòng tiêu đề lặng lẽ thành một bản ghi.\n- PostgreSQL không tự đoán header; phải khai báo `HEADER true`.\n- Báo lỗi chỉ xảy ra khi cột có kiểu chặt hơn (ví dụ cột `DATE` nhận chữ `birth_date` thì lỗi `invalid input syntax for type date`).\n- Không có chuyện so tên cột với kiểu; `COPY` chỉ ghép theo thứ tự cột.\nVì vậy luôn kiểm tra số dòng sau khi nạp."
+    },
+    {
+      "id": "sql-d24-04",
+      "topic": "Kiểm tra số bằng regex",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Cột `stock_quantity` trong bảng staging là `TEXT`. Có bao nhiêu giá trị dưới đây bị coi là KHÔNG hợp lệ bởi điều kiện `q !~ '^-?[0-9]+$'`?",
+      "code": "SELECT count(*)\nFROM (VALUES ('57'), (' 38'), ('2O'),\n             ('-3'), (''), ('12.0')) v(q)\nWHERE q !~ '^-?[0-9]+$';",
+      "codeLang": "sql",
+      "options": [
+        "4",
+        "3",
+        "2",
+        "5"
+      ],
+      "answer": 0,
+      "explanation": "Kết quả là **4**: `' 38'` (có dấu cách đầu), `'2O'` (chữ O thay vì số 0), `''` (rỗng, vì `+` cần ít nhất một chữ số) và `'12.0'` (có dấu chấm).\n- `'57'` và `'-3'` khớp mẫu nên không bị đếm; `-3` là số âm hợp lệ về định dạng, phải kiểm tra riêng bằng `::int < 0`.\n- Đáp án 3 quên dấu cách đầu; đáp án 2 quên thêm chuỗi rỗng và `12.0`; đáp án 5 đếm cả `-3`.\nBài học: nên `trim()` trước khi kiểm tra."
+    },
+    {
+      "id": "sql-d24-05",
+      "topic": "Ngày tháng kiểu Việt",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "File có ngày dạng `19/08/2003`. Câu lệnh nào gây LỖI khi chạy trong PostgreSQL 16 với cấu hình mặc định?",
+      "options": [
+        "```sql\nSELECT to_date('19/08/2003', 'DD/MM/YYYY');\n```",
+        "```sql\nSELECT '19/08/2003'::date;\n```",
+        "```sql\nSELECT '2003-08-19'::date;\n```",
+        "```sql\nSELECT to_date('2003-08-19', 'YYYY-MM-DD');\n```"
+      ],
+      "answer": 1,
+      "explanation": "Câu thứ hai lỗi: ép kiểu thẳng `'19/08/2003'::date` làm PostgreSQL đọc theo thứ tự tháng/ngày/năm, tháng 19 không tồn tại (`date/time field value out of range`).\n- `to_date` với mẫu `DD/MM/YYYY` chỉ rõ thứ tự ngày/tháng/năm nên chạy tốt.\n- `'2003-08-19'::date` là dạng chuẩn ISO nên luôn hiểu đúng.\n- `to_date` với mẫu `YYYY-MM-DD` cũng hợp lệ.\nVới file ngày kiểu Việt: nạp vào cột `TEXT` ở staging rồi đổi bằng `to_date`."
+    },
+    {
+      "id": "sql-d24-06",
+      "topic": "UPSERT cộng dồn tồn kho",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "File nhà cung cấp có SKU `LAP-001` (đã có trong shop, tồn kho 5) với giá mới 31990000 và số lượng nhập 2. Truy vấn nào cập nhật giá theo file VÀ cộng dồn tồn kho thành 7?",
+      "options": [
+        "```sql\nINSERT INTO products (sku, name, category_id, price, stock_quantity)\nVALUES ('LAP-001', 'X', 3, 31990000, 2)\nON CONFLICT (sku) DO UPDATE\nSET price = EXCLUDED.price,\n    stock_quantity = EXCLUDED.stock_quantity;\n```",
+        "```sql\nINSERT INTO products (sku, name, category_id, price, stock_quantity)\nVALUES ('LAP-001', 'X', 3, 31990000, 2)\nON CONFLICT (sku) DO UPDATE\nSET price = EXCLUDED.price,\n    stock_quantity = stock_quantity + 2;\n```",
+        "```sql\nINSERT INTO products (sku, name, category_id, price, stock_quantity)\nVALUES ('LAP-001', 'X', 3, 31990000, 2)\nON CONFLICT (sku) DO NOTHING;\n```",
+        "```sql\nINSERT INTO products (sku, name, category_id, price, stock_quantity)\nVALUES ('LAP-001', 'X', 3, 31990000, 2)\nON CONFLICT (sku) DO UPDATE\nSET price = EXCLUDED.price,\n    stock_quantity = products.stock_quantity\n                   + EXCLUDED.stock_quantity;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng dùng `products.stock_quantity` (giá trị đang có, 5) cộng `EXCLUDED.stock_quantity` (giá trị định chèn, 2) ra 7.\n- Phương án 1 cho tồn kho thành **2**: `EXCLUDED` thay thế chứ không cộng dồn, mất 5 sản phẩm đang có.\n- Phương án 2 báo lỗi `column reference \"stock_quantity\" is ambiguous`, vì trong `DO UPDATE` tên cột không có tiền tố vừa là dòng cũ vừa là `EXCLUDED`.\n- Phương án 3 `DO NOTHING` bỏ qua dòng trùng: giá vẫn 32990000 và tồn kho vẫn 5."
+    },
+    {
+      "id": "sql-d24-07",
+      "topic": "NULL và chuỗi rỗng trong CSV",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Với `FORMAT csv` mặc định của PostgreSQL, dòng `y,\"\"` được nạp vào hai cột `TEXT` (a, b). Giá trị cột `b` là gì?",
+      "options": [
+        "NULL, vì ô không có chữ",
+        "chuỗi `\"\"` gồm hai ký tự nháy kép",
+        "chuỗi rỗng, độ dài 0",
+        "lỗi, vì ô rỗng bắt buộc phải bỏ trống hẳn"
+      ],
+      "answer": 2,
+      "explanation": "Trong CSV của PostgreSQL, ô trống không nháy (`,,` hoặc `y,`) là NULL, còn `\"\"` là chuỗi rỗng: `b IS NULL` cho `f`, `length(b)` cho `0`.\n- Đáp án NULL nhầm hai trường hợp: NULL chỉ dành cho ô hoàn toàn trống.\n- Hai ký tự nháy là cách viết trong file, không phải giá trị: nháy bao ngoài được bỏ đi khi đọc.\n- Không có lỗi: `\"\"` hoàn toàn hợp lệ.\nFile dùng chữ khác cho NULL (`N/A`, `\\N`) thì khai báo `NULL 'N/A'`."
+    },
+    {
+      "id": "sql-d24-08",
+      "topic": "EXCEPT và NULL",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Sau khi sao lưu bảng ra CSV rồi nạp lại, bạn so sánh hai bảng bằng `EXCEPT` (một chiều). Bảng gốc và bảng khôi phục đều có đúng hai dòng: `a` và `NULL`. Truy vấn trả về giá trị nào?",
+      "code": "SELECT count(*) FROM (\n  (VALUES ('a'), (NULL))\n  EXCEPT\n  (VALUES ('a'), (NULL))\n) d;",
+      "codeLang": "sql",
+      "options": [
+        "1",
+        "0",
+        "2",
+        "NULL"
+      ],
+      "answer": 1,
+      "explanation": "Kết quả là **0**: `EXCEPT` coi hai giá trị NULL là giống nhau (khác với phép so sánh `=`), nên dòng `NULL` ở hai phía triệt tiêu nhau, dòng `a` cũng vậy.\n- 1 là nhầm tưởng NULL luôn khác NULL, như khi viết `WHERE x = NULL`.\n- 2 là nghĩ không dòng nào bị loại.\n- `count(*)` luôn trả về một số, không bao giờ là NULL.\nVì vậy `EXCEPT` hai chiều bằng 0 dòng chứng tỏ hai bảng giống nhau, kể cả các ô NULL."
+    },
+    {
+      "id": "sql-d24-09",
+      "topic": "Truy vấn xuất báo cáo",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Trước khi xuất bằng `\\copy (truy vấn) TO ...`, bạn cần truy vấn trả về: mỗi tháng (dạng `YYYY-MM`) một dòng với số đơn KHÔNG bị hủy, theo thứ tự tháng. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT to_char(o.order_date, 'YYYY-MM') AS thang,\n       count(*) AS so_don\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.status <> 'cancelled'\nGROUP BY thang ORDER BY thang;\n```",
+        "```sql\nSELECT to_char(o.order_date, 'YYYY-MM') AS thang,\n       count(DISTINCT o.order_id) AS so_don\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.status = 'cancelled'\nGROUP BY thang ORDER BY thang;\n```",
+        "```sql\nSELECT to_char(o.order_date, 'YYYY-MM') AS thang,\n       count(DISTINCT o.order_id) AS so_don\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.status <> 'cancelled'\nGROUP BY thang ORDER BY thang;\n```",
+        "```sql\nSELECT to_char(o.order_date, 'YYYY-MM') AS thang,\n       count(DISTINCT o.order_id) AS so_don\nFROM orders o JOIN order_items oi USING (order_id)\nWHERE o.status <> 'cancelled'\nORDER BY thang;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng đếm `DISTINCT order_id` (một đơn có nhiều dòng `order_items`), loại đơn hủy bằng `<>` và gom theo tháng.\n- Phương án 1 dùng `count(*)` sau khi JOIN: đếm số dòng chi tiết đơn chứ không phải số đơn, nên số bị phình lên.\n- Phương án 2 đảo điều kiện: chỉ lấy đơn **đã hủy**.\n- Phương án 4 thiếu `GROUP BY`: báo lỗi vì `to_char(...)` không nằm trong GROUP BY trong khi dùng hàm gộp."
+    },
+    {
+      "id": "sql-d24-10",
+      "topic": "Bảng staging",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Vì sao bảng staging thường khai báo toàn cột `TEXT` và không có ràng buộc?",
+      "options": [
+        "vì `TEXT` nạp nhanh hơn mọi kiểu khác",
+        "để mọi dòng đều nạp được, rồi kiểm tra và gắn lỗi từng dòng bằng SQL",
+        "vì `COPY` chỉ làm việc với cột `TEXT`",
+        "để PostgreSQL tự bỏ qua dòng sai kiểu dữ liệu"
+      ],
+      "answer": 1,
+      "explanation": "`COPY` là tất cả hoặc không gì cả: một ô sai kiểu là cả lệnh thất bại, và chỉ báo dòng sai đầu tiên. Nạp vào cột `TEXT` thì không dòng nào bị từ chối, sau đó bạn kiểm tra bằng `CASE`/regex và biết đủ mọi lỗi cùng lúc.\n- Tốc độ không phải lý do chính; không có chuyện `TEXT` luôn nhanh nhất.\n- `COPY` nạp được mọi kiểu (số, ngày...), chỉ là sai định dạng thì lỗi.\n- PostgreSQL 16 không tự bỏ qua dòng lỗi (tùy chọn `ON_ERROR ignore` chỉ có từ bản 17, và cũng không bắt lỗi nghiệp vụ)."
+    },
+    {
+      "id": "sql-d24-11",
+      "topic": "Kiểm tra SKU trùng trong file",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Bảng staging có `line_no` và `sku`. Đánh dấu một dòng là \"SKU trùng trong file\" nếu trước nó đã có dòng cùng SKU. Với các SKU: A, B, A, C, B, A (theo thứ tự), truy vấn dưới trả về bao nhiêu?",
+      "code": "CREATE TEMP TABLE stg (\n  line_no INT GENERATED ALWAYS AS IDENTITY,\n  sku TEXT);\nINSERT INTO stg (sku) VALUES\n  ('A'), ('B'), ('A'), ('C'), ('B'), ('A');\nSELECT count(*) FROM stg s\nWHERE EXISTS (SELECT 1 FROM stg d\n  WHERE d.sku = s.sku\n    AND d.line_no < s.line_no);",
+      "codeLang": "sql",
+      "options": [
+        "2",
+        "1",
+        "4",
+        "3"
+      ],
+      "answer": 3,
+      "explanation": "Kết quả là **3**: dòng 3 (A lần 2), dòng 5 (B lần 2) và dòng 6 (A lần 3). Dòng đầu tiên của mỗi SKU không bị đánh dấu nên vẫn được nạp.\n- 2 là số SKU bị lặp (A và B), không phải số dòng thừa.\n- 1 chỉ thấy một lần lặp.\n- 4 là đếm thừa: chỉ dòng có bản cùng SKU xuất hiện **trước** nó mới bị tính, nên dòng đầu của mỗi SKU không được đếm.\nĐiều kiện `d.line_no < s.line_no` chính là để giữ lại bản đầu tiên."
+    },
+    {
+      "id": "sql-d24-12",
+      "topic": "Cập nhật hàng loạt từ file kiểm kê",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "File kiểm kê có hai dòng bẩn: SKU `\" ACC-007\"` (dấu cách đầu) với số `\" 38\"`, và SKU `\"acc-008\"` với số `\"195\"`. Truy vấn nào cập nhật đúng tồn kho cả hai sản phẩm (ACC-007 thành 38, ACC-008 thành 195)?",
+      "options": [
+        "```sql\nUPDATE products p\nSET stock_quantity = trim(s.q)::int\nFROM (VALUES (' ACC-007', ' 38'),\n             ('acc-008', '195')) s(sku, q)\nWHERE p.sku = upper(trim(s.sku));\n```",
+        "```sql\nUPDATE products p\nSET stock_quantity = trim(s.q)::int\nFROM (VALUES (' ACC-007', ' 38'),\n             ('acc-008', '195')) s(sku, q)\nWHERE p.sku = s.sku;\n```",
+        "```sql\nUPDATE products p\nSET stock_quantity = trim(s.q)::int\nFROM (VALUES (' ACC-007', ' 38'),\n             ('acc-008', '195')) s(sku, q)\nWHERE p.sku = upper(s.sku);\n```",
+        "```sql\nUPDATE products p\nSET stock_quantity = trim(s.q)\nFROM (VALUES (' ACC-007', ' 38'),\n             ('acc-008', '195')) s(sku, q)\nWHERE p.sku = upper(trim(s.sku));\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng làm sạch cả hai phía: `upper(trim(s.sku))` sửa dấu cách và chữ thường, `trim(s.q)::int` đổi chữ thành số.\n- Phương án 2 so sánh thẳng `p.sku = s.sku`: không SKU nào khớp, lệnh chạy nhưng cập nhật 0 dòng.\n- Phương án 3 chỉ `upper` không `trim`: `acc-008` được sửa nhưng `\" ACC-007\"` vẫn còn dấu cách đầu nên bị bỏ sót.\n- Phương án 4 thiếu `::int`: gán chuỗi vào cột số nguyên nên báo lỗi kiểu dữ liệu."
+    },
+    {
+      "id": "sql-d24-13",
+      "topic": "Mã hóa và Excel",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Bạn xuất kết quả truy vấn ra CSV để đồng nghiệp mở bằng Excel, nhưng tiếng Việt hiện sai khi nhấp đúp vào file. Cách xử lý nào đúng?",
+      "options": [
+        "đổi đuôi file thành `.xlsx`, PostgreSQL sẽ tự chuyển định dạng",
+        "đổi `FORMAT csv` thành `FORMAT excel` trong `COPY`",
+        "mở bằng Data > From Text/CSV và chọn UTF-8, hoặc xuất CSV có BOM (utf-8-sig)",
+        "đổi toàn bộ chữ tiếng Việt sang không dấu trước khi xuất"
+      ],
+      "answer": 2,
+      "explanation": "Excel đoán mã hóa khi nhấp đúp; file UTF-8 không BOM thường bị đọc sai. Hai cách đúng: nhập file qua Data > From Text/CSV rồi chọn \"65001: Unicode (UTF-8)\", hoặc thêm BOM (ví dụ `encoding=\"utf-8-sig\"` trong pandas) để Excel nhận ra UTF-8.\n- Đổi đuôi `.xlsx` không đổi nội dung: nó vẫn là CSV và Excel còn báo định dạng không khớp.\n- `COPY` không có `FORMAT excel`; chỉ có `text`, `csv`, `binary`. Muốn file Excel thật phải dùng thư viện như pandas/openpyxl.\n- Bỏ dấu làm mất dữ liệu, không phải cách khắc phục."
+    },
+    {
+      "id": "sql-d24-14",
+      "topic": "ON CONFLICT DO UPDATE",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Chỉ một câu lệnh dưới đây gây LỖI khi chạy (cột `name` của `categories` là UNIQUE). Đó là câu nào?",
+      "options": [
+        "```sql\nINSERT INTO categories (name)\nVALUES ('Mới'), ('Mới')\nON CONFLICT (name)\nDO UPDATE SET name = EXCLUDED.name;\n```",
+        "```sql\nINSERT INTO categories (name)\nVALUES ('Mới'), ('Mới')\nON CONFLICT (name) DO NOTHING;\n```",
+        "```sql\nINSERT INTO categories (name)\nVALUES ('Mới')\nON CONFLICT (name)\nDO UPDATE SET name = EXCLUDED.name;\n```",
+        "```sql\nINSERT INTO categories (name)\nVALUES ('Mới'), ('Mới 2')\nON CONFLICT (name)\nDO UPDATE SET name = EXCLUDED.name;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Câu đầu lỗi `ON CONFLICT DO UPDATE command cannot affect row a second time`: hai dòng định chèn cùng giá trị `name` va vào cùng một dòng, mà một lệnh `DO UPDATE` không được cập nhật một dòng hai lần.\n- Câu 2 cùng dữ liệu nhưng `DO NOTHING` chỉ bỏ qua bản trùng nên chạy được.\n- Câu 3 chỉ có một dòng định chèn, không có gì trùng nhau.\n- Câu 4 hai giá trị khác nhau nên không dòng nào bị cập nhật hai lần.\nĐây là lý do quy trình staging vẫn phải loại SKU trùng trong file trước khi upsert."
+    },
+    {
+      "id": "sql-d24-15",
+      "topic": "Danh sách cột trong COPY",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "Bảng `customers` có `customer_id` (tự sinh), `full_name`, `email`, `phone`, `city`, `birth_date`, `created_at`. File CSV chỉ có 5 cột từ `full_name` đến `birth_date`. Chạy `COPY customers FROM ... WITH (FORMAT csv, HEADER true)` mà không liệt kê cột. Điều gì xảy ra?",
+      "options": [
+        "lỗi ở dòng 2: tên khách không phải số nguyên cho cột `customer_id`",
+        "nạp thành công, `customer_id` tự sinh còn `created_at` lấy `now()`",
+        "nạp thành công, hai cột thiếu được để NULL",
+        "PostgreSQL khớp cột theo tên trong dòng tiêu đề nên nạp đúng"
+      ],
+      "answer": 0,
+      "explanation": "Không có danh sách cột thì `COPY` hiểu file có đủ mọi cột theo đúng thứ tự trong bảng, bắt đầu từ `customer_id`. Giá trị đầu tiên của dòng 2 là tên khách, không ép được sang số nguyên nên báo `invalid input syntax for type integer`.\n- Giá trị tự sinh và `DEFAULT now()` chỉ được dùng cho cột bạn **không liệt kê**, nên phải viết `COPY customers (full_name, email, phone, city, birth_date) FROM ...`.\n- Cột thiếu không tự để NULL khi bạn không khai báo.\n- `HEADER true` chỉ bỏ qua dòng đầu, PostgreSQL không dùng nó để khớp tên cột."
+    },
+    {
+      "id": "sql-d24-16",
+      "topic": "DELIMITER",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",
+      "question": "File `price_update.csv` có dạng `LAP-001;31990000` (phân cách bằng dấu chấm phẩy). Bạn nạp vào bảng hai cột `(sku, new_price)` bằng `FORMAT csv, HEADER true` mà quên `DELIMITER`. Kết quả?",
+      "options": [
+        "nạp được, PostgreSQL tự nhận ra dấu `;`",
+        "nạp được nhưng `new_price` là NULL",
+        "cả dòng được ghép vào `sku` và `new_price` lấy giá trị mặc định",
+        "lỗi `missing data for column \"new_price\"` ở dòng 2"
+      ],
+      "answer": 3,
+      "explanation": "Mặc định dấu phân cách là dấu phẩy. Cả chuỗi `LAP-001;31990000` chỉ là một ô duy nhất, nên dòng thiếu cột `new_price` và `COPY` báo lỗi `missing data for column \"new_price\"`, không nạp dòng nào.\n- PostgreSQL không tự đoán dấu phân cách.\n- Không có chuyện thiếu ô thì gán NULL: một dòng thiếu cột là lỗi.\n- Không có ghép dòng vào `sku` rồi bù giá trị mặc định.\nCách sửa: thêm `DELIMITER ';'`."
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+[
+  {
+    "id": "sql-d30-03",
+    "kind": "choose-query",
+    "options": [
+      "CREATE ROLE support_staff NOLOGIN; GRANT USAGE ON SCHEMA shop TO support_staff; GRANT SELECT (customer_id, full_name, phone) ON customers TO support_staff;",
+      "CREATE ROLE support_staff NOLOGIN; GRANT USAGE ON SCHEMA shop TO support_staff; GRANT SELECT ON customers TO support_staff;",
+      "CREATE ROLE support_staff NOLOGIN; GRANT USAGE ON SCHEMA shop TO support_staff; GRANT SELECT ON customers (customer_id, full_name, phone) TO support_staff;",
+      "CREATE ROLE support_staff NOLOGIN; GRANT USAGE ON SCHEMA shop TO support_staff; GRANT SELECT (full_name, phone) ON customers TO support_staff;"
+    ],
+    "probe": "SELECT has_column_privilege('support_staff', 'shop.customers', 'customer_id', 'SELECT') AS c_customer_id, has_column_privilege('support_staff', 'shop.customers', 'full_name', 'SELECT') AS c_full_name, has_column_privilege('support_staff', 'shop.customers', 'phone', 'SELECT') AS c_phone, has_column_privilege('support_staff', 'shop.customers', 'email', 'SELECT') AS c_email, has_column_privilege('support_staff', 'shop.customers', 'birth_date', 'SELECT') AS c_birth_date"
+  },
+  {
+    "id": "sql-d30-04",
+    "kind": "choose-query",
+    "options": [
+      "CREATE ROLE shop_readonly NOLOGIN; CREATE ROLE report_user LOGIN; GRANT SELECT ON products TO shop_readonly; GRANT shop_readonly TO report_user;",
+      "CREATE ROLE shop_readonly NOLOGIN; CREATE ROLE report_user LOGIN; GRANT USAGE ON SCHEMA shop TO shop_readonly; GRANT SELECT ON products TO shop_readonly;",
+      "CREATE ROLE shop_readonly NOLOGIN; CREATE ROLE report_user LOGIN; GRANT USAGE ON SCHEMA shop TO shop_readonly; GRANT SELECT ON products TO shop_readonly; GRANT report_user TO shop_readonly;",
+      "CREATE ROLE shop_readonly NOLOGIN; CREATE ROLE report_user LOGIN; GRANT USAGE ON SCHEMA shop TO shop_readonly; GRANT SELECT ON products TO shop_readonly; GRANT shop_readonly TO report_user;"
+    ],
+    "probe": "SET ROLE report_user; SELECT count(*) FROM products"
+  },
+  {
+    "id": "sql-d30-05",
+    "kind": "predict",
+    "format": "text",
+    "query": "CREATE ROLE accountant NOLOGIN; GRANT USAGE ON SCHEMA shop TO accountant; GRANT SELECT (order_id, status) ON orders TO accountant; SELECT has_column_privilege('accountant', 'orders', 'status', 'SELECT') AS a, has_column_privilege('accountant', 'orders', 'customer_id', 'SELECT') AS b, has_table_privilege('accountant', 'orders', 'SELECT') AS c"
+  },
+  {
+    "id": "sql-d30-06",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "CREATE ROLE shop_readonly NOLOGIN; CREATE ROLE report_user LOGIN; GRANT SELECT ON orders TO shop_readonly; GRANT shop_readonly TO report_user; REVOKE SELECT ON orders FROM report_user; SELECT has_table_privilege('report_user', 'orders', 'SELECT')"
+  },
+  {
+    "id": "sql-d30-07",
+    "kind": "find-error",
+    "options": [
+      "CREATE ROLE app_user LOGIN; GRANT USAGE ON SCHEMA shop TO app_user; GRANT SELECT ON categories, products, customers, orders, order_items, payments TO app_user; GRANT INSERT ON customers, orders, order_items, payments TO app_user; GRANT UPDATE (stock_quantity) ON products TO app_user; GRANT UPDATE (status) ON orders TO app_user; SET ROLE app_user; DELETE FROM orders WHERE order_id = 1;",
+      "CREATE ROLE app_user LOGIN; GRANT USAGE ON SCHEMA shop TO app_user; GRANT SELECT ON categories, products, customers, orders, order_items, payments TO app_user; GRANT INSERT ON customers, orders, order_items, payments TO app_user; GRANT UPDATE (stock_quantity) ON products TO app_user; GRANT UPDATE (status) ON orders TO app_user; SET ROLE app_user; UPDATE products SET stock_quantity = stock_quantity - 1 WHERE product_id = 16;",
+      "CREATE ROLE app_user LOGIN; GRANT USAGE ON SCHEMA shop TO app_user; GRANT SELECT ON categories, products, customers, orders, order_items, payments TO app_user; GRANT INSERT ON customers, orders, order_items, payments TO app_user; GRANT UPDATE (stock_quantity) ON products TO app_user; GRANT UPDATE (status) ON orders TO app_user; SET ROLE app_user; UPDATE orders SET status = 'cancelled' WHERE order_id = 3;",
+      "CREATE ROLE app_user LOGIN; GRANT USAGE ON SCHEMA shop TO app_user; GRANT SELECT ON categories, products, customers, orders, order_items, payments TO app_user; GRANT INSERT ON customers, orders, order_items, payments TO app_user; GRANT UPDATE (stock_quantity) ON products TO app_user; GRANT UPDATE (status) ON orders TO app_user; SET ROLE app_user; INSERT INTO orders (customer_id, order_date, channel) VALUES (16, now(), 'online');"
+    ]
+  },
+  {
+    "id": "sql-d30-08",
+    "kind": "find-error",
+    "options": [
+      "CREATE ROLE support_staff NOLOGIN; GRANT USAGE ON SCHEMA shop TO support_staff; GRANT SELECT (customer_id, full_name, phone) ON customers TO support_staff; SET ROLE support_staff; SELECT customer_id, full_name FROM customers;",
+      "CREATE ROLE support_staff NOLOGIN; GRANT USAGE ON SCHEMA shop TO support_staff; GRANT SELECT (customer_id, full_name, phone) ON customers TO support_staff; SET ROLE support_staff; SELECT full_name FROM customers WHERE phone IS NULL;",
+      "CREATE ROLE support_staff NOLOGIN; GRANT USAGE ON SCHEMA shop TO support_staff; GRANT SELECT (customer_id, full_name, phone) ON customers TO support_staff; SET ROLE support_staff; SELECT count(*) FROM customers;",
+      "CREATE ROLE support_staff NOLOGIN; GRANT USAGE ON SCHEMA shop TO support_staff; GRANT SELECT (customer_id, full_name, phone) ON customers TO support_staff; SET ROLE support_staff; SELECT * FROM customers LIMIT 1;"
+    ]
+  },
+  {
+    "id": "sql-d30-09",
+    "kind": "choose-query",
+    "options": [
+      "CREATE ROLE app_user LOGIN; GRANT USAGE ON SCHEMA shop TO app_user; GRANT SELECT, UPDATE ON products TO app_user; REVOKE UPDATE (price) ON products FROM app_user;",
+      "CREATE ROLE app_user LOGIN; GRANT USAGE ON SCHEMA shop TO app_user; GRANT SELECT, UPDATE ON products TO app_user; REVOKE UPDATE ON products FROM app_user; GRANT UPDATE (stock_quantity) ON products TO app_user;",
+      "CREATE ROLE app_user LOGIN; GRANT USAGE ON SCHEMA shop TO app_user; GRANT SELECT, UPDATE ON products TO app_user; REVOKE ALL ON products FROM app_user; GRANT UPDATE (stock_quantity) ON products TO app_user;",
+      "CREATE ROLE app_user LOGIN; GRANT USAGE ON SCHEMA shop TO app_user; GRANT SELECT, UPDATE ON products TO app_user; REVOKE UPDATE ON products FROM app_user;"
+    ],
+    "probe": "SELECT has_column_privilege('app_user', 'shop.products', 'price', 'UPDATE') AS p, has_column_privilege('app_user', 'shop.products', 'stock_quantity', 'UPDATE') AS s, has_table_privilege('app_user', 'shop.products', 'SELECT') AS r"
+  },
+  {
+    "id": "sql-d30-10",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT count(*) FROM orders o JOIN customers c ON c.customer_id = o.customer_id WHERE c.email = 'x' AND o.status = 'delivered' OR '1'='1'"
+  },
+  {
+    "id": "sql-d30-11",
+    "kind": "predict",
+    "format": "rowcount",
+    "query": "PREPARE find_orders(text) AS SELECT o.order_id FROM orders o JOIN customers c ON c.customer_id = o.customer_id WHERE c.email = $1; EXECUTE find_orders(''' OR ''1''=''1')"
+  },
+  {
+    "id": "sql-d30-14",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "CREATE ROLE sales_staff NOLOGIN; GRANT USAGE ON SCHEMA shop TO sales_staff; GRANT SELECT ON orders TO sales_staff; ALTER TABLE orders ENABLE ROW LEVEL SECURITY; CREATE POLICY own_orders ON orders FOR SELECT TO sales_staff USING (employee_id = NULLIF(current_setting('app.employee_id', true), '')::int); SET ROLE sales_staff; SET app.employee_id = '4'; SELECT count(*) FROM orders"
+  },
+  {
+    "id": "sql-d30-15",
+    "kind": "predict",
+    "format": "text",
+    "query": "CREATE ROLE r NOLOGIN; GRANT USAGE ON SCHEMA shop TO r; GRANT SELECT ON ALL TABLES IN SCHEMA shop TO r; CREATE TABLE shop.new_t (id int); SELECT has_table_privilege('r', 'shop.new_t', 'SELECT') AS moi, has_table_privilege('r', 'shop.products', 'SELECT') AS cu"
+  }
+]

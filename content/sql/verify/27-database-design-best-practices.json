@@ -1,0 +1,64 @@
+[
+  {
+    "id": "sql-d27-03",
+    "kind": "find-error",
+    "options": [
+      "INSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (1, 1, 1, 100000);",
+      "INSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (2, 1, 1, 100000);",
+      "INSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (2, 23, 1, 150000);",
+      "INSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (1, 23, 1, 150000);"
+    ]
+  },
+  {
+    "id": "sql-d27-04",
+    "kind": "choose-query",
+    "options": [
+      "SELECT order_id,\n  sum(quantity * unit_price * (1 - discount)) AS tong\nFROM order_items\nGROUP BY order_id;",
+      "SELECT oi.order_id,\n  sum(oi.quantity * p.price * (1 - oi.discount)) AS tong\nFROM order_items AS oi\nJOIN products AS p ON p.product_id = oi.product_id\nGROUP BY oi.order_id;",
+      "SELECT order_id,\n  sum(quantity * unit_price) AS tong\nFROM order_items\nGROUP BY order_id;",
+      "SELECT order_id,\n  sum(quantity * unit_price * discount) AS tong\nFROM order_items\nGROUP BY order_id;"
+    ]
+  },
+  {
+    "id": "sql-d27-06",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT count(*) FROM order_items AS oi JOIN products AS p ON p.product_id = oi.product_id WHERE oi.unit_price <> p.price"
+  },
+  {
+    "id": "sql-d27-08",
+    "kind": "choose-query",
+    "options": [
+      "SELECT product_id\nFROM order_items\nGROUP BY product_id\nHAVING count(unit_price) > 1;",
+      "SELECT product_id\nFROM order_items\nGROUP BY product_id\nHAVING count(DISTINCT order_id) > 1;",
+      "SELECT product_id\nFROM order_items\nGROUP BY product_id\nHAVING count(DISTINCT unit_price) > 1;",
+      "SELECT product_id\nFROM order_items\nWHERE count(DISTINCT unit_price) > 1\nGROUP BY product_id;"
+    ]
+  },
+  {
+    "id": "sql-d27-09",
+    "kind": "choose-query",
+    "options": [
+      "SELECT o.order_id, e.full_name\nFROM orders AS o\nJOIN employees AS e\n  ON e.employee_id = o.employee_id;",
+      "SELECT o.order_id, e.full_name\nFROM orders AS o\nLEFT JOIN employees AS e\n  ON e.employee_id = o.employee_id;",
+      "SELECT o.order_id, e.full_name\nFROM employees AS e\nLEFT JOIN orders AS o\n  ON o.employee_id = e.employee_id;",
+      "SELECT o.order_id, e.full_name\nFROM orders AS o\nLEFT JOIN employees AS e\n  ON e.employee_id = o.customer_id;"
+    ]
+  },
+  {
+    "id": "sql-d27-11",
+    "kind": "find-error",
+    "options": [
+      "DELETE FROM customers\nWHERE customer_id = 1;",
+      "DELETE FROM employees\nWHERE employee_id = 7;",
+      "DELETE FROM orders\nWHERE order_id = 5;",
+      "DELETE FROM payments\nWHERE order_id = 1;"
+    ]
+  },
+  {
+    "id": "sql-d27-17",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT count(*) FROM employees AS e JOIN employees AS m ON m.employee_id = e.manager_id"
+  }
+]

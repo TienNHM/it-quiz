@@ -1,0 +1,215 @@
+{
+  "id": "sql-d05",
+  "title": "Ngày 5: Toán tử, biểu thức và hàm thường dùng",
+  "description": "Chia số nguyên, NULL trong biểu thức, hàm chuỗi, ngày giờ, ROUND, COALESCE và NULLIF trên DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d05-01",
+      "topic": "Chia số nguyên",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Kho chứa tối đa 200 cái mỗi mã. Truy vấn nào tính ĐÚNG phần trăm tồn kho (`stock_quantity` so với 200) cho các sản phẩm thuộc `category_id = 12`? (Sạc Anker đang có 40 cái, phải ra 20.)",
+      "options": [
+        "```sql\nSELECT stock_quantity / 200 * 100\nFROM products\nWHERE category_id = 12;\n```",
+        "```sql\nSELECT stock_quantity * 100.0 / 200\nFROM products\nWHERE category_id = 12;\n```",
+        "```sql\nSELECT CAST(stock_quantity / 200\n       AS NUMERIC) * 100\nFROM products\nWHERE category_id = 12;\n```",
+        "```sql\nSELECT ROUND(stock_quantity / 200)\n       * 100\nFROM products\nWHERE category_id = 12;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là phương án 2: `stock_quantity * 100.0` biến phép tính thành `NUMERIC` ngay từ đầu nên `/ 200` giữ được phần thập phân, ra 20 và 100.\n- Phương án 1: `40 / 200` là chia hai số nguyên nên bằng 0, nhân 100 vẫn 0 (lỗi \"chia nguyên\").\n- Phương án 3: `CAST` bọc SAU khi `stock_quantity / 200` đã chia nguyên ra `0`, đổi `0` sang NUMERIC vẫn là `0`, quá muộn.\n- Phương án 4: `ROUND` cũng chạy sau phép chia nguyên nên vẫn là 0.\nQuy tắc: muốn kết quả thập phân thì một vế phải là số thập phân TRƯỚC khi chia."
+    },
+    {
+      "id": "sql-d05-02",
+      "topic": "Toán tử % và chia nguyên",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Kết quả của truy vấn sau là gì?",
+      "code": "SELECT 17 / 5 + 17 % 5;",
+      "codeLang": "sql",
+      "options": [
+        "3",
+        "5.4",
+        "5",
+        "6"
+      ],
+      "answer": 2,
+      "explanation": "`17 / 5` là chia hai số nguyên nên ra `3` (bỏ phần dư), còn `17 % 5` là phần dư `2`. Tổng `3 + 2 = 5`.\n- `3`: chỉ tính phần chia, quên cộng phần dư.\n- `5.4`: tưởng `17 / 5` ra `3.4` (đúng trong MySQL, sai trong PostgreSQL).\n- `6`: tưởng chia nguyên làm tròn lên (`3.4` thành 4)."
+    },
+    {
+      "id": "sql-d05-03",
+      "topic": "CONCAT và NULL",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Truy vấn sau trả về giá trị nào?",
+      "code": "SELECT CONCAT('DSC', NULL, '-', 5);",
+      "codeLang": "sql",
+      "options": [
+        "DSC-5",
+        "NULL",
+        "DSC",
+        "DSC-NULL-5"
+      ],
+      "answer": 0,
+      "explanation": "`CONCAT` bỏ qua đối số `NULL` và tự đổi số `5` sang chuỗi, nên ra `DSC-5`.\n- `NULL`: đúng với toán tử `||` (`'DSC' || NULL` là `NULL`), nhưng `CONCAT` là ngoại lệ.\n- `DSC`: nhầm rằng gặp `NULL` thì dừng nối.\n- `DSC-NULL-5`: `NULL` không bao giờ được in thành chữ \"NULL\" khi nối."
+    },
+    {
+      "id": "sql-d05-04",
+      "topic": "COALESCE khi nối chuỗi",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "In danh sách cho khách `customer_id` từ 1 đến 6, mỗi dòng dạng `Tên - SĐT`. Khách chưa có số điện thoại (`phone` là NULL) phải hiện `Tên - chưa có SĐT`, vẫn giữ tên. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT full_name || ' - ' || phone\nFROM customers\nWHERE customer_id <= 6;\n```",
+        "```sql\nSELECT CONCAT(full_name, ' - ', phone)\nFROM customers\nWHERE customer_id <= 6;\n```",
+        "```sql\nSELECT COALESCE(\n  full_name || ' - ' || phone,\n  'chưa có SĐT')\nFROM customers\nWHERE customer_id <= 6;\n```",
+        "```sql\nSELECT full_name || ' - ' ||\n  COALESCE(phone, 'chưa có SĐT')\nFROM customers\nWHERE customer_id <= 6;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Phương án 4 chỉ thay riêng `phone` khi NULL, rồi mới nối nên tên vẫn còn.\n- Phương án 1: `||` gặp `NULL` thì cả chuỗi thành `NULL`, khách Lê Hoàng Cường mất cả dòng.\n- Phương án 2: `CONCAT` không ra NULL nhưng để lại `Lê Hoàng Cường - ` (cụt, không có chữ \"chưa có SĐT\").\n- Phương án 3: `COALESCE` bọc ngoài cả chuỗi nên khi `phone` NULL, dòng chỉ còn `chưa có SĐT`, mất tên.\nÝ chính: `COALESCE` phải đặt đúng cột có thể NULL."
+    },
+    {
+      "id": "sql-d05-05",
+      "topic": "Hàm MySQL trong PostgreSQL",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Trên PostgreSQL 16, câu lệnh nào gây LỖI khi chạy?",
+      "options": [
+        "```sql\nSELECT YEAR(order_date)\nFROM orders;\n```",
+        "```sql\nSELECT EXTRACT(YEAR FROM order_date)\nFROM orders;\n```",
+        "```sql\nSELECT DATE_TRUNC('year', order_date)\nFROM orders;\n```",
+        "```sql\nSELECT order_date::DATE\nFROM orders;\n```"
+      ],
+      "answer": 0,
+      "explanation": "`YEAR()` là hàm của MySQL và SQL Server; PostgreSQL báo `function year(...) does not exist`.\n- `EXTRACT(YEAR FROM ...)` là cú pháp chuẩn, lấy phần năm.\n- `DATE_TRUNC('year', ...)` cắt về ngày đầu năm, vẫn là kiểu ngày giờ.\n- `order_date::DATE` ép kiểu bỏ phần giờ.\nBa phương án còn lại chạy bình thường."
+    },
+    {
+      "id": "sql-d05-06",
+      "topic": "ROUND với số âm",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Kết quả của truy vấn sau là gì?",
+      "code": "SELECT ROUND(1234567, -3);",
+      "codeLang": "sql",
+      "options": [
+        "1234000",
+        "1235000",
+        "1234600",
+        "1230000"
+      ],
+      "answer": 1,
+      "explanation": "Tham số `-3` làm tròn sang TRÁI dấu phẩy 3 chữ số, tức tròn đến nghìn. `1234567` có phần dưới nghìn là 567 (từ 500 trở lên) nên làm tròn lên thành `1235000`.\n- `1234000`: cắt bỏ thay vì làm tròn.\n- `1234600`: đó là `ROUND(..., -2)`, tròn trăm.\n- `1230000`: đó là `ROUND(..., -4)`, tròn chục nghìn."
+    },
+    {
+      "id": "sql-d05-07",
+      "topic": "COALESCE và NULL",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Một số sản phẩm (như HP Pavilion 15) chưa có `cost_price` (NULL). Khi làm báo cáo lợi nhuận `price - cost_price`, cách xử lý nào hợp lý nhất?",
+      "options": [
+        "dùng `COALESCE(cost_price, 0)` để dòng nào cũng có lợi nhuận và báo cáo không còn ô trống",
+        "xóa các sản phẩm chưa có giá nhập khỏi bảng để báo cáo chỉ còn dữ liệu đầy đủ",
+        "giữ NULL (hoặc ghi \"chưa có giá nhập\"), vì giá nhập chưa biết không có nghĩa là bằng 0",
+        "gán `cost_price = price` cho các sản phẩm đó để lợi nhuận tính ra bằng 0"
+      ],
+      "answer": 2,
+      "explanation": "NULL nghĩa là \"chưa biết\", không phải \"bằng 0\". Giữ `NULL` (hoặc hiển thị chữ rõ nghĩa) là trung thực với dữ liệu.\n- `COALESCE(cost_price, 0)`: HP Pavilion thành lãi 16.990.000 đ, một con số ảo hoàn toàn.\n- Xóa sản phẩm: mất dữ liệu thật chỉ vì thiếu một cột, và không liên quan đến việc báo cáo.\n- Gán `cost_price = price`: bịa ra giá nhập, lợi nhuận 0 cũng là số sai.\nChỉ dùng `COALESCE(x, 0)` khi 0 thật sự đúng nghĩa, ví dụ \"chưa có đơn nào\" thì số đơn là 0."
+    },
+    {
+      "id": "sql-d05-08",
+      "topic": "LOWER, TRIM so sánh chuỗi",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Cột `customers.city` nhập tay nên Đà Nẵng có chỗ viết `Đà Nẵng`, có chỗ `đà nẵng`. Truy vấn nào lấy ĐỦ mọi khách ở Đà Nẵng bất kể cách viết hoa thường?",
+      "options": [
+        "```sql\nSELECT customer_id FROM customers\nWHERE city = 'Đà Nẵng';\n```",
+        "```sql\nSELECT customer_id FROM customers\nWHERE city = 'đà nẵng';\n```",
+        "```sql\nSELECT customer_id FROM customers\nWHERE LOWER(city) = 'Đà Nẵng';\n```",
+        "```sql\nSELECT customer_id FROM customers\nWHERE LOWER(TRIM(city)) = 'đà nẵng';\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đưa giá trị cột về dạng chuẩn (`LOWER`, bỏ khoảng trắng thừa bằng `TRIM`) rồi so với hằng cũng viết thường: khách 3, 8 và 18 đều khớp.\n- Phương án 1: so sánh có phân biệt hoa thường nên chỉ lấy `Đà Nẵng` (khách 3, 18), bỏ sót khách 8.\n- Phương án 2: ngược lại, chỉ lấy `đà nẵng` (khách 8).\n- Phương án 3: `LOWER(city)` ra chữ thường nhưng hằng `'Đà Nẵng'` còn chữ hoa nên không bao giờ bằng, kết quả rỗng.\nHai vế phải được đưa về CÙNG một dạng."
+    },
+    {
+      "id": "sql-d05-09",
+      "topic": "POSITION và SUBSTRING",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Lấy tên miền (phần sau dấu `@`) trong email của khách có `customer_id = 6` là `phong.vo@student.hcmute.edu.vn`. Truy vấn sau trả về giá trị nào?",
+      "code": "SELECT SUBSTRING(email FROM POSITION('@' IN email) + 1)\nFROM customers\nWHERE customer_id = 6;",
+      "codeLang": "sql",
+      "options": [
+        "@student.hcmute.edu.vn",
+        "student.hcmute.edu.vn",
+        "phong.vo",
+        "student"
+      ],
+      "answer": 1,
+      "explanation": "`POSITION('@' IN email)` cho vị trí của `@`, ở đây là 9. `SUBSTRING(email FROM 10)` lấy từ ký tự thứ 10 đến hết, tức `student.hcmute.edu.vn`.\n- `@student.hcmute.edu.vn`: sẽ ra nếu quên `+ 1` (khi đó bắt đầu từ chính dấu `@`).\n- `phong.vo`: là phần TRƯỚC `@`, cần `LEFT(email, POSITION('@' IN email) - 1)`.\n- `student`: `SUBSTRING` không tự dừng ở dấu chấm, nó lấy đến hết chuỗi."
+    },
+    {
+      "id": "sql-d05-10",
+      "topic": "Lọc theo khoảng thời gian",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Lấy các đơn hàng đặt trong tháng 10 năm 2026. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT order_id FROM orders\nWHERE EXTRACT(MONTH FROM order_date)\n      = 10;\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE order_date >= '2026-10-01'\n  AND order_date <  '2026-11-01';\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE TO_CHAR(order_date, 'DD/MM/YYYY')\n      >= '01/10/2026';\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE EXTRACT(YEAR FROM order_date)\n      = 2026\n   OR EXTRACT(MONTH FROM order_date)\n      = 10;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Khoảng nửa mở `>= đầu tháng AND < đầu tháng sau` chọn đúng tháng 10/2026 (đơn 39 và 40) và còn dùng được index trên `order_date`.\n- Phương án 1: chỉ kiểm tra THÁNG nên lẫn cả đơn tháng 10/2025 (đơn 20).\n- Phương án 3: `TO_CHAR` ra chuỗi, so sánh theo chữ nên `'12/01/2025'` cũng lớn hơn `'01/10/2026'`; kết quả sai nhiều dòng.\n- Phương án 4: dùng `OR` nên lấy mọi đơn năm 2026 cộng mọi đơn tháng 10 của năm nào cũng được."
+    },
+    {
+      "id": "sql-d05-11",
+      "topic": "INTERVAL và cộng ngày",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Trên PostgreSQL 16, câu lệnh nào gây LỖI khi chạy? (`order_date` kiểu `TIMESTAMPTZ`)",
+      "options": [
+        "```sql\nSELECT order_date + INTERVAL '3 days'\nFROM orders;\n```",
+        "```sql\nSELECT order_date::DATE + 3\nFROM orders;\n```",
+        "```sql\nSELECT order_date + 3\nFROM orders;\n```",
+        "```sql\nSELECT DATE '2026-10-17'\n       - order_date::DATE\nFROM orders;\n```"
+      ],
+      "answer": 2,
+      "explanation": "`TIMESTAMPTZ + số nguyên` không có toán tử tương ứng, PostgreSQL báo `operator does not exist: timestamp with time zone + integer`. Muốn cộng thời gian phải dùng `INTERVAL`.\n- `order_date + INTERVAL '3 days'`: đúng cách cộng 3 ngày vào mốc thời gian.\n- `order_date::DATE + 3`: với kiểu `DATE`, cộng số nguyên nghĩa là cộng số ngày, chạy bình thường.\n- `DATE - DATE`: ra số ngày (số nguyên), chạy bình thường."
+    },
+    {
+      "id": "sql-d05-12",
+      "topic": "CAST làm tròn",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Kết quả của truy vấn sau là gì? (Nhớ: đổi `NUMERIC` sang `INT` là làm tròn, không phải cắt.)",
+      "code": "SELECT 2.5::INT + 3.49::INT;",
+      "codeLang": "sql",
+      "options": [
+        "6",
+        "5",
+        "7",
+        "5.99"
+      ],
+      "answer": 0,
+      "explanation": "`2.5::INT` làm tròn thành `3` (nửa thì làm tròn ra xa 0), `3.49::INT` thành `3`. Tổng `3 + 3 = 6`.\n- `5`: nhầm rằng `::INT` cắt bỏ phần thập phân (`2 + 3`).\n- `7`: cho rằng cả hai đều bị làm tròn lên (`3 + 4`), nhưng `3.49` làm tròn xuống 3.\n- `5.99`: cộng hai số thập phân, quên rằng mỗi vế đã bị ép về `INT` trước khi cộng."
+    },
+    {
+      "id": "sql-d05-13",
+      "topic": "NULLIF tránh chia cho 0",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Trong `products` có sản phẩm `stock_quantity = 0`. Muốn hiện `price / stock_quantity` cho TẤT CẢ sản phẩm, sản phẩm hết hàng hiện NULL và không bị lỗi, dùng truy vấn nào?",
+      "options": [
+        "```sql\nSELECT sku,\n  price / NULLIF(stock_quantity, 0)\nFROM products;\n```",
+        "```sql\nSELECT sku,\n  price / stock_quantity\nFROM products;\n```",
+        "```sql\nSELECT sku,\n  price / COALESCE(stock_quantity, 1)\nFROM products;\n```",
+        "```sql\nSELECT sku,\n  price / stock_quantity\nFROM products\nWHERE stock_quantity > 0;\n```"
+      ],
+      "answer": 0,
+      "explanation": "`NULLIF(stock_quantity, 0)` biến mẫu số 0 thành NULL, nên phép chia ra NULL thay vì lỗi, và mọi dòng đều còn trong kết quả.\n- Phương án 2: dòng có `stock_quantity = 0` làm cả truy vấn báo `division by zero`.\n- Phương án 3: `COALESCE` chỉ thay NULL, mà `stock_quantity` đâu có NULL, còn số 0 vẫn nguyên nên vẫn lỗi.\n- Phương án 4: chạy được nhưng lọc mất các sản phẩm hết hàng, không hiện NULL như yêu cầu."
+    },
+    {
+      "id": "sql-d05-14",
+      "topic": "Thứ tự gọi hàm chuỗi",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "question": "Khi làm sạch `city`, ta muốn đổi `TP.HCM` thành `Hồ Chí Minh` nhưng gọi `INITCAP` TRƯỚC `REPLACE`. Kết quả của truy vấn sau là gì?",
+      "code": "SELECT REPLACE(INITCAP('TP.HCM'),\n               'TP.HCM', 'Hồ Chí Minh');",
+      "codeLang": "sql",
+      "options": [
+        "Hồ Chí Minh",
+        "Tp.Hcm",
+        "TP.HCM",
+        "NULL"
+      ],
+      "answer": 1,
+      "explanation": "`INITCAP('TP.HCM')` chạy trước và ra `Tp.Hcm` (chữ đầu mỗi từ hoa, còn lại thường). Sau đó `REPLACE` tìm `TP.HCM` nhưng `REPLACE` phân biệt hoa thường nên không khớp, chuỗi giữ nguyên `Tp.Hcm`.\n- `Hồ Chí Minh`: chỉ đúng nếu `REPLACE` chạy trước `INITCAP`.\n- `TP.HCM`: nhầm rằng `INITCAP` không đổi gì.\n- `NULL`: không có đối số nào là NULL nên kết quả không thể NULL.\nBài học: thứ tự gọi hàm quan trọng, hãy thử từng bước bằng `SELECT`."
+    }
+  ]
+}

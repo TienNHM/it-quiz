@@ -1,0 +1,225 @@
+{
+  "id": "sql",
+  "title": "SQL",
+  "icon": "database",
+  "description": "Lộ trình 30 ngày học SQL trên PostgreSQL: từ SELECT, JOIN đến index, transaction, window function và bảo mật.",
+  "chapters": [
+    {
+      "id": "sql-d01",
+      "slug": "01-intro-to-sql-and-dbms",
+      "title": "Ngày 1: Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "description": "SQL và RDBMS là gì, các lệnh psql, câu SELECT đầu tiên và bốn nhóm lệnh DDL, DML, DCL, TCL.",
+      "count": 15
+    },
+    {
+      "id": "sql-d02",
+      "slug": "02-table-structure-and-data-types",
+      "title": "Ngày 2: Bảng, kiểu dữ liệu và ràng buộc",
+      "description": "Chọn kiểu dữ liệu đúng, hiểu IDENTITY, các ràng buộc, ON DELETE và ALTER TABLE trên DSC Shop.",
+      "count": 14
+    },
+    {
+      "id": "sql-d03",
+      "slug": "03-select-where",
+      "title": "Ngày 3: SELECT và WHERE",
+      "description": "Chọn cột, lọc dòng bằng điều kiện, LIKE, BETWEEN và bẫy NULL trong logic ba trị.",
+      "count": 14
+    },
+    {
+      "id": "sql-d04",
+      "slug": "04-order-by-limit",
+      "title": "Ngày 4: ORDER BY và LIMIT",
+      "description": "Sắp xếp kết quả, xử lý NULL, lấy top N, phân trang bằng OFFSET và keyset.",
+      "count": 16
+    },
+    {
+      "id": "sql-d05",
+      "slug": "05-operators-expressions",
+      "title": "Ngày 5: Toán tử, biểu thức và hàm thường dùng",
+      "description": "Chia số nguyên, NULL trong biểu thức, hàm chuỗi, ngày giờ, ROUND, COALESCE và NULLIF trên DSC Shop.",
+      "count": 14
+    },
+    {
+      "id": "sql-d06",
+      "slug": "06-insert-update-delete",
+      "title": "Ngày 6: Thêm, sửa, xóa dữ liệu (INSERT, UPDATE, DELETE)",
+      "description": "INSERT, RETURNING, UPDATE, DELETE, UPSERT, TRUNCATE và quy trình sửa dữ liệu an toàn trên DSC Shop.",
+      "count": 14
+    },
+    {
+      "id": "sql-d07",
+      "slug": "07-review-1",
+      "title": "Ngày 7: Ôn tập 1 (Ngày 1 đến 6)",
+      "description": "Ôn lại schema, ràng buộc, WHERE/NULL, ORDER BY/LIMIT, biểu thức, hàm và INSERT/UPDATE/DELETE trên DSC Shop.",
+      "count": 16
+    },
+    {
+      "id": "sql-d08",
+      "slug": "08-aggregate-functions",
+      "title": "Ngày 8: Hàm tổng hợp",
+      "description": "COUNT, SUM, AVG, MIN, MAX, cách chúng đối xử với NULL và cách tính tiền đơn hàng trên DSC Shop.",
+      "count": 15
+    },
+    {
+      "id": "sql-d09",
+      "slug": "09-group-by-having",
+      "title": "Ngày 9: GROUP BY và HAVING",
+      "description": "Nhóm dữ liệu với GROUP BY, lọc nhóm với HAVING, phân biệt WHERE và HAVING, thứ tự thực thi câu SELECT.",
+      "count": 18
+    },
+    {
+      "id": "sql-d10",
+      "slug": "10-join",
+      "title": "Ngày 10: Kết hợp nhiều bảng với JOIN",
+      "description": "INNER, LEFT, RIGHT, FULL, CROSS và SELF JOIN trên DSC Shop, anti-join và hai cái bẫy kinh điển: điều kiện ở WHERE và nhân dòng khi SUM.",
+      "count": 14
+    },
+    {
+      "id": "sql-d11",
+      "slug": "11-subquery",
+      "title": "Ngày 11: Truy vấn con (subquery) và CTE",
+      "description": "Subquery vô hướng, IN/EXISTS, subquery tương quan, bẫy NOT IN với NULL và CTE trên DSC Shop.",
+      "count": 14
+    },
+    {
+      "id": "sql-d12",
+      "slug": "12-union-intersect",
+      "title": "Ngày 12: UNION, INTERSECT và EXCEPT",
+      "description": "Gộp, giao và trừ kết quả truy vấn: UNION/UNION ALL, INTERSECT, EXCEPT và các quy tắc về cột, kiểu, ORDER BY.",
+      "count": 16
+    },
+    {
+      "id": "sql-d13",
+      "slug": "13-case-when",
+      "title": "Ngày 13: CASE và tổng hợp có điều kiện",
+      "description": "CASE dạng tìm kiếm và đơn giản, CASE trong ORDER BY và UPDATE, SUM/COUNT(CASE) và FILTER, cùng các bẫy thứ tự WHEN, NULL, kiểu dữ liệu.",
+      "count": 14
+    },
+    {
+      "id": "sql-d14",
+      "slug": "14-review-2",
+      "title": "Ngày 14: Ôn tập 2 - Báo cáo trên DSC Shop",
+      "description": "Ôn chặng 2: hàm tổng hợp, GROUP BY/HAVING, JOIN, subquery/CTE, tập hợp và CASE qua các báo cáo của DSC Shop.",
+      "count": 17
+    },
+    {
+      "id": "sql-d15",
+      "slug": "15-index",
+      "title": "Ngày 15: Chỉ mục (index)",
+      "description": "Tạo, xóa, liệt kê index; quy tắc tiền tố trái, độ chọn lọc, partial và expression index, chi phí ghi.",
+      "count": 17
+    },
+    {
+      "id": "sql-d16",
+      "slug": "16-transactions-acid",
+      "title": "Ngày 16: Transaction và ACID",
+      "description": "BEGIN/COMMIT/ROLLBACK, SAVEPOINT, lost update, isolation level, khóa dòng và deadlock trên dữ liệu DSC Shop.",
+      "count": 17
+    },
+    {
+      "id": "sql-d17",
+      "slug": "17-stored-procedures-functions",
+      "title": "Ngày 17: Function và Stored Procedure",
+      "description": "Viết function và procedure trong PostgreSQL: LANGUAGE sql và PL/pgSQL, tham số mặc định, CALL, bắt lỗi EXCEPTION, SQL động an toàn.",
+      "count": 14
+    },
+    {
+      "id": "sql-d18",
+      "slug": "18-triggers",
+      "title": "Ngày 18: Trigger",
+      "description": "Trigger function, BEFORE/AFTER, ROW/STATEMENT, NEW/OLD, WHEN và khi nào không nên dùng trigger trên DSC Shop.",
+      "count": 14
+    },
+    {
+      "id": "sql-d19",
+      "slug": "19-views",
+      "title": "Ngày 19: View và materialized view",
+      "description": "Tạo, sửa, xóa view, ghi dữ liệu qua view, WITH CHECK OPTION và materialized view trên DSC Shop.",
+      "count": 16
+    },
+    {
+      "id": "sql-d20",
+      "slug": "20-query-performance",
+      "title": "Ngày 20: Đọc kế hoạch thực thi với EXPLAIN",
+      "description": "EXPLAIN và EXPLAIN ANALYZE, cost/rows/loops, các kiểu scan và join, Sort, thống kê và ANALYZE.",
+      "count": 14
+    },
+    {
+      "id": "sql-d21",
+      "slug": "21-review-3",
+      "title": "Ngày 21: Ôn tập 3 (Ngày 15 đến 20)",
+      "description": "Ôn lại index, transaction, function và procedure, trigger, view và cách đọc plan EXPLAIN trên DSC Shop.",
+      "count": 18
+    },
+    {
+      "id": "sql-d22",
+      "slug": "22-sql-json-practice",
+      "title": "Ngày 22: Làm việc với JSON và JSONB",
+      "description": "Đọc, lọc, tách mảng, sửa JSONB, chỉ mục GIN và khi nào nên tách JSONB thành cột riêng trên DSC Shop.",
+      "count": 16
+    },
+    {
+      "id": "sql-d23",
+      "slug": "23-sql-connect-apps",
+      "title": "Ngày 23: Kết nối SQL từ ứng dụng",
+      "description": "Truy vấn tham số hóa, placeholder của driver, connection pool, transaction từ code, thử lại lỗi 40001 và bẫy N+1 trên DSC Shop.",
+      "count": 15
+    },
+    {
+      "id": "sql-d24",
+      "slug": "24-import-export-data",
+      "title": "Ngày 24: Nhập và xuất dữ liệu với CSV",
+      "description": "COPY và \\copy, định dạng CSV, bảng staging để làm sạch dữ liệu, upsert hàng loạt và xuất báo cáo ra file.",
+      "count": 16
+    },
+    {
+      "id": "sql-d25",
+      "slug": "25-big-data",
+      "title": "Ngày 25: SQL và dữ liệu lớn",
+      "description": "Phân vùng bảng RANGE, LIST, HASH, luật khóa chính và cận, DETACH, cắt tỉa phân vùng, cùng replication, sharding, kho dữ liệu cột và TOAST.",
+      "count": 16
+    },
+    {
+      "id": "sql-d26",
+      "slug": "26-sql-nosql",
+      "title": "Ngày 26: SQL và NoSQL",
+      "description": "Bốn họ NoSQL, so sánh với PostgreSQL, ACID và CAP, embed hay reference, và dựng document bằng JSONB trên DSC Shop.",
+      "count": 16
+    },
+    {
+      "id": "sql-d27",
+      "slug": "27-database-design-best-practices",
+      "title": "Ngày 27: Thiết kế cơ sở dữ liệu",
+      "description": "ERD và các loại quan hệ, phụ thuộc hàm, chuẩn hóa 1NF-BCNF, khi nào phi chuẩn hóa và các thực hành thiết kế tốt.",
+      "count": 17
+    },
+    {
+      "id": "sql-d28",
+      "slug": "28-sql-query-optimization",
+      "title": "Ngày 28: Tối ưu truy vấn",
+      "description": "Điều kiện sargable, viết lại subquery, EXISTS/IN/NOT EXISTS, covering index, phân trang keyset, N+1 và materialized view.",
+      "count": 14
+    },
+    {
+      "id": "sql-d29",
+      "slug": "29-recursive-queries-window-functions",
+      "title": "Ngày 29: Window function và truy vấn đệ quy",
+      "description": "Xếp hạng, lũy kế, LAG/LEAD, khung ROWS/RANGE và CTE đệ quy trên cây danh mục, sơ đồ nhân viên.",
+      "count": 15
+    },
+    {
+      "id": "sql-d30",
+      "slug": "30-database-security",
+      "title": "Ngày 30: Bảo mật cơ sở dữ liệu",
+      "description": "Role, GRANT/REVOKE theo từng tầng, quyền tối thiểu, RLS, SQL injection, lưu mật khẩu và sao lưu trên DSC Shop.",
+      "count": 16
+    },
+    {
+      "id": "sql-d99",
+      "slug": "99-summary",
+      "title": "Ngày 99: Tổng kết khóa SQL",
+      "description": "Ôn tổng hợp bốn chặng: anti-join, HAVING, window function, JSONB, ràng buộc, CTE đệ quy, sargable và bảo mật.",
+      "count": 16
+    }
+  ]
+}

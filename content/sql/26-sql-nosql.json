@@ -1,0 +1,251 @@
+{
+  "id": "sql-d26",
+  "title": "Ngày 26: SQL và NoSQL",
+  "description": "Bốn họ NoSQL, so sánh với PostgreSQL, ACID và CAP, embed hay reference, và dựng document bằng JSONB trên DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d26-01",
+      "topic": "Key-value",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "DSC Shop muốn lưu phiên đăng nhập của khách, mỗi phiên tự hết hạn sau 30 phút, đọc ghi theo mã phiên. Loại cơ sở dữ liệu nào hợp nhất?",
+      "kind": "concept",
+      "options": [
+        "wide-column (Cassandra)",
+        "graph (Neo4j)",
+        "key-value (Redis)",
+        "quan hệ với nhiều bảng chuẩn hóa"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là key-value: truy cập chỉ theo một khóa (mã phiên), cần cực nhanh và có thể đặt thời gian hết hạn cho từng khóa, đúng sở trường của Redis.\n- Wide-column hợp với ghi khối lượng rất lớn theo thời gian (log, cảm biến), quá nặng nề cho một phiên đăng nhập.\n- Graph dành cho bài toán duyệt quan hệ nhiều tầng, ở đây không có quan hệ nào.\n- Bảng quan hệ chuẩn hóa dùng được nhưng là quá mức: không cần JOIN hay ràng buộc, lại không tự hết hạn."
+    },
+    {
+      "id": "sql-d26-02",
+      "topic": "Wide-column",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Một hệ thống IoT ghi nhiệt độ từ 10.000 cảm biến mỗi giây, hầu như chỉ truy vấn theo cảm biến và khoảng thời gian. Họ NoSQL nào thường được chọn?",
+      "kind": "concept",
+      "options": [
+        "document (MongoDB)",
+        "wide-column (Cassandra)",
+        "key-value dùng làm cache (Memcached)",
+        "graph (Neo4j)"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là wide-column: dữ liệu chia theo khóa phân vùng (mã cảm biến) và sắp theo thời gian, ghi tuần tự khối lượng cực lớn, truy vấn theo khóa và khoảng thời gian.\n- Document hợp với dữ liệu cấu trúc thay đổi đọc trọn một cục, không phải luồng ghi liên tục.\n- Memcached chỉ là cache trong bộ nhớ, dữ liệu mất khi đầy hoặc khởi động lại, không phải nơi lưu lâu dài.\n- Graph tối ưu cho duyệt quan hệ, còn dữ liệu cảm biến gần như không có quan hệ giữa các điểm."
+    },
+    {
+      "id": "sql-d26-03",
+      "topic": "Transaction trong NoSQL",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Phát biểu nào đúng về transaction của MongoDB?",
+      "kind": "concept",
+      "options": [
+        "Không hỗ trợ transaction nhiều document, vì đó là điểm khác biệt định nghĩa NoSQL",
+        "Chỉ hỗ trợ transaction trên cụm sharded, replica set thì không",
+        "Mọi thao tác đều tự động là transaction ACID nhiều document, nên không cần thiết kế gì thêm",
+        "Thao tác trên một document luôn nguyên tử, và có transaction ACID nhiều document từ bản 4.0, nhưng tốn kém hơn nên dùng ít"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng là phương án 4. Ghi vào một document luôn nguyên tử; transaction nhiều document có từ MongoDB 4.0 (replica set) và 4.2 (sharded cluster).\n- Phương án 1 sai: \"NoSQL không có transaction\" là hiểu lầm phổ biến, mức hỗ trợ tùy từng hệ.\n- Phương án 2 sai: replica set đã hỗ trợ từ 4.0, sharded cluster đến 4.2 mới có, không phải chỉ riêng sharded.\n- Phương án 3 sai: transaction nhiều document phải mở tường minh và tốn kém, nên thiết kế document để mỗi thao tác chỉ chạm một bản ghi vẫn là lời khuyên chính."
+    },
+    {
+      "id": "sql-d26-04",
+      "topic": "ACID và CAP",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Phát biểu nào đúng khi so sánh ACID với CAP?",
+      "kind": "concept",
+      "options": [
+        "ACID là tính chất của transaction; CAP là định lý về hệ phân tán khi mạng giữa các máy bị đứt",
+        "Chữ C của ACID và chữ C của CAP cùng nghĩa là mọi lần đọc thấy giá trị mới nhất",
+        "NoSQL dùng CAP thay cho ACID, còn SQL dùng ACID thay cho CAP",
+        "CAP chỉ áp dụng cho NoSQL, PostgreSQL có replica thì không bị ảnh hưởng"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng là phương án 1: ACID nói về transaction (đưa dữ liệu từ trạng thái hợp lệ sang hợp lệ), CAP nói về hệ phân tán khi mạng đứt.\n- Phương án 2 sai: C của ACID là không vi phạm ràng buộc, C của CAP là mọi lần đọc thấy bản ghi mới nhất.\n- Phương án 3 sai: hai khái niệm ở hai tầng khác nhau, không thay thế nhau.\n- Phương án 4 sai: CAP áp dụng cho mọi hệ phân tán, kể cả PostgreSQL có replica, nơi đọc từ replica có thể thấy dữ liệu cũ."
+    },
+    {
+      "id": "sql-d26-05",
+      "topic": "CAP và nhất quán cuối cùng",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "DSC Shop chạy PostgreSQL với một primary và một read replica. Khách vừa đổi địa chỉ trên primary, vài trăm mili giây sau trang hồ sơ (đọc từ replica) vẫn hiện địa chỉ cũ rồi tự cập nhật. Hiện tượng này gần nhất với khái niệm nào?",
+      "kind": "concept",
+      "options": [
+        "Vi phạm tính Durability của ACID, vì dữ liệu mới bị mất",
+        "Nhất quán cuối cùng (eventual consistency): hệ phân tán chấp nhận dữ liệu cũ tạm thời để vẫn phục vụ đọc",
+        "Dị thường cập nhật do chưa chuẩn hóa dữ liệu",
+        "Lỗi của định lý CAP, vì PostgreSQL là SQL nên luôn nhất quán tức thì"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là phương án 2: đọc từ replica có thể thấy dữ liệu cũ trong lúc replication chưa kịp chuyển thay đổi sang, rồi tự khớp lại. Đó chính là nhất quán cuối cùng, cùng họ với cách các hệ AP/BASE hoạt động.\n- Phương án 1 sai: dữ liệu vẫn nằm an toàn trên primary, Durability không bị vi phạm.\n- Phương án 3 sai: dị thường cập nhật là chuyện lặp dữ liệu ở nhiều chỗ trong thiết kế, ở đây chỉ là độ trễ sao chép.\n- Phương án 4 sai: CAP không \"lỗi\", và SQL không đảm bảo nhất quán tức thì ở mọi bản sao."
+    },
+    {
+      "id": "sql-d26-06",
+      "topic": "Embed hay reference",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Trong MongoDB, DSC Shop thiết kế document cho khách và đơn hàng. Cách nào hợp lý nhất?",
+      "kind": "concept",
+      "options": [
+        "Lồng toàn bộ mọi đơn hàng vào document của khách, để đọc khách là có hết",
+        "Chỉ lưu id sản phẩm trong dòng hàng, không lưu tên và giá tại lúc mua",
+        "Lồng các dòng hàng (sku, tên, số lượng, đơn giá) vào document đơn, còn thông tin khách thì chỉ lưu customer_id tham chiếu",
+        "Chép đầy đủ tên và thành phố khách vào mọi đơn, và sửa lại tất cả đơn cũ mỗi khi khách đổi thông tin"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là phương án 3: dòng hàng thuộc về đơn, luôn đọc cùng đơn và có số lượng giới hạn nên nên embed; khách là dữ liệu dùng chung, hay đổi nên tham chiếu bằng id.\n- Phương án 1 là lỗi \"embed mọi thứ\": mảng đơn tăng mãi, document phình tới giới hạn 16 MB, mỗi đơn mới phải ghi lại document lớn.\n- Phương án 2 làm mất sự thật lịch sử: tên và giá tại lúc mua phải giữ lại trong đơn (PostgreSQL cũng lưu unit_price trong order_items vì lý do này).\n- Phương án 4 gây dị thường cập nhật: thông tin khách lặp ở nhiều đơn, sửa sót một đơn là dữ liệu mâu thuẫn. (Chỉ nên chép khi cần giữ đúng giá trị lúc đặt hàng, như tên và giá sản phẩm.)"
+    },
+    {
+      "id": "sql-d26-07",
+      "topic": "Chọn công nghệ lưu trữ",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "DSC Shop có thông số kỹ thuật sản phẩm mỗi loại một kiểu (laptop có RAM, áo có size), nhưng phần còn lại như đơn hàng, tồn kho vẫn quan hệ chặt và cần transaction. Lựa chọn hợp lý nhất?",
+      "kind": "concept",
+      "options": [
+        "Giữ PostgreSQL, dùng cột JSONB cho phần thông số thay đổi",
+        "Chuyển toàn bộ sang MongoDB vì dữ liệu cuối cùng cũng là JSON",
+        "Dùng Redis làm nơi lưu chính cho sản phẩm và đơn hàng",
+        "Dùng Cassandra để có tính linh hoạt về schema"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng là PostgreSQL kèm JSONB: phần lớn dữ liệu vẫn quan hệ, chỉ một phần linh hoạt, đúng như cột products.attributes của DSC Shop.\n- Chuyển hết sang MongoDB chỉ vì \"dữ liệu là JSON\" là lỗi thường gặp: API trả JSON không có nghĩa dữ liệu nên lưu dạng document, và đơn hàng vẫn cần ràng buộc, transaction.\n- Redis là kho key-value cho cache, phiên, bộ đếm, không nên là nguồn sự thật của đơn hàng.\n- Cassandra mạnh ở ghi khối lượng lớn, không giải quyết nhu cầu schema linh hoạt và lại yếu ở JOIN, ràng buộc."
+    },
+    {
+      "id": "sql-d26-08",
+      "topic": "jsonb_agg và mảng rỗng",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Dựng document của khách 16 (khách này chưa có đơn nào) sao cho có khóa \"customer_id\" và khóa \"orders\" là mảng rỗng [] . Truy vấn nào cho đúng document đó?",
+      "kind": "choose-query",
+      "options": [
+        "```sql\nSELECT jsonb_build_object('customer_id', c.customer_id,\n  'orders', (SELECT jsonb_agg(o.order_id)\n     FROM orders o WHERE o.customer_id = c.customer_id))\nFROM customers c WHERE c.customer_id = 16;\n```",
+        "```sql\nSELECT jsonb_build_object('customer_id', c.customer_id,\n  'orders', jsonb_agg(o.order_id))\nFROM customers c JOIN orders o USING (customer_id)\nWHERE c.customer_id = 16 GROUP BY c.customer_id;\n```",
+        "```sql\nSELECT jsonb_build_object('customer_id', c.customer_id,\n  'orders', jsonb_agg(o.order_id))\nFROM customers c LEFT JOIN orders o USING (customer_id)\nWHERE c.customer_id = 16 GROUP BY c.customer_id;\n```",
+        "```sql\nSELECT jsonb_build_object('customer_id', c.customer_id,\n  'orders', COALESCE((SELECT jsonb_agg(o.order_id)\n     FROM orders o WHERE o.customer_id = c.customer_id),\n     '[]'::jsonb))\nFROM customers c WHERE c.customer_id = 16;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng là phương án 4: jsonb_agg trên tập rỗng trả NULL, nên phải bọc COALESCE(..., '[]'::jsonb) để ra đúng mảng rỗng, kết quả {\"orders\": [], \"customer_id\": 16}.\n- Phương án 1 thiếu COALESCE nên khóa orders mang giá trị null, không phải [].\n- Phương án 2 dùng JOIN thường: khách không có đơn bị loại, kết quả 0 dòng, không có document nào.\n- Phương án 3 dùng LEFT JOIN nên giữ được khách, nhưng jsonb_agg gom đúng một dòng NULL thành [null], mảng có một phần tử null chứ không rỗng.\nHai cách đúng để tránh bẫy: subquery bọc COALESCE như trên, hoặc lọc phần tử NULL bằng FILTER."
+    },
+    {
+      "id": "sql-d26-09",
+      "topic": "jsonb_agg ORDER BY",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Đơn 12 có hai dòng hàng, product_id lần lượt là 2 và 18. Truy vấn sau trả về giá trị nào?",
+      "kind": "predict",
+      "code": "SELECT jsonb_agg(oi.product_id\n                 ORDER BY oi.product_id DESC)::text\nFROM order_items AS oi\nWHERE oi.order_id = 12;",
+      "codeLang": "sql",
+      "options": [
+        "[18, 2]",
+        "[2, 18]",
+        "[18]",
+        "[2]"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng là [18, 2]: ORDER BY đặt bên trong hàm tổng hợp jsonb_agg quyết định thứ tự phần tử của mảng, ở đây giảm dần theo product_id.\n- [2, 18] là thứ tự tăng dần, chỉ đúng nếu bỏ DESC.\n- [18] và [2] sai vì hàm gom đủ mọi dòng của đơn 12, không bỏ dòng nào.\nCách viết này chính là mảng \"items\" có sắp xếp trong document đơn hàng ở bài học."
+    },
+    {
+      "id": "sql-d26-10",
+      "topic": "SELF JOIN cặp mua cùng",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Gợi ý \"thường được mua cùng\": liệt kê mỗi cặp sản phẩm cùng xuất hiện trong ít nhất 2 đơn, mỗi cặp đúng một lần. Truy vấn nào đúng?",
+      "kind": "choose-query",
+      "options": [
+        "```sql\nSELECT a.product_id, b.product_id, count(*)\nFROM order_items a JOIN order_items b\n  ON b.order_id = a.order_id\n AND b.product_id <> a.product_id\nGROUP BY 1, 2 HAVING count(*) >= 2;\n```",
+        "```sql\nSELECT a.product_id, b.product_id, count(*)\nFROM order_items a JOIN order_items b\n  ON b.order_id = a.order_id\n AND b.product_id > a.product_id\nGROUP BY 1, 2 HAVING count(*) >= 2;\n```",
+        "```sql\nSELECT a.product_id, b.product_id, count(*)\nFROM order_items a JOIN order_items b\n  ON b.order_id = a.order_id\n AND b.product_id > a.product_id\nGROUP BY 1, 2;\n```",
+        "```sql\nSELECT a.product_id, b.product_id, count(*)\nFROM order_items a JOIN order_items b\n  ON b.order_id = a.order_id\n AND b.product_id > a.product_id\nWHERE count(*) >= 2 GROUP BY 1, 2;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là phương án 2: nối order_items với chính nó theo order_id, điều kiện b.product_id > a.product_id để mỗi cặp chỉ xuất hiện một lần và không ghép sản phẩm với chính nó, rồi lọc nhóm bằng HAVING. Kết quả thật có 3 cặp: (12, 22), (16, 18), (22, 23), mỗi cặp 2 đơn.\n- Phương án 1 dùng <> nên cặp (a, b) và (b, a) đều xuất hiện, mỗi cặp bị liệt kê hai lần.\n- Phương án 3 thiếu HAVING nên liệt kê cả những cặp chỉ cùng xuất hiện 1 đơn.\n- Phương án 4 đặt hàm tổng hợp trong WHERE, PostgreSQL báo lỗi vì WHERE chạy trước khi gom nhóm.\nLưu ý: một cặp mua cùng một bước chỉ cần SELF JOIN, chưa cần graph database."
+    },
+    {
+      "id": "sql-d26-11",
+      "topic": "LEFT JOIN và count",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Liệt kê từng khách ở Cần Thơ kèm số đơn của họ; khách chưa có đơn nào vẫn phải hiện với số 0. Truy vấn nào đúng?",
+      "kind": "choose-query",
+      "options": [
+        "```sql\nSELECT c.customer_id, count(*)\nFROM customers c LEFT JOIN orders o\n  ON o.customer_id = c.customer_id\nWHERE c.city = 'Cần Thơ'\nGROUP BY c.customer_id;\n```",
+        "```sql\nSELECT c.customer_id, count(o.order_id)\nFROM customers c JOIN orders o\n  ON o.customer_id = c.customer_id\nWHERE c.city = 'Cần Thơ'\nGROUP BY c.customer_id;\n```",
+        "```sql\nSELECT c.customer_id, count(o.order_id)\nFROM customers c LEFT JOIN orders o\n  ON o.customer_id = c.customer_id\nWHERE c.city = 'Cần Thơ'\nGROUP BY c.customer_id;\n```",
+        "```sql\nSELECT c.customer_id, count(o.order_id)\nFROM customers c LEFT JOIN orders o USING (customer_id)\nWHERE c.city = 'Cần Thơ'\n  AND o.order_date >= '2025-01-01'\nGROUP BY c.customer_id;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là phương án 3: LEFT JOIN giữ lại khách không có đơn, và count(o.order_id) đếm cột của bảng orders nên bỏ qua NULL, ra 0. Kết quả thật: khách 5 có 2 đơn, khách 16 có 0 đơn.\n- Phương án 1 dùng count(*) nên dòng đơn trống do LEFT JOIN tạo ra vẫn được đếm, khách 16 hiện 1 đơn thay vì 0.\n- Phương án 2 dùng JOIN thường nên khách 16 biến mất khỏi kết quả.\n- Phương án 4 thêm điều kiện lên cột của bảng bên phải trong WHERE, biến LEFT JOIN thành INNER JOIN: khách không có đơn bị loại.\nQuy tắc: đếm bên \"nhiều\" của LEFT JOIN thì đếm cột của bảng đó, đừng dùng count(*)."
+    },
+    {
+      "id": "sql-d26-12",
+      "topic": "jsonb_build_object và GROUP BY",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Phương án nào gây lỗi khi chạy trên PostgreSQL?",
+      "kind": "find-error",
+      "options": [
+        "```sql\nSELECT jsonb_build_object('id', customer_id,\n                          'ids', jsonb_agg(order_id))\nFROM orders;\n```",
+        "```sql\nSELECT jsonb_build_object('id', customer_id,\n                          'ids', jsonb_agg(order_id))\nFROM orders GROUP BY customer_id;\n```",
+        "```sql\nSELECT jsonb_build_object('n', count(*))\nFROM orders;\n```",
+        "```sql\nSELECT jsonb_build_object('a', 1, 'b', NULL);\n```"
+      ],
+      "answer": 0,
+      "explanation": "Phương án 1 lỗi `column \"orders.customer_id\" must appear in the GROUP BY clause or be used in an aggregate function`: jsonb_agg gom cả bảng thành một dòng, trong khi customer_id là cột thường không nằm trong GROUP BY.\n- Phương án 2 thêm GROUP BY customer_id nên mỗi khách ra một document, chạy được.\n- Phương án 3 chỉ có hàm tổng hợp, không có cột thường, ra một document {\"n\": ...}.\n- Phương án 4 chạy được: giá trị NULL trong jsonb_build_object trở thành null của JSON, không gây lỗi (lỗi chỉ xảy ra khi số đối số lẻ, thiếu giá trị cho một khóa).\nĐây là quy tắc GROUP BY quen thuộc, vẫn áp dụng khi dựng JSON."
+    },
+    {
+      "id": "sql-d26-13",
+      "topic": "Toán tử @> với mảng lồng",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Document đơn hàng lưu mảng items. Toán tử @> của JSONB kiểm tra \"vế trái chứa vế phải\". Biểu thức sau trả về giá trị nào?",
+      "kind": "predict",
+      "code": "SELECT '{\"items\": [{\"sku\": \"A\"}, {\"sku\": \"B\"}]}'::jsonb\n       @> '{\"items\": [{\"sku\": \"B\", \"qty\": 1}]}'::jsonb;",
+      "codeLang": "sql",
+      "options": [
+        "true",
+        "null",
+        "lỗi cú pháp",
+        "false"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng là false. Toán tử @> kiểm tra vế trái có \"chứa\" vế phải hay không: một phần tử của mảng items phải chứa đủ mọi khóa của {\"sku\": \"B\", \"qty\": 1}. Phần tử {\"sku\": \"B\"} có sku đúng nhưng không có khóa qty, nên không phần tử nào thỏa.\n- true chỉ đúng nếu vế phải là {\"items\": [{\"sku\": \"B\"}]}, không có qty.\n- null không xảy ra vì cả hai vế đều là jsonb hợp lệ khác NULL.\n- Không có lỗi cú pháp: @> là toán tử chuẩn của jsonb, và JSONB có thể lập chỉ mục GIN cho kiểu truy vấn này."
+    },
+    {
+      "id": "sql-d26-14",
+      "topic": "Lỗi khi dựng JSON",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Phương án nào gây lỗi khi chạy trên PostgreSQL?",
+      "kind": "find-error",
+      "options": [
+        "```sql\nSELECT jsonb_build_object('a', 1, 'b', NULL);\n```",
+        "```sql\nSELECT jsonb_build_object(NULL, 1);\n```",
+        "```sql\nSELECT jsonb_build_object(1, 'a');\n```",
+        "```sql\nSELECT jsonb_build_object('a',\n  jsonb_build_object('b', 1));\n```"
+      ],
+      "answer": 1,
+      "explanation": "Phương án 2 lỗi `argument 1: key must not be null`: khóa của đối tượng JSON không được NULL.\n- Phương án 1 chạy được: giá trị NULL thành null của JSON, ra {\"a\": 1, \"b\": null}.\n- Phương án 3 chạy được: khóa số được đổi thành chuỗi, ra {\"1\": \"a\"}.\n- Phương án 4 chạy được: lồng đối tượng trong đối tượng, ra {\"a\": {\"b\": 1}}, đúng cách dựng phần \"customer\" lồng trong document đơn hàng.\nGiá trị được phép NULL, khóa thì không."
+    },
+    {
+      "id": "sql-d26-15",
+      "topic": "CAP: CP và AP",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Mạng giữa hai trung tâm dữ liệu bị đứt. Hệ A từ chối trả lời ở phía không chắc có dữ liệu mới nhất; hệ B vẫn trả lời ở cả hai phía, có thể trả dữ liệu cũ rồi khớp lại sau. Cách mô tả nào đúng?",
+      "kind": "concept",
+      "options": [
+        "Cả hai đều bỏ qua định lý CAP vì mạng đứt chỉ là lỗi tạm thời",
+        "A chọn sẵn sàng (AP), B chọn nhất quán (CP)",
+        "A chọn nhất quán (CP), B chọn sẵn sàng (AP, nhất quán cuối cùng)",
+        "A là SQL còn B là NoSQL, vì SQL luôn chọn CP và NoSQL luôn chọn AP"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là phương án 3: khi mạng đứt phải chọn một. Từ chối phục vụ để không trả dữ liệu cũ là giữ nhất quán (CP); vẫn phục vụ dù có thể cũ, sau đó khớp lại, là ưu tiên sẵn sàng (AP, kiểu BASE).\n- Phương án 1 sai: nói rằng cả hai đều bỏ qua CAP, trong khi mạng đứt chắc chắn sẽ xảy ra, định lý CAP chính là nói về lúc đó.\n- Phương án 2 đảo ngược hai khái niệm.\n- Phương án 4 sai: lựa chọn phụ thuộc cấu hình và từng hệ, nhiều hệ cho chỉnh mức nhất quán theo từng truy vấn (Cassandra, MongoDB), nên không thể gán nhãn cố định theo SQL hay NoSQL."
+    },
+    {
+      "id": "sql-d26-16",
+      "topic": "Schema trong NoSQL",
+      "source": "Ngày 26 - SQL và NoSQL",
+      "question": "Một nhóm nói \"chọn NoSQL để khỏi lo schema\". Nhận định nào chính xác nhất?",
+      "kind": "concept",
+      "options": [
+        "Đúng: NoSQL không có schema nên ứng dụng đọc ghi dạng nào cũng được",
+        "Sai: PostgreSQL cũng không kiểm tra kiểu dữ liệu khi ghi",
+        "Sai: NoSQL không bao giờ cho phép kiểm tra cấu trúc dữ liệu",
+        "Sai một phần: schema vẫn tồn tại nhưng chuyển từ CSDL sang code ứng dụng, và code đọc phải xử lý mọi phiên bản document đã ghi"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng là phương án 4: schema không biến mất mà chuyển từ CSDL sang code ứng dụng (schema-on-read). Ba phiên bản ứng dụng ghi ba dạng document khác nhau thì code đọc phải xử lý cả ba.\n- Phương án 1 là hiểu lầm phổ biến: linh hoạt chỉ đẩy việc kiểm tra sang ứng dụng.\n- Phương án 2 sai: PostgreSQL kiểm tra kiểu, NOT NULL, CHECK, khóa ngoại ngay khi ghi.\n- Phương án 3 sai: MongoDB có thể bật JSON Schema validation để kiểm tra cấu trúc, dù phần còn lại ứng dụng vẫn phải tự lo."
+    }
+  ]
+}

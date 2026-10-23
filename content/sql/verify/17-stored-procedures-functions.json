@@ -1,0 +1,78 @@
+[
+  {
+    "id": "sql-d17-02",
+    "kind": "find-error",
+    "options": [
+      "CREATE FUNCTION f1() RETURNS TABLE (name VARCHAR)\nLANGUAGE plpgsql AS $$ BEGIN\n  RETURN QUERY SELECT p.name FROM products p;\nEND $$;\nSELECT * FROM f1();",
+      "CREATE FUNCTION f2() RETURNS TABLE (o_name VARCHAR)\nLANGUAGE plpgsql AS $$ BEGIN\n  RETURN QUERY SELECT name FROM products;\nEND $$;\nSELECT * FROM f2();",
+      "CREATE FUNCTION f3() RETURNS TABLE (name VARCHAR)\nLANGUAGE plpgsql AS $$ BEGIN\n  RETURN QUERY SELECT name FROM products;\nEND $$;\nSELECT * FROM f3();",
+      "CREATE FUNCTION f4() RETURNS TABLE (name VARCHAR)\nLANGUAGE sql AS $$\n  SELECT name FROM products $$;\nSELECT * FROM f4();"
+    ]
+  },
+  {
+    "id": "sql-d17-03",
+    "kind": "predict",
+    "query": "CREATE FUNCTION price_after_discount(\n    p_price    NUMERIC,\n    p_percent  NUMERIC DEFAULT 10,\n    p_round_to INT     DEFAULT -3\n)\nRETURNS NUMERIC\nLANGUAGE sql IMMUTABLE AS $$\n    SELECT ROUND(p_price * (100 - p_percent) / 100, p_round_to);\n$$;\nSELECT price_after_discount(24990000, 15);",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d17-04",
+    "kind": "choose-query",
+    "options": [
+      "CREATE FUNCTION n_orders(p_cid INT) RETURNS BIGINT\nAS $$ SELECT count(*) FROM orders\n  WHERE customer_id = p_cid $$;",
+      "CREATE FUNCTION n_orders(customer_id INT) RETURNS BIGINT\nLANGUAGE sql AS $$ SELECT count(*) FROM orders\n  WHERE customer_id = customer_id $$;",
+      "CREATE FUNCTION n_orders(p_cid INT) RETURNS BIGINT\nLANGUAGE sql AS $$ SELECT count(*) FROM orders\n  WHERE customer_id = p_cid $$;",
+      "CREATE FUNCTION n_orders(p_cid INT) RETURNS BIGINT\nLANGUAGE sql AS $$ SELECT count(DISTINCT customer_id)\n  FROM orders WHERE customer_id = p_cid $$;"
+    ],
+    "probe": "SELECT n_orders(4)"
+  },
+  {
+    "id": "sql-d17-05",
+    "kind": "find-error",
+    "options": [
+      "DO $$ DECLARE v INT; BEGIN\n  SELECT stock_quantity INTO v\n  FROM products WHERE sku = 'LAP-999';\nEND $$;",
+      "DO $$ DECLARE v INT; BEGIN\n  SELECT stock_quantity INTO STRICT v\n  FROM products WHERE sku = 'LAP-999';\nEND $$;",
+      "DO $$ DECLARE v INT; BEGIN\n  SELECT stock_quantity INTO v\n  FROM products WHERE category_id = 3;\nEND $$;",
+      "DO $$ DECLARE v INT; BEGIN\n  SELECT stock_quantity INTO STRICT v\n  FROM products WHERE sku = 'LAP-001';\nEND $$;"
+    ]
+  },
+  {
+    "id": "sql-d17-06",
+    "kind": "predict",
+    "query": "DO $$\nBEGIN\n  UPDATE products SET stock_quantity = stock_quantity + 10\n  WHERE product_id = 1;\n  BEGIN\n    UPDATE products SET stock_quantity = stock_quantity + 100\n    WHERE product_id = 1;\n    RAISE EXCEPTION 'loi';\n  EXCEPTION WHEN others THEN\n    NULL;\n  END;\nEND $$;",
+    "probe": "SELECT stock_quantity FROM products WHERE product_id = 1",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d17-08",
+    "kind": "choose-query",
+    "options": [
+      "CREATE FUNCTION price_after_discount(\n    p_price    NUMERIC,\n    p_percent  NUMERIC DEFAULT 10,\n    p_round_to INT     DEFAULT -3\n)\nRETURNS NUMERIC\nLANGUAGE sql IMMUTABLE AS $$\n    SELECT ROUND(p_price * (100 - p_percent) / 100, p_round_to);\n$$;\nSELECT price_after_discount(24990000, -5);",
+      "CREATE FUNCTION price_after_discount(\n    p_price    NUMERIC,\n    p_percent  NUMERIC DEFAULT 10,\n    p_round_to INT     DEFAULT -3\n)\nRETURNS NUMERIC\nLANGUAGE sql IMMUTABLE AS $$\n    SELECT ROUND(p_price * (100 - p_percent) / 100, p_round_to);\n$$;\nSELECT price_after_discount(24990000, , -5);",
+      "CREATE FUNCTION price_after_discount(\n    p_price    NUMERIC,\n    p_percent  NUMERIC DEFAULT 10,\n    p_round_to INT     DEFAULT -3\n)\nRETURNS NUMERIC\nLANGUAGE sql IMMUTABLE AS $$\n    SELECT ROUND(p_price * (100 - p_percent) / 100, p_round_to);\n$$;\nSELECT price_after_discount(p_round_to => -5, 24990000);",
+      "CREATE FUNCTION price_after_discount(\n    p_price    NUMERIC,\n    p_percent  NUMERIC DEFAULT 10,\n    p_round_to INT     DEFAULT -3\n)\nRETURNS NUMERIC\nLANGUAGE sql IMMUTABLE AS $$\n    SELECT ROUND(p_price * (100 - p_percent) / 100, p_round_to);\n$$;\nSELECT price_after_discount(24990000, p_round_to => -5);"
+    ]
+  },
+  {
+    "id": "sql-d17-09",
+    "kind": "predict",
+    "query": "CREATE FUNCTION safe_div(a INT, b INT) RETURNS TEXT\nLANGUAGE plpgsql AS $$\nBEGIN\n  RETURN (a / b)::TEXT;\nEXCEPTION\n  WHEN division_by_zero THEN\n    RETURN 'chia 0';\nEND;\n$$;\nSELECT safe_div(7, 2) || ' / ' || safe_div(1, 0);",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d17-10",
+    "kind": "find-error",
+    "options": [
+      "CREATE FUNCTION order_total(p_order_id INT)\nRETURNS NUMERIC LANGUAGE sql STABLE AS $$\n  SELECT COALESCE(SUM(quantity * unit_price), 0)\n  FROM order_items WHERE order_id = p_order_id\n$$;\nCREATE OR REPLACE FUNCTION order_total(p_order_id INT)\nRETURNS NUMERIC LANGUAGE sql AS $$\n  SELECT 0::NUMERIC\n$$;",
+      "CREATE FUNCTION order_total(p_order_id INT)\nRETURNS NUMERIC LANGUAGE sql STABLE AS $$\n  SELECT COALESCE(SUM(quantity * unit_price), 0)\n  FROM order_items WHERE order_id = p_order_id\n$$;\nCREATE OR REPLACE FUNCTION order_total(p_order_id INT)\nRETURNS BIGINT LANGUAGE sql AS $$\n  SELECT 0::BIGINT\n$$;",
+      "CREATE FUNCTION order_total(p_order_id INT)\nRETURNS NUMERIC LANGUAGE sql STABLE AS $$\n  SELECT COALESCE(SUM(quantity * unit_price), 0)\n  FROM order_items WHERE order_id = p_order_id\n$$;\nDROP FUNCTION order_total(INT);\nCREATE FUNCTION order_total(p_order_id INT)\nRETURNS BIGINT LANGUAGE sql AS $$ SELECT 0::BIGINT $$;",
+      "CREATE FUNCTION order_total(p_order_id INT)\nRETURNS NUMERIC LANGUAGE sql STABLE AS $$\n  SELECT COALESCE(SUM(quantity * unit_price), 0)\n  FROM order_items WHERE order_id = p_order_id\n$$;\nCREATE OR REPLACE FUNCTION order_total(p_id INT, p_vat INT)\nRETURNS NUMERIC LANGUAGE sql AS $$\n  SELECT 0::NUMERIC\n$$;"
+    ]
+  },
+  {
+    "id": "sql-d17-12",
+    "kind": "predict",
+    "query": "CREATE FUNCTION count_orders_by_status(p_status TEXT)\nRETURNS BIGINT LANGUAGE plpgsql AS $$\nDECLARE v_count BIGINT;\nBEGIN\n  EXECUTE 'SELECT count(*) FROM orders WHERE status = $1'\n  INTO v_count USING p_status;\n  RETURN v_count;\nEND;\n$$;\nSELECT count_orders_by_status('x'' OR ''1''=''1');",
+    "format": "scalar"
+  }
+]

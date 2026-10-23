@@ -1,0 +1,98 @@
+[
+  {
+    "id": "sql-d05-01",
+    "kind": "choose-query",
+    "options": [
+      "SELECT stock_quantity / 200 * 100 FROM products WHERE category_id = 12",
+      "SELECT stock_quantity * 100.0 / 200 FROM products WHERE category_id = 12",
+      "SELECT CAST(stock_quantity / 200 AS NUMERIC) * 100 FROM products WHERE category_id = 12",
+      "SELECT ROUND(stock_quantity / 200) * 100 FROM products WHERE category_id = 12"
+    ]
+  },
+  {
+    "id": "sql-d05-02",
+    "kind": "predict",
+    "query": "SELECT 17 / 5 + 17 % 5",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d05-03",
+    "kind": "predict",
+    "query": "SELECT CONCAT('DSC', NULL, '-', 5)",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d05-04",
+    "kind": "choose-query",
+    "options": [
+      "SELECT full_name || ' - ' || phone FROM customers WHERE customer_id <= 6",
+      "SELECT CONCAT(full_name, ' - ', phone) FROM customers WHERE customer_id <= 6",
+      "SELECT COALESCE(full_name || ' - ' || phone, 'chưa có SĐT') FROM customers WHERE customer_id <= 6",
+      "SELECT full_name || ' - ' || COALESCE(phone, 'chưa có SĐT') FROM customers WHERE customer_id <= 6"
+    ]
+  },
+  {
+    "id": "sql-d05-05",
+    "kind": "find-error",
+    "options": [
+      "SELECT YEAR(order_date) FROM orders",
+      "SELECT EXTRACT(YEAR FROM order_date) FROM orders",
+      "SELECT DATE_TRUNC('year', order_date) FROM orders",
+      "SELECT order_date::DATE FROM orders"
+    ]
+  },
+  {
+    "id": "sql-d05-06",
+    "kind": "predict",
+    "query": "SELECT ROUND(1234567, -3)",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d05-08",
+    "kind": "choose-query",
+    "options": [
+      "SELECT customer_id FROM customers WHERE city = 'Đà Nẵng'",
+      "SELECT customer_id FROM customers WHERE city = 'đà nẵng'",
+      "SELECT customer_id FROM customers WHERE LOWER(city) = 'Đà Nẵng'",
+      "SELECT customer_id FROM customers WHERE LOWER(TRIM(city)) = 'đà nẵng'"
+    ]
+  },
+  {
+    "id": "sql-d05-09",
+    "kind": "predict",
+    "query": "SELECT SUBSTRING(email FROM POSITION('@' IN email) + 1) FROM customers WHERE customer_id = 6",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d05-10",
+    "kind": "choose-query",
+    "options": [
+      "SELECT order_id FROM orders WHERE EXTRACT(MONTH FROM order_date) = 10",
+      "SELECT order_id FROM orders WHERE order_date >= '2026-10-01' AND order_date < '2026-11-01'",
+      "SELECT order_id FROM orders WHERE TO_CHAR(order_date, 'DD/MM/YYYY') >= '01/10/2026'",
+      "SELECT order_id FROM orders WHERE EXTRACT(YEAR FROM order_date) = 2026 OR EXTRACT(MONTH FROM order_date) = 10"
+    ]
+  },
+  {
+    "id": "sql-d05-12",
+    "kind": "predict",
+    "query": "SELECT 2.5::INT + 3.49::INT",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d05-13",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku, price / NULLIF(stock_quantity, 0) FROM products",
+      "SELECT sku, price / stock_quantity FROM products",
+      "SELECT sku, price / COALESCE(stock_quantity, 1) FROM products",
+      "SELECT sku, price / stock_quantity FROM products WHERE stock_quantity > 0"
+    ]
+  },
+  {
+    "id": "sql-d05-14",
+    "kind": "predict",
+    "query": "SELECT REPLACE(INITCAP('TP.HCM'), 'TP.HCM', 'Hồ Chí Minh')",
+    "format": "scalar"
+  }
+]

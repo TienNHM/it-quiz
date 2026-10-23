@@ -9,6 +9,7 @@ export interface Question {
   source?: string;
   question: string; // markdown tối giản: **đậm**, `code`, "- " bullet, ``` fence
   code?: string; // khối <pre> kèm đề
+  codeLang?: string; // 'sql' -> tô màu cú pháp
   diagram?: string; // mermaid
   options: string[];
   answer: Answer;

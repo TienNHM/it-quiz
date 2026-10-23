@@ -1,0 +1,112 @@
+[
+ {
+  "id": "sql-d08-01",
+  "kind": "predict",
+  "query": "SELECT COUNT(phone) FROM customers",
+  "format": "scalar"
+ },
+ {
+  "id": "sql-d08-02",
+  "kind": "choose-query",
+  "options": [
+   "SELECT COUNT(*) FROM customers WHERE email = NULL",
+   "SELECT COUNT(email) FROM customers",
+   "SELECT COUNT(*) FROM customers WHERE email IS NULL",
+   "SELECT COUNT(email) - COUNT(*) FROM customers"
+  ]
+ },
+ {
+  "id": "sql-d08-03",
+  "kind": "choose-query",
+  "options": [
+   "SELECT COUNT(DISTINCT customer_id) FROM orders",
+   "SELECT COUNT(customer_id) FROM orders",
+   "SELECT COUNT(*) FROM orders",
+   "SELECT COUNT(DISTINCT order_id) FROM orders"
+  ]
+ },
+ {
+  "id": "sql-d08-04",
+  "kind": "choose-query",
+  "options": [
+   "SELECT ROUND(AVG(cost_price)) FROM products WHERE category_id = 4",
+   "SELECT ROUND(SUM(cost_price) / COUNT(DISTINCT category_id)) FROM products WHERE category_id = 4",
+   "SELECT ROUND(AVG(COALESCE(cost_price, price))) FROM products WHERE category_id = 4",
+   "SELECT ROUND(AVG(COALESCE(cost_price, 0))) FROM products WHERE category_id = 4"
+  ]
+ },
+ {
+  "id": "sql-d08-05",
+  "kind": "find-error",
+  "options": [
+   "SELECT COUNT(*), MAX(amount) FROM payments",
+   "SELECT order_id, amount FROM payments WHERE amount = MAX(amount)",
+   "SELECT order_id, amount FROM payments ORDER BY amount DESC LIMIT 1",
+   "SELECT MAX(amount) FROM payments WHERE method = 'cash'"
+  ]
+ },
+ {
+  "id": "sql-d08-06",
+  "kind": "find-error",
+  "options": [
+   "SELECT MIN(full_name) FROM customers",
+   "SELECT MAX(full_name) FROM customers",
+   "SELECT COUNT(DISTINCT full_name) FROM customers",
+   "SELECT SUM(full_name) FROM customers"
+  ]
+ },
+ {
+  "id": "sql-d08-07",
+  "kind": "predict",
+  "query": "SELECT SUM(quantity) * SUM(unit_price) FROM order_items WHERE order_id = 13",
+  "format": "scalar"
+ },
+ {
+  "id": "sql-d08-08",
+  "kind": "predict",
+  "query": "SELECT SUM(price * stock_quantity) - SUM(cost_price * stock_quantity) FROM products",
+  "format": "scalar"
+ },
+ {
+  "id": "sql-d08-09",
+  "kind": "choose-query",
+  "options": [
+   "SELECT SUM(quantity * unit_price) FROM order_items WHERE order_id = 4",
+   "SELECT ROUND(SUM(quantity * unit_price * (1 - discount))) FROM order_items WHERE order_id = 4",
+   "SELECT SUM(quantity * unit_price * discount) FROM order_items WHERE order_id = 4",
+   "SELECT ROUND(AVG(quantity * unit_price * (1 - discount))) FROM order_items WHERE order_id = 4"
+  ]
+ },
+ {
+  "id": "sql-d08-10",
+  "kind": "choose-query",
+  "options": [
+   "SELECT ROUND(AVG(quantity * unit_price * (1 - discount))) FROM order_items",
+   "SELECT ROUND(SUM(quantity * unit_price * (1 - discount)) / COUNT(*)) FROM order_items",
+   "SELECT ROUND(SUM(quantity * unit_price * (1 - discount)) / COUNT(DISTINCT product_id)) FROM order_items",
+   "SELECT ROUND(SUM(quantity * unit_price * (1 - discount)) / COUNT(DISTINCT order_id)) FROM order_items"
+  ]
+ },
+ {
+  "id": "sql-d08-11",
+  "kind": "choose-query",
+  "options": [
+   "SELECT ROUND(100.0 * COUNT(email) / COUNT(*), 1) FROM customers",
+   "SELECT 100 * COUNT(email) / COUNT(*) FROM customers",
+   "SELECT COUNT(email) / COUNT(*) FROM customers",
+   "SELECT ROUND(100.0 * COUNT(email) / COUNT(phone), 1) FROM customers"
+  ]
+ },
+ {
+  "id": "sql-d08-12",
+  "kind": "predict",
+  "query": "SELECT COUNT(*) - COUNT(employee_id) FROM orders",
+  "format": "scalar"
+ },
+ {
+  "id": "sql-d08-14",
+  "kind": "predict",
+  "query": "SELECT COUNT(DISTINCT city) FROM customers",
+  "format": "scalar"
+ }
+]

@@ -1,0 +1,236 @@
+{
+  "id": "sql-d01",
+  "title": "Ngày 1: Giới thiệu SQL, RDBMS và môi trường thực hành",
+  "description": "SQL và RDBMS là gì, các lệnh psql, câu SELECT đầu tiên và bốn nhóm lệnh DDL, DML, DCL, TCL.",
+  "questions": [
+    {
+      "id": "sql-d01-01",
+      "topic": "SELECT *",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Truy vấn nào trả về **mọi cột, mọi dòng** của bảng `categories` trong DSC Shop?",
+      "options": [
+        "```sql\nSELECT categories FROM categories;\n```",
+        "```sql\nSELECT '*' FROM categories;\n```",
+        "```sql\nSELECT * FROM categories;\n```",
+        "```sql\nSELECT category_id, name\nFROM categories;\n```"
+      ],
+      "answer": 2,
+      "explanation": "`SELECT * FROM categories;` dùng dấu `*` nghĩa là mọi cột, nên ra đủ 3 cột `category_id`, `name`, `parent_id` cho 13 dòng.\n- `SELECT categories FROM categories;` vẫn chạy được nhưng PostgreSQL coi tên bảng là cả một dòng gộp, nên chỉ ra **một** cột chứa chuỗi kiểu `(1,\"Máy tính\",)`.\n- `SELECT '*' FROM categories;` đặt `*` trong nháy đơn nên nó chỉ là chuỗi ký tự, kết quả là 13 dòng chứa toàn dấu `*`.\n- Liệt kê `category_id, name` hợp lệ nhưng thiếu cột `parent_id`.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d01-02",
+      "topic": "SQL khai báo",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "SQL được gọi là ngôn ngữ **khai báo** (declarative). Điều đó có nghĩa là gì?",
+      "options": [
+        "bạn viết từng bước duyệt bảng, DBMS chạy đúng thứ tự đó",
+        "bạn mô tả muốn lấy dữ liệu gì, DBMS tự chọn cách lấy",
+        "bạn phải khai báo kiểu dữ liệu trước mỗi truy vấn",
+        "câu lệnh chỉ được chạy khi đã khai báo xong mọi biến"
+      ],
+      "answer": 1,
+      "explanation": "SQL mô tả **kết quả mong muốn** (lấy tên và thành phố của mọi khách hàng), còn việc đọc bảng, dùng chỉ mục hay thứ tự thực hiện là do bộ phân tích và tối ưu của DBMS quyết định.\n- Phương án nói về từng bước duyệt bảng mô tả ngôn ngữ **thủ tục** (như vòng lặp trong Python), không phải SQL.\n- Hai phương án còn lại bịa ra yêu cầu khai báo kiểu hay khai báo biến, không đúng với một câu `SELECT`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d01-03",
+      "topic": "Nhóm lệnh DDL",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Theo cách chia trong bài, lệnh `TRUNCATE TABLE orders;` thuộc nhóm nào?",
+      "options": [
+        "DDL, nhóm định nghĩa cấu trúc",
+        "DML, vì nó xóa dữ liệu trong bảng",
+        "DCL, vì nó cần quyền đặc biệt",
+        "TCL, vì nó kết thúc một giao dịch"
+      ],
+      "answer": 0,
+      "explanation": "Bài xếp `TRUNCATE` cùng `CREATE`, `ALTER`, `DROP` vào **DDL**.\n- Nó nhìn giống `DELETE` (xóa dữ liệu) nên dễ nhầm sang DML, nhưng theo cách phân loại chuẩn của bài thì `TRUNCATE` thuộc DDL.\n- DCL chỉ gồm `GRANT` và `REVOKE`: cấp và thu hồi quyền, không liên quan việc xóa dữ liệu.\n- TCL gồm `BEGIN`, `COMMIT`, `ROLLBACK`, `SAVEPOINT`: điều khiển giao dịch, `TRUNCATE` không nằm trong đó.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d01-04",
+      "topic": "Nháy đơn và nháy kép",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Câu lệnh nào dưới đây **gây lỗi** khi chạy trên PostgreSQL?",
+      "options": [
+        "```sql\nSELECT 'Hà Nội';\n```",
+        "```sql\nselect full_name from CUSTOMERS;\n```",
+        "```sql\nSELECT * FROM categories; -- danh mục\n```",
+        "```sql\nSELECT \"Hà Nội\";\n```"
+      ],
+      "answer": 3,
+      "explanation": "Nháy kép `\"...\"` dùng cho **tên** cột hoặc bảng, nên `SELECT \"Hà Nội\";` báo `column \"Hà Nội\" does not exist`. Đây là thói quen mang từ MySQL sang.\n- `SELECT 'Hà Nội';` đúng: chuỗi nằm trong nháy đơn.\n- `select full_name from CUSTOMERS;` vẫn chạy vì từ khóa và tên không đặt trong nháy kép không phân biệt hoa thường.\n- Đoạn sau `--` là chú thích, bị bỏ qua khi chạy.",
+      "kind": "find-error"
+    },
+    {
+      "id": "sql-d01-05",
+      "topic": "Dấu chấm phẩy trong psql",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Bạn gõ `SELECT * FROM customers` trong `psql`, bấm Enter và không thấy kết quả, dấu nhắc đổi từ `sql_challenge=#` thành `sql_challenge-#`. Chuyện gì đang xảy ra?",
+      "options": [
+        "máy chủ đã mất kết nối nên psql chuyển sang chế độ chờ",
+        "psql đang chạy câu lệnh và chờ máy chủ trả kết quả",
+        "psql chưa gửi câu lệnh vì thiếu `;`, gõ `;` rồi Enter là xong",
+        "câu lệnh sai cú pháp nên psql chờ bạn sửa lại từ đầu"
+      ],
+      "answer": 2,
+      "explanation": "Trong `psql`, câu SQL chỉ được gửi đi khi gặp dấu `;`. Dấu nhắc `-#` báo rằng psql vẫn đang chờ bạn gõ tiếp câu lệnh, nên chỉ cần gõ `;` rồi Enter.\n- Không có chuyện mất kết nối: dấu nhắc vẫn cho biết đang ở trong database `sql_challenge`.\n- Câu lệnh chưa hề được gửi nên máy chủ chưa chạy gì cả.\n- Lỗi cú pháp sẽ hiện ngay thông báo `ERROR`, chứ không làm dấu nhắc đổi.\n- Lưu ý ngược lại: lệnh meta như `\\dt` không cần `;`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d01-06",
+      "topic": "SELECT biểu thức",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Truy vấn dưới đây trả về một dòng. Giá trị trong dòng đó (theo thứ tự cột) là gì?",
+      "code": "SELECT 1 + 1 AS tong, 'a' || 'b' AS chuoi;",
+      "codeLang": "sql",
+      "options": [
+        "2 | ab",
+        "11 | ab",
+        "2 | a b",
+        "1 + 1 | a || b"
+      ],
+      "answer": 0,
+      "explanation": "`SELECT` không bắt buộc có `FROM`: nó tính biểu thức rồi trả kết quả. `1 + 1` là phép cộng số nên ra `2`, còn `||` là toán tử nối chuỗi nên `'a' || 'b'` ra `ab`.\n- `11` sai vì `1 + 1` là số, không phải nối chuỗi.\n- `a b` sai vì `||` nối trực tiếp, không tự thêm dấu cách.\n- Cuối cùng, SQL không in nguyên văn biểu thức mà tính giá trị của nó.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d01-07",
+      "topic": "Khóa chính và khóa ngoại",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Trong DSC Shop, đơn hàng ở bảng `orders` có `customer_id = 1`. Điều đó nghĩa là gì?",
+      "options": [
+        "đơn này là đơn đầu tiên của cả cửa hàng",
+        "đơn này thuộc khách có `customer_id` là 1 trong bảng `customers`",
+        "khách số 1 phải trả tiền cho đơn này bằng tiền mặt",
+        "mỗi khách chỉ được có đúng một đơn trong bảng `orders`"
+      ],
+      "answer": 1,
+      "explanation": "`orders.customer_id` là **khóa ngoại** trỏ tới khóa chính `customers.customer_id`. Giá trị 1 nghĩa là đơn thuộc khách có mã 1.\n- Đơn đầu tiên được xác định bằng `order_id`, không phải `customer_id`.\n- Cách thanh toán nằm ở bảng `payments`, cột `method`.\n- Khóa ngoại không giới hạn số đơn của một khách: một khách có thể có nhiều đơn, nên không có quy tắc \"mỗi khách một đơn\".",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d01-08",
+      "topic": "Schema shop",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Các bảng của DSC Shop nằm trong schema `shop`, còn `search_path` đã được đặt sẵn là `shop, public`. Câu lệnh nào **gây lỗi**?",
+      "options": [
+        "```sql\nSELECT * FROM shop.customers;\n```",
+        "```sql\nSELECT * FROM customers;\n```",
+        "```sql\nSELECT * FROM public.customers;\n```",
+        "```sql\nSELECT * FROM \"customers\";\n```"
+      ],
+      "answer": 2,
+      "explanation": "Bảng `customers` chỉ tồn tại trong schema `shop`, nên `public.customers` báo `relation \"public.customers\" does not exist`.\n- `shop.customers` ghi rõ cả schema nên luôn đúng.\n- `customers` không ghi schema: PostgreSQL duyệt `search_path` (`shop` trước) và tìm thấy.\n- `\"customers\"` trong nháy kép vẫn là tên viết thường nên khớp bảng `customers`.",
+      "kind": "find-error"
+    },
+    {
+      "id": "sql-d01-09",
+      "topic": "Chọn cột",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Cần liệt kê **họ tên, chức danh và ngày vào làm** của mọi nhân viên. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT full_name title, hire_date\nFROM employees;\n```",
+        "```sql\nSELECT 'full_name', 'title', 'hire_date'\nFROM employees;\n```",
+        "```sql\nSELECT full_name, title\nFROM employees;\n```",
+        "```sql\nSELECT full_name, title, hire_date\nFROM employees;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Các cột cách nhau bằng dấu phẩy: `full_name, title, hire_date`.\n- Thiếu dấu phẩy giữa `full_name` và `title` là lỗi hay gặp: PostgreSQL không báo lỗi mà hiểu `title` là **bí danh** của `full_name`, kết quả chỉ còn 2 cột và mất chức danh.\n- Đặt tên cột trong nháy đơn biến chúng thành chuỗi hằng, mỗi dòng đều là `full_name`, `title`, `hire_date`.\n- Phương án chỉ có 2 cột thì thiếu ngày vào làm.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d01-10",
+      "topic": "Lệnh meta của psql",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Trong `psql`, muốn xem **cấu trúc** (cột, kiểu, ràng buộc, khóa ngoại) của bảng `orders` thì gõ gì?",
+      "options": [
+        "`\\d orders`",
+        "`\\dt orders;`",
+        "`\\conninfo orders`",
+        "`\\l orders`"
+      ],
+      "answer": 0,
+      "explanation": "`\\d tên_bảng` in cấu trúc bảng, kèm phần `Indexes` và `Referenced by` rất tiện để lần theo khóa ngoại.\n- `\\dt` chỉ liệt kê danh sách các bảng, không cho biết cột.\n- `\\conninfo` in thông tin kết nối hiện tại (database nào, user nào).\n- `\\l` liệt kê các database.\n- Các lệnh meta do psql xử lý nên không cần dấu `;`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d01-11",
+      "topic": "BEGIN và ROLLBACK",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Trên dữ liệu gốc (bảng `categories` có 13 dòng), chạy khối lệnh sau. Câu `SELECT` cuối trả về số nào?",
+      "code": "BEGIN;\nINSERT INTO categories (name) VALUES ('Thử nghiệm');\nROLLBACK;\nSELECT COUNT(*) FROM categories;",
+      "codeLang": "sql",
+      "options": [
+        "14",
+        "13",
+        "12",
+        "0"
+      ],
+      "answer": 1,
+      "explanation": "`ROLLBACK` hủy mọi thay đổi kể từ `BEGIN`, nên dòng vừa chèn biến mất và bảng vẫn có **13** dòng.\n- `14` chỉ đúng nếu kết thúc bằng `COMMIT`: lúc đó thay đổi được giữ lại.\n- `12` và `0` không có lý do nào: không lệnh nào xóa dòng.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d01-12",
+      "topic": "Giao dịch với DDL",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Trong PostgreSQL, bạn chạy `BEGIN; CREATE TABLE thu_nghiem (ghi_chu TEXT); ROLLBACK;`. Điều gì đúng?",
+      "options": [
+        "bảng vẫn còn vì lệnh tạo bảng là DDL, không bị `ROLLBACK` hủy",
+        "câu lệnh báo lỗi vì không được tạo bảng trong giao dịch",
+        "bảng được giữ lại nhưng toàn bộ dữ liệu trong đó bị xóa",
+        "bảng biến mất, vì PostgreSQL hủy được cả lệnh tạo bảng trong giao dịch"
+      ],
+      "answer": 3,
+      "explanation": "PostgreSQL cho phép DDL nằm trong giao dịch, nên `ROLLBACK` hủy luôn cả bảng. Truy vấn bảng sau đó báo `relation \"thu_nghiem\" does not exist`.\n- Ý \"DDL không bị rollback\" đúng với một số RDBMS khác (MySQL tự commit khi gặp `CREATE TABLE`), nhưng không đúng với PostgreSQL.\n- PostgreSQL không cấm `CREATE TABLE` trong giao dịch.\n- Bảng mới tạo còn chưa có dữ liệu, và nó không \"được giữ lại\" sau khi rollback.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d01-13",
+      "topic": "Tên viết hoa trong PostgreSQL",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Bạn chạy `CREATE DATABASE ShopDB;` rồi gõ `\\c ShopDB` trong `psql` và bị báo database không tồn tại. Giải thích nào đúng?",
+      "options": [
+        "PostgreSQL chặn tên có chữ hoa nên chưa tạo database nào",
+        "database tạo ra tên `ShopDB`, chỉ cần gõ `\\c shopdb` là kết nối được",
+        "database được tạo tên `shopdb`, còn `\\c` dùng đúng chuỗi `ShopDB` bạn gõ",
+        "database bị tạo thành `SHOPDB` nên phải gõ toàn chữ hoa"
+      ],
+      "answer": 2,
+      "explanation": "PostgreSQL tự đổi tên **không** nằm trong nháy kép thành chữ thường, nên `CREATE DATABASE ShopDB;` tạo database `shopdb`. Lệnh meta `\\c` lại dùng nguyên chuỗi bạn gõ nên tìm `ShopDB` và không thấy.\n- Tên có chữ hoa không bị cấm, nên câu đầu không phải do lỗi tạo.\n- Phương án nói database tên `ShopDB` sai vì không có nháy kép thì tên bị đổi thành chữ thường.\n- Không có quy tắc đổi thành chữ in hoa.\n- Cách tránh đơn giản: luôn đặt tên chữ thường kiểu `snake_case`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d01-14",
+      "topic": "Nhóm lệnh DCL",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Lệnh nào sau đây thuộc nhóm **DCL** (Data Control Language)?",
+      "options": [
+        "```sql\nREVOKE SELECT ON customers FROM intern;\n```",
+        "```sql\nCOMMIT;\n```",
+        "```sql\nALTER TABLE customers\nADD COLUMN gender TEXT;\n```",
+        "```sql\nUPDATE products SET price = 0;\n```"
+      ],
+      "answer": 0,
+      "explanation": "DCL là nhóm cấp và thu hồi quyền, gồm `GRANT` và `REVOKE`.\n- `COMMIT` thuộc TCL (điều khiển giao dịch).\n- `ALTER TABLE` thuộc DDL vì thay đổi cấu trúc bảng.\n- `UPDATE` thuộc DML vì sửa dữ liệu trong bảng.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d01-15",
+      "topic": "Các RDBMS phổ biến",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",
+      "question": "Một ứng dụng mobile cần lưu dữ liệu cục bộ trên điện thoại, không muốn chạy riêng một máy chủ CSDL. Hệ nào trong bài phù hợp nhất?",
+      "options": [
+        "PostgreSQL, vì có nhiều kiểu dữ liệu nhất",
+        "SQL Server, vì có công cụ quản trị tốt",
+        "MySQL, vì phổ biến với web",
+        "SQLite, vì không cần server, cả database là một file"
+      ],
+      "answer": 3,
+      "explanation": "**SQLite** không cần tiến trình máy chủ: toàn bộ database nằm trong một file, nên rất hợp ứng dụng mobile, desktop hoặc thử nghiệm nhanh.\n- PostgreSQL mạnh về tính năng nhưng chạy như một máy chủ riêng, cần cài đặt và vận hành.\n- SQL Server thường gặp ở doanh nghiệp dùng .NET và cũng là máy chủ riêng.\n- MySQL phổ biến với web (WordPress, hệ thống PHP) và cũng cần máy chủ.\n- Đổi lại, SQLite không có quản lý user/quyền và giới hạn ghi đồng thời.",
+      "kind": "concept"
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+[
+ {
+  "id": "sql-d10-01",
+  "kind": "choose-query",
+  "options": [
+   "SELECT c.customer_id, c.full_name,\n       COUNT(o.order_id) AS so_don\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;",
+   "SELECT c.customer_id, c.full_name,\n       COUNT(o.order_id) AS so_don\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;",
+   "SELECT c.customer_id, c.full_name,\n       COUNT(*) AS so_don\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;",
+   "SELECT c.full_name,\n       COUNT(o.order_id) AS so_don\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.full_name;"
+  ]
+ },
+ {
+  "id": "sql-d10-02",
+  "kind": "choose-query",
+  "options": [
+   "SELECT c.full_name\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nWHERE o.order_id IS NULL;",
+   "SELECT c.full_name\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nWHERE o.order_id IS NOT NULL;",
+   "SELECT c.full_name\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nWHERE o.note IS NULL;",
+   "SELECT c.full_name\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nWHERE o.order_id IS NULL;"
+  ]
+ },
+ {
+  "id": "sql-d10-03",
+  "kind": "choose-query",
+  "options": [
+   "SELECT c.customer_id, COUNT(o.order_id)\nFROM customers c\nLEFT JOIN orders o\n       ON o.customer_id = c.customer_id\n      AND o.status = 'delivered'\nGROUP BY c.customer_id;",
+   "SELECT c.customer_id, COUNT(o.order_id)\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nWHERE o.status = 'delivered'\nGROUP BY c.customer_id;",
+   "SELECT c.customer_id, COUNT(*)\nFROM customers c\nLEFT JOIN orders o\n       ON o.customer_id = c.customer_id\n      AND o.status = 'delivered'\nGROUP BY c.customer_id;",
+   "SELECT c.customer_id, COUNT(o.order_id)\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;"
+  ]
+ },
+ {
+  "id": "sql-d10-04",
+  "kind": "predict",
+  "query": "SELECT * FROM categories CROSS JOIN employees",
+  "format": "rowcount"
+ },
+ {
+  "id": "sql-d10-05",
+  "kind": "predict",
+  "query": "SELECT c.customer_id, o.order_id\nFROM customers c\nLEFT JOIN orders o\n       ON o.customer_id = c.customer_id\n      AND o.status = 'delivered';",
+  "format": "rowcount"
+ },
+ {
+  "id": "sql-d10-06",
+  "kind": "find-error",
+  "options": [
+   "SELECT o.customer_id\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id;",
+   "SELECT customer_id\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id;",
+   "SELECT o.order_id, c.full_name\nFROM orders o\nJOIN customers c ON o.order_id = c.customer_id;",
+   "SELECT o.order_id, customer_id\nFROM orders o\nJOIN employees e ON e.employee_id = o.employee_id;"
+  ]
+ },
+ {
+  "id": "sql-d10-07",
+  "kind": "find-error",
+  "options": [
+   "SELECT c.customer_id, c.full_name, COUNT(*)\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.full_name;",
+   "SELECT c.customer_id, c.full_name, COUNT(*)\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;",
+   "SELECT c.full_name, COUNT(*)\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;",
+   "SELECT c.full_name, o.status, COUNT(*)\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;"
+  ]
+ },
+ {
+  "id": "sql-d10-08",
+  "kind": "choose-query",
+  "options": [
+   "SELECT e.full_name, m.full_name AS quan_ly\nFROM employees e\nJOIN employees m ON m.employee_id = e.manager_id;",
+   "SELECT e.full_name, m.full_name AS quan_ly\nFROM employees e\nLEFT JOIN employees m ON m.employee_id = e.employee_id;",
+   "SELECT e.full_name, m.full_name AS quan_ly\nFROM employees e\nLEFT JOIN employees m ON m.employee_id = e.manager_id;",
+   "SELECT e.full_name, m.full_name AS quan_ly\nFROM employees e\nLEFT JOIN employees m ON m.manager_id = e.employee_id;"
+  ]
+ },
+ {
+  "id": "sql-d10-09",
+  "kind": "choose-query",
+  "options": [
+   "SELECT p.sku, p.name\nFROM products p\nLEFT JOIN order_items oi ON oi.product_id = p.product_id\nWHERE oi.product_id IS NULL;",
+   "SELECT p.sku, p.name\nFROM products p\nJOIN order_items oi ON oi.product_id = p.product_id\nWHERE oi.product_id IS NULL;",
+   "SELECT p.sku, p.name\nFROM products p\nLEFT JOIN order_items oi ON oi.product_id = p.product_id\nWHERE oi.product_id IS NOT NULL;",
+   "SELECT p.sku, p.name\nFROM products p\nLEFT JOIN order_items oi ON oi.product_id = p.product_id\nGROUP BY p.product_id\nHAVING COUNT(*) = 0;"
+  ]
+ },
+ {
+  "id": "sql-d10-10",
+  "kind": "predict",
+  "query": "SELECT SUM(p.amount)\nFROM orders o\nJOIN order_items oi ON oi.order_id = o.order_id\nJOIN payments p     ON p.order_id = o.order_id\nWHERE o.order_id = 12;",
+  "format": "scalar"
+ },
+ {
+  "id": "sql-d10-11",
+  "kind": "choose-query",
+  "options": [
+   "SELECT a.full_name, b.full_name, a.city\nFROM customers a\nJOIN customers b ON a.city = b.city;",
+   "SELECT a.full_name, b.full_name, a.city\nFROM customers a\nJOIN customers b ON a.city = b.city\n                AND a.customer_id <> b.customer_id;",
+   "SELECT a.full_name, b.full_name, a.city\nFROM customers a\nJOIN customers b ON a.city = b.city\n                AND a.customer_id < b.customer_id;",
+   "SELECT a.full_name, b.full_name, a.city\nFROM customers a\nJOIN customers b ON a.city = b.city\n                AND a.customer_id <= b.customer_id;"
+  ]
+ },
+ {
+  "id": "sql-d10-12",
+  "kind": "choose-query",
+  "options": [
+   "SELECT o.order_id, c.full_name, e.full_name\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nLEFT JOIN employees e ON e.employee_id = o.employee_id;",
+   "SELECT o.order_id, c.full_name, e.full_name\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nJOIN employees e ON e.employee_id = o.employee_id;",
+   "SELECT o.order_id, c.full_name, e.full_name\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nLEFT JOIN employees e ON e.employee_id = o.employee_id\nWHERE e.title = 'Nhân viên bán hàng';",
+   "SELECT o.order_id, c.full_name, e.full_name\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nLEFT JOIN employees e ON e.employee_id = o.customer_id;"
+  ]
+ },
+ {
+  "id": "sql-d10-14",
+  "kind": "predict",
+  "query": "SELECT e.full_name, o.order_id\nFROM employees e\nFULL JOIN orders o\n       ON o.employee_id = e.employee_id;",
+  "format": "rowcount"
+ }
+]

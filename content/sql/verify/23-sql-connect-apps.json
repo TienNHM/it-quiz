@@ -1,0 +1,71 @@
+[
+  {
+    "id": "sql-d23-02",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT COUNT(*) FROM customers WHERE email = '' OR '1'='1'"
+  },
+  {
+    "id": "sql-d23-03",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT count(*) + 1 FROM customers WHERE city = 'Hà Nội'"
+  },
+  {
+    "id": "sql-d23-04",
+    "kind": "find-error",
+    "options": [
+      "SELECT sku, price FROM products ORDER BY 'price'",
+      "SELECT sku, price FROM products ORDER BY price",
+      "SELECT sku, price FROM products ORDER BY \"price\"",
+      "SELECT sku, price FROM products ORDER BY 2"
+    ]
+  },
+  {
+    "id": "sql-d23-05",
+    "kind": "choose-query",
+    "options": [
+      "SELECT order_id, status FROM orders WHERE order_id IN ARRAY[5, 15, 28]",
+      "SELECT order_id, status FROM orders WHERE order_id = ANY(ARRAY[5, 15, 28])",
+      "SELECT order_id, status FROM orders WHERE order_id = ALL(ARRAY[5, 15, 28])",
+      "SELECT order_id, status FROM orders WHERE order_id = ARRAY[5, 15, 28]"
+    ]
+  },
+  {
+    "id": "sql-d23-06",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku, name FROM products WHERE name LIKE '%logitech%'",
+      "SELECT sku, name FROM products WHERE name ILIKE 'logitech'",
+      "SELECT sku, name FROM products WHERE name ILIKE '%logitech%'",
+      "SELECT sku, name FROM products WHERE name ILIKE '%logitech'"
+    ]
+  },
+  {
+    "id": "sql-d23-07",
+    "kind": "choose-query",
+    "options": [
+      "SELECT c.full_name, COUNT(o.order_id) FROM customers c LEFT JOIN orders o ON o.customer_id = c.customer_id WHERE c.city = 'Cần Thơ' GROUP BY c.customer_id, c.full_name",
+      "SELECT c.full_name, COUNT(*) FROM customers c LEFT JOIN orders o ON o.customer_id = c.customer_id WHERE c.city = 'Cần Thơ' GROUP BY c.customer_id, c.full_name",
+      "SELECT c.full_name, COUNT(o.order_id) FROM customers c JOIN orders o ON o.customer_id = c.customer_id WHERE c.city = 'Cần Thơ' GROUP BY c.customer_id, c.full_name",
+      "SELECT c.full_name, COUNT(o.order_id) FROM customers c LEFT JOIN orders o ON o.customer_id = c.customer_id AND c.city = 'Cần Thơ' GROUP BY c.customer_id, c.full_name"
+    ]
+  },
+  {
+    "id": "sql-d23-08",
+    "kind": "choose-query",
+    "probe": "SELECT product_id, stock_quantity FROM products ORDER BY product_id",
+    "options": [
+      "UPDATE products SET stock_quantity = 53 WHERE product_id = 16",
+      "UPDATE products SET stock_quantity = stock_quantity - 5 WHERE stock_quantity >= 5",
+      "UPDATE products SET stock_quantity = 5 WHERE product_id = 16 AND stock_quantity >= 5",
+      "UPDATE products SET stock_quantity = stock_quantity - 5 WHERE product_id = 16 AND stock_quantity >= 5"
+    ]
+  },
+  {
+    "id": "sql-d23-09",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT COUNT(*) FROM products WHERE is_active AND (NULL::int IS NULL OR category_id = NULL::int) AND (NULL::numeric IS NULL OR price <= NULL::numeric)"
+  }
+]

@@ -1,0 +1,85 @@
+[
+  {
+    "id": "sql-d28-01",
+    "kind": "choose-query",
+    "options": [
+      "SELECT COUNT(*) FROM orders WHERE order_date >= '2025-11-11' AND order_date <= '2025-11-30'",
+      "SELECT COUNT(*) FROM orders WHERE order_date >= '2025-11-11' AND order_date < '2025-11-12'",
+      "SELECT COUNT(*) FROM orders WHERE order_date BETWEEN '2025-11-11' AND '2025-11-11'",
+      "SELECT COUNT(*) FROM orders WHERE order_date >= '2025-11-11' AND order_date < '2025-11-11 23:00'"
+    ]
+  },
+  {
+    "id": "sql-d28-02",
+    "kind": "predict",
+    "query": "SELECT COUNT(*) FROM orders WHERE order_date BETWEEN '2025-12-01' AND '2025-12-24'",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d28-04",
+    "kind": "find-error",
+    "options": [
+      "SELECT name FROM products\nWHERE (price, product_id) < (19990000, 10)\nORDER BY price DESC, product_id DESC;",
+      "SELECT name FROM products\nWHERE (price, name) < (19990000, 'Dell')\nORDER BY price DESC, name DESC;",
+      "SELECT name FROM products\nWHERE (price, product_id) < (19990000, 10, 1)\nORDER BY price DESC, product_id DESC;",
+      "SELECT name FROM products\nWHERE (price, product_id) > (0, 0)\nORDER BY price DESC, product_id DESC;"
+    ]
+  },
+  {
+    "id": "sql-d28-05",
+    "kind": "choose-query",
+    "options": [
+      "SELECT p.sku, p.name FROM products p\nLEFT JOIN order_items oi\n  ON oi.product_id = p.product_id\n GROUP BY p.product_id\nHAVING COUNT(*) = 0;",
+      "SELECT p.sku, p.name FROM products p\nWHERE NOT EXISTS (\n  SELECT 1 FROM order_items oi\n  WHERE oi.product_id = p.product_id);",
+      "SELECT p.sku, p.name FROM products p\nJOIN order_items oi\n  ON oi.product_id = p.product_id\nWHERE oi.product_id IS NULL;",
+      "SELECT p.sku, p.name FROM products p\nLEFT JOIN order_items oi\n  ON oi.product_id = p.product_id\n AND oi.product_id IS NULL;"
+    ]
+  },
+  {
+    "id": "sql-d28-06",
+    "kind": "choose-query",
+    "options": [
+      "SELECT c.customer_id, c.full_name FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id AND o.status = 'delivered')",
+      "SELECT c.customer_id, c.full_name FROM customers c JOIN orders o ON o.customer_id = c.customer_id WHERE o.status = 'delivered'",
+      "SELECT c.customer_id, c.full_name FROM customers c WHERE c.customer_id IN (SELECT customer_id FROM orders WHERE status <> 'delivered')",
+      "SELECT c.customer_id, c.full_name FROM customers c WHERE EXISTS (SELECT 1 FROM orders o WHERE o.status = 'delivered')"
+    ]
+  },
+  {
+    "id": "sql-d28-07",
+    "kind": "choose-query",
+    "options": [
+      "SELECT e.employee_id, e.full_name FROM employees e WHERE e.employee_id NOT IN (SELECT employee_id FROM orders)",
+      "SELECT e.employee_id, e.full_name FROM employees e WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.employee_id = e.employee_id)",
+      "SELECT e.employee_id, e.full_name FROM employees e JOIN orders o ON o.employee_id <> e.employee_id",
+      "SELECT e.employee_id, e.full_name FROM employees e WHERE NOT EXISTS (SELECT 1 FROM orders)"
+    ]
+  },
+  {
+    "id": "sql-d28-08",
+    "kind": "predict",
+    "query": "SELECT COUNT(*) FROM customers c, orders o",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d28-09",
+    "kind": "choose-query",
+    "ordered": true,
+    "options": [
+      "SELECT product_id, name, price FROM products WHERE price < 19990000 AND product_id < 10 ORDER BY price DESC, product_id DESC LIMIT 5",
+      "SELECT product_id, name, price FROM products WHERE (price, product_id) > (19990000, 10) ORDER BY price DESC, product_id DESC LIMIT 5",
+      "SELECT product_id, name, price FROM products WHERE price <= 19990000 ORDER BY price DESC, product_id DESC LIMIT 5",
+      "SELECT product_id, name, price FROM products WHERE (price, product_id) < (19990000, 10) ORDER BY price DESC, product_id DESC LIMIT 5"
+    ]
+  },
+  {
+    "id": "sql-d28-10",
+    "kind": "choose-query",
+    "options": [
+      "SELECT c.customer_id, c.full_name, COUNT(o.order_id) AS so_don FROM customers c LEFT JOIN orders o ON o.customer_id = c.customer_id GROUP BY c.customer_id, c.full_name",
+      "SELECT c.customer_id, c.full_name, COUNT(o.order_id) AS so_don FROM customers c JOIN orders o ON o.customer_id = c.customer_id GROUP BY c.customer_id, c.full_name",
+      "SELECT c.customer_id, c.full_name, COUNT(o.order_id) AS so_don FROM orders o LEFT JOIN customers c ON o.customer_id = c.customer_id GROUP BY c.customer_id, c.full_name",
+      "SELECT c.customer_id, c.full_name, COUNT(*) AS so_don FROM customers c LEFT JOIN orders o ON o.customer_id = c.customer_id GROUP BY c.customer_id, c.full_name"
+    ]
+  }
+]

@@ -1,0 +1,251 @@
+{
+  "id": "sql-d27",
+  "title": "Ngày 27: Thiết kế cơ sở dữ liệu",
+  "description": "ERD và các loại quan hệ, phụ thuộc hàm, chuẩn hóa 1NF-BCNF, khi nào phi chuẩn hóa và các thực hành thiết kế tốt.",
+  "questions": [
+    {
+      "id": "sql-d27-01",
+      "topic": "Quan hệ n-n",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Một đơn hàng có nhiều sản phẩm và một sản phẩm nằm trong nhiều đơn hàng. Cách cài đặt quan hệ này đúng nhất là gì?",
+      "options": [
+        "thêm cột `product_ids` chứa danh sách mã sản phẩm vào `orders`",
+        "tạo bảng trung gian có hai khóa ngoại và khóa chính ghép",
+        "thêm cột `order_id` vào bảng `products`",
+        "thêm cột `product_id` vào `orders`, chỉ lưu sản phẩm đầu tiên"
+      ],
+      "answer": 1,
+      "explanation": "Quan hệ n-n không thể đặt khóa ngoại ở một bên nào, nên cần **bảng trung gian** như `order_items` với hai khóa ngoại và khóa chính ghép `(order_id, product_id)`. Bảng này còn chứa thuộc tính của chính mối quan hệ: số lượng, giá lúc mua, giảm giá.\n- Cột danh sách `product_ids` vi phạm 1NF, không có khóa ngoại kiểm tra và không JOIN được.\n- `products.order_id` chỉ cho mỗi sản phẩm thuộc đúng một đơn.\n- `orders.product_id` chỉ cho mỗi đơn có một sản phẩm."
+    },
+    {
+      "id": "sql-d27-02",
+      "topic": "1NF",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Một bạn thêm cột `order_ids` kiểu VARCHAR vào bảng `customers`, lưu chuỗi như `1,4,13` cho mỗi khách. Vấn đề chính của thiết kế này là gì?",
+      "options": [
+        "vi phạm 1NF: một ô chứa nhiều giá trị, không có khóa ngoại và không JOIN được",
+        "vi phạm 3NF vì `order_ids` phụ thuộc bắc cầu vào khóa",
+        "không có vấn đề thiết kế, chỉ hơi chậm khi truy vấn",
+        "vi phạm BCNF vì `order_ids` không phải siêu khóa"
+      ],
+      "answer": 0,
+      "explanation": "Đúng là vi phạm **1NF**: mỗi ô phải chứa một giá trị nguyên tố. Chuỗi `1,4,13` không có khóa ngoại kiểm tra mã đơn có tồn tại, muốn tìm khách của đơn 4 chỉ còn cách dò chuỗi, và đếm số đơn cũng không viết được bằng SQL gọn gàng.\n- Không phải 3NF hay BCNF: các dạng chuẩn đó chỉ xét tiếp sau khi 1NF đã đạt.\n- Nói \"chỉ hơi chậm\" là sai: đây là lỗi thiết kế, không phải chuyện tốc độ.\nCách đúng: quan hệ 1-n với khóa ngoại `orders.customer_id`."
+    },
+    {
+      "id": "sql-d27-03",
+      "topic": "Khóa chính ghép",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Đơn 1 của DSC Shop đã có sản phẩm 16 và 23. Câu INSERT nào vào `order_items` gây LỖI khi chạy?",
+      "options": [
+        "```sql\nINSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (1, 1, 1, 100000);\n```",
+        "```sql\nINSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (2, 1, 1, 100000);\n```",
+        "```sql\nINSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (2, 23, 1, 150000);\n```",
+        "```sql\nINSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (1, 23, 1, 150000);\n```"
+      ],
+      "answer": 3,
+      "explanation": "Câu cuối lỗi: cặp `(order_id, product_id) = (1, 23)` đã có, vi phạm khóa chính ghép (`duplicate key value violates unique constraint \"order_items_pkey\"`). Muốn mua thêm cùng sản phẩm thì tăng `quantity`, không thêm dòng.\n- `(1, 1)`: đơn 1 chưa có sản phẩm 1, khóa chính ghép cho phép.\n- `(2, 1)` và `(2, 23)`: khóa chính ghép chỉ cấm trùng **cả cặp**, cùng sản phẩm ở đơn khác hay cùng đơn với sản phẩm khác đều hợp lệ. Người hay nhầm là khóa ghép nghĩa là từng cột phải duy nhất."
+    },
+    {
+      "id": "sql-d27-04",
+      "topic": "Dữ liệu dẫn xuất",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "DSC Shop không có cột tổng tiền trong `orders`, vì đó là dữ liệu dẫn xuất. Truy vấn nào tính đúng tổng tiền mỗi đơn, tính theo giá lúc mua và có giảm giá?",
+      "options": [
+        "```sql\nSELECT order_id,\n  sum(quantity * unit_price * (1 - discount)) AS tong\nFROM order_items\nGROUP BY order_id;\n```",
+        "```sql\nSELECT oi.order_id,\n  sum(oi.quantity * p.price * (1 - oi.discount)) AS tong\nFROM order_items AS oi\nJOIN products AS p ON p.product_id = oi.product_id\nGROUP BY oi.order_id;\n```",
+        "```sql\nSELECT order_id,\n  sum(quantity * unit_price) AS tong\nFROM order_items\nGROUP BY order_id;\n```",
+        "```sql\nSELECT order_id,\n  sum(quantity * unit_price * discount) AS tong\nFROM order_items\nGROUP BY order_id;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Truy vấn đầu đúng: số lượng nhân **giá lúc mua** `unit_price`, nhân `(1 - discount)`.\n- Phương án dùng `products.price` lấy giá **hiện tại**, nên các đơn mua sản phẩm đã đổi giá (sản phẩm 3 và 5) ra số sai.\n- Phương án bỏ `discount` tính cả phần đã giảm.\n- Phương án nhân `discount` thay vì `(1 - discount)` chỉ ra phần tiền được giảm, và các dòng không giảm cho 0.\nGiá lúc mua là sự thật lịch sử nằm đúng chỗ ở `order_items`."
+    },
+    {
+      "id": "sql-d27-05",
+      "topic": "2NF",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Bảng `dong_hang(order_id, sku, product_name, quantity)` có khóa chính ghép `(order_id, sku)`. Bảng này vi phạm điều gì?",
+      "options": [
+        "1NF: mỗi ô vẫn chứa nhiều giá trị",
+        "3NF: `product_name` phụ thuộc bắc cầu qua `quantity`",
+        "2NF: `product_name` chỉ phụ thuộc vào `sku`, một phần của khóa ghép",
+        "không vi phạm dạng chuẩn nào vì bảng đã có khóa chính"
+      ],
+      "answer": 2,
+      "explanation": "Có phụ thuộc `sku → product_name` mà vế trái chỉ là **một phần** của khóa `(order_id, sku)`: đây là phụ thuộc bộ phận, vi phạm **2NF**. Hậu quả: tên sản phẩm lặp ở mọi dòng hàng, đổi tên phải sửa nhiều dòng, và sản phẩm chưa bán thì không có chỗ ghi. Tách `san_pham(sku, product_name)`.\n- Không vi phạm 1NF: mọi ô đều là giá trị đơn.\n- Không phải bắc cầu: `quantity` không xác định tên sản phẩm.\n- Có khóa chính vẫn có thể vi phạm 2NF khi khóa là khóa ghép."
+    },
+    {
+      "id": "sql-d27-06",
+      "topic": "Giá lúc mua",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Chạy truy vấn sau trên DSC Shop. Kết quả là bao nhiêu?",
+      "code": "SELECT count(*)\nFROM order_items AS oi\nJOIN products AS p\n  ON p.product_id = oi.product_id\nWHERE oi.unit_price <> p.price;",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "2",
+        "5",
+        "8"
+      ],
+      "answer": 1,
+      "explanation": "Kết quả là **2**: có hai dòng hàng được mua với giá khác giá hiện tại (sản phẩm 3 và 5 đã đổi giá sau khi khách đặt).\n- 0 sai vì `unit_price` không phải bản sao của `products.price`. Nó là giá **lúc mua**, nên lệch khi sản phẩm đổi giá.\n- 5 và 8 sai: chỉ hai dòng hàng bị lệch, đa số dòng vẫn khớp giá hiện tại.\nĐây là lý do `unit_price` không vi phạm 3NF: nó là sự thật lịch sử của dòng hàng `(order_id, product_id)`, không phải dữ liệu thừa."
+    },
+    {
+      "id": "sql-d27-07",
+      "topic": "3NF",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Bảng `don_hang(order_id, order_date, customer_id, customer_name, customer_city)` có khóa chính `order_id`, và mỗi khách có đúng một tên, một thành phố. Bảng này vi phạm điều gì?",
+      "options": [
+        "2NF: có phụ thuộc vào một phần khóa",
+        "1NF: `customer_city` có thể lặp lại giữa các dòng",
+        "không vi phạm gì vì khóa chính `order_id` là một cột",
+        "3NF: tên và thành phố phụ thuộc vào `order_id` qua `customer_id` (bắc cầu)"
+      ],
+      "answer": 3,
+      "explanation": "Chuỗi `order_id → customer_id → customer_name, customer_city` là phụ thuộc **bắc cầu**: tên và thành phố thật ra là sự thật về khách, không phải về đơn. `customer_id` không phải siêu khóa của bảng, nên vi phạm **3NF**; khách đặt 4 đơn thì tên bị lưu 4 lần. Tách `khach_hang(customer_id, customer_name, customer_city)`.\n- Không phải 2NF: khóa chỉ một cột nên không thể có phụ thuộc bộ phận.\n- Không phải 1NF: giá trị lặp giữa các dòng không liên quan đến việc ô có nguyên tố hay không.\n- Có khóa chính một cột chỉ giúp đạt 2NF, chưa đủ cho 3NF."
+    },
+    {
+      "id": "sql-d27-08",
+      "topic": "Phụ thuộc hàm",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Để bác bỏ giả thuyết `product_id → unit_price` trong `order_items` (cùng sản phẩm luôn cùng giá lúc mua), bạn cần liệt kê các `product_id` có hơn một mức `unit_price`. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT product_id\nFROM order_items\nGROUP BY product_id\nHAVING count(unit_price) > 1;\n```",
+        "```sql\nSELECT product_id\nFROM order_items\nGROUP BY product_id\nHAVING count(DISTINCT order_id) > 1;\n```",
+        "```sql\nSELECT product_id\nFROM order_items\nGROUP BY product_id\nHAVING count(DISTINCT unit_price) > 1;\n```",
+        "```sql\nSELECT product_id\nFROM order_items\nWHERE count(DISTINCT unit_price) > 1\nGROUP BY product_id;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Truy vấn thứ ba đúng: `count(DISTINCT unit_price) > 1` trong `HAVING` tìm nhóm sản phẩm có từ hai mức giá khác nhau trở lên. Kết quả thật: sản phẩm 3 và 5, nên `product_id ↛ unit_price`.\n- `count(unit_price)` đếm **số dòng**, không phải số giá khác nhau: trả cả sản phẩm xuất hiện nhiều đơn dù giá luôn giống nhau.\n- `count(DISTINCT order_id)` đếm số đơn, không liên quan đến giá.\n- Hàm tổng hợp trong `WHERE` gây lỗi, phải đặt trong `HAVING`."
+    },
+    {
+      "id": "sql-d27-09",
+      "topic": "LEFT JOIN, quan hệ 0..1",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Liệt kê mọi đơn hàng kèm tên nhân viên bán (`order_id`, `full_name`). Đơn online không có nhân viên (`employee_id` NULL) vẫn phải xuất hiện, với tên NULL. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT o.order_id, e.full_name\nFROM orders AS o\nJOIN employees AS e\n  ON e.employee_id = o.employee_id;\n```",
+        "```sql\nSELECT o.order_id, e.full_name\nFROM orders AS o\nLEFT JOIN employees AS e\n  ON e.employee_id = o.employee_id;\n```",
+        "```sql\nSELECT o.order_id, e.full_name\nFROM employees AS e\nLEFT JOIN orders AS o\n  ON o.employee_id = e.employee_id;\n```",
+        "```sql\nSELECT o.order_id, e.full_name\nFROM orders AS o\nLEFT JOIN employees AS e\n  ON e.employee_id = o.customer_id;\n```"
+      ],
+      "answer": 1,
+      "explanation": "`orders.employee_id` cho phép NULL (quan hệ `0..1`), nên phải bắt đầu từ `orders` và dùng `LEFT JOIN employees`: đơn online giữ lại với `full_name` NULL.\n- `JOIN` (INNER) loại mọi đơn không có nhân viên.\n- `employees LEFT JOIN orders` giữ nhân viên chưa bán đơn nào (một dòng với `order_id` NULL) và vẫn mất đơn online, vì chiều giữ lại bị đảo.\n- Nối `e.employee_id = o.customer_id` là nối nhầm cột khóa: ghép nhân viên với khách, ra tên sai."
+    },
+    {
+      "id": "sql-d27-10",
+      "topic": "BCNF",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Bảng `tu_van(customer_id, category_name, employee_id)` có hai quy tắc: mỗi nhân viên chỉ tư vấn một nhóm hàng (`employee_id → category_name`), mỗi khách với mỗi nhóm hàng có đúng một người tư vấn. Các khóa ứng viên là `{customer_id, category_name}` và `{customer_id, employee_id}`. Bảng đạt dạng chuẩn cao nhất nào?",
+      "code": "CREATE TABLE tu_van (\n  customer_id   INT,\n  category_name VARCHAR(100),\n  employee_id   INT,\n  PRIMARY KEY (customer_id, category_name),\n  UNIQUE (customer_id, employee_id)\n);",
+      "codeLang": "sql",
+      "options": [
+        "3NF nhưng không đạt BCNF",
+        "BCNF, vì mọi cột đều nằm trong một khóa ứng viên",
+        "2NF nhưng không đạt 3NF",
+        "chỉ 1NF, vì có phụ thuộc vào một phần khóa"
+      ],
+      "answer": 0,
+      "explanation": "Mọi cột đều là thuộc tính khóa nên không có phụ thuộc bộ phận lẫn bắc cầu theo định nghĩa 3NF: bảng **đạt 3NF**. Nhưng `employee_id → category_name` có vế trái không phải siêu khóa, nên **không đạt BCNF**: sự thật \"nhân viên 4 tư vấn Laptop\" lặp ở mọi khách của nhân viên đó.\n- BCNF không chấp nhận ngoại lệ \"vế phải là thuộc tính khóa\" của 3NF, nên nằm trong khóa không cứu được bảng.\n- Không phải chỉ 2NF hay 1NF: bảng đạt cả hai.\nGiá phải trả khi tách lên BCNF: quy tắc của khách không còn chặn được bằng một `UNIQUE`."
+    },
+    {
+      "id": "sql-d27-11",
+      "topic": "Khóa ngoại",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Trên dữ liệu gốc của DSC Shop, lệnh DELETE nào bị khóa ngoại chặn và báo LỖI?",
+      "options": [
+        "```sql\nDELETE FROM customers\nWHERE customer_id = 1;\n```",
+        "```sql\nDELETE FROM employees\nWHERE employee_id = 7;\n```",
+        "```sql\nDELETE FROM orders\nWHERE order_id = 5;\n```",
+        "```sql\nDELETE FROM payments\nWHERE order_id = 1;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Khách 1 đã có đơn và `orders.customer_id` là khóa ngoại không có `ON DELETE CASCADE`, nên PostgreSQL báo `violates foreign key constraint` và từ chối xóa dòng cha.\n- Nhân viên 7 không được đơn hàng hay nhân viên nào tham chiếu nên xóa được.\n- Đơn 5 chưa có thanh toán, còn `order_items.order_id` khai báo `ON DELETE CASCADE` nên các dòng hàng đi theo.\n- `payments` là bảng con: xóa dòng con luôn được, khóa ngoại chỉ kiểm soát việc dòng con trỏ tới dòng cha không tồn tại."
+    },
+    {
+      "id": "sql-d27-12",
+      "topic": "Phi chuẩn hóa",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Trang quản trị cần tổng tiền mỗi đơn, được mở hàng trăm lần mỗi phút và chấp nhận số liệu cũ vài phút. Phương án hợp lý nhất là gì?",
+      "options": [
+        "thêm cột `total_amount` vào `orders` và để ứng dụng tự nhớ cập nhật, không cần cơ chế đồng bộ",
+        "bỏ `unit_price` khỏi `order_items`, JOIN giá hiện tại từ `products` cho nhanh",
+        "dùng materialized view tính tổng từ `order_items` và `REFRESH` định kỳ",
+        "gộp mọi bảng thành một bảng phẳng để khỏi JOIN"
+      ],
+      "answer": 2,
+      "explanation": "Đây là phi chuẩn hóa **có chủ đích**: đọc nhiều, chấp nhận số cũ, nên materialized view lưu sẵn tổng và `REFRESH` định kỳ là hợp lý, bảng gốc vẫn chuẩn hóa.\n- Cột `total_amount` không có trigger hay transaction đồng bộ sẽ lệch ngay khi quên cập nhật một chỗ.\n- Bỏ `unit_price` làm mất giá lịch sử, tổng tiền của đơn cũ sẽ đổi theo giá hiện tại.\n- Gộp thành bảng phẳng quay lại đúng ba loại dị thường của chưa chuẩn hóa."
+    },
+    {
+      "id": "sql-d27-13",
+      "topic": "NULL và giá trị giả",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Khách chưa cho biết ngày sinh. Cách lưu `birth_date` nào đúng thiết kế nhất?",
+      "options": [
+        "lưu `1900-01-01` để dễ lọc",
+        "tách `birth_date` ra bảng 1-1 riêng cho mọi khách, kể cả khi đã biết",
+        "đổi cột sang TEXT và lưu chuỗi `unknown`",
+        "để NULL, vì NULL là cách biểu diễn giá trị chưa biết và các hàm tổng hợp sẽ bỏ qua nó"
+      ],
+      "answer": 3,
+      "explanation": "Giá trị chưa biết nên là **NULL**, đừng thay bằng giá trị giả. `min(birth_date)` hay tính tuổi trung bình sẽ tính cả ngày giả và cho kết quả sai; còn với NULL, hàm tổng hợp bỏ qua, và `IS NULL` tìm được khách thiếu dữ liệu.\n- `1900-01-01` trộn lẫn với ngày thật, ai cũng có thể tưởng đó là ngày sinh thật.\n- Đổi sang TEXT làm mất kiểu DATE, mất kiểm tra và phép tính ngày.\n- Tách bảng 1-1 chỉ có lý khi dữ liệu tùy chọn, ít dùng hoặc cần phân quyền riêng, không phải cho mọi khách.\nNULL không làm chậm truy vấn, cái cần nhớ là các bẫy logic của nó."
+    },
+    {
+      "id": "sql-d27-14",
+      "topic": "Phụ thuộc hàm",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Truy vấn `GROUP BY customer_id HAVING count(DISTINCT shipping_city) > 1` trên `orders` trả về 0 dòng. Kết luận nào đúng?",
+      "options": [
+        "đã chứng minh `customer_id → shipping_city`, nên chuyển `shipping_city` sang `customers`",
+        "dữ liệu hiện tại chưa bác bỏ phụ thuộc, nhưng đó không phải quy tắc nghiệp vụ nên vẫn giữ `shipping_city` trong `orders`",
+        "chứng tỏ `orders` vi phạm 1NF",
+        "phải xóa cột `city` khỏi `customers` vì trùng với `shipping_city`"
+      ],
+      "answer": 1,
+      "explanation": "Phụ thuộc hàm là **quy tắc nghiệp vụ**, dữ liệu chỉ có thể bác bỏ, không chứng minh được. 0 dòng nghĩa là chưa có phản ví dụ, nhưng khách hoàn toàn có thể đặt đơn giao về quê hay công ty. Vì vậy `shipping_city` (nơi giao đơn này) và `customers.city` (nơi khách ở) là hai sự thật khác nhau, giữ cả hai.\n- Chuyển sang `customers` sẽ mất khả năng giao nơi khác nhau cho từng đơn.\n- Không liên quan 1NF: mỗi ô vẫn là một giá trị.\n- Xóa `customers.city` làm mất thông tin nơi ở của khách."
+    },
+    {
+      "id": "sql-d27-15",
+      "topic": "Quan hệ 1-1",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Mỗi khách có tối đa một thẻ thành viên. Thiết kế bảng `the_thanh_vien` nào để chính cơ sở dữ liệu đảm bảo quan hệ 1-1 này?",
+      "options": [
+        "```sql\ncard_id INT PRIMARY KEY,\ncustomer_id INT REFERENCES customers\n```",
+        "```sql\ncustomer_id INT PRIMARY KEY\n  REFERENCES customers (customer_id)\n```",
+        "```sql\ncard_id INT PRIMARY KEY,\ncustomer_name VARCHAR(100)\n```",
+        "thêm cột `card_ids` chứa danh sách mã thẻ vào `customers`"
+      ],
+      "answer": 1,
+      "explanation": "Đặt `customer_id` vừa là khóa chính vừa là khóa ngoại: mỗi khách chỉ có tối đa một dòng thẻ (thẻ thứ hai bị lỗi `duplicate key`), và thẻ luôn trỏ tới một khách có thật.\n- Có `card_id` làm khóa chính và `customer_id` chỉ là khóa ngoại thường thì một khách vẫn có nhiều thẻ, đó là 1-n (muốn 1-1 phải thêm `UNIQUE`).\n- Lưu `customer_name` thay vì khóa ngoại thì không có ràng buộc, trùng tên là mơ hồ.\n- Cột danh sách `card_ids` vi phạm 1NF và là quan hệ nhiều, không phải 1-1."
+    },
+    {
+      "id": "sql-d27-16",
+      "topic": "Index khóa ngoại",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Bạn khai báo `orders.customer_id REFERENCES customers (customer_id)`. Về index trên cột khóa ngoại này, phát biểu nào đúng với PostgreSQL?",
+      "options": [
+        "PostgreSQL không tự tạo index cho cột khóa ngoại, bạn nên tự tạo vì JOIN và xóa dòng cha cần nó",
+        "PostgreSQL tự tạo index cho mọi cột khóa ngoại, không cần làm gì thêm",
+        "index trên khóa ngoại là vô ích vì khóa chính đã có index",
+        "khóa ngoại chỉ hoạt động khi cột đã có index sẵn"
+      ],
+      "answer": 0,
+      "explanation": "PostgreSQL tạo index tự động cho khóa chính và `UNIQUE`, **không** tạo cho khóa ngoại. Index này giúp JOIN từ bảng cha sang bảng con và giúp kiểm tra khi xóa hoặc sửa dòng cha, nếu không PostgreSQL phải quét cả bảng con. Vì vậy DSC Shop tự tạo index trên các cột khóa ngoại.\n- Phát biểu \"tự tạo\" sai: chỉ khóa chính và `UNIQUE` được tạo index tự động.\n- Index của khóa chính ở bảng cha không phục vụ truy vấn trên cột khóa ngoại của bảng con.\n- Khóa ngoại vẫn khai báo và hoạt động bình thường khi cột chưa có index, chỉ chậm hơn."
+    },
+    {
+      "id": "sql-d27-17",
+      "topic": "Quan hệ tự tham chiếu",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "question": "Bảng `employees` tự tham chiếu qua `manager_id` (nhân viên cấp cao nhất có `manager_id` NULL). DSC Shop có 8 nhân viên. Truy vấn sau trả về bao nhiêu?",
+      "code": "SELECT count(*)\nFROM employees AS e\nJOIN employees AS m\n  ON m.employee_id = e.manager_id;",
+      "codeLang": "sql",
+      "options": [
+        "1",
+        "8",
+        "7",
+        "0"
+      ],
+      "answer": 2,
+      "explanation": "Kết quả là **7**: mỗi nhân viên có quản lý được ghép với đúng một dòng quản lý, riêng người đứng đầu có `manager_id` NULL nên không khớp điều kiện nối và bị `JOIN` (INNER) loại.\n- 8 là kết quả nếu dùng `LEFT JOIN`, vì khi đó người đứng đầu vẫn được giữ lại với phần quản lý là NULL.\n- 1 chính là số người không có quản lý, đúng thứ bị loại chứ không phải thứ được đếm.\n- 0 sai vì quan hệ tự tham chiếu nối được như hai bảng thường khi đặt hai bí danh khác nhau."
+    }
+  ]
+}

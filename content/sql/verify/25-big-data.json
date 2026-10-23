@@ -1,0 +1,95 @@
+[
+ {
+  "id": "sql-d25-01",
+  "kind": "find-error",
+  "options": [
+   "CREATE TABLE s1 (id INT, d DATE, PRIMARY KEY (id, d)) PARTITION BY RANGE (d)",
+   "CREATE TABLE s2 (id INT PRIMARY KEY, d DATE) PARTITION BY RANGE (d)",
+   "CREATE TABLE s3 (id INT, d DATE) PARTITION BY RANGE (d)",
+   "CREATE TABLE s4 (id INT, d DATE, UNIQUE (d, id)) PARTITION BY RANGE (d)"
+  ]
+ },
+ {
+  "id": "sql-d25-02",
+  "kind": "predict",
+  "format": "scalar",
+  "query": "CREATE TABLE sales (sale_id INT, sale_date DATE NOT NULL, PRIMARY KEY (sale_id, sale_date)) PARTITION BY RANGE (sale_date); CREATE TABLE sales_h1 PARTITION OF sales FOR VALUES FROM ('2025-01-01') TO ('2025-07-01'); CREATE TABLE sales_h2 PARTITION OF sales FOR VALUES FROM ('2025-07-01') TO ('2026-01-01'); INSERT INTO sales VALUES (1, '2025-07-01');",
+  "probe": "SELECT tableoid::regclass::text FROM sales"
+ },
+ {
+  "id": "sql-d25-03",
+  "kind": "find-error",
+  "options": [
+   "CREATE TABLE h (id INT PRIMARY KEY) PARTITION BY HASH (id); CREATE TABLE h0 PARTITION OF h FOR VALUES WITH (MODULUS 4, REMAINDER 0)",
+   "CREATE TABLE h (id INT PRIMARY KEY) PARTITION BY HASH (id); CREATE TABLE h1 PARTITION OF h FOR VALUES WITH (MODULUS 2, REMAINDER 1)",
+   "CREATE TABLE h (id INT PRIMARY KEY) PARTITION BY HASH (id); CREATE TABLE h5 PARTITION OF h FOR VALUES WITH (MODULUS 8, REMAINDER 5)",
+   "CREATE TABLE h (id INT PRIMARY KEY) PARTITION BY HASH (id); CREATE TABLE hx PARTITION OF h DEFAULT"
+  ]
+ },
+ {
+  "id": "sql-d25-04",
+  "kind": "choose-query",
+  "options": [
+   "CREATE TABLE op (order_id INT, order_date TIMESTAMPTZ NOT NULL, PRIMARY KEY (order_id, order_date)) PARTITION BY RANGE (order_date); CREATE TABLE op_default PARTITION OF op DEFAULT; CREATE TABLE op_2026 PARTITION OF op FOR VALUES FROM ('2026-01-01') TO ('2027-01-01'); CREATE TABLE op_2025 PARTITION OF op FOR VALUES FROM ('2025-01-01') TO ('2025-12-31')",
+   "CREATE TABLE op (order_id INT, order_date TIMESTAMPTZ NOT NULL, PRIMARY KEY (order_id, order_date)) PARTITION BY RANGE (order_date); CREATE TABLE op_default PARTITION OF op DEFAULT; CREATE TABLE op_2026 PARTITION OF op FOR VALUES FROM ('2026-01-01') TO ('2027-01-01'); CREATE TABLE op_2025 PARTITION OF op FOR VALUES FROM ('2025-01-01') TO ('2026-01-01')",
+   "CREATE TABLE op (order_id INT, order_date TIMESTAMPTZ NOT NULL, PRIMARY KEY (order_id, order_date)) PARTITION BY RANGE (order_date); CREATE TABLE op_default PARTITION OF op DEFAULT; CREATE TABLE op_2026 PARTITION OF op FOR VALUES FROM ('2026-01-01') TO ('2027-01-01'); CREATE TABLE op_2025 PARTITION OF op FOR VALUES FROM ('2025-01-01') TO ('2025-12-31 23:59:59')",
+   "CREATE TABLE op (order_id INT, order_date TIMESTAMPTZ NOT NULL, PRIMARY KEY (order_id, order_date)) PARTITION BY RANGE (order_date); CREATE TABLE op_default PARTITION OF op DEFAULT; CREATE TABLE op_2026 PARTITION OF op FOR VALUES FROM ('2026-01-01') TO ('2027-01-01'); CREATE TABLE op_2025 PARTITION OF op FOR VALUES FROM ('2025-01-01') TO ('2026-01-02')"
+  ],
+  "probe": "INSERT INTO op VALUES (1, '2025-06-01'), (2, '2025-12-31 10:00'), (3, '2025-12-31 23:59:59.5'); SELECT count(*) FROM op_2025"
+ },
+ {
+  "id": "sql-d25-05",
+  "kind": "predict",
+  "format": "text",
+  "query": "CREATE TABLE orders_by_year (order_id INT, customer_id INT NOT NULL, order_date TIMESTAMPTZ NOT NULL, status VARCHAR(20) NOT NULL, PRIMARY KEY (order_id, order_date)) PARTITION BY RANGE (order_date); CREATE TABLE oby_2025 PARTITION OF orders_by_year FOR VALUES FROM ('2025-01-01') TO ('2026-01-01'); CREATE TABLE oby_2026 PARTITION OF orders_by_year FOR VALUES FROM ('2026-01-01') TO ('2027-01-01'); INSERT INTO orders_by_year SELECT order_id, customer_id, order_date, status FROM orders; ALTER TABLE orders_by_year DETACH PARTITION oby_2025;",
+  "probe": "SELECT (SELECT count(*) FROM orders_by_year) AS a, (SELECT count(*) FROM oby_2025) AS b"
+ },
+ {
+  "id": "sql-d25-06",
+  "kind": "predict",
+  "format": "scalar",
+  "query": "CREATE TABLE orders_by_status (order_id INT, status VARCHAR(20) NOT NULL, PRIMARY KEY (order_id, status)) PARTITION BY LIST (status); CREATE TABLE os_done PARTITION OF orders_by_status FOR VALUES IN ('delivered', 'shipped'); CREATE TABLE os_wait PARTITION OF orders_by_status FOR VALUES IN ('pending'); CREATE TABLE os_other PARTITION OF orders_by_status DEFAULT; INSERT INTO orders_by_status SELECT order_id, status FROM orders;",
+  "probe": "SELECT count(*) FROM os_other"
+ },
+ {
+  "id": "sql-d25-07",
+  "kind": "find-error",
+  "options": [
+   "CREATE TABLE orders_by_channel (order_id INT, customer_id INT NOT NULL, order_date TIMESTAMPTZ NOT NULL, status VARCHAR(20) NOT NULL, channel VARCHAR(10) NOT NULL, PRIMARY KEY (order_id, channel)) PARTITION BY LIST (channel); CREATE TABLE orders_online PARTITION OF orders_by_channel FOR VALUES IN ('online'); CREATE TABLE orders_offline PARTITION OF orders_by_channel FOR VALUES IN ('offline'); INSERT INTO orders_by_channel SELECT order_id, customer_id, order_date, status, channel FROM orders; INSERT INTO orders_by_channel VALUES (41, 1, now(), 'pending', 'online')",
+   "CREATE TABLE orders_by_channel (order_id INT, customer_id INT NOT NULL, order_date TIMESTAMPTZ NOT NULL, status VARCHAR(20) NOT NULL, channel VARCHAR(10) NOT NULL, PRIMARY KEY (order_id, channel)) PARTITION BY LIST (channel); CREATE TABLE orders_online PARTITION OF orders_by_channel FOR VALUES IN ('online'); CREATE TABLE orders_offline PARTITION OF orders_by_channel FOR VALUES IN ('offline'); INSERT INTO orders_by_channel SELECT order_id, customer_id, order_date, status, channel FROM orders; INSERT INTO orders_by_channel VALUES (1, 1, now(), 'pending', 'offline')",
+   "CREATE TABLE orders_by_channel (order_id INT, customer_id INT NOT NULL, order_date TIMESTAMPTZ NOT NULL, status VARCHAR(20) NOT NULL, channel VARCHAR(10) NOT NULL, PRIMARY KEY (order_id, channel)) PARTITION BY LIST (channel); CREATE TABLE orders_online PARTITION OF orders_by_channel FOR VALUES IN ('online'); CREATE TABLE orders_offline PARTITION OF orders_by_channel FOR VALUES IN ('offline'); INSERT INTO orders_by_channel SELECT order_id, customer_id, order_date, status, channel FROM orders; INSERT INTO orders_by_channel VALUES (42, 1, now(), 'pending', 'app')",
+   "CREATE TABLE orders_by_channel (order_id INT, customer_id INT NOT NULL, order_date TIMESTAMPTZ NOT NULL, status VARCHAR(20) NOT NULL, channel VARCHAR(10) NOT NULL, PRIMARY KEY (order_id, channel)) PARTITION BY LIST (channel); CREATE TABLE orders_online PARTITION OF orders_by_channel FOR VALUES IN ('online'); CREATE TABLE orders_offline PARTITION OF orders_by_channel FOR VALUES IN ('offline'); INSERT INTO orders_by_channel SELECT order_id, customer_id, order_date, status, channel FROM orders; INSERT INTO orders_by_channel VALUES (43, 2, now(), 'paid', 'offline')"
+  ]
+ },
+ {
+  "id": "sql-d25-08",
+  "kind": "choose-query",
+  "options": [
+   "CREATE TABLE pbm (payment_id INT, order_id INT NOT NULL, amount NUMERIC(12,0) NOT NULL, method VARCHAR(20) NOT NULL, paid_at TIMESTAMPTZ NOT NULL, PRIMARY KEY (payment_id, method)) PARTITION BY LIST (method); CREATE TABLE pbm_cash PARTITION OF pbm FOR VALUES IN ('cash'); CREATE TABLE pbm_card PARTITION OF pbm FOR VALUES IN ('card'); CREATE TABLE pbm_transfer PARTITION OF pbm FOR VALUES IN ('momo')",
+   "CREATE TABLE pbm (payment_id INT, order_id INT NOT NULL, amount NUMERIC(12,0) NOT NULL, method VARCHAR(20) NOT NULL, paid_at TIMESTAMPTZ NOT NULL, PRIMARY KEY (payment_id, method)) PARTITION BY LIST (method); CREATE TABLE pbm_cash PARTITION OF pbm FOR VALUES IN ('cash'); CREATE TABLE pbm_card PARTITION OF pbm FOR VALUES IN ('card'); CREATE TABLE pbm_transfer PARTITION OF pbm FOR VALUES FROM ('momo') TO ('bank_transfer')",
+   "CREATE TABLE pbm (payment_id INT, order_id INT NOT NULL, amount NUMERIC(12,0) NOT NULL, method VARCHAR(20) NOT NULL, paid_at TIMESTAMPTZ NOT NULL, PRIMARY KEY (payment_id, method)) PARTITION BY LIST (method); CREATE TABLE pbm_cash PARTITION OF pbm FOR VALUES IN ('cash'); CREATE TABLE pbm_card PARTITION OF pbm FOR VALUES IN ('card'); CREATE TABLE pbm_transfer PARTITION OF pbm FOR VALUES ('momo', 'bank_transfer')",
+   "CREATE TABLE pbm (payment_id INT, order_id INT NOT NULL, amount NUMERIC(12,0) NOT NULL, method VARCHAR(20) NOT NULL, paid_at TIMESTAMPTZ NOT NULL, PRIMARY KEY (payment_id, method)) PARTITION BY LIST (method); CREATE TABLE pbm_cash PARTITION OF pbm FOR VALUES IN ('cash'); CREATE TABLE pbm_card PARTITION OF pbm FOR VALUES IN ('card'); CREATE TABLE pbm_transfer PARTITION OF pbm FOR VALUES IN ('momo', 'bank_transfer')"
+  ],
+  "probe": "INSERT INTO pbm SELECT payment_id, order_id, amount, method, paid_at FROM payments; SELECT count(*) FROM pbm_transfer"
+ },
+ {
+  "id": "sql-d25-09",
+  "kind": "find-error",
+  "options": [
+   "CREATE TABLE ev (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)) PARTITION BY RANGE (d); CREATE TABLE ev_default PARTITION OF ev DEFAULT; INSERT INTO ev VALUES (1, '2027-03-01'); CREATE TABLE ev_2027 PARTITION OF ev FOR VALUES FROM ('2027-01-01') TO ('2028-01-01')",
+   "CREATE TABLE ev (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)) PARTITION BY RANGE (d); CREATE TABLE ev_default PARTITION OF ev DEFAULT; INSERT INTO ev VALUES (1, '2027-03-01'); CREATE TABLE ev_2026 PARTITION OF ev FOR VALUES FROM ('2026-01-01') TO ('2027-01-01')",
+   "CREATE TABLE ev (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)) PARTITION BY RANGE (d); CREATE TABLE ev_default PARTITION OF ev DEFAULT; INSERT INTO ev VALUES (1, '2027-03-01'); CREATE TABLE ev_2028 PARTITION OF ev FOR VALUES FROM ('2028-01-01') TO ('2029-01-01')",
+   "CREATE TABLE ev (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)) PARTITION BY RANGE (d); CREATE TABLE ev_default PARTITION OF ev DEFAULT; INSERT INTO ev VALUES (1, '2027-03-01'); CREATE TABLE ev_2025 PARTITION OF ev FOR VALUES FROM ('2025-01-01') TO ('2026-01-01')"
+  ]
+ },
+ {
+  "id": "sql-d25-16",
+  "kind": "find-error",
+  "options": [
+   "CREATE TABLE ev (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)) PARTITION BY RANGE (d); CREATE TABLE x (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)); INSERT INTO x VALUES (1, '2025-01-01'); ALTER TABLE ev ATTACH PARTITION x FOR VALUES FROM ('2025-01-01') TO ('2026-01-01')",
+   "CREATE TABLE ev (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)) PARTITION BY RANGE (d); CREATE TABLE x (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)); INSERT INTO x VALUES (2, '2026-01-01'); ALTER TABLE ev ATTACH PARTITION x FOR VALUES FROM ('2025-01-01') TO ('2026-01-01')",
+   "CREATE TABLE ev (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)) PARTITION BY RANGE (d); CREATE TABLE x (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)); INSERT INTO x VALUES (3, '2025-12-31'); ALTER TABLE ev ATTACH PARTITION x FOR VALUES FROM ('2025-01-01') TO ('2026-01-01')",
+   "CREATE TABLE ev (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)) PARTITION BY RANGE (d); CREATE TABLE x (id INT, d DATE NOT NULL, PRIMARY KEY (id, d)); INSERT INTO x VALUES (4, '2025-06-15'); ALTER TABLE ev ATTACH PARTITION x FOR VALUES FROM ('2025-01-01') TO ('2026-01-01')"
+  ]
+ }
+]

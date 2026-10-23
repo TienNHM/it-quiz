@@ -29,3 +29,14 @@ Workflow `.github/workflows/deploy.yml` tự chạy khi push lên `main` hoặc 
 Cấu hình một lần: repo → **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 
 Site chạy tại `https://<user>.github.io/<repo>/`. `base` là `./` và router dùng hash nên không cần rewrite hay trang 404. Có thể đẩy `dist/` lên host tĩnh khác (Netlify, Cloudflare Pages...) mà không cần đổi gì.
+
+## Bộ câu hỏi SQL
+
+Nguồn: khóa học 30 ngày ở repo sql-challenge, 31 chương (ngày 1-30 và tổng kết), 478 câu trắc nghiệm trên cùng bộ dữ liệu cửa hàng DSC Shop. Dữ liệu mẫu nằm ở `content/sql/seed/`.
+
+- `npm run sql:run -- "SELECT ..."`: chạy thử SQL trên DSC Shop (PostgreSQL chạy trong Node qua PGlite, không cần Docker).
+- `npm run sql:lint`: kiểm tra định dạng câu hỏi (4 phương án, SQL trong fence, không emoji, phân bố đáp án...).
+- `npm run sql:verify`: chạy thật mọi truy vấn trong các câu kiểm chứng (`content/sql/verify/*.json`): đáp án đúng chạy được, đáp án sai phải lỗi hoặc cho kết quả khác. Có 337 mục kiểm chứng.
+- `npm run sql:subject`: dựng lại `content/sql/subject.json` từ các file chương.
+
+CI chạy lint và verify trước khi deploy.

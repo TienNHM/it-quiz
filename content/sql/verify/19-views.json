@@ -1,0 +1,122 @@
+[
+  {
+    "id": "sql-d19-02",
+    "kind": "choose-query",
+    "options": [
+      "CREATE VIEW phone_tablet AS\nSELECT sku, name, price\nFROM products\nWHERE is_active AND category_id IN (7, 8);",
+      "CREATE VIEW phone_tablet AS\nSELECT sku, name, price\nFROM products\nWHERE category_id = 7 OR category_id = 8\n  AND is_active;",
+      "CREATE VIEW phone_tablet AS\nSELECT sku, name, price\nFROM products\nWHERE is_active AND category_id = 7\n  AND category_id = 8;",
+      "CREATE VIEW phone_tablet AS\nSELECT sku, name, price\nFROM products\nWHERE is_active = NULL\n   OR category_id IN (7, 8);"
+    ],
+    "probe": "SELECT * FROM phone_tablet"
+  },
+  {
+    "id": "sql-d19-03",
+    "kind": "find-error",
+    "options": [
+      "CREATE VIEW product_prices AS\nSELECT sku, name, price FROM products;\nCREATE OR REPLACE VIEW product_prices AS\nSELECT sku, name, price, stock_quantity\nFROM products;",
+      "CREATE VIEW product_prices AS\nSELECT sku, name, price FROM products;\nCREATE OR REPLACE VIEW product_prices AS\nSELECT sku, name, price\nFROM products\nWHERE is_active;",
+      "CREATE VIEW product_prices AS\nSELECT sku, name, price FROM products;\nCREATE OR REPLACE VIEW product_prices AS\nSELECT sku, name, price,\n       price - cost_price AS margin\nFROM products;",
+      "CREATE VIEW product_prices AS\nSELECT sku, name, price FROM products;\nCREATE OR REPLACE VIEW product_prices AS\nSELECT sku, price, name\nFROM products;"
+    ]
+  },
+  {
+    "id": "sql-d19-04",
+    "kind": "find-error",
+    "options": [
+      "CREATE VIEW order_totals AS\nSELECT o.order_id, o.customer_id, o.status,\n       ROUND(SUM(oi.quantity * oi.unit_price\n             * (1 - oi.discount))) AS total_amount\nFROM orders AS o\nJOIN order_items AS oi ON oi.order_id = o.order_id\nGROUP BY o.order_id, o.customer_id, o.status;\n\nCREATE VIEW customer_spending AS\nSELECT customer_id, SUM(total_amount) AS total_spent\nFROM order_totals\nGROUP BY customer_id;\nDROP VIEW customer_spending;",
+      "CREATE VIEW order_totals AS\nSELECT o.order_id, o.customer_id, o.status,\n       ROUND(SUM(oi.quantity * oi.unit_price\n             * (1 - oi.discount))) AS total_amount\nFROM orders AS o\nJOIN order_items AS oi ON oi.order_id = o.order_id\nGROUP BY o.order_id, o.customer_id, o.status;\n\nCREATE VIEW customer_spending AS\nSELECT customer_id, SUM(total_amount) AS total_spent\nFROM order_totals\nGROUP BY customer_id;\nDROP VIEW IF EXISTS no_such_view;",
+      "CREATE VIEW order_totals AS\nSELECT o.order_id, o.customer_id, o.status,\n       ROUND(SUM(oi.quantity * oi.unit_price\n             * (1 - oi.discount))) AS total_amount\nFROM orders AS o\nJOIN order_items AS oi ON oi.order_id = o.order_id\nGROUP BY o.order_id, o.customer_id, o.status;\n\nCREATE VIEW customer_spending AS\nSELECT customer_id, SUM(total_amount) AS total_spent\nFROM order_totals\nGROUP BY customer_id;\nDROP VIEW order_totals;",
+      "CREATE VIEW order_totals AS\nSELECT o.order_id, o.customer_id, o.status,\n       ROUND(SUM(oi.quantity * oi.unit_price\n             * (1 - oi.discount))) AS total_amount\nFROM orders AS o\nJOIN order_items AS oi ON oi.order_id = o.order_id\nGROUP BY o.order_id, o.customer_id, o.status;\n\nCREATE VIEW customer_spending AS\nSELECT customer_id, SUM(total_amount) AS total_spent\nFROM order_totals\nGROUP BY customer_id;\nDROP VIEW order_totals CASCADE;"
+    ]
+  },
+  {
+    "id": "sql-d19-05",
+    "kind": "find-error",
+    "options": [
+      "CREATE VIEW customer_directory AS\nSELECT customer_id, full_name, city,\n       SUBSTRING(email, 1, 3) || '***' AS email_hint,\n       EXTRACT(YEAR FROM birth_date) AS birth_year\nFROM customers;\nUPDATE customer_directory\nSET city = 'Huế'\nWHERE customer_id = 1;",
+      "CREATE VIEW customer_directory AS\nSELECT customer_id, full_name, city,\n       SUBSTRING(email, 1, 3) || '***' AS email_hint,\n       EXTRACT(YEAR FROM birth_date) AS birth_year\nFROM customers;\nUPDATE customer_directory\nSET birth_year = 2000\nWHERE customer_id = 1;",
+      "CREATE VIEW customer_directory AS\nSELECT customer_id, full_name, city,\n       SUBSTRING(email, 1, 3) || '***' AS email_hint,\n       EXTRACT(YEAR FROM birth_date) AS birth_year\nFROM customers;\nDELETE FROM customer_directory\nWHERE customer_id = 17;",
+      "CREATE VIEW customer_directory AS\nSELECT customer_id, full_name, city,\n       SUBSTRING(email, 1, 3) || '***' AS email_hint,\n       EXTRACT(YEAR FROM birth_date) AS birth_year\nFROM customers;\nUPDATE customer_directory\nSET full_name = UPPER(full_name);"
+    ]
+  },
+  {
+    "id": "sql-d19-06",
+    "kind": "find-error",
+    "options": [
+      "CREATE VIEW cheap_products AS SELECT product_id, sku, name, price FROM products WHERE price < 1000000 WITH CHECK OPTION;\nUPDATE cheap_products\nSET price = 790000\nWHERE sku = 'ACC-007';",
+      "CREATE VIEW cheap_products AS SELECT product_id, sku, name, price FROM products WHERE price < 1000000 WITH CHECK OPTION;\nUPDATE cheap_products\nSET price = 1290000\nWHERE sku = 'ACC-004';",
+      "CREATE VIEW cheap_products AS SELECT product_id, sku, name, price FROM products WHERE price < 1000000 WITH CHECK OPTION;\nUPDATE cheap_products\nSET price = price - 50000\nWHERE sku = 'ACC-008';",
+      "CREATE VIEW cheap_products AS SELECT product_id, sku, name, price FROM products WHERE price < 1000000 WITH CHECK OPTION;\nUPDATE cheap_products\nSET price = 1290000\nWHERE sku = 'ACC-007';"
+    ]
+  },
+  {
+    "id": "sql-d19-07",
+    "kind": "predict",
+    "query": "CREATE VIEW cheap_products AS\nSELECT product_id, sku, name, price\nFROM products\nWHERE price < 1000000;\n\nUPDATE cheap_products\nSET price = 1290000\nWHERE sku = 'ACC-007';\n\nSELECT COUNT(*) FROM cheap_products;",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d19-08",
+    "kind": "choose-query",
+    "options": [
+      "CREATE VIEW customer_orders AS\nSELECT c.customer_id, COUNT(o.order_id) AS order_count\nFROM customers AS c\nJOIN orders AS o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;",
+      "CREATE VIEW customer_orders AS\nSELECT c.customer_id, COUNT(*) AS order_count\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;",
+      "CREATE VIEW customer_orders AS\nSELECT c.customer_id, COUNT(o.order_id) AS order_count\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id;",
+      "CREATE VIEW customer_orders AS\nSELECT c.customer_id, COUNT(o.order_id) AS order_count\nFROM customers AS c\nLEFT JOIN orders AS o ON o.customer_id = c.customer_id\nWHERE o.status <> 'cancelled'\nGROUP BY c.customer_id;"
+    ],
+    "probe": "SELECT * FROM customer_orders ORDER BY customer_id"
+  },
+  {
+    "id": "sql-d19-09",
+    "kind": "predict",
+    "query": "CREATE VIEW all_customers AS SELECT * FROM customers; ALTER TABLE customers ADD COLUMN vip BOOLEAN DEFAULT FALSE; SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = 'shop' AND table_name = 'all_customers'",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d19-10",
+    "kind": "predict",
+    "query": "CREATE MATERIALIZED VIEW order_stats AS\nSELECT COUNT(*) AS order_count\nFROM orders;\n\nINSERT INTO orders (customer_id, order_date, channel)\nVALUES (16, now(), 'online');\n\nSELECT order_count FROM order_stats;",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d19-11",
+    "kind": "find-error",
+    "options": [
+      "CREATE MATERIALIZED VIEW city_stats AS SELECT city, COUNT(*) AS n FROM customers WHERE city IS NOT NULL GROUP BY city;\nREFRESH MATERIALIZED VIEW CONCURRENTLY city_stats;",
+      "CREATE MATERIALIZED VIEW city_stats AS SELECT city, COUNT(*) AS n FROM customers WHERE city IS NOT NULL GROUP BY city;\nREFRESH MATERIALIZED VIEW city_stats;",
+      "CREATE MATERIALIZED VIEW city_stats AS SELECT city, COUNT(*) AS n FROM customers WHERE city IS NOT NULL GROUP BY city;\nCREATE UNIQUE INDEX ON city_stats (city);\nREFRESH MATERIALIZED VIEW CONCURRENTLY city_stats;",
+      "CREATE MATERIALIZED VIEW city_stats AS SELECT city, COUNT(*) AS n FROM customers WHERE city IS NOT NULL GROUP BY city;\nCREATE INDEX ON city_stats (n);\nREFRESH MATERIALIZED VIEW city_stats;"
+    ]
+  },
+  {
+    "id": "sql-d19-14",
+    "kind": "find-error",
+    "options": [
+      "CREATE VIEW cheap_products AS SELECT product_id, sku, price FROM products WHERE price < 1000000;  CREATE VIEW mid_products AS SELECT * FROM cheap_products WHERE price > 500000 WITH LOCAL CHECK OPTION;\nUPDATE mid_products\nSET price = 790000\nWHERE sku = 'ACC-007';",
+      "CREATE VIEW cheap_products AS SELECT product_id, sku, price FROM products WHERE price < 1000000;  CREATE VIEW mid_products AS SELECT * FROM cheap_products WHERE price > 500000 WITH LOCAL CHECK OPTION;\nUPDATE mid_products\nSET price = 1290000\nWHERE sku = 'ACC-007';",
+      "CREATE VIEW cheap_products AS SELECT product_id, sku, price FROM products WHERE price < 1000000;  CREATE VIEW mid_products AS SELECT * FROM cheap_products WHERE price > 500000 WITH LOCAL CHECK OPTION;\nUPDATE mid_products\nSET sku = 'ACC-007B'\nWHERE sku = 'ACC-007';",
+      "CREATE VIEW cheap_products AS SELECT product_id, sku, price FROM products WHERE price < 1000000;  CREATE VIEW mid_products AS SELECT * FROM cheap_products WHERE price > 500000 WITH LOCAL CHECK OPTION;\nUPDATE mid_products\nSET price = 300000\nWHERE sku = 'ACC-007';"
+    ]
+  },
+  {
+    "id": "sql-d19-15",
+    "kind": "find-error",
+    "options": [
+      "CREATE VIEW active_products AS\nSELECT product_id, sku, name, price, stock_quantity\nFROM products\nWHERE is_active;\n\nCREATE VIEW category_prices AS\nSELECT category_id, MAX(price) AS max_price\nFROM products\nGROUP BY category_id;\nUPDATE category_prices\nSET max_price = 0\nWHERE category_id = 7;",
+      "CREATE VIEW active_products AS\nSELECT product_id, sku, name, price, stock_quantity\nFROM products\nWHERE is_active;\n\nCREATE VIEW category_prices AS\nSELECT category_id, MAX(price) AS max_price\nFROM products\nGROUP BY category_id;\nUPDATE active_products\nSET stock_quantity = stock_quantity + 5\nWHERE sku = 'PHN-003';",
+      "CREATE VIEW active_products AS\nSELECT product_id, sku, name, price, stock_quantity\nFROM products\nWHERE is_active;\n\nCREATE VIEW category_prices AS\nSELECT category_id, MAX(price) AS max_price\nFROM products\nGROUP BY category_id;\nDELETE FROM active_products\nWHERE sku = 'PHN-004';",
+      "CREATE VIEW active_products AS\nSELECT product_id, sku, name, price, stock_quantity\nFROM products\nWHERE is_active;\n\nCREATE VIEW category_prices AS\nSELECT category_id, MAX(price) AS max_price\nFROM products\nGROUP BY category_id;\nUPDATE active_products\nSET price = price * 1.1\nWHERE sku = 'ACC-007';"
+    ]
+  },
+  {
+    "id": "sql-d19-16",
+    "kind": "find-error",
+    "options": [
+      "CREATE VIEW product_full AS\nSELECT sku, name, category_id, price\nFROM products;\n\nCREATE VIEW product_names AS\nSELECT sku, name, price\nFROM products;\nINSERT INTO product_full (sku, name, category_id, price)\nVALUES ('ACC-011', 'Giá đỡ laptop', 9, 350000);",
+      "CREATE VIEW product_full AS\nSELECT sku, name, category_id, price\nFROM products;\n\nCREATE VIEW product_names AS\nSELECT sku, name, price\nFROM products;\nINSERT INTO product_names (sku, name, price)\nVALUES ('ACC-011', 'Giá đỡ laptop', 350000);",
+      "CREATE VIEW product_full AS\nSELECT sku, name, category_id, price\nFROM products;\n\nCREATE VIEW product_names AS\nSELECT sku, name, price\nFROM products;\nINSERT INTO product_full (sku, name, category_id, price)\nVALUES ('ACC-011', 'Giá đỡ laptop', 9, 350000),\n       ('ACC-012', 'Hub USB 4 cổng', 9, 290000);",
+      "CREATE VIEW product_full AS\nSELECT sku, name, category_id, price\nFROM products;\n\nCREATE VIEW product_names AS\nSELECT sku, name, price\nFROM products;\nUPDATE product_names\nSET price = 100000\nWHERE sku = 'ACC-009';"
+    ]
+  }
+]

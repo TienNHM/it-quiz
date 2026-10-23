@@ -1,4 +1,5 @@
 import type {ReactNode} from 'react';
+import CodeBlock from './CodeBlock';
 
 /** Inline: **đậm** và `code`. */
 function inline(text: string): ReactNode[] {
@@ -17,7 +18,7 @@ function inline(text: string): ReactNode[] {
   return out;
 }
 
-type Block = {t: 'p'; v: string} | {t: 'ul'; v: string[]} | {t: 'pre'; v: string};
+type Block = {t: 'p'; v: string} | {t: 'ul'; v: string[]} | {t: 'pre'; v: string; lang?: string};
 
 function parse(text: string): Block[] {
   const blocks: Block[] = [];
@@ -32,11 +33,12 @@ function parse(text: string): Block[] {
     const line = lines[i];
     if (line.trimStart().startsWith('```')) {
       flush();
+      const lang = line.trimStart().slice(3).trim().toLowerCase() || undefined;
       const code: string[] = [];
       i++;
       while (i < lines.length && !lines[i].trimStart().startsWith('```')) code.push(lines[i++]);
       i++; // bỏ dòng đóng fence
-      blocks.push({t: 'pre', v: code.join('\n')});
+      blocks.push({t: 'pre', v: code.join('\n'), lang});
     } else if (/^\s*[-*] /.test(line)) {
       flush();
       const items: string[] = [];
@@ -60,11 +62,7 @@ export default function RichText({text}: {text: string}) {
     <div className="rich">
       {blocks.map((b, idx) => {
         if (b.t === 'pre')
-          return (
-            <pre key={idx}>
-              <code>{b.v}</code>
-            </pre>
-          );
+          return <CodeBlock key={idx} code={b.v} lang={b.lang} />;
         if (b.t === 'ul')
           return (
             <ul key={idx}>

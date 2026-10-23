@@ -1,0 +1,109 @@
+[
+  {
+    "id": "sql-d22-01",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT pg_typeof(attributes -> 'brand')::text FROM products WHERE sku = 'LAP-005'"
+  },
+  {
+    "id": "sql-d22-02",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku FROM products WHERE attributes ->> 'ram_gb' > '8'",
+      "SELECT sku FROM products WHERE (attributes ->> 'ram_gb')::INT > 8",
+      "SELECT sku FROM products WHERE attributes -> 'ram_gb' > 8",
+      "SELECT sku FROM products WHERE attributes ? 'ram_gb'"
+    ]
+  },
+  {
+    "id": "sql-d22-03",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT COUNT(*) FROM products WHERE NOT attributes ? 'brand'"
+  },
+  {
+    "id": "sql-d22-04",
+    "kind": "find-error",
+    "options": [
+      "SELECT sku FROM products WHERE attributes ->> 'brand' = 'Apple'",
+      "SELECT sku FROM products WHERE attributes @> '{\"brand\": \"Apple\"}'",
+      "SELECT sku FROM products WHERE attributes -> 'brand' = 'Apple'",
+      "SELECT sku FROM products WHERE attributes -> 'brand' = '\"Apple\"'"
+    ]
+  },
+  {
+    "id": "sql-d22-05",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku FROM products WHERE attributes ? 'Xanh'",
+      "SELECT sku FROM products WHERE attributes ->> 'colors' = 'Xanh'",
+      "SELECT sku FROM products WHERE attributes @> '{\"colors\": \"Xanh\"}'",
+      "SELECT sku FROM products WHERE attributes @> '{\"colors\": [\"Xanh\"]}'"
+    ]
+  },
+  {
+    "id": "sql-d22-06",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT (attributes -> 'colors' -> 0)::text FROM products WHERE sku = 'PHN-001'"
+  },
+  {
+    "id": "sql-d22-07",
+    "kind": "choose-query",
+    "options": [
+      "SELECT attributes ->> 'colors', COUNT(*) FROM products WHERE attributes ? 'colors' GROUP BY attributes ->> 'colors'",
+      "SELECT c.color, COUNT(*) FROM products AS p CROSS JOIN jsonb_array_elements_text(p.attributes -> 'colors') AS c(color) GROUP BY c.color, p.sku",
+      "SELECT c.color, COUNT(*) FROM products AS p CROSS JOIN jsonb_array_elements_text(p.attributes -> 'colors') AS c(color) GROUP BY c.color",
+      "SELECT c.color, COUNT(*) FROM products AS p CROSS JOIN jsonb_array_elements_text(p.attributes -> 'color') AS c(color) GROUP BY c.color"
+    ]
+  },
+  {
+    "id": "sql-d22-08",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT jsonb_set('{\"brand\": \"Dell\"}'::jsonb, '{dimensions,weight_g}', '1500')::text"
+  },
+  {
+    "id": "sql-d22-09",
+    "kind": "find-error",
+    "options": [
+      "SELECT jsonb_set(attributes, '{cpu}', 'Intel Core i9') FROM products WHERE sku = 'LAP-001'",
+      "SELECT jsonb_set(attributes, '{cpu}', '\"Intel Core i9\"') FROM products WHERE sku = 'LAP-001'",
+      "SELECT jsonb_set(attributes, '{cpu}', to_jsonb('Intel Core i9'::TEXT)) FROM products WHERE sku = 'LAP-001'",
+      "SELECT attributes || '{\"cpu\": \"Intel Core i9\"}' FROM products WHERE sku = 'LAP-001'"
+    ]
+  },
+  {
+    "id": "sql-d22-10",
+    "kind": "choose-query",
+    "probe": "SELECT sku, attributes::text FROM products ORDER BY sku",
+    "options": [
+      "UPDATE products SET attributes = attributes || '{\"warranty_months\": 12}' WHERE sku LIKE 'ACC%'",
+      "UPDATE products SET attributes = jsonb_set(attributes, '{warranty_months}', '12') WHERE sku LIKE 'ACC%'",
+      "UPDATE products SET attributes = '{\"warranty_months\": 12}' WHERE sku LIKE 'ACC%'",
+      "UPDATE products SET attributes = COALESCE(attributes, '{}') || '{\"warranty_months\": 12}' WHERE sku LIKE 'ACC%'"
+    ]
+  },
+  {
+    "id": "sql-d22-11",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT '{\"a\": 1, \"a\": 2}'::jsonb ->> 'a'"
+  },
+  {
+    "id": "sql-d22-12",
+    "kind": "choose-query",
+    "options": [
+      "SELECT sku FROM products WHERE attributes ?& ARRAY['watt', 'refresh_hz']",
+      "SELECT sku FROM products WHERE attributes ?| ARRAY['watt', 'refresh_hz']",
+      "SELECT sku FROM products WHERE attributes ? 'watt' AND attributes ? 'refresh_hz'",
+      "SELECT sku FROM products WHERE attributes @> '{\"watt\": null, \"refresh_hz\": null}'"
+    ]
+  },
+  {
+    "id": "sql-d22-16",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT COUNT(*) FROM products WHERE attributes ?& ARRAY['ram_gb', 'storage_gb']"
+  }
+]

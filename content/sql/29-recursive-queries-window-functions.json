@@ -1,0 +1,233 @@
+{
+  "id": "sql-d29",
+  "title": "Ngày 29: Window function và truy vấn đệ quy",
+  "description": "Xếp hạng, lũy kế, LAG/LEAD, khung ROWS/RANGE và CTE đệ quy trên cây danh mục, sơ đồ nhân viên.",
+  "questions": [
+    {
+      "id": "sql-d29-01",
+      "topic": "Window vs GROUP BY",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Điểm khác biệt cốt lõi giữa `GROUP BY` và window function (`... OVER (...)`) là gì?",
+      "options": [
+        "window function chỉ dùng được với hàm xếp hạng, không dùng được với `SUM` hay `AVG`",
+        "`GROUP BY` gộp mỗi nhóm thành một dòng; window function tính trên cửa sổ nhưng vẫn giữ từng dòng",
+        "window function cũng gộp dòng như `GROUP BY` nhưng chạy nhanh hơn",
+        "`GROUP BY` giữ nguyên từng dòng còn window function gộp dòng"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: `GROUP BY` cho ra một dòng mỗi nhóm nên chi tiết từng dòng biến mất; window function thêm cột tính toán trên một \"cửa sổ\" các dòng liên quan nhưng vẫn giữ đủ số dòng.\n- Sai ở phương án 1: `SUM(...) OVER (...)`, `AVG(...) OVER (...)` dùng rất phổ biến để lấy lũy kế, tỷ trọng.\n- Sai ở phương án 3: window function không gộp dòng, đây là khác biệt chính chứ không phải tốc độ.\n- Sai ở phương án 4: hai vế bị nói ngược lại."
+    },
+    {
+      "id": "sql-d29-02",
+      "topic": "RANK",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Truy vấn dưới đây trả về cột `r` theo thứ tự `x` giảm dần. Dãy giá trị của `r` là gì?",
+      "code": "SELECT x,\n       RANK() OVER (ORDER BY x DESC) AS r\nFROM (VALUES (90), (85), (85), (70)) t(x)\nORDER BY x DESC;",
+      "codeLang": "sql",
+      "options": [
+        "1, 2, 2, 4",
+        "1, 2, 2, 3",
+        "1, 2, 3, 4",
+        "1, 1, 1, 2"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: `1, 2, 2, 4`. Hai giá trị 85 bằng nhau nên cùng hạng 2, và `RANK` **nhảy số**: hạng kế tiếp là 4 chứ không phải 3 (vì đã có 3 dòng đứng trước).\n- `1, 2, 2, 3` là kết quả của `DENSE_RANK`, không nhảy số.\n- `1, 2, 3, 4` là của `ROW_NUMBER`, luôn đánh số khác nhau.\n- `1, 1, 1, 2` không khớp với bất kỳ hàm nào vì 90 phải đứng riêng ở hạng 1."
+    },
+    {
+      "id": "sql-d29-03",
+      "topic": "RANK và top-N mỗi nhóm",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Lọc \"top 2 mỗi nhóm\" bằng `RANK() ... <= 2` ở truy vấn ngoài. Truy vấn dưới đây trả về bao nhiêu dòng?",
+      "code": "SELECT g, v FROM (\n  SELECT g, v,\n         RANK() OVER (PARTITION BY g ORDER BY v DESC) AS r\n  FROM (VALUES ('a', 100), ('a', 90), ('a', 90),\n               ('a', 80), ('b', 50)) t(g, v)\n) s\nWHERE r <= 2;",
+      "codeLang": "sql",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: 4. Nhóm `a` có hạng 1, 2, 2, 4 (hai giá trị 90 đồng hạng 2, `RANK` nhảy số nên giá trị 80 là hạng 4), nên lọc `r <= 2` giữ 3 dòng của nhóm `a`; nhóm `b` có 1 dòng hạng 1. Tổng 3 + 1 = 4.\n- 3 là kết quả nếu dùng `ROW_NUMBER()`: mỗi nhóm chỉ lấy đúng 2 dòng thì được 2 + 1 = 3. Đó là khác biệt: `RANK` giữ mọi dòng đồng hạng nên một nhóm có thể ra nhiều hơn N dòng.\n- 2 là quên nhóm `b`, `PARTITION BY` vẫn xếp hạng riêng từng nhóm.\n- 5 là không lọc gì: dòng 80 (hạng 4) vẫn bị loại bởi `r <= 2`."
+    },
+    {
+      "id": "sql-d29-04",
+      "topic": "Window function trong WHERE",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Câu lệnh nào gây lỗi khi chạy trên PostgreSQL?",
+      "options": [
+        "```sql\nSELECT * FROM (\n  SELECT name, ROW_NUMBER() OVER (ORDER BY price DESC) rn\n  FROM products) t\nWHERE rn <= 3;\n```",
+        "```sql\nSELECT name FROM products\nORDER BY RANK() OVER (ORDER BY price DESC)\nLIMIT 3;\n```",
+        "```sql\nWITH r AS (SELECT name, DENSE_RANK() OVER (ORDER BY price) k\n           FROM products)\nSELECT name FROM r WHERE k <= 3;\n```",
+        "```sql\nSELECT name FROM products\nWHERE ROW_NUMBER() OVER (ORDER BY price DESC) <= 3;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: phương án cuối. WHERE chạy **trước** window function nên không được dùng window function trong WHERE (lỗi `window functions are not allowed in WHERE`).\n- Phương án 1 tính `rn` trong subquery rồi lọc ở truy vấn ngoài, đúng cách.\n- Phương án 2 đặt window function trong `ORDER BY` cuối câu, được phép.\n- Phương án 3 tính hạng trong CTE rồi lọc, cũng đúng."
+    },
+    {
+      "id": "sql-d29-05",
+      "topic": "ROW_NUMBER, PARTITION BY",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Lấy sản phẩm **đắt nhất trong mỗi danh mục** (mỗi danh mục một dòng gồm `category_id`, `name`, `price`). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT category_id, name, price FROM products\nORDER BY price DESC LIMIT 1;\n```",
+        "```sql\nSELECT category_id, name, price FROM (\n  SELECT *, ROW_NUMBER() OVER (PARTITION BY category_id\n  ORDER BY price DESC) rn FROM products) t\nWHERE rn = 1;\n```",
+        "```sql\nSELECT category_id, name, price FROM (\n  SELECT *, ROW_NUMBER() OVER (PARTITION BY category_id\n  ORDER BY price) rn FROM products) t\nWHERE rn = 1;\n```",
+        "```sql\nSELECT category_id, name, MAX(price) FROM products\nGROUP BY category_id, name;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: phương án 2. `PARTITION BY category_id` chia từng danh mục, `ORDER BY price DESC` đưa món đắt nhất lên số 1, rồi lọc `rn = 1` ở truy vấn ngoài.\n- Phương án 1 chỉ cho đúng một dòng của cả bảng, không chia theo danh mục.\n- Phương án 3 thiếu `DESC` nên lấy món **rẻ nhất** mỗi danh mục.\n- Phương án 4 gom theo `category_id, name` nên mỗi sản phẩm là một nhóm riêng, ra lại toàn bộ sản phẩm."
+    },
+    {
+      "id": "sql-d29-06",
+      "topic": "Khung mặc định RANGE",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Hai dòng `id` 2 và 3 cùng ngày. Giá trị `s` của dòng `id = 2` là bao nhiêu?",
+      "code": "SELECT id, SUM(v) OVER (ORDER BY d) AS s\nFROM (VALUES (1, DATE '2025-01-01', 10),\n             (2, DATE '2025-01-02', 20),\n             (3, DATE '2025-01-02', 30),\n             (4, DATE '2025-01-03', 40)) t(id, d, v);",
+      "codeLang": "sql",
+      "options": [
+        "20",
+        "30",
+        "60",
+        "100"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: 60. Có `ORDER BY` mà không ghi khung nên khung mặc định là `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`. Dòng 2 và 3 cùng ngày là \"ngang hàng\" (peer) nên vào khung cùng nhau: 10 + 20 + 30 = 60, và dòng 3 cũng ra 60.\n- 20 là giá trị của riêng dòng 2, bạn quên cộng dòng 1 và dòng 3.\n- 30 = 10 + 20 là kết quả nếu khung là `ROWS` (theo từng dòng).\n- 100 là tổng toàn bộ, chỉ đúng với dòng cuối."
+    },
+    {
+      "id": "sql-d29-07",
+      "topic": "LAST_VALUE",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Giá trị `l` ở dòng có `x = 5` là bao nhiêu?",
+      "code": "SELECT x,\n       LAST_VALUE(x) OVER (ORDER BY x) AS l\nFROM (VALUES (5), (8), (3)) t(x);",
+      "codeLang": "sql",
+      "options": [
+        "5",
+        "3",
+        "8",
+        "NULL"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: 5. Khung mặc định kết thúc ở `CURRENT ROW`, nên \"dòng cuối của khung\" luôn là chính dòng hiện tại: `LAST_VALUE` trả về `x` của dòng đó (3, 5, 8 theo từng dòng).\n- 3 là `FIRST_VALUE`, không phải `LAST_VALUE`.\n- 8 sẽ đúng nếu mở khung tới `ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING`.\n- Không có dòng nào cho NULL vì khung luôn chứa ít nhất dòng hiện tại."
+    },
+    {
+      "id": "sql-d29-08",
+      "topic": "LAG",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Với `x` tăng dần (3, 5, 8, 9), dãy giá trị cột `l` là gì?",
+      "code": "SELECT x,\n       LAG(x, 2, 0) OVER (ORDER BY x) AS l\nFROM (VALUES (5), (8), (3), (9)) t(x)\nORDER BY x;",
+      "codeLang": "sql",
+      "options": [
+        "NULL, NULL, 3, 5",
+        "0, 3, 5, 8",
+        "0, 0, 5, 8",
+        "0, 0, 3, 5"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: `0, 0, 3, 5`. `LAG(x, 2, 0)` lấy giá trị **cách 2 dòng phía trước**; hai dòng đầu không có dòng đó nên nhận giá trị mặc định 0 (tham số thứ ba), các dòng sau lần lượt là 3 và 5.\n- `NULL, NULL, 3, 5` là kết quả nếu bỏ tham số mặc định.\n- `0, 3, 5, 8` là kết quả của `LAG(x, 1, 0)`, lùi 1 dòng.\n- `0, 0, 5, 8` bỏ sót giá trị 3 ở dòng thứ ba."
+    },
+    {
+      "id": "sql-d29-09",
+      "topic": "Lũy kế theo nhóm",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Với mỗi khoản thanh toán, tính **tổng tiền đã thanh toán lũy kế của riêng khách đó** theo thời gian (giữ nguyên từng khoản). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT o.customer_id, MIN(p.payment_id), SUM(p.amount)\nFROM payments p JOIN orders o USING (order_id)\nGROUP BY o.customer_id;\n```",
+        "```sql\nSELECT o.customer_id, p.payment_id,\n  SUM(p.amount) OVER (ORDER BY p.paid_at, p.payment_id)\nFROM payments p JOIN orders o USING (order_id);\n```",
+        "```sql\nSELECT o.customer_id, p.payment_id,\n  SUM(p.amount) OVER (PARTITION BY o.customer_id\n    ORDER BY p.paid_at, p.payment_id) AS luy_ke\nFROM payments p JOIN orders o USING (order_id);\n```",
+        "```sql\nSELECT o.customer_id, p.payment_id,\n  SUM(p.amount) OVER (PARTITION BY o.customer_id)\nFROM payments p JOIN orders o USING (order_id);\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: phương án 3. `PARTITION BY o.customer_id` làm lũy kế riêng cho từng khách, `ORDER BY p.paid_at, p.payment_id` cho thứ tự thời gian xác định.\n- Phương án 1 dùng `GROUP BY` nên mất từng khoản và chỉ còn tổng mỗi khách.\n- Phương án 2 thiếu `PARTITION BY`: lũy kế chạy chung cho mọi khách, \"chảy\" từ khách này sang khách khác.\n- Phương án 4 có `PARTITION BY` nhưng thiếu `ORDER BY`, nên mọi dòng của khách đều thấy cùng tổng cuối, không phải lũy kế."
+    },
+    {
+      "id": "sql-d29-10",
+      "topic": "Window chạy sau WHERE",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Window function chạy **sau** `WHERE`. Giá trị `s` ở dòng có `id = 2` là bao nhiêu?",
+      "code": "SELECT id, SUM(v) OVER () AS s\nFROM (VALUES (1, 10), (2, 20),\n             (3, 30), (4, 40)) t(id, v)\nWHERE v > 10;",
+      "codeLang": "sql",
+      "options": [
+        "100",
+        "20",
+        "70",
+        "90"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: 90. `WHERE v > 10` loại dòng `id = 1` trước, rồi `SUM(v) OVER ()` cộng trên cửa sổ là toàn bộ các dòng còn lại: 20 + 30 + 40 = 90, và mọi dòng đều nhận 90.\n- 100 là tổng cả bảng, chỉ đúng nếu window function chạy trước `WHERE`.\n- 20 là giá trị riêng của dòng 2, tức đã nhầm với không có window.\n- 70 = 30 + 40 là tổng các dòng sau dòng 2, không có khung nào như vậy vì `OVER ()` rỗng lấy cả cửa sổ."
+    },
+    {
+      "id": "sql-d29-11",
+      "topic": "CTE đệ quy đi xuống cây",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Liệt kê Lê Thị Hạnh (`employee_id = 2`) **và mọi cấp dưới của chị, kể cả gián tiếp**. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nWITH RECURSIVE t AS (\n  SELECT * FROM employees WHERE employee_id = 2\n  UNION ALL SELECT e.* FROM employees e\n  JOIN t ON e.employee_id = t.manager_id)\nSELECT employee_id FROM t;\n```",
+        "```sql\nWITH RECURSIVE t AS (\n  SELECT * FROM employees WHERE employee_id = 2\n  UNION ALL SELECT e.* FROM employees e\n  JOIN t ON e.manager_id = t.employee_id)\nSELECT employee_id FROM t;\n```",
+        "```sql\nSELECT employee_id FROM employees\nWHERE employee_id = 2 OR manager_id = 2;\n```",
+        "```sql\nWITH RECURSIVE t AS (\n  SELECT * FROM employees WHERE manager_id = 2\n  UNION ALL SELECT e.* FROM employees e\n  JOIN t ON e.manager_id = t.employee_id)\nSELECT employee_id FROM t;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: phương án 2. Phần neo lấy Hạnh; phần đệ quy tìm nhân viên có `manager_id` là một người vừa tìm được, nên đi **xuống** từng cấp (ra 2, 4, 5, 6, 8).\n- Phương án 1 đảo chiều JOIN (`e.employee_id = t.manager_id`) nên đi **lên** và chỉ ra Hạnh cùng giám đốc, không báo lỗi.\n- Phương án 3 chỉ lấy cấp dưới trực tiếp, thiếu Kiều Anh Thư (cấp dưới của Phạm Thị Thu).\n- Phương án 4 neo ở cấp dưới trực tiếp (`manager_id = 2`) nên thiếu chính Hạnh."
+    },
+    {
+      "id": "sql-d29-12",
+      "topic": "Kiểu dữ liệu của CTE đệ quy",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Câu lệnh nào gây lỗi khi chạy trên PostgreSQL?",
+      "options": [
+        "```sql\nWITH RECURSIVE t AS (\n  SELECT 1 AS n UNION ALL\n  SELECT n + 1 FROM t WHERE n < 3)\nSELECT n FROM t;\n```",
+        "```sql\nWITH RECURSIVE t AS (\n  SELECT category_id AS id, name::text AS p FROM categories\n  WHERE parent_id IS NULL UNION ALL\n  SELECT c.category_id, t.p || c.name FROM categories c\n  JOIN t ON c.parent_id = t.id) SELECT p FROM t;\n```",
+        "```sql\nWITH RECURSIVE t AS (\n  SELECT 1 AS n UNION\n  SELECT n + 1 FROM t WHERE n < 3)\nSELECT n FROM t;\n```",
+        "```sql\nWITH RECURSIVE t AS (\n  SELECT category_id AS id, name AS p FROM categories\n  WHERE parent_id IS NULL UNION ALL\n  SELECT c.category_id, t.p || c.name FROM categories c\n  JOIN t ON c.parent_id = t.id) SELECT p FROM t;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: phương án cuối. Cột `name` là `VARCHAR(100)` ở phần neo, nhưng phép nối `||` ở phần đệ quy cho kiểu `VARCHAR` không giới hạn nên PostgreSQL báo kiểu hai phần không khớp (`recursive query \"t\" column 2 has type character varying(100) in non-recursive term but type character varying overall`). Sửa bằng `name::text`.\n- Phương án 1 đếm 1 đến 3, kiểu `INT` ở cả hai phần nên chạy được.\n- Phương án 2 đã ép `name::text` ở phần neo nên khớp kiểu.\n- Phương án 3 dùng `UNION` thay `UNION ALL`, vẫn hợp lệ (chỉ loại dòng trùng)."
+    },
+    {
+      "id": "sql-d29-13",
+      "topic": "Điều kiện dừng đệ quy",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Truy vấn dưới đây trả về bao nhiêu dòng?",
+      "code": "WITH RECURSIVE t(n) AS (\n    VALUES (10)\n    UNION ALL\n    SELECT n - 3 FROM t WHERE n > 0\n)\nSELECT COUNT(*) FROM t;",
+      "codeLang": "sql",
+      "options": [
+        "4",
+        "6",
+        "5",
+        "3"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: 5. Các giá trị sinh ra: 10, 7, 4, 1, rồi từ n = 1 (vẫn thỏa `n > 0`) sinh thêm -2. Dòng -2 không thỏa `n > 0` nên đệ quy dừng. Tổng là 5 dòng.\n- 4 là bỏ quên dòng -2: `WHERE` chỉ kiểm tra dòng **cha** (dòng vòng trước), không kiểm tra dòng mới sinh.\n- 6 là đếm thêm một vòng nữa, nhưng từ -2 không còn sinh được dòng nào.\n- 3 là dừng quá sớm, tưởng điều kiện áp lên giá trị mới (chỉ lấy 10, 7, 4)."
+    },
+    {
+      "id": "sql-d29-14",
+      "topic": "Chống vòng lặp",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Dữ liệu cây bị nhập sai thành vòng (A là cha của B, B là cha của A) khiến CTE đệ quy chạy mãi. Cách nào xử lý đúng bản chất?",
+      "options": [
+        "Lưu mảng đường đi của từng dòng (hoặc dùng mệnh đề `CYCLE`) để dừng khi gặp lại một nút đã đi qua",
+        "Đổi `UNION ALL` thành `UNION`, luôn đủ để chặn vòng",
+        "Thêm `ORDER BY` vào phần đệ quy",
+        "Bỏ từ khóa `RECURSIVE`, PostgreSQL sẽ tự phát hiện vòng"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: theo dõi đường đi (mảng id đã qua) hoặc dùng `CYCLE ... SET ... USING ...` (PostgreSQL 14 trở lên) để nhận ra khi một nút lặp lại và dừng nhánh đó.\n- `UNION` chỉ loại dòng trùng **hệt nhau**; chỉ cần một cột như `cap` tăng mỗi vòng là không dòng nào trùng, vòng lặp vẫn chạy mãi.\n- `ORDER BY` trong phần đệ quy không ảnh hưởng điều kiện dừng.\n- Bỏ `RECURSIVE` thì truy vấn tự tham chiếu sẽ báo lỗi, chứ không tự chống vòng."
+    },
+    {
+      "id": "sql-d29-15",
+      "topic": "Trung bình trượt ROWS",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy",
+      "question": "Trung bình trượt 3 tháng, tháng nào cũng có dòng. Dãy giá trị cột `a` (theo `m` tăng dần) là gì?",
+      "code": "SELECT m,\n       ROUND(AVG(v) OVER (ORDER BY m\n         ROWS BETWEEN 2 PRECEDING AND CURRENT ROW)) AS a\nFROM (VALUES (1, 30), (2, 60),\n             (3, 90), (4, 120)) t(m, v)\nORDER BY m;",
+      "codeLang": "sql",
+      "options": [
+        "30, 45, 60, 90",
+        "30, 45, 60, 75",
+        "NULL, 45, 60, 90",
+        "30, 60, 90, 120"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: `30, 45, 60, 90`. Khung là dòng hiện tại cùng tối đa 2 dòng liền trước: tháng 1 chỉ có chính nó (30), tháng 2 là (30 + 60) / 2 = 45, tháng 3 là (30 + 60 + 90) / 3 = 60, tháng 4 là (60 + 90 + 120) / 3 = 90.\n- `30, 45, 60, 75` là trung bình lũy kế từ đầu (khung `UNBOUNDED PRECEDING`), không phải trượt 3 dòng.\n- `NULL, 45, 60, 90` sai vì khung không \"bịa\" thêm dòng: hai tháng đầu vẫn ra số, tính trên số dòng đang có.\n- `30, 60, 90, 120` là chính giá trị `v`, tức không có phép trung bình nào."
+    }
+  ]
+}

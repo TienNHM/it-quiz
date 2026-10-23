@@ -1,0 +1,93 @@
+[
+  {
+    "id": "sql-d18-02",
+    "kind": "find-error",
+    "options": [
+      "CREATE FUNCTION f() RETURNS trigger LANGUAGE plpgsql\nAS $$ BEGIN RETURN NULL; END $$;\nCREATE TRIGGER t\nBEFORE INSERT ON order_items\nREFERENCING NEW TABLE AS nr\nFOR EACH STATEMENT\nEXECUTE FUNCTION f();",
+      "CREATE FUNCTION f() RETURNS trigger LANGUAGE plpgsql\nAS $$ BEGIN RETURN NULL; END $$;\nCREATE TRIGGER t\nAFTER INSERT ON order_items\nREFERENCING NEW TABLE AS nr\nFOR EACH STATEMENT\nEXECUTE FUNCTION f();",
+      "CREATE FUNCTION f() RETURNS trigger LANGUAGE plpgsql\nAS $$ BEGIN RETURN NULL; END $$;\nCREATE TRIGGER t\nAFTER UPDATE ON products\nREFERENCING OLD TABLE AS o NEW TABLE AS n\nFOR EACH STATEMENT\nEXECUTE FUNCTION f();",
+      "CREATE FUNCTION f() RETURNS trigger LANGUAGE plpgsql\nAS $$ BEGIN RETURN NULL; END $$;\nCREATE TRIGGER t\nAFTER DELETE ON order_items\nREFERENCING OLD TABLE AS o\nFOR EACH STATEMENT\nEXECUTE FUNCTION f();"
+    ]
+  },
+  {
+    "id": "sql-d18-03",
+    "kind": "predict",
+    "query": "CREATE FUNCTION skip_row() RETURNS trigger LANGUAGE plpgsql\nAS $$ BEGIN RETURN NULL; END $$;\n\nCREATE TRIGGER trg_skip\nBEFORE INSERT ON categories\nFOR EACH ROW EXECUTE FUNCTION skip_row();\n\nINSERT INTO categories (name)\nVALUES ('A'), ('B'), ('C');\n\nSELECT count(*) FROM categories\nWHERE name IN ('A', 'B', 'C');",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d18-04",
+    "kind": "choose-query",
+    "ordered": true,
+    "probe": "UPDATE products SET price = price - 1000000 WHERE product_id = 5;\nUPDATE products SET price = price WHERE product_id = 6;\nUPDATE products SET name = name || ' (mới)' WHERE product_id = 7;\nSELECT product_id, old_price, new_price FROM product_price_log ORDER BY product_id;",
+    "options": [
+      "CREATE TABLE product_price_log (\n  product_id INT,\n  old_price  NUMERIC,\n  new_price  NUMERIC\n);\n\nCREATE FUNCTION log_price_change()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  INSERT INTO product_price_log\n  VALUES (OLD.product_id, OLD.price, NEW.price);\n  RETURN NULL;\nEND $$;\nCREATE TRIGGER trg_log\nAFTER UPDATE ON products\nFOR EACH ROW\nEXECUTE FUNCTION log_price_change();",
+      "CREATE TABLE product_price_log (\n  product_id INT,\n  old_price  NUMERIC,\n  new_price  NUMERIC\n);\n\nCREATE FUNCTION log_price_change()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  INSERT INTO product_price_log\n  VALUES (OLD.product_id, OLD.price, NEW.price);\n  RETURN NULL;\nEND $$;\nCREATE TRIGGER trg_log\nAFTER UPDATE OF price ON products\nFOR EACH ROW\nWHEN (OLD.price IS DISTINCT FROM NEW.price)\nEXECUTE FUNCTION log_price_change();",
+      "CREATE TABLE product_price_log (\n  product_id INT,\n  old_price  NUMERIC,\n  new_price  NUMERIC\n);\n\nCREATE FUNCTION log_price_change()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  INSERT INTO product_price_log\n  VALUES (OLD.product_id, OLD.price, NEW.price);\n  RETURN NULL;\nEND $$;\nCREATE TRIGGER trg_log\nAFTER UPDATE OF price ON products\nFOR EACH ROW\nWHEN (OLD.price = NEW.price)\nEXECUTE FUNCTION log_price_change();",
+      "CREATE TABLE product_price_log (\n  product_id INT,\n  old_price  NUMERIC,\n  new_price  NUMERIC\n);\n\nCREATE FUNCTION log_price_change()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  INSERT INTO product_price_log\n  VALUES (OLD.product_id, OLD.price, NEW.price);\n  RETURN NULL;\nEND $$;\nCREATE TRIGGER trg_log\nAFTER UPDATE OF price ON products\nFOR EACH STATEMENT\nEXECUTE FUNCTION log_price_change();"
+    ]
+  },
+  {
+    "id": "sql-d18-05",
+    "kind": "choose-query",
+    "probe": "INSERT INTO customers (full_name, email)\nVALUES ('Lê Thị Vy', '  Vy.Le@Gmail.COM ');\nSELECT count(*), max(email) FROM customers WHERE full_name = 'Lê Thị Vy';",
+    "options": [
+      "CREATE FUNCTION customers_normalize_email()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  NEW.email := lower(trim(NEW.email));\nEND;\n$$;\n\nCREATE TRIGGER trg_normalize_email\nBEFORE INSERT ON customers\nFOR EACH ROW\nEXECUTE FUNCTION customers_normalize_email();",
+      "CREATE FUNCTION customers_normalize_email()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  NEW.email := lower(trim(NEW.email));\n  RETURN NULL;\nEND;\n$$;\n\nCREATE TRIGGER trg_normalize_email\nBEFORE INSERT ON customers\nFOR EACH ROW\nEXECUTE FUNCTION customers_normalize_email();",
+      "CREATE FUNCTION customers_normalize_email()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  NEW.email := lower(trim(NEW.email));\n  RETURN NEW;\nEND;\n$$;\n\nCREATE TRIGGER trg_normalize_email\nBEFORE INSERT ON customers\nFOR EACH ROW\nEXECUTE FUNCTION customers_normalize_email();",
+      "CREATE FUNCTION customers_normalize_email()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  UPDATE customers SET email = lower(trim(email))\n  WHERE customer_id = NEW.customer_id;\n  RETURN NEW;\nEND;\n$$;\n\nCREATE TRIGGER trg_normalize_email\nBEFORE INSERT ON customers\nFOR EACH ROW\nEXECUTE FUNCTION customers_normalize_email();"
+    ]
+  },
+  {
+    "id": "sql-d18-06",
+    "kind": "choose-query",
+    "ordered": true,
+    "probe": "INSERT INTO order_items (order_id, product_id, quantity, unit_price)\nVALUES (40, 16, 1, NULL), (40, 22, 1, 800000);\nSELECT product_id, unit_price FROM order_items\nWHERE order_id = 40 AND product_id IN (16, 22)\nORDER BY product_id;",
+    "options": [
+      "CREATE FUNCTION order_items_fill_price()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  NEW.unit_price := coalesce(NEW.unit_price,\n    (SELECT price FROM products p\n     WHERE p.product_id = NEW.product_id));\n  RETURN NEW; END;\n$$;\n\nCREATE TRIGGER trg_fill_price\nBEFORE INSERT ON order_items\nFOR EACH ROW\nEXECUTE FUNCTION order_items_fill_price();",
+      "CREATE FUNCTION order_items_fill_price()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  SELECT price INTO NEW.unit_price FROM products\n  WHERE product_id = NEW.product_id;\n  RETURN NEW; END;\n$$;\n\nCREATE TRIGGER trg_fill_price\nBEFORE INSERT ON order_items\nFOR EACH ROW\nEXECUTE FUNCTION order_items_fill_price();",
+      "CREATE FUNCTION order_items_fill_price()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  NEW.unit_price := coalesce(NEW.unit_price,\n    (SELECT price FROM products p\n     WHERE p.product_id = NEW.product_id));\n  RETURN NULL; END;\n$$;\n\nCREATE TRIGGER trg_fill_price\nBEFORE INSERT ON order_items\nFOR EACH ROW\nEXECUTE FUNCTION order_items_fill_price();",
+      "CREATE FUNCTION order_items_fill_price()\nRETURNS trigger LANGUAGE plpgsql AS $$\nDECLARE v NUMERIC;\nBEGIN\n  SELECT price INTO v FROM products\n  WHERE product_id = NEW.product_id;\n  RETURN NEW; END;\n$$;\n\nCREATE TRIGGER trg_fill_price\nBEFORE INSERT ON order_items\nFOR EACH ROW\nEXECUTE FUNCTION order_items_fill_price();"
+    ]
+  },
+  {
+    "id": "sql-d18-07",
+    "kind": "predict",
+    "query": "CREATE TABLE product_update_log (rows_changed INT);\n\nCREATE FUNCTION log_stmt() RETURNS trigger\nLANGUAGE plpgsql AS $$\nBEGIN\n  INSERT INTO product_update_log\n  SELECT count(*) FROM new_rows;\n  RETURN NULL;\nEND $$;\n\nCREATE TRIGGER trg_stmt\nAFTER UPDATE ON products\nREFERENCING NEW TABLE AS new_rows\nFOR EACH STATEMENT\nEXECUTE FUNCTION log_stmt();\n\nUPDATE products SET stock_quantity = stock_quantity + 1\nWHERE category_id = 11;   -- khớp 3 dòng\nUPDATE products SET stock_quantity = stock_quantity + 1\nWHERE product_id = 999;   -- khớp 0 dòng\nUPDATE products SET stock_quantity = stock_quantity + 1\nWHERE category_id = 10;   -- khớp 4 dòng\n\nSELECT count(*) FROM product_update_log;",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d18-08",
+    "kind": "find-error",
+    "options": [
+      "CREATE FUNCTION f() RETURNS trigger LANGUAGE plpgsql\nAS $$ BEGIN RETURN NULL; END $$;\nCREATE TRIGGER t\nBEFORE UPDATE OF price ON products\nFOR EACH ROW\nWHEN (OLD.price <> NEW.price)\nEXECUTE FUNCTION f();",
+      "CREATE FUNCTION f() RETURNS trigger LANGUAGE plpgsql\nAS $$ BEGIN RETURN NULL; END $$;\nCREATE TRIGGER t\nAFTER DELETE ON order_items\nFOR EACH ROW\nWHEN (OLD.quantity > 5)\nEXECUTE FUNCTION f();",
+      "CREATE FUNCTION f() RETURNS trigger LANGUAGE plpgsql\nAS $$ BEGIN RETURN NULL; END $$;\nCREATE TRIGGER t\nAFTER INSERT ON order_items\nFOR EACH ROW\nWHEN (NEW.quantity > 5)\nEXECUTE FUNCTION f();",
+      "CREATE FUNCTION f() RETURNS trigger LANGUAGE plpgsql\nAS $$ BEGIN RETURN NULL; END $$;\nCREATE TRIGGER t\nBEFORE INSERT ON products\nFOR EACH ROW\nWHEN (OLD.price > 0)\nEXECUTE FUNCTION f();"
+    ]
+  },
+  {
+    "id": "sql-d18-09",
+    "kind": "predict",
+    "query": "CREATE FUNCTION orders_check_status()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  IF NOT (\n    (OLD.status = 'pending' AND NEW.status IN ('paid', 'cancelled'))\n    OR (OLD.status = 'paid'\n        AND NEW.status IN ('shipped', 'cancelled'))\n    OR (OLD.status = 'shipped' AND NEW.status = 'delivered')\n  ) THEN\n    RAISE EXCEPTION 'chuyển trạng thái không hợp lệ'\n      USING ERRCODE = 'check_violation';\n  END IF;\n  RETURN NEW;\nEND $$;\n\nCREATE TRIGGER trg_orders_check_status\nBEFORE UPDATE OF status ON orders\nFOR EACH ROW\nWHEN (OLD.status IS DISTINCT FROM NEW.status)\nEXECUTE FUNCTION orders_check_status();\n\nDO $$\nBEGIN\n  UPDATE orders SET status = 'cancelled'\n  WHERE status IN ('paid', 'shipped');\nEXCEPTION WHEN check_violation THEN\n  NULL;   -- nuốt lỗi\nEND $$;\n\nSELECT count(*) FROM orders\nWHERE status = 'cancelled';",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d18-10",
+    "kind": "predict",
+    "query": "CREATE FUNCTION order_items_decrease_stock()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  UPDATE products\n  SET stock_quantity = stock_quantity - NEW.quantity\n  WHERE product_id = NEW.product_id\n    AND stock_quantity >= NEW.quantity;\n  RETURN NULL;\nEND $$;\n\nCREATE TRIGGER trg_decrease_stock\nAFTER INSERT ON order_items\nFOR EACH ROW\nEXECUTE FUNCTION order_items_decrease_stock();\n\n-- Code ứng dụng (cũ) vẫn tự trừ kho\nINSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (40, 16, 3, 399000);\n\nUPDATE products\nSET stock_quantity = stock_quantity - 3\nWHERE product_id = 16;\n\nSELECT stock_quantity FROM products\nWHERE product_id = 16;",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d18-01",
+    "kind": "predict",
+    "query": "CREATE FUNCTION customers_lower_email()\nRETURNS trigger LANGUAGE plpgsql AS $$\nBEGIN\n  NEW.email := lower(NEW.email);\n  RETURN NEW;\nEND $$;\n\nCREATE TRIGGER trg_lower_email\nAFTER INSERT ON customers\nFOR EACH ROW\nEXECUTE FUNCTION customers_lower_email();\n\nINSERT INTO customers (full_name, email)\nVALUES ('Lê Thị Vy', 'VY.LE@GMAIL.COM');\n\nSELECT email FROM customers\nWHERE full_name = 'Lê Thị Vy';",
+    "format": "scalar"
+  },
+  {
+    "id": "sql-d18-11",
+    "kind": "predict",
+    "query": "CREATE TABLE cat_log (op TEXT);\n\nCREATE FUNCTION cat_audit() RETURNS trigger\nLANGUAGE plpgsql AS $$\nBEGIN\n  INSERT INTO cat_log VALUES (TG_OP);\n  RETURN NULL;\nEND $$;\n\nCREATE TRIGGER trg_cat\nAFTER INSERT OR DELETE ON categories\nFOR EACH ROW\nEXECUTE FUNCTION cat_audit();\n\nINSERT INTO categories (name)\nVALUES ('A'), ('B'), ('C');\nDELETE FROM categories\nWHERE name IN ('A', 'B');\n\nSELECT count(*) FROM cat_log;",
+    "format": "scalar"
+  }
+]

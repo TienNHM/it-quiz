@@ -1,0 +1,239 @@
+{
+  "id": "sql-d07",
+  "title": "Ngày 7: Ôn tập 1 (Ngày 1 đến 6)",
+  "description": "Ôn lại schema, ràng buộc, WHERE/NULL, ORDER BY/LIMIT, biểu thức, hàm và INSERT/UPDATE/DELETE trên DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d07-01",
+      "topic": "Khóa chính ghép",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 2)",
+      "question": "Bảng `order_items` có khóa chính ghép `(order_id, product_id)`. Điều này có nghĩa là gì?",
+      "options": [
+        "mỗi đơn chỉ có một dòng cho mỗi sản phẩm; cùng sản phẩm không lặp lại trong một đơn",
+        "mỗi `order_id` chỉ xuất hiện đúng một lần trong bảng",
+        "mỗi `product_id` chỉ được bán trong đúng một đơn",
+        "hai cột này được phép NULL nhưng không được trùng nhau"
+      ],
+      "answer": 0,
+      "explanation": "Khóa chính ghép đòi **cặp** `(order_id, product_id)` là duy nhất, nên một đơn có nhiều dòng (nhiều sản phẩm) nhưng mỗi sản phẩm chỉ một dòng, muốn mua nhiều thì tăng `quantity`.\n- Một đơn có nhiều sản phẩm, nên `order_id` lặp lại là bình thường.\n- Một sản phẩm bán được trong nhiều đơn, nên `product_id` cũng lặp lại.\n- Khóa chính luôn ngầm `NOT NULL`, các cột của nó không bao giờ NULL."
+    },
+    {
+      "id": "sql-d07-02",
+      "topic": "BETWEEN",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 3, 4)",
+      "question": "Liệt kê `sku` của sản phẩm có giá từ 4.290.000 đến 9.490.000, **tính cả hai đầu**, giá cao xếp trước.",
+      "options": [
+        "```sql\nSELECT sku FROM products\nWHERE price BETWEEN 4290000 AND 9490000\nORDER BY price DESC;\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price > 4290000 AND price < 9490000\nORDER BY price DESC;\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price BETWEEN 9490000 AND 4290000\nORDER BY price DESC;\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price BETWEEN 4290000 AND 9490000\nORDER BY price;\n```"
+      ],
+      "answer": 0,
+      "explanation": "`BETWEEN a AND b` lấy cả hai đầu, và `DESC` xếp giá cao trước.\n- Phương án dùng `>` và `<` bỏ mất hai sản phẩm đúng giá biên (PC-002 và TAB-002).\n- `BETWEEN` với cận lớn đứng trước cận nhỏ luôn cho 0 dòng, vì PostgreSQL không tự đảo cận.\n- Phương án thiếu `DESC` đúng tập dòng nhưng thứ tự tăng dần, ngược yêu cầu."
+    },
+    {
+      "id": "sql-d07-03",
+      "topic": "IS NULL",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 3)",
+      "question": "Lấy `customer_id` của khách **thiếu số điện thoại hoặc thiếu email**. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT customer_id FROM customers\nWHERE phone = NULL OR email = NULL;\n```",
+        "```sql\nSELECT customer_id FROM customers\nWHERE phone IS NULL AND email IS NULL;\n```",
+        "```sql\nSELECT customer_id FROM customers\nWHERE phone IS NULL OR email IS NULL;\n```",
+        "```sql\nSELECT customer_id FROM customers\nWHERE phone IS NULL OR email IS NOT NULL;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Cần `IS NULL` nối bằng `OR`: chỉ cần thiếu một trong hai là đủ. Kết quả thật là 5 khách (3, 5, 7, 13, 17).\n- `= NULL` luôn cho `UNKNOWN`, truy vấn trả 0 dòng.\n- `AND` đòi thiếu cả hai, chỉ còn khách 17.\n- `phone IS NULL OR email IS NOT NULL` lấy cả những người có email đầy đủ, ra rất nhiều dòng thừa."
+    },
+    {
+      "id": "sql-d07-04",
+      "topic": "Thứ tự thực thi",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 3)",
+      "question": "Câu lệnh nào gây **lỗi** khi chạy?",
+      "options": [
+        "```sql\nSELECT * FROM customers\nWHERE phone = NULL;\n```",
+        "```sql\nSELECT sku, price AS gia\nFROM products\nWHERE gia > 1000000;\n```",
+        "```sql\nSELECT sku, price AS gia\nFROM products\nORDER BY gia DESC;\n```",
+        "```sql\nSELECT sku FROM products\nORDER BY price LIMIT 3;\n```"
+      ],
+      "answer": 1,
+      "explanation": "`WHERE` chạy **trước** `SELECT`, nên chưa biết alias `gia` và báo lỗi cột không tồn tại. Phải viết `WHERE price > 1000000`.\n- `phone = NULL` không lỗi, chỉ luôn trả 0 dòng (lỗi logic, không phải lỗi cú pháp).\n- `ORDER BY` chạy sau `SELECT` nên dùng được alias.\n- `ORDER BY price LIMIT 3` là cú pháp hợp lệ bình thường."
+    },
+    {
+      "id": "sql-d07-05",
+      "topic": "Logic ba trị",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 3)",
+      "question": "Bảng `customers` có 18 khách, 4 người ở `Hà Nội`, 2 người có `city` là NULL. Truy vấn này trả bao nhiêu dòng?",
+      "code": "SELECT * FROM customers\nWHERE city <> 'Hà Nội';",
+      "codeLang": "sql",
+      "options": [
+        "12",
+        "14",
+        "18",
+        "16"
+      ],
+      "answer": 0,
+      "explanation": "Kết quả là **12** dòng: 18 - 4 = 14, nhưng hai khách có `city` NULL bị loại vì `NULL <> 'Hà Nội'` cho `UNKNOWN`, và `WHERE` chỉ giữ dòng `TRUE`.\n- 14 là con số bạn mong đợi nếu quên NULL.\n- 18 là toàn bộ bảng, như thể không có gì bị lọc.\n- 16 là kết quả nếu chỉ loại nhầm một nửa số dòng NULL hoặc đếm sai số khách ở Hà Nội."
+    },
+    {
+      "id": "sql-d07-06",
+      "topic": "Chia nguyên",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 5)",
+      "question": "Sản phẩm `PC-001` có `stock_quantity` là 12 (kiểu INT). Truy vấn này trả giá trị nào?",
+      "code": "SELECT stock_quantity / 5\nFROM products\nWHERE sku = 'PC-001';",
+      "codeLang": "sql",
+      "options": [
+        "2.4",
+        "3",
+        "2",
+        "2.40"
+      ],
+      "answer": 2,
+      "explanation": "`INT / INT` là phép chia nguyên: 12 / 5 = **2**, phần dư bị bỏ chứ không làm tròn.\n- 2.4 và 2.40 chỉ có khi một vế là số thập phân, ví dụ `12 / 5.0`.\n- 3 là kết quả của làm tròn lên, nhưng PostgreSQL cắt bỏ phần thập phân chứ không làm tròn."
+    },
+    {
+      "id": "sql-d07-07",
+      "topic": "AND/OR và ngoặc",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 3)",
+      "question": "Tìm `order_id` của các đơn đang xử lý (`paid` hoặc `shipped`) giao tới `TP. Hồ Chí Minh`.",
+      "options": [
+        "```sql\nSELECT order_id FROM orders\nWHERE status = 'paid' OR status = 'shipped'\n  AND shipping_city = 'TP. Hồ Chí Minh';\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE (status = 'paid' OR status = 'shipped')\n  AND shipping_city = 'TP. Hồ Chí Minh';\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE status IN ('paid', 'shipped')\n   OR shipping_city = 'TP. Hồ Chí Minh';\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE status = 'paid' AND status = 'shipped'\n  AND shipping_city = 'TP. Hồ Chí Minh';\n```"
+      ],
+      "answer": 1,
+      "explanation": "`AND` ưu tiên hơn `OR`, nên khi trộn phải bọc phần `OR` trong ngoặc: `(paid OR shipped) AND Hà Nội`.\n- Không ngoặc, câu hiểu thành `paid OR (shipped AND Hà Nội)`: mọi đơn `paid` lọt vào, kể cả đơn giao nơi khác (như hai đơn `paid` ở Hà Nội), nên thừa dòng.\n- `IN (...) OR city = ...` lấy đơn đang xử lý ở bất kỳ đâu cộng mọi đơn giao TP. Hồ Chí Minh, quá rộng.\n- Một dòng không thể vừa `paid` vừa `shipped`, nên `AND` giữa hai trạng thái trả 0 dòng."
+    },
+    {
+      "id": "sql-d07-08",
+      "topic": "ILIKE",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 3)",
+      "question": "Người dùng gõ `logitech` (chữ thường). Truy vấn nào tìm được các sản phẩm Logitech dựa vào tên?",
+      "options": [
+        "```sql\nSELECT name FROM products\nWHERE name LIKE '%logitech%';\n```",
+        "```sql\nSELECT name FROM products\nWHERE name ILIKE 'logitech%';\n```",
+        "```sql\nSELECT name FROM products\nWHERE name ILIKE '%logitech%';\n```",
+        "```sql\nSELECT name FROM products\nWHERE name ILIKE 'logitech';\n```"
+      ],
+      "answer": 2,
+      "explanation": "`ILIKE` không phân biệt hoa thường, và `%...%` cho phép từ khóa nằm ở giữa tên (\"Chuột Logitech G102\"). Ra 2 sản phẩm.\n- `LIKE` phân biệt hoa thường: `logitech` không khớp `Logitech`, 0 dòng.\n- `'logitech%'` đòi tên **bắt đầu** bằng từ khóa, nhưng tên bắt đầu bằng \"Chuột\".\n- `ILIKE 'logitech'` không có `%` nên đòi tên đúng bằng \"logitech\"."
+    },
+    {
+      "id": "sql-d07-09",
+      "topic": "NULLS LAST",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 4, 5)",
+      "question": "Lấy `sku` của 3 sản phẩm có **tỉ lệ lãi trên giá bán cao nhất**. Sản phẩm chưa có giá nhập (`cost_price` NULL) không được chiếm chỗ.",
+      "options": [
+        "```sql\nSELECT sku FROM products\nORDER BY (price - cost_price) * 100.0 / price\n  DESC LIMIT 3;\n```",
+        "```sql\nSELECT sku FROM products\nORDER BY (price - cost_price) * 100.0 / price\n  DESC NULLS LAST LIMIT 3;\n```",
+        "```sql\nSELECT sku FROM products\nORDER BY (price - cost_price) * 100.0 / price\n  NULLS LAST LIMIT 3;\n```",
+        "```sql\nSELECT sku FROM products\nWHERE cost_price = NULL\nORDER BY price DESC LIMIT 3;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Khi sắp `DESC`, PostgreSQL mặc định đặt NULL **lên đầu**, nên phải thêm `NULLS LAST`. Kết quả đúng: ACC-008, ACC-001, ACC-007.\n- Bản thiếu `NULLS LAST` đưa HP Pavilion và Lót chuột (chưa có giá nhập) lên đầu.\n- Bản có `NULLS LAST` nhưng không `DESC` sắp tăng dần, ra 3 sản phẩm lãi thấp nhất.\n- `cost_price = NULL` không bao giờ đúng, 0 dòng."
+    },
+    {
+      "id": "sql-d07-10",
+      "topic": "LIMIT và OFFSET",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 4)",
+      "question": "Truy vấn này trả về những `sku` nào (theo thứ tự hiển thị)?",
+      "code": "SELECT sku FROM products\nORDER BY price DESC, product_id\nLIMIT 2 OFFSET 4;",
+      "codeLang": "sql",
+      "options": [
+        "LAP-003, PHN-001",
+        "PHN-002, LAP-004",
+        "PHN-001, PHN-002",
+        "LAP-005, LAP-003"
+      ],
+      "answer": 2,
+      "explanation": "Thứ tự giá giảm dần: LAP-001, LAP-002, LAP-005, LAP-003, PHN-001, PHN-002, ... `OFFSET 4` bỏ qua 4 dòng đầu, `LIMIT 2` lấy 2 dòng tiếp: **PHN-001, PHN-002**.\n- `LAP-003, PHN-001` là kết quả khi `OFFSET 3` (đếm lệch một).\n- `PHN-002, LAP-004` ứng với `OFFSET 5`.\n- `LAP-005, LAP-003` ứng với `OFFSET 2`."
+    },
+    {
+      "id": "sql-d07-11",
+      "topic": "ON CONFLICT",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 6)",
+      "question": "Danh mục `Chuột & Bàn phím` đã tồn tại với `parent_id` là 9. Muốn thêm lại danh mục này với `parent_id` NULL, và nếu trùng tên thì **cập nhật** `parent_id` về NULL (không báo lỗi, không tạo dòng mới). Lệnh nào đúng?",
+      "options": [
+        "```sql\nINSERT INTO categories (name, parent_id)\nVALUES ('Chuột & Bàn phím', NULL)\nON CONFLICT (name) DO NOTHING;\n```",
+        "```sql\nINSERT INTO categories (name, parent_id)\nVALUES ('Chuột & Bàn phím', NULL);\n```",
+        "```sql\nINSERT INTO categories (name, parent_id)\nVALUES ('Chuột & Bàn phím', NULL)\nON CONFLICT DO UPDATE\nSET parent_id = EXCLUDED.parent_id;\n```",
+        "```sql\nINSERT INTO categories (name, parent_id)\nVALUES ('Chuột & Bàn phím', NULL)\nON CONFLICT (name) DO UPDATE\nSET parent_id = EXCLUDED.parent_id;\n```"
+      ],
+      "answer": 3,
+      "explanation": "`ON CONFLICT (name) DO UPDATE SET parent_id = EXCLUDED.parent_id` bắt xung đột trên cột `name` (UNIQUE) rồi ghi đè bằng giá trị định chèn (`EXCLUDED`), nên dòng cũ có `parent_id` NULL và không có dòng mới.\n- `DO NOTHING` không lỗi nhưng bỏ qua, `parent_id` vẫn là 9.\n- `INSERT` trơn vi phạm ràng buộc `UNIQUE` của `name`, báo lỗi.\n- `DO UPDATE` mà thiếu đích xung đột `(name)` bị PostgreSQL từ chối: bắt buộc phải nêu cột hoặc ràng buộc."
+    },
+    {
+      "id": "sql-d07-12",
+      "topic": "COALESCE",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 5)",
+      "question": "Tạo danh bạ một cột cho khách ở `Hà Nội`, dạng `Tên - Số điện thoại`; ai chưa có số thì ghi `chưa có SĐT`, sắp theo tên.",
+      "options": [
+        "```sql\nSELECT full_name || ' - ' || phone\nFROM customers WHERE city = 'Hà Nội'\nORDER BY full_name;\n```",
+        "```sql\nSELECT COALESCE(full_name || ' - ' || phone,\n  'chưa có SĐT')\nFROM customers WHERE city = 'Hà Nội'\nORDER BY full_name;\n```",
+        "```sql\nSELECT full_name || ' - ' ||\n  NULLIF(phone, 'chưa có SĐT')\nFROM customers WHERE city = 'Hà Nội'\nORDER BY full_name;\n```",
+        "```sql\nSELECT full_name || ' - ' ||\n  COALESCE(phone, 'chưa có SĐT')\nFROM customers WHERE city = 'Hà Nội'\nORDER BY full_name;\n```"
+      ],
+      "answer": 3,
+      "explanation": "`COALESCE` phải bọc riêng cột `phone`, để chỉ phần số điện thoại được thay: `Đặng Thu Giang - chưa có SĐT`.\n- Nối thẳng `|| phone` thì khách thiếu số cho ra NULL cả chuỗi, dòng danh bạ trống.\n- Bọc `COALESCE` quanh cả chuỗi nối chỉ thay được cả dòng bằng \"chưa có SĐT\", mất tên khách.\n- `NULLIF` làm việc ngược lại (đổi giá trị bằng nhau thành NULL), nên vẫn ra NULL cho khách thiếu số."
+    },
+    {
+      "id": "sql-d07-13",
+      "topic": "ON DELETE CASCADE",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 2, 6)",
+      "question": "Đơn hàng số 5 có 1 dòng trong `order_items`. Sau khi chạy lệnh xóa đơn này, `SELECT * FROM order_items WHERE order_id = 5` trả bao nhiêu dòng? (Bảng `order_items` khai báo `ON DELETE CASCADE`.)",
+      "code": "DELETE FROM orders WHERE order_id = 5;",
+      "codeLang": "sql",
+      "options": [
+        "1",
+        "0",
+        "lỗi vì còn dòng con tham chiếu",
+        "2"
+      ],
+      "answer": 1,
+      "explanation": "`ON DELETE CASCADE` khiến xóa dòng cha kéo theo xóa các dòng con, nên không còn dòng nào: **0**.\n- 1 là số dòng trước khi xóa; nó chỉ còn nguyên nếu khóa ngoại không có `CASCADE`, mà ở đây thì có.\n- Lỗi vì còn dòng con chỉ xảy ra với khóa ngoại không `CASCADE` (ví dụ xóa một sản phẩm đã từng bán).\n- 2 không có cơ sở: đơn 5 chỉ có 1 dòng hàng."
+    },
+    {
+      "id": "sql-d07-14",
+      "topic": "UPDATE ... FROM",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 6)",
+      "question": "Tăng 3% giá (làm tròn đến nghìn) cho mọi sản phẩm thuộc danh mục tên `Chuột & Bàn phím`, chỉ biết tên danh mục. Lệnh nào đúng?",
+      "options": [
+        "```sql\nUPDATE products\nSET price = ROUND(price * 1.03, -3)\nFROM categories\nWHERE categories.category_id = products.category_id\n  AND categories.name = 'Chuột & Bàn phím';\n```",
+        "```sql\nUPDATE products\nSET price = ROUND(price * 0.03, -3)\nFROM categories\nWHERE categories.category_id = products.category_id\n  AND categories.name = 'Chuột & Bàn phím';\n```",
+        "```sql\nUPDATE products\nSET price = ROUND(price * 1.03, -3)\nFROM categories\nWHERE categories.name = 'Chuột & Bàn phím';\n```",
+        "```sql\nUPDATE products\nSET price = ROUND(price * 1.03, -3)\nWHERE category_id = 9;\n```"
+      ],
+      "answer": 0,
+      "explanation": "`UPDATE ... FROM` cần điều kiện nối `categories.category_id = products.category_id` cùng điều kiện lọc theo tên.\n- Thiếu điều kiện nối, mỗi sản phẩm ghép với danh mục thỏa tên nên **mọi** sản phẩm đều bị tăng giá, thảm họa thật.\n- `price * 0.03` đặt giá bằng 3% giá cũ thay vì cộng thêm 3%.\n- `category_id = 9` là danh mục cha `Phụ kiện`, không có sản phẩm nào gắn trực tiếp, nên không sửa dòng nào (danh mục `Chuột & Bàn phím` là 10)."
+    },
+    {
+      "id": "sql-d07-15",
+      "topic": "Ràng buộc CHECK",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 2, 6)",
+      "question": "Câu lệnh nào gây **lỗi** khi chạy trên DSC Shop?",
+      "options": [
+        "```sql\nINSERT INTO order_items\n  (order_id, product_id, quantity, unit_price)\nVALUES (1, 1, 1, 100);\n```",
+        "```sql\nINSERT INTO order_items\n  (order_id, product_id, quantity, unit_price,\n   discount)\nVALUES (1, 2, 1, 100, 1.5);\n```",
+        "```sql\nUPDATE products SET price = price * 2\nWHERE sku = 'ACC-001';\n```",
+        "```sql\nINSERT INTO categories (name, parent_id)\nVALUES ('Máy in', NULL);\n```"
+      ],
+      "answer": 1,
+      "explanation": "`discount` có `CHECK (discount BETWEEN 0 AND 1)`, nên `1.5` bị từ chối dù kiểu `numeric(3,2)` chứa được số này.\n- Phương án thứ nhất bỏ qua `discount`, nên dùng `DEFAULT 0`; cặp `(1, 1)` chưa tồn tại nên không vi phạm khóa chính.\n- `UPDATE` tăng giá gấp đôi vẫn thỏa `price >= 0`.\n- Thêm danh mục mới với `parent_id` NULL là hợp lệ (danh mục gốc)."
+    },
+    {
+      "id": "sql-d07-16",
+      "topic": "Lọc theo khoảng thời gian",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 5)",
+      "question": "Lấy `order_id` của mọi đơn đặt trong **tháng 6/2025** (`order_date` có cả giờ; có đơn đặt lúc 22:05 ngày 30/6). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT order_id FROM orders\nWHERE order_date BETWEEN '2025-06-01'\n  AND '2025-06-30';\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE EXTRACT(MONTH FROM order_date) = 6;\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE order_date >= '2025-06-01'\n  AND order_date < '2025-06-30';\n```",
+        "```sql\nSELECT order_id FROM orders\nWHERE order_date >= '2025-06-01'\n  AND order_date < '2025-07-01';\n```"
+      ],
+      "answer": 3,
+      "explanation": "Điều kiện khoảng `>= ngày đầu tháng AND < ngày đầu tháng sau` lấy trọn tháng, kể cả đơn lúc 22:05 ngày 30/6 (đơn 11 và 12).\n- `BETWEEN '2025-06-01' AND '2025-06-30'` hiểu cận trên là 00:00 ngày 30, nên mất đơn 12.\n- `EXTRACT(MONTH ...) = 6` không xét năm, lẫn cả đơn tháng 6 của năm khác (đơn 34).\n- `< '2025-06-30'` cũng cắt ở 00:00 ngày 30 nên mất đơn 12."
+    }
+  ]
+}

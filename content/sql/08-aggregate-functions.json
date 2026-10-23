@@ -1,0 +1,227 @@
+{
+  "id": "sql-d08",
+  "title": "Ngày 8: Hàm tổng hợp",
+  "description": "COUNT, SUM, AVG, MIN, MAX, cách chúng đối xử với NULL và cách tính tiền đơn hàng trên DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d08-01",
+      "topic": "COUNT(cot)",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Bảng `customers` có 18 khách. Truy vấn dưới đây trả về giá trị nào?",
+      "code": "SELECT COUNT(phone) FROM customers;",
+      "codeLang": "sql",
+      "options": [
+        "18",
+        "14",
+        "4",
+        "0"
+      ],
+      "answer": 1,
+      "explanation": "`COUNT(phone)` chỉ đếm các dòng có `phone` khác NULL. Kết quả thật là **14**, nghĩa là có 4 khách chưa để lại số điện thoại.\n- 18 là kết quả của `COUNT(*)`, hàm này đếm cả dòng có NULL.\n- 4 là số khách thiếu phone, tức `COUNT(*) - COUNT(phone)`, không phải số được đếm.\n- 0 sẽ xảy ra nếu bạn nhầm rằng hàm đếm gặp NULL thì cả kết quả thành 0."
+    },
+    {
+      "id": "sql-d08-02",
+      "topic": "Đếm NULL",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Chọn truy vấn đếm đúng số khách hàng KHÔNG có email (kết quả đúng là 2).",
+      "options": [
+        "```sql\nSELECT COUNT(*) FROM customers\nWHERE email = NULL;\n```",
+        "```sql\nSELECT COUNT(email) FROM customers;\n```",
+        "```sql\nSELECT COUNT(*) FROM customers\nWHERE email IS NULL;\n```",
+        "```sql\nSELECT COUNT(email) - COUNT(*)\nFROM customers;\n```"
+      ],
+      "answer": 2,
+      "explanation": "`WHERE email IS NULL` giữ lại đúng 2 dòng thiếu email, rồi `COUNT(*)` đếm các dòng đó.\n- `email = NULL` không bao giờ đúng (kết quả là NULL), nên không dòng nào được giữ và ra 0.\n- `COUNT(email)` đếm số khách CÓ email, ra 16.\n- `COUNT(email) - COUNT(*)` đúng ý tưởng nhưng ngược dấu: 16 - 18 = -2. Muốn ra 2 phải viết `COUNT(*) - COUNT(email)`."
+    },
+    {
+      "id": "sql-d08-03",
+      "topic": "COUNT(DISTINCT)",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Có bao nhiêu khách hàng KHÁC NHAU đã từng đặt ít nhất một đơn (kết quả đúng là 16, trong khi bảng `orders` có 40 đơn)?",
+      "options": [
+        "```sql\nSELECT COUNT(DISTINCT customer_id)\nFROM orders;\n```",
+        "```sql\nSELECT COUNT(customer_id)\nFROM orders;\n```",
+        "```sql\nSELECT COUNT(*) FROM orders;\n```",
+        "```sql\nSELECT COUNT(DISTINCT order_id)\nFROM orders;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Một khách có thể đặt nhiều đơn, nên phải đếm giá trị khác nhau của `customer_id`: `COUNT(DISTINCT customer_id)` cho 16.\n- `COUNT(customer_id)` đếm mọi giá trị khác NULL, kể cả giá trị lặp, nên ra 40.\n- `COUNT(*)` đếm số dòng, cũng 40.\n- `COUNT(DISTINCT order_id)` đếm số đơn khác nhau, mà `order_id` là khóa chính nên vẫn là 40."
+    },
+    {
+      "id": "sql-d08-04",
+      "topic": "AVG với COALESCE",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Trong danh mục laptop văn phòng (`category_id = 4`) có 3 sản phẩm, trong đó HP Pavilion 15 chưa có `cost_price`. Chọn truy vấn tính giá nhập trung bình khi COI giá nhập chưa biết là 0 (làm tròn đến đồng, kết quả đúng là 12666667).",
+      "options": [
+        "```sql\nSELECT ROUND(AVG(cost_price))\nFROM products WHERE category_id = 4;\n```",
+        "```sql\nSELECT ROUND(SUM(cost_price) /\n  COUNT(DISTINCT category_id))\nFROM products WHERE category_id = 4;\n```",
+        "```sql\nSELECT ROUND(AVG(COALESCE(cost_price,\n  price)))\nFROM products WHERE category_id = 4;\n```",
+        "```sql\nSELECT ROUND(AVG(COALESCE(cost_price, 0)))\nFROM products WHERE category_id = 4;\n```"
+      ],
+      "answer": 3,
+      "explanation": "`COALESCE(cost_price, 0)` biến NULL thành 0 trước khi `AVG` chạy, nên mẫu số là 3: 38000000 / 3 = **12666667**.\n- `AVG(cost_price)` bỏ qua NULL, chia cho 2 máy có giá, ra 19000000.\n- Chia tổng cho `COUNT(DISTINCT category_id)` là chia cho 1 (cả ba máy cùng danh mục), ra 38000000.\n- `COALESCE(cost_price, price)` thay NULL bằng giá bán của HP thay vì 0, nên tử số tăng thêm 16990000 và ra 18330000."
+    },
+    {
+      "id": "sql-d08-05",
+      "topic": "Hàm tổng hợp trong WHERE",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Câu lệnh nào gây lỗi khi chạy trên PostgreSQL?",
+      "options": [
+        "```sql\nSELECT COUNT(*), MAX(amount)\nFROM payments;\n```",
+        "```sql\nSELECT order_id, amount FROM payments\nWHERE amount = MAX(amount);\n```",
+        "```sql\nSELECT order_id, amount FROM payments\nORDER BY amount DESC LIMIT 1;\n```",
+        "```sql\nSELECT MAX(amount) FROM payments\nWHERE method = 'cash';\n```"
+      ],
+      "answer": 1,
+      "explanation": "`WHERE` chạy trên từng dòng, trước khi hàm tổng hợp được tính, nên đặt `MAX(amount)` trong `WHERE` báo lỗi `aggregate functions are not allowed in WHERE`.\n- Hai hàm tổng hợp cùng nằm trong SELECT là hợp lệ, cho một dòng kết quả.\n- `ORDER BY amount DESC LIMIT 1` là cách đúng để lấy dòng thanh toán lớn nhất.\n- Đặt `WHERE` lọc theo cột thường rồi mới `MAX` cũng hợp lệ."
+    },
+    {
+      "id": "sql-d08-06",
+      "topic": "SUM trên cột chữ",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Câu lệnh nào dưới đây gây lỗi vì dùng hàm tổng hợp trên kiểu dữ liệu không phù hợp?",
+      "options": [
+        "```sql\nSELECT MIN(full_name) FROM customers;\n```",
+        "```sql\nSELECT MAX(full_name) FROM customers;\n```",
+        "```sql\nSELECT COUNT(DISTINCT full_name)\nFROM customers;\n```",
+        "```sql\nSELECT SUM(full_name) FROM customers;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Không thể cộng chuỗi, nên `SUM(full_name)` báo lỗi `function sum(character varying) does not exist`. `AVG` trên cột chữ cũng lỗi tương tự.\n- `MIN` và `MAX` so sánh được chuỗi theo thứ tự chữ cái, nên chạy bình thường.\n- `COUNT(DISTINCT full_name)` chỉ đếm giá trị khác nhau, dùng được với mọi kiểu."
+    },
+    {
+      "id": "sql-d08-07",
+      "topic": "SUM nhân SUM",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Đơn 13 có 2 sạc Anker (890000 mỗi cái) và 3 cáp USB-C (150000 mỗi sợi). Truy vấn dưới đây trả về giá trị nào?",
+      "code": "SELECT SUM(quantity) * SUM(unit_price)\nFROM order_items\nWHERE order_id = 13;",
+      "codeLang": "sql",
+      "options": [
+        "5200000",
+        "2230000",
+        "1040000",
+        "5"
+      ],
+      "answer": 0,
+      "explanation": "Hai hàm tổng hợp được tính độc lập rồi mới nhân: (2 + 3) * (890000 + 150000) = 5 * 1040000 = **5200000**.\n- 2230000 là tổng tiền hàng thật, `SUM(quantity * unit_price)`, tức nhân từng dòng rồi mới cộng. Đây chính là cách đúng, nhưng không phải câu lệnh này.\n- 1040000 là `SUM(unit_price)` riêng lẻ.\n- 5 là `SUM(quantity)` riêng lẻ."
+    },
+    {
+      "id": "sql-d08-08",
+      "topic": "SUM với NULL",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Hai sản phẩm (LAP-006 và ACC-009) chưa có `cost_price`. Truy vấn dưới đây trả về giá trị nào?",
+      "code": "SELECT SUM(price * stock_quantity)\n     - SUM(cost_price * stock_quantity)\nFROM products;",
+      "codeLang": "sql",
+      "options": [
+        "1816880000",
+        "279520000",
+        "354980000",
+        "75460000"
+      ],
+      "answer": 2,
+      "explanation": "Vế đầu cộng doanh thu của mọi sản phẩm (kể cả hai sản phẩm thiếu giá nhập), vế sau bỏ qua NULL nên không trừ giá vốn của chúng. Kết quả thật là **354980000**.\n- 279520000 là kết quả của `SUM((price - cost_price) * stock_quantity)`: biểu thức có NULL nên hai sản phẩm bị loại hẳn.\n- 1816880000 là giá trị tồn kho theo giá bán, vế đầu của phép trừ.\n- 75460000 chính là phần chênh giữa hai cách tính, không phải kết quả."
+    },
+    {
+      "id": "sql-d08-09",
+      "topic": "Tổng tiền đơn hàng",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Đơn 4 gồm 2 dòng hàng, một dòng được giảm 10%. Chọn truy vấn tính tổng tiền khách phải trả cho đơn 4 (kết quả đúng là 7881000).",
+      "options": [
+        "```sql\nSELECT SUM(quantity * unit_price)\nFROM order_items WHERE order_id = 4;\n```",
+        "```sql\nSELECT ROUND(SUM(quantity * unit_price\n  * (1 - discount)))\nFROM order_items WHERE order_id = 4;\n```",
+        "```sql\nSELECT SUM(quantity * unit_price\n  * discount)\nFROM order_items WHERE order_id = 4;\n```",
+        "```sql\nSELECT ROUND(AVG(quantity * unit_price\n  * (1 - discount)))\nFROM order_items WHERE order_id = 4;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Tiền mỗi dòng là `quantity * unit_price * (1 - discount)`, rồi `SUM` cộng các dòng của đơn: **7881000**.\n- Bỏ `discount` ra 8480000, cao hơn thực tế vì quên giảm giá.\n- Nhân với `discount` thay vì `(1 - discount)` cho ra số tiền được giảm (599000), không phải số tiền phải trả.\n- `AVG` cho tiền trung bình một dòng hàng (3940500), không phải tổng."
+    },
+    {
+      "id": "sql-d08-10",
+      "topic": "Trung bình mỗi đơn",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Chọn truy vấn tính giá trị trung bình MỖI ĐƠN trên toàn bộ `order_items` (60 dòng hàng thuộc 40 đơn, 23 mặt hàng).",
+      "options": [
+        "```sql\nSELECT ROUND(AVG(quantity * unit_price\n  * (1 - discount)))\nFROM order_items;\n```",
+        "```sql\nSELECT ROUND(SUM(quantity * unit_price\n  * (1 - discount)) / COUNT(*))\nFROM order_items;\n```",
+        "```sql\nSELECT ROUND(SUM(quantity * unit_price\n  * (1 - discount))\n  / COUNT(DISTINCT product_id))\nFROM order_items;\n```",
+        "```sql\nSELECT ROUND(SUM(quantity * unit_price\n  * (1 - discount))\n  / COUNT(DISTINCT order_id))\nFROM order_items;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Muốn trung bình mỗi đơn thì mẫu số phải là số đơn khác nhau: tổng tiền chia `COUNT(DISTINCT order_id)` = 40, ra 14483775.\n- `AVG(...)` chia cho 60 dòng hàng nên là trung bình mỗi dòng (9655850).\n- Chia cho `COUNT(*)` thực chất cũng là chia 60 dòng, ra đúng số của `AVG`.\n- Chia cho `COUNT(DISTINCT product_id)` là chia cho 23 mặt hàng, ra trung bình mỗi mặt hàng, sai đơn vị đếm."
+    },
+    {
+      "id": "sql-d08-11",
+      "topic": "Tỉ lệ phần trăm",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Chọn truy vấn tính tỉ lệ phần trăm khách có email, làm tròn 1 chữ số thập phân (kết quả đúng là 88.9).",
+      "options": [
+        "```sql\nSELECT ROUND(100.0 * COUNT(email)\n  / COUNT(*), 1)\nFROM customers;\n```",
+        "```sql\nSELECT 100 * COUNT(email) / COUNT(*)\nFROM customers;\n```",
+        "```sql\nSELECT COUNT(email) / COUNT(*)\nFROM customers;\n```",
+        "```sql\nSELECT ROUND(100.0 * COUNT(email)\n  / COUNT(phone), 1)\nFROM customers;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Nhân `100.0` (số thập phân) trước khi chia để tránh chia nguyên, mẫu số là `COUNT(*)` vì tỉ lệ tính trên toàn bộ 18 khách: 16 / 18 = **88.9**.\n- `100 * COUNT(email) / COUNT(*)` là chia nguyên, bị cắt thành 88.\n- `COUNT(email) / COUNT(*)` là `16 / 18` nguyên, ra 0.\n- Chia cho `COUNT(phone)` dùng sai mẫu số (14 khách có phone), ra 114.3."
+    },
+    {
+      "id": "sql-d08-12",
+      "topic": "COUNT(*) - COUNT(cot)",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Bảng `orders` có 40 đơn, đơn online để `employee_id` là NULL. Truy vấn dưới đây trả về giá trị nào?",
+      "code": "SELECT COUNT(*) - COUNT(employee_id)\nFROM orders;",
+      "codeLang": "sql",
+      "options": [
+        "40",
+        "15",
+        "25",
+        "4"
+      ],
+      "answer": 2,
+      "explanation": "`COUNT(*)` là 40, `COUNT(employee_id)` chỉ đếm 15 đơn có nhân viên bán, nên hiệu là **25**, chính là số đơn không có nhân viên (đơn online).\n- 40 là `COUNT(*)`, chưa trừ gì.\n- 15 là `COUNT(employee_id)` riêng lẻ.\n- 4 là số nhân viên khác nhau đã bán, tức `COUNT(DISTINCT employee_id)`."
+    },
+    {
+      "id": "sql-d08-13",
+      "topic": "Tập rỗng",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Đơn 40 đang `pending` và chưa có thanh toán nào. Điều gì xảy ra khi chạy các hàm tổng hợp trên `payments WHERE order_id = 40`?",
+      "options": [
+        "`COUNT(*)` và `SUM(amount)` đều trả về 0",
+        "`COUNT(*)` trả về 0, còn `SUM(amount)` trả về NULL",
+        "cả hai đều trả về NULL",
+        "truy vấn báo lỗi vì không có dòng nào để tính"
+      ],
+      "answer": 1,
+      "explanation": "Trên tập rỗng, `COUNT` trả về 0 còn `SUM`, `AVG`, `MIN`, `MAX` trả về NULL.\n- `SUM` không trả về 0: chưa có giá trị nào để cộng nên kết quả là \"không biết\". Muốn hiển thị 0 phải viết `COALESCE(SUM(amount), 0)`.\n- `COUNT(*)` luôn ra một con số nên không bao giờ NULL.\n- Truy vấn vẫn chạy bình thường và trả về một dòng kết quả, không có lỗi."
+    },
+    {
+      "id": "sql-d08-14",
+      "topic": "COUNT(DISTINCT) và NULL",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Trong `customers`, `SELECT DISTINCT city` trả về 10 dòng (một dòng là NULL). Truy vấn dưới đây trả về giá trị nào?",
+      "options": [
+        "10",
+        "16",
+        "9",
+        "18"
+      ],
+      "answer": 2,
+      "explanation": "`COUNT(DISTINCT city)` bỏ qua NULL nên chỉ đếm các giá trị khác nhau còn lại: **9**. Lưu ý đây là 9 cách viết, chưa phải 9 thành phố thật vì dữ liệu còn bẩn (`TP.HCM`, `Hồ Chí Minh`...).\n- 10 là số dòng của `SELECT DISTINCT city`, vì `DISTINCT` coi NULL là một giá trị.\n- 16 là `COUNT(city)`, đếm mọi dòng có city, kể cả trùng.\n- 18 là `COUNT(*)`, đếm cả khách không có city.",
+      "code": "SELECT COUNT(DISTINCT city)\nFROM customers;",
+      "codeLang": "sql"
+    },
+    {
+      "id": "sql-d08-15",
+      "topic": "MIN/MAX và NULL",
+      "source": "Ngày 8 - Hàm tổng hợp",
+      "question": "Muốn biết ngày sinh của khách lớn tuổi nhất trong `customers`, trong khi 3 khách chưa có `birth_date`. Cách nào đúng?",
+      "options": [
+        "`MAX(birth_date)`; khách thiếu ngày sinh được tính là nhỏ nhất",
+        "`MAX(birth_date)`; khách thiếu ngày sinh làm kết quả thành NULL",
+        "`MIN(birth_date)`; khách thiếu ngày sinh làm kết quả thành NULL",
+        "`MIN(birth_date)`; khách thiếu ngày sinh bị bỏ qua"
+      ],
+      "answer": 3,
+      "explanation": "Người lớn tuổi nhất sinh sớm nhất, tức ngày nhỏ nhất, nên dùng `MIN(birth_date)`; thật sự kết quả là 1985-04-18.\n- `MAX(birth_date)` cho ngày sinh muộn nhất, tức khách trẻ nhất (2005-02-14).\n- NULL không được coi là giá trị nhỏ nhất hay lớn nhất: `MIN` và `MAX` đều bỏ qua NULL nên 3 khách thiếu ngày sinh không làm hỏng kết quả.\n- Kết quả chỉ là NULL khi mọi dòng đều NULL hoặc tập rỗng."
+    }
+  ]
+}

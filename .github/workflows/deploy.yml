@@ -33,6 +33,10 @@ jobs:
       - name: Validate content
         run: npm run validate
 
+      # Chạy thật mọi truy vấn trong câu hỏi SQL trên PostgreSQL (PGlite) để chắc đáp án đúng
+      - name: Lint and verify SQL questions
+        run: npm run sql:lint && npm run sql:verify
+
       - name: Test
         run: npm test
 

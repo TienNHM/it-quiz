@@ -1,0 +1,215 @@
+{
+  "id": "sql-d17",
+  "title": "Ngày 17: Function và Stored Procedure",
+  "description": "Viết function và procedure trong PostgreSQL: LANGUAGE sql và PL/pgSQL, tham số mặc định, CALL, bắt lỗi EXCEPTION, SQL động an toàn.",
+  "questions": [
+    {
+      "id": "sql-d17-01",
+      "topic": "Function vs procedure",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Điểm khác biệt quan trọng nhất giữa procedure và function trong PostgreSQL là gì?",
+      "options": [
+        "Procedure được phép `COMMIT`/`ROLLBACK` bên trong (khi `CALL` không nằm trong `BEGIN` do bạn mở), function thì không",
+        "Function không bao giờ sửa được dữ liệu, còn procedure thì được",
+        "Procedure luôn chạy nhanh hơn vì được biên dịch sẵn",
+        "Procedure có thể gọi ngay trong câu truy vấn giống hàm thường"
+      ],
+      "answer": 0,
+      "explanation": "Function chạy trong transaction của câu lệnh gọi nó nên không được kết thúc transaction. Procedure gọi bằng `CALL` và được `COMMIT`/`ROLLBACK` giữa chừng, rất hợp cho xử lý hàng loạt.\n- Function (loại `VOLATILE`, mặc định) vẫn sửa được dữ liệu, nên \"function không sửa được dữ liệu\" là sai.\n- Không có chuyện procedure nhanh hơn vì được \"biên dịch sẵn\": cả hai dùng cùng ngôn ngữ và cơ chế thực thi, hiệu năng không khác nhau về bản chất.\n- Procedure không có giá trị trả về nên không dùng trong `SELECT` hay `WHERE`; phải gọi bằng lệnh riêng `CALL`."
+    },
+    {
+      "id": "sql-d17-02",
+      "topic": "RETURNS TABLE trùng tên cột",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Mỗi phương án tạo một function trả về bảng rồi gọi nó. Phương án nào báo lỗi khi gọi?",
+      "options": [
+        "```sql\nCREATE FUNCTION f1() RETURNS TABLE (name VARCHAR)\nLANGUAGE plpgsql AS $$ BEGIN\n  RETURN QUERY SELECT p.name FROM products p;\nEND $$;\nSELECT * FROM f1();\n```",
+        "```sql\nCREATE FUNCTION f2() RETURNS TABLE (o_name VARCHAR)\nLANGUAGE plpgsql AS $$ BEGIN\n  RETURN QUERY SELECT name FROM products;\nEND $$;\nSELECT * FROM f2();\n```",
+        "```sql\nCREATE FUNCTION f3() RETURNS TABLE (name VARCHAR)\nLANGUAGE plpgsql AS $$ BEGIN\n  RETURN QUERY SELECT name FROM products;\nEND $$;\nSELECT * FROM f3();\n```",
+        "```sql\nCREATE FUNCTION f4() RETURNS TABLE (name VARCHAR)\nLANGUAGE sql AS $$\n  SELECT name FROM products $$;\nSELECT * FROM f4();\n```"
+      ],
+      "answer": 2,
+      "explanation": "Trong PL/pgSQL, cột khai báo ở `RETURNS TABLE` cũng là một **biến**. Ở `f3`, `SELECT name FROM products` không biết `name` là biến hay cột bảng nên báo lỗi `column reference \"name\" is ambiguous` ngay khi gọi.\n- `f1` đặt bí danh `p.name` nên chỉ rõ là cột của bảng: chạy được.\n- `f2` đặt tên cột trả về là `o_name` (tiền tố khác), không còn trùng với cột `name`: chạy được.\n- `f4` viết bằng `LANGUAGE sql`: ở đây tên cột được ưu tiên nên không mơ hồ, chạy được.\nThói quen tốt: đặt bí danh bảng, dùng tiền tố `p_`, `v_`, `o_` cho tham số và biến."
+    },
+    {
+      "id": "sql-d17-03",
+      "topic": "Tham số mặc định",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Với function `price_after_discount` bên dưới, `SELECT price_after_discount(24990000, 15);` trả về giá trị nào?",
+      "code": "CREATE FUNCTION price_after_discount(\n    p_price    NUMERIC,\n    p_percent  NUMERIC DEFAULT 10,\n    p_round_to INT     DEFAULT -3\n)\nRETURNS NUMERIC\nLANGUAGE sql IMMUTABLE AS $$\n    SELECT ROUND(p_price * (100 - p_percent) / 100, p_round_to);\n$$;",
+      "codeLang": "sql",
+      "options": [
+        "21241500",
+        "21242000",
+        "22491000",
+        "21240000"
+      ],
+      "answer": 1,
+      "explanation": "Tham số thứ hai (`p_percent`) nhận 15, tham số thứ ba lấy mặc định `-3`. Giá giảm: 24990000 x 85 / 100 = 21241500, rồi `ROUND(..., -3)` làm tròn tới hàng nghìn thành **21242000**.\n- 21241500 là giá chưa làm tròn: quên rằng `p_round_to` mặc định vẫn được áp dụng.\n- 22491000 là kết quả khi giảm 10% (giá trị mặc định của `p_percent`), không phải 15%.\n- 21240000 là làm tròn tới hàng chục nghìn (`-4`), sai vì mặc định là `-3`."
+    },
+    {
+      "id": "sql-d17-04",
+      "topic": "Tên tham số trùng tên cột",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Bạn cần function `n_orders` nhận mã khách và trả về số đơn của đúng khách đó (khách 4 có 3 đơn nên `n_orders(4)` phải ra 3). Phiên bản nào đúng?",
+      "options": [
+        "```sql\nCREATE FUNCTION n_orders(p_cid INT) RETURNS BIGINT\nAS $$ SELECT count(*) FROM orders\n  WHERE customer_id = p_cid $$;\n```",
+        "```sql\nCREATE FUNCTION n_orders(customer_id INT) RETURNS BIGINT\nLANGUAGE sql AS $$ SELECT count(*) FROM orders\n  WHERE customer_id = customer_id $$;\n```",
+        "```sql\nCREATE FUNCTION n_orders(p_cid INT) RETURNS BIGINT\nLANGUAGE sql AS $$ SELECT count(*) FROM orders\n  WHERE customer_id = p_cid $$;\n```",
+        "```sql\nCREATE FUNCTION n_orders(p_cid INT) RETURNS BIGINT\nLANGUAGE sql AS $$ SELECT count(DISTINCT customer_id)\n  FROM orders WHERE customer_id = p_cid $$;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Phiên bản đúng đặt tên tham số `p_cid` khác tên cột, khai báo `LANGUAGE sql` và `RETURNS BIGINT` (kiểu của `count`).\n- Thiếu `LANGUAGE` thì `CREATE FUNCTION` báo lỗi \"no language specified\".\n- Tham số tên `customer_id` trùng tên cột: trong `WHERE customer_id = customer_id` tên cột được ưu tiên nên điều kiện luôn đúng, hàm đếm cả 40 đơn thay vì 3, và không báo lỗi gì.\n- `count(DISTINCT customer_id)` đếm số giá trị khác nhau của `customer_id`, mà các đơn đã lọc cùng một khách nên luôn ra 1, không phải 3."
+    },
+    {
+      "id": "sql-d17-05",
+      "topic": "SELECT INTO STRICT",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Sản phẩm có mã `LAP-001` tồn tại, mã `LAP-999` thì không, và danh mục 3 có nhiều sản phẩm. Khối `DO` nào gây lỗi khi chạy?",
+      "options": [
+        "```sql\nDO $$ DECLARE v INT; BEGIN\n  SELECT stock_quantity INTO v\n  FROM products WHERE sku = 'LAP-999';\nEND $$;\n```",
+        "```sql\nDO $$ DECLARE v INT; BEGIN\n  SELECT stock_quantity INTO STRICT v\n  FROM products WHERE sku = 'LAP-999';\nEND $$;\n```",
+        "```sql\nDO $$ DECLARE v INT; BEGIN\n  SELECT stock_quantity INTO v\n  FROM products WHERE category_id = 3;\nEND $$;\n```",
+        "```sql\nDO $$ DECLARE v INT; BEGIN\n  SELECT stock_quantity INTO STRICT v\n  FROM products WHERE sku = 'LAP-001';\nEND $$;\n```"
+      ],
+      "answer": 1,
+      "explanation": "`INTO STRICT` bắt buộc truy vấn trả về **đúng một dòng**. Với `LAP-999` không có dòng nào nên PostgreSQL báo lỗi `query returned no rows` (mã `no_data_found`).\n- `INTO v` (không STRICT) khi không có dòng: không lỗi, biến `v` chỉ thành `NULL`. Đây là cái bẫy: mã sai lặng lẽ trả NULL.\n- `INTO v` khi có nhiều dòng (danh mục 3): không STRICT thì lấy dòng đầu tiên, không lỗi.\n- `INTO STRICT` với `LAP-001`: đúng một dòng nên chạy bình thường."
+    },
+    {
+      "id": "sql-d17-06",
+      "topic": "Khối EXCEPTION và savepoint",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Sản phẩm 1 ban đầu có `stock_quantity = 5`. Sau khi chạy khối `DO` dưới đây (lỗi được bắt, không lan ra ngoài), `stock_quantity` của sản phẩm 1 là bao nhiêu?",
+      "code": "DO $$\nBEGIN\n  UPDATE products SET stock_quantity = stock_quantity + 10\n  WHERE product_id = 1;\n  BEGIN\n    UPDATE products SET stock_quantity = stock_quantity + 100\n    WHERE product_id = 1;\n    RAISE EXCEPTION 'loi';\n  EXCEPTION WHEN others THEN\n    NULL;\n  END;\nEND $$;",
+      "codeLang": "sql",
+      "options": [
+        "15",
+        "115",
+        "5",
+        "105"
+      ],
+      "answer": 0,
+      "explanation": "Khối con có phần `EXCEPTION` hoạt động như một savepoint: khi lỗi xảy ra, thay đổi **bên trong khối con** (cộng 100) bị lùi về savepoint, còn thay đổi ở khối ngoài (cộng 10) vẫn được giữ. Kết quả 5 + 10 = **15**.\n- 115 là khi cho rằng cả hai lệnh UPDATE đều còn: sai, lệnh trong khối bị lỗi đã bị hoàn tác.\n- 5 là khi cho rằng toàn bộ bị hủy: lỗi đã được bắt nên phần ngoài khối con không bị ảnh hưởng.\n- 105 là chỉ giữ lệnh cộng 100: ngược hẳn với thực tế."
+    },
+    {
+      "id": "sql-d17-07",
+      "topic": "Function trong WHERE",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Bảng `customers` rất lớn và có `customer_tier(customer_id)` là function đọc đơn hàng để xếp hạng. Truy vấn `WHERE customer_tier(customer_id) = 'Vàng'` có vấn đề chính nào?",
+      "options": [
+        "Cú pháp sai vì function không được đặt trong `WHERE`",
+        "Function chỉ chạy đúng khi đặt ở danh sách cột kết quả",
+        "Function phải chạy cho từng dòng của bảng, mỗi lần lại truy vấn thêm, và không tận dụng được index",
+        "Kết quả bị sai vì function `STABLE` không so sánh được với chuỗi"
+      ],
+      "answer": 2,
+      "explanation": "Điều kiện bọc cột trong function buộc PostgreSQL gọi function **cho từng dòng**, mà mỗi lần gọi lại chạy một truy vấn bên trong. Index trên cột gốc cũng không dùng được. Với bảng lớn, truy vấn này rất chậm.\n- Function hoàn toàn được dùng trong `WHERE`: cú pháp không sai.\n- Vị trí trong danh sách cột hay trong `WHERE` không ảnh hưởng tới tính đúng của kết quả.\n- `STABLE` chỉ là lời hứa \"không sửa dữ liệu\", không liên quan tới kiểu so sánh.\nCách tốt hơn: điều kiện dạng khoảng trên cột gốc, hoặc gộp bằng `JOIN`/`GROUP BY`."
+    },
+    {
+      "id": "sql-d17-08",
+      "topic": "Gọi theo tên",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Bạn muốn giữ giảm giá mặc định 10% nhưng làm tròn tới hàng trăm nghìn (`p_round_to = -5`). Với function `price_after_discount` bên dưới, cách gọi nào cho kết quả đúng (22500000)?",
+      "code": "CREATE FUNCTION price_after_discount(\n    p_price    NUMERIC,\n    p_percent  NUMERIC DEFAULT 10,\n    p_round_to INT     DEFAULT -3\n)\nRETURNS NUMERIC\nLANGUAGE sql IMMUTABLE AS $$\n    SELECT ROUND(p_price * (100 - p_percent) / 100, p_round_to);\n$$;",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nSELECT price_after_discount(24990000, -5);\n```",
+        "```sql\nSELECT price_after_discount(24990000, , -5);\n```",
+        "```sql\nSELECT price_after_discount(p_round_to => -5, 24990000);\n```",
+        "```sql\nSELECT price_after_discount(24990000, p_round_to => -5);\n```"
+      ],
+      "answer": 3,
+      "explanation": "Gọi theo tên `p_round_to => -5` cho phép bỏ qua `p_percent` ở giữa và dùng mặc định 10, kết quả **22500000**.\n- `price_after_discount(24990000, -5)` đưa -5 vào vị trí thứ hai, tức `p_percent = -5` (tăng giá 5%), làm tròn mặc định: ra 26239500 làm tròn thành 26240000, sai.\n- `(24990000, , -5)` không có cú pháp bỏ trống đối số, báo lỗi cú pháp.\n- Đặt đối số theo tên rồi mới tới đối số theo vị trí là không được phép, PostgreSQL báo lỗi.\nQuy tắc: đối số theo vị trí phải đứng trước đối số theo tên."
+    },
+    {
+      "id": "sql-d17-09",
+      "topic": "Bắt lỗi EXCEPTION",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Với function `safe_div` bên dưới, truy vấn `SELECT safe_div(7, 2) || ' / ' || safe_div(1, 0);` trả về gì?",
+      "code": "CREATE FUNCTION safe_div(a INT, b INT) RETURNS TEXT\nLANGUAGE plpgsql AS $$\nBEGIN\n  RETURN (a / b)::TEXT;\nEXCEPTION\n  WHEN division_by_zero THEN\n    RETURN 'chia 0';\nEND;\n$$;",
+      "codeLang": "sql",
+      "options": [
+        "3 / chia 0",
+        "3.5 / chia 0",
+        "báo lỗi division by zero",
+        "NULL"
+      ],
+      "answer": 0,
+      "explanation": "`7 / 2` là phép chia **nguyên** giữa hai `INT` nên ra 3, không phải 3.5. Với `safe_div(1, 0)`, lỗi `division_by_zero` bị khối `EXCEPTION` bắt và hàm trả về chuỗi `chia 0`. Kết quả nối: **3 / chia 0**.\n- 3.5 quên rằng chia hai số nguyên trong PostgreSQL cắt phần thập phân.\n- Lỗi không lan ra ngoài vì đã có nhánh `WHEN division_by_zero`.\n- `NULL` chỉ xảy ra nếu một vế nối là NULL, ở đây cả hai vế đều là chuỗi."
+    },
+    {
+      "id": "sql-d17-10",
+      "topic": "CREATE OR REPLACE",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Function `order_total` dưới đây đã tồn tại. Lệnh nào bên dưới gây lỗi khi chạy?",
+      "code": "CREATE FUNCTION order_total(p_order_id INT)\nRETURNS NUMERIC LANGUAGE sql STABLE AS $$\n  SELECT COALESCE(SUM(quantity * unit_price), 0)\n  FROM order_items WHERE order_id = p_order_id\n$$;",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nCREATE OR REPLACE FUNCTION order_total(p_order_id INT)\nRETURNS NUMERIC LANGUAGE sql AS $$\n  SELECT 0::NUMERIC\n$$;\n```",
+        "```sql\nCREATE OR REPLACE FUNCTION order_total(p_order_id INT)\nRETURNS BIGINT LANGUAGE sql AS $$\n  SELECT 0::BIGINT\n$$;\n```",
+        "```sql\nDROP FUNCTION order_total(INT);\nCREATE FUNCTION order_total(p_order_id INT)\nRETURNS BIGINT LANGUAGE sql AS $$ SELECT 0::BIGINT $$;\n```",
+        "```sql\nCREATE OR REPLACE FUNCTION order_total(p_id INT, p_vat INT)\nRETURNS NUMERIC LANGUAGE sql AS $$\n  SELECT 0::NUMERIC\n$$;\n```"
+      ],
+      "answer": 1,
+      "explanation": "`CREATE OR REPLACE` không đổi được **kiểu trả về** của function đã có: đổi `NUMERIC` thành `BIGINT` báo lỗi `cannot change return type of existing function` (kèm gợi ý dùng `DROP FUNCTION` trước).\n- Giữ nguyên chữ ký và kiểu trả về, chỉ đổi thân hàm: được phép.\n- `DROP FUNCTION order_total(INT)` rồi `CREATE` lại với kiểu mới: được, vì hàm cũ đã bị xóa.\n- Thêm tham số thứ hai không phải là sửa hàm cũ mà tạo một function **cùng tên khác chữ ký** (overloading), nên cũng chạy được. Vì vậy khi `DROP` nên ghi kèm kiểu tham số."
+    },
+    {
+      "id": "sql-d17-11",
+      "topic": "SQL động an toàn",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Trong PL/pgSQL, khi dùng `EXECUTE` với tên bảng và giá trị lọc nhận từ tham số, cách nào an toàn trước SQL injection?",
+      "options": [
+        "Nối giá trị vào chuỗi bằng `||` và bọc dấu nháy đơn quanh nó",
+        "Dùng `format('%s', ...)` cho cả tên bảng lẫn giá trị",
+        "Bọc cả khối trong `EXCEPTION WHEN others THEN` để lỗi không lộ ra ngoài",
+        "Dùng `format('%I', ten_bang)` cho tên đối tượng và truyền giá trị bằng `USING` với chỗ giữ chỗ `$1`"
+      ],
+      "answer": 3,
+      "explanation": "`%I` bọc tên đối tượng thành định danh an toàn (cả chuỗi chỉ là một tên bảng, không thể chèn lệnh khác), còn giá trị đi qua `USING` nên luôn là **dữ liệu**, không bao giờ được hiểu thành SQL.\n- Nối chuỗi bằng `||` có dấu nháy là đúng kiểu mở cửa cho injection: chuỗi `x' OR '1'='1` sẽ biến điều kiện thành luôn đúng.\n- `%s` chèn nguyên văn, không escape gì cả, nguy hiểm hơn cả cách trên.\n- `EXCEPTION` chỉ bắt lỗi, không ngăn lệnh độc hại chạy thành công."
+    },
+    {
+      "id": "sql-d17-12",
+      "topic": "EXECUTE ... USING",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Bảng `orders` có 40 đơn. Với function bên dưới (giá trị truyền bằng `USING`), `SELECT count_orders_by_status('x'' OR ''1''=''1');` trả về bao nhiêu?",
+      "code": "CREATE FUNCTION count_orders_by_status(p_status TEXT)\nRETURNS BIGINT LANGUAGE plpgsql AS $$\nDECLARE v_count BIGINT;\nBEGIN\n  EXECUTE 'SELECT count(*) FROM orders WHERE status = $1'\n  INTO v_count USING p_status;\n  RETURN v_count;\nEND;\n$$;",
+      "codeLang": "sql",
+      "options": [
+        "40",
+        "33",
+        "0",
+        "báo lỗi cú pháp"
+      ],
+      "answer": 2,
+      "explanation": "Nhờ `USING p_status`, chuỗi `x' OR '1'='1` chỉ là **một giá trị** để so sánh với cột `status`. Không trạng thái nào có tên như vậy nên đếm ra **0**.\n- 40 sẽ xảy ra nếu ghép chuỗi vào câu SQL: lúc đó `OR '1'='1'` biến điều kiện thành luôn đúng và đếm hết mọi đơn. Đây chính là SQL injection.\n- 33 là số đơn `delivered`, không liên quan tới giá trị truyền vào.\n- Không có lỗi cú pháp: dấu nháy đã được nhân đôi đúng khi viết chuỗi hằng."
+    },
+    {
+      "id": "sql-d17-13",
+      "topic": "IMMUTABLE, STABLE, VOLATILE",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Một function chỉ đọc bảng `products` để trả về tồn kho, không sửa dữ liệu nào. Mức biến động phù hợp nhất để khai báo là gì?",
+      "options": [
+        "`STABLE`: đọc bảng nhưng không sửa, trong một câu lệnh cùng đầu vào cho cùng kết quả",
+        "`IMMUTABLE`: luôn khai báo mức này cho nhanh nhất",
+        "`VOLATILE` chỉ dành cho procedure, function phải là `STABLE` hoặc `IMMUTABLE`",
+        "Không cần khai báo vì PostgreSQL tự suy ra từ thân hàm"
+      ],
+      "answer": 0,
+      "explanation": "`STABLE` đúng với function chỉ đọc dữ liệu: bộ tối ưu biết kết quả không đổi trong một câu lệnh.\n- `IMMUTABLE` hứa rằng kết quả chỉ phụ thuộc đầu vào, không đọc bảng. Khai báo sai khiến kết quả cũ có thể bị dùng lại sau khi dữ liệu bảng đã đổi.\n- `VOLATILE` là mức mặc định của function và hoàn toàn hợp lệ (cho function sửa dữ liệu hoặc như `random()`); procedure thì không có khái niệm này.\n- PostgreSQL **không** tự suy ra: không khai báo thì lấy `VOLATILE`, an toàn nhưng kém cơ hội tối ưu."
+    },
+    {
+      "id": "sql-d17-14",
+      "topic": "Race condition trong procedure",
+      "source": "Ngày 17 - Function và Stored Procedure",
+      "question": "Procedure đặt hàng đọc `stock_quantity` vào biến, kiểm tra đủ hàng rồi mới `UPDATE ... SET stock_quantity = v_stock - p_quantity`. Hai người mua cùng lúc. Điều gì đúng?",
+      "options": [
+        "An toàn, vì code nằm trong procedure nên các lệnh tự được khóa",
+        "Vẫn có thể bị lost update như khi viết ngoài procedure; cần câu lệnh trừ kho có điều kiện hoặc khóa dòng trước khi đọc",
+        "An toàn nếu khai báo procedure là `STABLE`",
+        "An toàn nếu bọc trong khối `EXCEPTION WHEN others`"
+      ],
+      "answer": 1,
+      "explanation": "Đưa logic vào procedure không tự thêm khóa. Hai phiên cùng đọc 5 rồi cùng ghi 4 thì một lần mua bị mất (lost update).\n- Cách đúng: một câu `UPDATE ... SET stock_quantity = stock_quantity - n WHERE stock_quantity >= n` vừa khóa dòng vừa kiểm tra, rồi dùng `FOUND` để biết có trừ được không; hoặc khóa trước bằng `SELECT ... FOR UPDATE`.\n- `STABLE` dành cho function không sửa dữ liệu, không liên quan tới khóa.\n- `EXCEPTION` chỉ bắt lỗi, mà lost update không phát sinh lỗi nào nên cũng không được bắt."
+    }
+  ]
+}

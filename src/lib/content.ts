@@ -10,6 +10,7 @@ const byId = new Map<string, Question>();
 for (const [path, data] of Object.entries(files)) {
   const m = path.match(/content\/([^/]+)\/([^/]+)\.json$/);
   if (!m) continue;
+  if (m[2] === 'subject.meta') continue; // chỉ dùng khi dựng subject.json
   if (m[2] === 'subject') {
     subjects.push(data as Subject);
   } else {

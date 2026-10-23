@@ -1,0 +1,241 @@
+{
+  "id": "sql-d22",
+  "title": "Ngày 22: Làm việc với JSON và JSONB",
+  "description": "Đọc, lọc, tách mảng, sửa JSONB, chỉ mục GIN và khi nào nên tách JSONB thành cột riêng trên DSC Shop.",
+  "questions": [
+    {
+      "id": "sql-d22-01",
+      "topic": "Toán tử ->",
+      "source": "Ngày 22 - Làm việc với JSON và JSONB",
+      "question": "Kiểu dữ liệu của biểu thức `attributes -> 'brand'` (toán tử một mũi tên) trên cột `attributes` kiểu JSONB là gì?",
+      "options": [
+        "text",
+        "jsonb",
+        "json",
+        "varchar"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là `jsonb`: `->` luôn trả về JSONB, nên chuỗi vẫn còn dấu nháy kép (\"Apple\").\n- `text` là kiểu của `->>` (hai mũi tên), dùng khi cần hiển thị hoặc so sánh.\n- `json` không đúng vì cột là JSONB nên kết quả cũng là JSONB.\n- `varchar` chỉ xuất hiện khi bạn tự ép kiểu.\nChạy thật: `pg_typeof(attributes -> 'brand')` ra `jsonb`."
+    },
+    {
+      "id": "sql-d22-02",
+      "topic": "Ép kiểu số từ JSONB",
+      "source": "Ngày 22 - Làm việc với JSONB",
+      "question": "Liệt kê mã sản phẩm có RAM lớn hơn 8 GB (khóa `ram_gb`). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT sku FROM products\nWHERE attributes ->> 'ram_gb' > '8';\n```",
+        "```sql\nSELECT sku FROM products\nWHERE (attributes ->> 'ram_gb')::INT > 8;\n```",
+        "```sql\nSELECT sku FROM products\nWHERE attributes -> 'ram_gb' > 8;\n```",
+        "```sql\nSELECT sku FROM products\nWHERE attributes ? 'ram_gb';\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là phương án 2: `->>` trả về text nên phải ép `::INT` rồi mới so sánh số. Kết quả: LAP-001, LAP-002, LAP-006.\n- Phương án 1 so sánh chuỗi: '16' < '8' vì ký tự '1' đứng trước '8', nên ra 0 dòng dù có 3 laptop 16 GB.\n- Phương án 3 báo lỗi vì không có toán tử so sánh `jsonb > integer`.\n- Phương án 4 chỉ kiểm tra có khóa `ram_gb`, nên trả luôn cả 3 laptop 8 GB (6 dòng)."
+    },
+    {
+      "id": "sql-d22-03",
+      "topic": "NULL và toán tử ?",
+      "source": "Ngày 22 - Lỗi thường gặp",
+      "question": "Truy vấn dưới đây đếm các sản phẩm **không có** khóa `brand` trong `attributes`. Có 3 sản phẩm có `attributes` là NULL. Kết quả là bao nhiêu?",
+      "code": "SELECT COUNT(*)\nFROM products\nWHERE NOT attributes ? 'brand';",
+      "codeLang": "sql",
+      "options": [
+        "3",
+        "21",
+        "24",
+        "0"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng là 0.\n- Với 21 sản phẩm có `brand`, `attributes ? 'brand'` là TRUE, `NOT TRUE` là FALSE nên bị loại.\n- Với 3 sản phẩm có `attributes` NULL, `NULL ? 'brand'` là NULL, và `NOT NULL` vẫn là NULL nên cũng bị loại (WHERE chỉ giữ dòng TRUE).\n- Vì vậy không phải 3 (nhiều người tưởng 3 dòng NULL sẽ được tính), cũng không phải 21 hay 24.\nMuốn tính cả chúng: `WHERE attributes IS NULL OR NOT attributes ? 'brand'`."
+    },
+    {
+      "id": "sql-d22-04",
+      "topic": "-> và ->> khi so sánh",
+      "source": "Ngày 22 - Lỗi thường gặp",
+      "question": "Câu lệnh nào dưới đây **gây lỗi** khi chạy trên DSC Shop?",
+      "options": [
+        "```sql\nSELECT sku FROM products\nWHERE attributes ->> 'brand' = 'Apple';\n```",
+        "```sql\nSELECT sku FROM products\nWHERE attributes @> '{\"brand\": \"Apple\"}';\n```",
+        "```sql\nSELECT sku FROM products\nWHERE attributes -> 'brand' = 'Apple';\n```",
+        "```sql\nSELECT sku FROM products\nWHERE attributes -> 'brand' = '\"Apple\"';\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là phương án 3: vế trái `attributes -> 'brand'` là JSONB, còn `'Apple'` bị hiểu là JSONB nhưng không phải JSON hợp lệ (thiếu nháy kép) nên PostgreSQL báo `invalid input syntax for type json`.\n- Phương án 1 dùng `->>` trả text, so sánh với 'Apple' bình thường.\n- Phương án 2 dùng `@>` với JSON hợp lệ.\n- Phương án 4 chạy được vì `'\"Apple\"'` là JSON hợp lệ (chuỗi có nháy kép)."
+    },
+    {
+      "id": "sql-d22-05",
+      "topic": "@> với mảng",
+      "source": "Ngày 22 - Lọc: @> và ?",
+      "question": "Tìm các sản phẩm có màu `Xanh` trong mảng `colors` bằng toán tử `@>` hoặc `?`. Truy vấn nào cho đúng 2 sản phẩm (PHN-001 và PHN-003)?",
+      "options": [
+        "```sql\nSELECT sku FROM products\nWHERE attributes ? 'Xanh';\n```",
+        "```sql\nSELECT sku FROM products\nWHERE attributes ->> 'colors' = 'Xanh';\n```",
+        "```sql\nSELECT sku FROM products\nWHERE attributes @> '{\"colors\": \"Xanh\"}';\n```",
+        "```sql\nSELECT sku FROM products\nWHERE attributes @> '{\"colors\": [\"Xanh\"]}';\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng là phương án 4: `colors` là một mảng nên vế phải cũng phải là mảng `[\"Xanh\"]`, khi đó `@>` kiểm tra mảng có chứa phần tử đó.\n- Phương án 1: `?` ở cấp ngoài chỉ tìm KHÓA tên `Xanh`, không có khóa nào như vậy nên 0 dòng.\n- Phương án 2: `->> 'colors'` trả cả mảng dưới dạng chuỗi `[\"Đen\", \"Hồng\", \"Xanh\"]`, không bằng 'Xanh' nên 0 dòng.\n- Phương án 3: giá trị `\"Xanh\"` (chuỗi) không khớp với mảng nên 0 dòng, kể cả khi viết đúng cú pháp."
+    },
+    {
+      "id": "sql-d22-06",
+      "topic": "Phần tử mảng JSONB",
+      "source": "Ngày 22 - Mảng và đường dẫn lồng nhau",
+      "question": "Điện thoại PHN-001 có `colors` là `[\"Đen\", \"Hồng\", \"Xanh\"]`. Truy vấn dưới đây trả về giá trị nào (khi in ra dạng text)?",
+      "code": "SELECT attributes -> 'colors' -> 0\nFROM products\nWHERE sku = 'PHN-001';",
+      "codeLang": "sql",
+      "options": [
+        "Đen",
+        "\"Đen\"",
+        "Hồng",
+        "NULL"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là `\"Đen\"` (có dấu nháy kép).\n- Mảng JSON đánh số từ 0 nên `-> 0` lấy phần tử đầu là Đen, không phải 'Hồng' (đó là chỉ số 1).\n- Vì dùng `->` nên kết quả vẫn là JSONB, chuỗi giữ nguyên nháy kép. Muốn ra `Đen` trần phải dùng `->> 0`.\n- Không phải NULL vì sản phẩm có khóa `colors` và chỉ số 0 tồn tại."
+    },
+    {
+      "id": "sql-d22-07",
+      "topic": "jsonb_array_elements_text",
+      "source": "Ngày 22 - Mảng thành dòng",
+      "question": "Đếm số điện thoại theo từng màu (mỗi màu một dòng: `color`, số lượng). Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT attributes ->> 'colors', COUNT(*)\nFROM products\nWHERE attributes ? 'colors'\nGROUP BY attributes ->> 'colors';\n```",
+        "```sql\nSELECT c.color, COUNT(*)\nFROM products AS p\nCROSS JOIN jsonb_array_elements_text(\n  p.attributes -> 'colors') AS c(color)\nGROUP BY c.color, p.sku;\n```",
+        "```sql\nSELECT c.color, COUNT(*)\nFROM products AS p\nCROSS JOIN jsonb_array_elements_text(\n  p.attributes -> 'colors') AS c(color)\nGROUP BY c.color;\n```",
+        "```sql\nSELECT c.color, COUNT(*)\nFROM products AS p\nCROSS JOIN jsonb_array_elements_text(\n  p.attributes -> 'color') AS c(color)\nGROUP BY c.color;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là phương án 3: `jsonb_array_elements_text` biến mỗi phần tử mảng thành một dòng, rồi GROUP BY màu. Kết quả: Đen 3, Xanh 2, Hồng 1, Tím 1, Vàng 1.\n- Phương án 1 nhóm theo cả chuỗi mảng nên ra 3 nhóm, mỗi nhóm là một danh sách màu chứ không phải từng màu.\n- Phương án 2 thêm `p.sku` vào GROUP BY nên mỗi (màu, sản phẩm) là một nhóm, mọi số đếm đều là 1.\n- Phương án 4 gõ sai khóa `'color'` (đúng là `'colors'`), `->` trả NULL, hàm sinh 0 dòng nên kết quả rỗng."
+    },
+    {
+      "id": "sql-d22-08",
+      "topic": "jsonb_set",
+      "source": "Ngày 22 - Lỗi thường gặp",
+      "question": "Chạy truy vấn sau, kết quả là gì? (Khóa `dimensions` chưa tồn tại trong JSON.)",
+      "code": "SELECT jsonb_set(\n  '{\"brand\": \"Dell\"}'::jsonb,\n  '{dimensions,weight_g}',\n  '1500');",
+      "codeLang": "sql",
+      "options": [
+        "{\"brand\": \"Dell\"}",
+        "{\"brand\": \"Dell\", \"dimensions\": {\"weight_g\": 1500}}",
+        "NULL",
+        "báo lỗi vì đường dẫn không tồn tại"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng là JSON giữ nguyên `{\"brand\": \"Dell\"}`: `jsonb_set` chỉ đặt giá trị khi đối tượng cha của đường dẫn đã có, còn thiếu cha thì lặng lẽ không làm gì (UPDATE vẫn báo thành công).\n- Không tự tạo `dimensions` nên phương án 2 sai.\n- Kết quả không NULL (NULL chỉ xảy ra khi cột đầu vào là NULL).\n- Không báo lỗi, đó chính là cái bẫy. Muốn thêm phải tạo cha trước: `jsonb_set(attributes, '{dimensions}', '{\"weight_g\": 1500}')`."
+    },
+    {
+      "id": "sql-d22-09",
+      "topic": "jsonb_set với chuỗi",
+      "source": "Ngày 22 - Sửa JSONB",
+      "question": "Câu lệnh nào dưới đây **gây lỗi** khi đổi CPU của LAP-001 thành `Intel Core i9`?",
+      "options": [
+        "```sql\nSELECT jsonb_set(attributes, '{cpu}',\n  'Intel Core i9')\nFROM products WHERE sku = 'LAP-001';\n```",
+        "```sql\nSELECT jsonb_set(attributes, '{cpu}',\n  '\"Intel Core i9\"')\nFROM products WHERE sku = 'LAP-001';\n```",
+        "```sql\nSELECT jsonb_set(attributes, '{cpu}',\n  to_jsonb('Intel Core i9'::TEXT))\nFROM products WHERE sku = 'LAP-001';\n```",
+        "```sql\nSELECT attributes ||\n  '{\"cpu\": \"Intel Core i9\"}'\nFROM products WHERE sku = 'LAP-001';\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng là phương án 1: tham số thứ ba của `jsonb_set` phải là JSONB hợp lệ, `'Intel Core i9'` không có nháy kép nên PostgreSQL báo `invalid input syntax for type json`.\n- Phương án 2 bọc chuỗi trong nháy kép bên trong nháy đơn nên là JSON hợp lệ.\n- Phương án 3 dùng `to_jsonb` để PostgreSQL tự thêm nháy kép.\n- Phương án 4 dùng `||` gộp một object hợp lệ, khóa trùng thì lấy giá trị mới."
+    },
+    {
+      "id": "sql-d22-10",
+      "topic": "|| với cột NULL",
+      "source": "Ngày 22 - Lỗi thường gặp",
+      "question": "Thêm `\"warranty_months\": 12` vào `attributes` của mọi sản phẩm mã `ACC-...`, kể cả ACC-008 và ACC-009 đang có `attributes` NULL, mà không làm mất thông số cũ. Câu lệnh nào đúng?",
+      "options": [
+        "```sql\nUPDATE products\nSET attributes = attributes ||\n  '{\"warranty_months\": 12}'\nWHERE sku LIKE 'ACC%';\n```",
+        "```sql\nUPDATE products\nSET attributes = jsonb_set(attributes,\n  '{warranty_months}', '12')\nWHERE sku LIKE 'ACC%';\n```",
+        "```sql\nUPDATE products\nSET attributes = '{\"warranty_months\": 12}'\nWHERE sku LIKE 'ACC%';\n```",
+        "```sql\nUPDATE products\nSET attributes = COALESCE(attributes, '{}')\n  || '{\"warranty_months\": 12}'\nWHERE sku LIKE 'ACC%';\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng là phương án 4: `COALESCE(attributes, '{}')` đổi NULL thành object rỗng rồi mới gộp, nên sản phẩm chưa có thông số vẫn nhận được khóa mới.\n- Phương án 1: `NULL || '{...}'` ra NULL nên ACC-008 và ACC-009 không được thêm gì.\n- Phương án 2: `jsonb_set` trên cột NULL cũng trả NULL, cùng lỗi.\n- Phương án 3 ghi đè toàn bộ `attributes`, làm mất `brand`, `wireless`... của các sản phẩm ACC khác."
+    },
+    {
+      "id": "sql-d22-11",
+      "topic": "JSON và JSONB",
+      "source": "Ngày 22 - JSON và JSONB",
+      "question": "Chạy truy vấn sau, kết quả là gì? (Chú ý khóa `a` xuất hiện hai lần.)",
+      "code": "SELECT '{\"a\": 1, \"a\": 2}'::jsonb ->> 'a';",
+      "codeLang": "sql",
+      "options": [
+        "1",
+        "báo lỗi vì khóa trùng",
+        "2",
+        "NULL"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là 2: JSONB chỉ giữ giá trị cuối khi gặp khóa trùng, nên `{\"a\": 1, \"a\": 2}` được lưu thành `{\"a\": 2}`.\n- Không phải 1: nếu dùng kiểu `JSON` thì cả hai khóa được giữ nguyên văn, nhưng JSONB thì không.\n- Không báo lỗi: khóa trùng vẫn là JSON hợp lệ.\n- Không NULL vì khóa `a` tồn tại."
+    },
+    {
+      "id": "sql-d22-12",
+      "topic": "?| và ?&",
+      "source": "Ngày 22 - Lọc: @> và ?",
+      "question": "Tìm các sản phẩm có **ít nhất một** trong hai khóa `watt` hoặc `refresh_hz`. Truy vấn nào đúng (3 sản phẩm: PC-001, PC-002, ACC-007)?",
+      "options": [
+        "```sql\nSELECT sku FROM products\nWHERE attributes ?& ARRAY['watt', 'refresh_hz'];\n```",
+        "```sql\nSELECT sku FROM products\nWHERE attributes ?| ARRAY['watt', 'refresh_hz'];\n```",
+        "```sql\nSELECT sku FROM products\nWHERE attributes ? 'watt'\n  AND attributes ? 'refresh_hz';\n```",
+        "```sql\nSELECT sku FROM products\nWHERE attributes @>\n  '{\"watt\": null, \"refresh_hz\": null}';\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là phương án 2: `?|` đúng khi JSON có ít nhất một trong các khóa trong mảng. Kết quả: PC-001, PC-002, ACC-007.\n- Phương án 1 dùng `?&` (phải có đủ mọi khóa), không sản phẩm nào có cả `watt` lẫn `refresh_hz` nên ra 0 dòng.\n- Phương án 3 viết AND hai điều kiện nên cũng yêu cầu đủ cả hai khóa, ra 0 dòng.\n- Phương án 4 dùng `@>` để tìm giá trị null của JSON, không phải kiểm tra khóa tồn tại, nên ra 0 dòng."
+    },
+    {
+      "id": "sql-d22-13",
+      "topic": "Chỉ mục GIN",
+      "source": "Ngày 22 - Tăng tốc bằng chỉ mục GIN",
+      "question": "Bảng `listings` có chỉ mục GIN mặc định (`jsonb_ops`) trên cột `attributes` kiểu JSONB. Điều kiện lọc nào dưới đây dùng được chỉ mục này?",
+      "options": [
+        "```sql\nWHERE (attributes ->> 'shop_id')::INT = 777\n```",
+        "```sql\nWHERE attributes ->> 'shop_id' LIKE '77%'\n```",
+        "```sql\nWHERE attributes -> 'shop_id' = '777'\n```",
+        "```sql\nWHERE attributes @> '{\"shop_id\": 777}'\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng là phương án 4: GIN mặc định hỗ trợ các toán tử `@>`, `?`, `?|`, `?&` trên chính cột JSONB.\n- Phương án 1 và 2 áp hàm/toán tử `->>` lên cột nên thành một biểu thức khác, chỉ mục trên cột không giúp được, PostgreSQL quét cả bảng.\n- Phương án 3 cũng là biểu thức `->` rồi so sánh, GIN không hỗ trợ.\nNếu hay lọc bằng `=` hoặc khoảng giá trị, hãy tạo expression index B-tree trên đúng biểu thức đó, hoặc đưa khóa ra thành cột thường."
+    },
+    {
+      "id": "sql-d22-14",
+      "topic": "Khi nào dùng JSONB",
+      "source": "Ngày 22 - Khi nào dùng JSONB, khi nào tách bảng",
+      "question": "Thuộc tính nào của sản phẩm DSC Shop nên là **cột thường** (hoặc bảng riêng) thay vì nằm trong `attributes` JSONB?",
+      "options": [
+        "`gpu` của laptop: chỉ một số sản phẩm có, dùng để hiển thị",
+        "`switch` của bàn phím cơ: chỉ một sản phẩm có",
+        "`price`: cần CHECK (price >= 0), cần SUM và kiểu NUMERIC chính xác",
+        "`watt` của củ sạc: thông số riêng theo loại hàng"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là `price`: dữ liệu có cấu trúc ổn định, mọi dòng đều có, cần ràng buộc (JSONB không có CHECK/REFERENCES theo từng khóa), cần tính toán và sắp xếp thường xuyên.\n- `gpu`, `switch` và `watt` là thông số thay đổi theo từng loại hàng, phần lớn sản phẩm không có, chủ yếu để hiển thị. Đó chính là phần JSONB sinh ra để chứa.\n- Nếu để `price` trong JSON, không ai chặn được giá âm hay giá dạng chuỗi như \"19.990.000\", và mỗi báo cáo doanh thu phải ép kiểu."
+    },
+    {
+      "id": "sql-d22-15",
+      "topic": "GIN jsonb_path_ops",
+      "source": "Ngày 22 - Bài tập 9 (jsonb_path_ops)",
+      "question": "Bảng `listings` có chỉ mục `GIN (attributes jsonb_path_ops)`. Điều kiện nào dưới đây **không** dùng được chỉ mục này (PostgreSQL phải quét cả bảng)?",
+      "options": [
+        "```sql\nWHERE attributes @> '{\"shop_id\": 777}'\n```",
+        "```sql\nWHERE attributes @>\n  '{\"wireless\": true, \"brand\": \"Apple\"}'\n```",
+        "```sql\nWHERE attributes ? 'gpu'\n```",
+        "```sql\nWHERE attributes @> '{\"colors\": [\"Đen\"]}'\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng là `attributes ? 'gpu'`: `jsonb_path_ops` chỉ lưu băm của đường dẫn tới giá trị, không lưu riêng từng khóa, nên không trả lời được \"có khóa `gpu` không\".\n- Ba phương án còn lại đều dùng `@>`, đúng loại toán tử mà `jsonb_path_ops` hỗ trợ (kể cả nhiều cặp khóa-giá trị và mảng).\nĐổi lại index này nhỏ hơn GIN mặc định. Nếu cần cả `?`, `?|`, `?&` thì dùng GIN mặc định (`jsonb_ops`)."
+    },
+    {
+      "id": "sql-d22-16",
+      "topic": "?& và đếm khóa",
+      "source": "Ngày 22 - Lọc: @> và ?",
+      "question": "Có 12 sản phẩm có khóa `storage_gb`. Truy vấn dưới đây trả về bao nhiêu?",
+      "code": "SELECT COUNT(*)\nFROM products\nWHERE attributes ?& ARRAY['ram_gb', 'storage_gb'];",
+      "codeLang": "sql",
+      "options": [
+        "6",
+        "12",
+        "18",
+        "3"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng là 6: `?&` yêu cầu có đủ cả `ram_gb` lẫn `storage_gb`, và chỉ 6 laptop có cả hai.\n- 12 là số sản phẩm có `storage_gb` (gồm điện thoại, máy tính bảng...), nhưng nhiều sản phẩm trong đó không có `ram_gb`.\n- 18 là phép cộng 12 + 6, không liên quan đến `?&`.\n- 3 không khớp với cách đếm nào của điều kiện này (đó chỉ là số điện thoại có danh sách màu)."
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+[
+  {"id": "sql-d01-01", "kind": "choose-query", "options": [
+    "SELECT categories FROM categories;",
+    "SELECT '*' FROM categories;",
+    "SELECT * FROM categories;",
+    "SELECT category_id, name FROM categories;"
+  ]},
+  {"id": "sql-d01-04", "kind": "find-error", "options": [
+    "SELECT 'Hà Nội';",
+    "select full_name from CUSTOMERS;",
+    "SELECT * FROM categories; -- danh mục",
+    "SELECT \"Hà Nội\";"
+  ]},
+  {"id": "sql-d01-06", "kind": "predict", "format": "text", "query": "SELECT 1 + 1 AS tong, 'a' || 'b' AS chuoi;"},
+  {"id": "sql-d01-08", "kind": "find-error", "options": [
+    "SELECT * FROM shop.customers;",
+    "SELECT * FROM customers;",
+    "SELECT * FROM public.customers;",
+    "SELECT * FROM \"customers\";"
+  ]},
+  {"id": "sql-d01-09", "kind": "choose-query", "options": [
+    "SELECT full_name title, hire_date FROM employees;",
+    "SELECT 'full_name', 'title', 'hire_date' FROM employees;",
+    "SELECT full_name, title FROM employees;",
+    "SELECT full_name, title, hire_date FROM employees;"
+  ]},
+  {"id": "sql-d01-11", "kind": "predict", "format": "scalar", "query": "BEGIN; INSERT INTO categories (name) VALUES ('Thử nghiệm'); ROLLBACK; SELECT COUNT(*) FROM categories;"}
+]

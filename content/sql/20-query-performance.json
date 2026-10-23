@@ -1,0 +1,209 @@
+{
+  "id": "sql-d20",
+  "title": "Ngày 20: Đọc kế hoạch thực thi với EXPLAIN",
+  "description": "EXPLAIN và EXPLAIN ANALYZE, cost/rows/loops, các kiểu scan và join, Sort, thống kê và ANALYZE.",
+  "questions": [
+    {
+      "id": "sql-d20-01",
+      "topic": "EXPLAIN ANALYZE chạy thật",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Bảng `payments` của DSC Shop có 37 dòng, trong đó 8 dòng thanh toán `cash`. Bạn chạy hai lệnh sau liên tiếp (không có BEGIN/ROLLBACK). Lệnh `SELECT` trả về bao nhiêu?",
+      "code": "EXPLAIN ANALYZE\nDELETE FROM payments WHERE method = 'cash';\n\nSELECT COUNT(*) FROM payments;",
+      "codeLang": "sql",
+      "options": [
+        "37",
+        "29",
+        "8",
+        "0"
+      ],
+      "answer": 1,
+      "explanation": "`EXPLAIN ANALYZE` **chạy thật** câu lệnh để đo, nên `DELETE` đã xóa 8 dòng `cash`: 37 - 8 = 29.\n- 37 sai: đó là kết quả nếu chỉ dùng `EXPLAIN` (không ANALYZE), khi đó lệnh chỉ lập plan.\n- 8 sai: đó là số dòng bị xóa, không phải số dòng còn lại.\n- 0 sai: điều kiện `method = 'cash'` chỉ xóa một phần bảng.\nMuốn đo mà không mất dữ liệu, hãy bọc trong `BEGIN; ... ROLLBACK;`."
+    },
+    {
+      "id": "sql-d20-02",
+      "topic": "EXPLAIN an toàn với DELETE",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Bạn chỉ muốn xem plan của câu `DELETE` dưới đây và chắc chắn KHÔNG dòng nào bị xóa (không dùng transaction). Cách viết nào đảm bảo điều đó?",
+      "options": [
+        "```sql\nEXPLAIN\nDELETE FROM payments WHERE method = 'cash';\n```",
+        "```sql\nEXPLAIN ANALYZE\nDELETE FROM payments WHERE method = 'cash';\n```",
+        "```sql\nEXPLAIN (ANALYZE)\nDELETE FROM payments WHERE method = 'cash';\n```",
+        "```sql\nEXPLAIN (ANALYZE, BUFFERS)\nDELETE FROM payments WHERE method = 'cash';\n```"
+      ],
+      "answer": 0,
+      "explanation": "`EXPLAIN` không có `ANALYZE` chỉ lập plan, không chạy lệnh nên dữ liệu giữ nguyên (đếm lại vẫn 37 dòng).\n- `EXPLAIN ANALYZE` chạy thật: 8 dòng `cash` bị xóa (còn 29).\n- `EXPLAIN (ANALYZE)` chỉ là cách viết khác của cùng tùy chọn, cũng chạy thật.\n- `EXPLAIN (ANALYZE, BUFFERS)` thêm số trang đọc nhưng vẫn chạy thật.\nNếu cần số đo thật mà không đổi dữ liệu: bọc `EXPLAIN ANALYZE` trong `BEGIN ... ROLLBACK`."
+    },
+    {
+      "id": "sql-d20-03",
+      "topic": "EXPLAIN ANALYZE UPDATE",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Cột `products.price` có ràng buộc `CHECK (price >= 0)`. Câu nào dưới đây gây LỖI khi chạy?",
+      "options": [
+        "```sql\nEXPLAIN\nUPDATE products SET price = -1\nWHERE product_id = 1;\n```",
+        "```sql\nEXPLAIN ANALYZE\nSELECT * FROM products\nWHERE price = -1;\n```",
+        "```sql\nEXPLAIN ANALYZE\nUPDATE products SET price = -1\nWHERE product_id = 1;\n```",
+        "```sql\nEXPLAIN ANALYZE\nUPDATE products SET price = price + 1\nWHERE product_id = 1;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Vì `EXPLAIN ANALYZE` chạy thật `UPDATE`, giá trị -1 vi phạm `CHECK (price >= 0)` và PostgreSQL báo lỗi ràng buộc.\n- `EXPLAIN UPDATE ...` chỉ lập plan, không thực hiện việc ghi nên không kiểm tra ràng buộc: chạy được.\n- `EXPLAIN ANALYZE SELECT ... WHERE price = -1` chỉ đọc, trả về 0 dòng và không lỗi.\n- `price = price + 1` cho giá trị hợp lệ nên chạy được (và đổi dữ liệu thật nếu không rollback).\nĐây là một cách nhớ: ANALYZE nghĩa là thực thi thật."
+    },
+    {
+      "id": "sql-d20-04",
+      "topic": "Cú pháp EXPLAIN",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Câu nào dưới đây gây LỖI cú pháp?",
+      "options": [
+        "```sql\nEXPLAIN (ANALYZE, BUFFERS)\nSELECT * FROM orders\nWHERE order_id = 1;\n```",
+        "```sql\nEXPLAIN ANALYZE\nSELECT * FROM orders\nWHERE order_id = 1;\n```",
+        "```sql\nEXPLAIN (ANALYZE true, COSTS off)\nSELECT * FROM orders\nWHERE order_id = 1;\n```",
+        "```sql\nEXPLAIN ANALYZE, BUFFERS\nSELECT * FROM orders\nWHERE order_id = 1;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Khi dùng nhiều tùy chọn, phải đặt trong **ngoặc đơn**, ngăn cách bằng dấu phẩy: `EXPLAIN (ANALYZE, BUFFERS)`. Dạng `ANALYZE, BUFFERS` không có ngoặc gây lỗi cú pháp tại dấu phẩy.\n- Phương án 1 đúng cú pháp (dạng có ngoặc).\n- Phương án 2 đúng: viết ngắn `EXPLAIN ANALYZE` chỉ dùng được cho riêng ANALYZE.\n- Phương án 3 đúng: mỗi tùy chọn có thể kèm giá trị `true`/`off`."
+    },
+    {
+      "id": "sql-d20-05",
+      "topic": "Thống kê và ANALYZE",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Bảng `orders` của DSC Shop có đúng 40 dòng. Sau khi chạy hai lệnh dưới đây, `reltuples` (số dòng ước lượng mà planner lưu) là bao nhiêu?",
+      "code": "ANALYZE orders;\n\nSELECT reltuples::int\nFROM pg_class\nWHERE oid = 'orders'::regclass;",
+      "codeLang": "sql",
+      "options": [
+        "40",
+        "-1",
+        "0",
+        "18"
+      ],
+      "answer": 0,
+      "explanation": "`ANALYZE` lấy mẫu bảng và cập nhật thống kê; với bảng nhỏ nó đếm hết nên `reltuples` = 40.\n- -1 sai: đó là giá trị của bảng **chưa từng** được ANALYZE (planner chưa có thống kê, nên phải đoán).\n- 0 sai: 0 chỉ xuất hiện với bảng đã phân tích mà rỗng.\n- 18 sai: đó là số dòng của bảng `customers`, không phải `orders`.\nVì vậy sau khi nạp nhiều dữ liệu hãy chạy `ANALYZE ten_bang;`."
+    },
+    {
+      "id": "sql-d20-06",
+      "topic": "Cách tính cost",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Bảng `customers` ở schema `perf` nằm trên 1161 trang và có 100.000 dòng. Biết `seq_page_cost = 1`, `cpu_tuple_cost = 0.01`, `cpu_operator_cost = 0.0025`. Cost tổng của `SELECT * FROM customers WHERE city = 'Huế'` (Seq Scan, kiểm tra một phép so sánh trên mỗi dòng) là bao nhiêu?",
+      "options": [
+        "2161",
+        "1161",
+        "2411",
+        "3661"
+      ],
+      "answer": 2,
+      "explanation": "Cost Seq Scan = số trang x `seq_page_cost` + số dòng x `cpu_tuple_cost` + số dòng x `cpu_operator_cost` cho mỗi phép so sánh trong `WHERE`: 1161 + 1000 + 250 = **2411**.\n- 2161 sai: đó là cost của `SELECT * FROM customers` không có `WHERE` (thiếu phần 250 của phép so sánh).\n- 1161 sai: chỉ tính phần đọc trang, bỏ phần CPU xử lý dòng.\n- 3661 sai: cộng nhầm, ví dụ nhân đôi phần CPU.\nLưu ý: điều kiện lọc không giảm số trang phải đọc, chỉ thêm việc kiểm tra."
+    },
+    {
+      "id": "sql-d20-07",
+      "topic": "loops trong plan",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Một nút trong nhánh trong của Nested Loop có dòng dưới đây. Tổng số dòng nút này trả ra trong cả truy vấn là khoảng bao nhiêu?",
+      "code": "Bitmap Heap Scan on orders o\n  (actual time=0.019..0.037 rows=11 loops=3)",
+      "codeLang": "text",
+      "options": [
+        "11 dòng",
+        "3 dòng",
+        "0,037 dòng",
+        "khoảng 33 dòng"
+      ],
+      "answer": 3,
+      "explanation": "Với `loops` > 1, `rows` và `actual time` là số **trung bình mỗi lần chạy**. Nút chạy 3 lần, mỗi lần khoảng 11 dòng, nên tổng khoảng 3 x 11 = 33 dòng (thời gian cũng cỡ 3 x 0,037 ms).\n- 11 dòng sai: quên nhân với `loops`, một lỗi đọc plan rất hay gặp.\n- 3 dòng sai: nhầm `loops` với số dòng.\n- 0,037 dòng sai: đó là một mức thời gian (ms), không phải số dòng."
+    },
+    {
+      "id": "sql-d20-08",
+      "topic": "Index Cond và Filter",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Trong một nút scan của plan, `Index Cond` khác `Filter` ở điểm nào?",
+      "options": [
+        "hai tên gọi của cùng một thứ",
+        "`Index Cond` dùng để tra index; `Filter` kiểm tra trên dòng đã đọc",
+        "`Filter` dùng để tra index; `Index Cond` kiểm tra sau khi đọc dòng",
+        "`Index Cond` chỉ xuất hiện trong truy vấn có JOIN"
+      ],
+      "answer": 1,
+      "explanation": "`Index Cond` là điều kiện được dùng để **tra index**, tìm thẳng các dòng khớp. `Filter` là điều kiện kiểm tra trên từng dòng sau khi đã đọc nó lên; những dòng bị loại được đếm trong `Rows Removed by Filter`.\n- Hai tên không đồng nghĩa: `Filter` lớn kèm `Rows Removed by Filter` lớn là dấu hiệu đọc thừa.\n- Đảo ngược vai trò là sai.\n- `Index Cond` xuất hiện ở mọi nút dùng index, kể cả `WHERE order_id = 1` không có JOIN."
+    },
+    {
+      "id": "sql-d20-09",
+      "topic": "Ước lượng sai và ANALYZE",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Bạn vừa nạp ~200.000 đơn vào bảng mới (autovacuum chưa chạy). Plan của `WHERE status = 'delivered'` cho `Bitmap Heap Scan ... rows=583` nhưng `actual rows=174865`. Việc nên làm đầu tiên là gì?",
+      "options": [
+        "tạo thêm index thứ hai trên cột `status`",
+        "tăng `work_mem` lên 128MB",
+        "chạy `ANALYZE` trên bảng rồi xem lại plan",
+        "chạy `VACUUM FULL` vì bảng bị phình"
+      ],
+      "answer": 2,
+      "explanation": "Ước lượng lệch 300 lần là dấu hiệu thống kê cũ hoặc chưa có. `ANALYZE` cập nhật thống kê; sau đó planner ước lượng gần 174.699 dòng và chuyển sang Seq Scan hợp lý hơn.\n- Thêm index không sửa được ước lượng sai, nó chỉ cho planner thêm lựa chọn để chọn sai.\n- `work_mem` liên quan Sort/Hash chạy ngoài bộ nhớ, không liên quan số dòng ước lượng.\n- `VACUUM FULL` dọn dung lượng; bảng vừa nạp không bị phình và nó cũng không cập nhật thống kê phân bố."
+    },
+    {
+      "id": "sql-d20-10",
+      "topic": "Hash Join",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Truy vấn nối 1.000.000 đơn với khoảng 9.886 khách ở Huế (sau khi lọc) dùng Hash Join. Planner dựng bảng băm từ phía nào, và vì sao?",
+      "options": [
+        "phía khách ở Huế, vì bên nhỏ hơn dễ vừa bộ nhớ, bên lớn dò vào",
+        "phía đơn hàng, vì bên lớn hơn cho kết quả chính xác hơn",
+        "phía bảng viết trước chữ JOIN trong câu SQL, bất kể kích thước",
+        "phía bảng có index trên cột nối, bất kể kích thước"
+      ],
+      "answer": 0,
+      "explanation": "Hash Join dựng bảng băm trong bộ nhớ từ bên **nhỏ hơn** (ở đây 658 kB cho khách đã lọc), rồi đọc bên lớn (1 triệu đơn) và dò từng dòng vào bảng băm. Mỗi bảng chỉ đọc một lần.\n- Dựng từ bên lớn sẽ tốn bộ nhớ và dễ vượt `work_mem` (phải chia nhiều `Batches`); độ chính xác không đổi.\n- Thứ tự viết trong SQL không quyết định: planner tự chọn theo ước lượng kích thước.\n- Index không phải điều kiện để chọn bên dựng bảng băm."
+    },
+    {
+      "id": "sql-d20-11",
+      "topic": "Sort và work_mem",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Plan của `ORDER BY total_amount DESC` trên 1 triệu dòng có dòng `Sort Method: external merge  Disk: 20368kB`. Điều này nghĩa là gì?",
+      "options": [
+        "sắp xếp dùng index lưu trên đĩa nên rất nhanh",
+        "dữ liệu cần sắp vượt `work_mem` nên phải ghi tạm ra đĩa",
+        "bảng bị hỏng, cần chạy `REINDEX`",
+        "truy vấn đang chạy song song bằng nhiều worker"
+      ],
+      "answer": 1,
+      "explanation": "`external merge ... Disk` nghĩa là dữ liệu cần sắp lớn hơn `work_mem` (mặc định 4MB), nên PostgreSQL ghi tạm khoảng 20 MB ra đĩa rồi trộn lại. Khi vừa bộ nhớ, dòng này là `quicksort  Memory: ...`.\n- Sắp xếp bằng index không có dòng `Sort` như vậy (Index Scan trả sẵn thứ tự).\n- Đây là hành vi bình thường, không phải dấu hiệu hỏng bảng hay cần `REINDEX`.\n- Chạy song song hiện qua nút `Gather` và `Workers Launched`, không qua `Sort Method`.\nLưu ý: tăng `work_mem` chưa chắc nhanh hơn; hãy đo."
+    },
+    {
+      "id": "sql-d20-12",
+      "topic": "Nested Loop",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Truy vấn lấy đơn của 3 khách đầu tiên (`WHERE c.customer_id BETWEEN 1 AND 3`), trong khi `orders.customer_id` đã có index. Planner chọn Nested Loop và chạy chỉ ~0,14 ms, thay vì ~72 ms của Hash Join khi chưa có index. Vì sao Nested Loop hợp lý ở đây?",
+      "options": [
+        "Nested Loop luôn nhanh hơn Hash Join, bất kể kích thước bảng",
+        "Nested Loop dựng bảng băm trong bộ nhớ nên dò rất nhanh",
+        "Nested Loop chỉ chạy được khi cả hai bảng đã sắp theo cột nối",
+        "bên ngoài chỉ 3 dòng, mỗi dòng tra nhanh bên trong bằng index"
+      ],
+      "answer": 3,
+      "explanation": "Nested Loop lặp với **mỗi dòng** của bảng ngoài (chỉ 3 khách) và tra các dòng khớp ở bảng trong bằng index trên cột nối, nên chỉ chạm vài chục dòng thay vì đọc cả triệu đơn (nhánh trong có `loops=3`).\n- \"Luôn nhanh hơn\" sai: nếu bên ngoài nhiều dòng hoặc bên trong không có index, mỗi vòng phải quét lại cả bảng và Nested Loop rất chậm.\n- Dựng bảng băm là việc của Hash Join, không phải Nested Loop.\n- Yêu cầu hai bên đã sắp theo cột nối là điều kiện của Merge Join."
+    },
+    {
+      "id": "sql-d20-13",
+      "topic": "Execution Time",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Một truy vấn có `Execution Time: 0.2 ms` trong `EXPLAIN ANALYZE`, nhưng ứng dụng báo mất 3 giây. Giải thích nào hợp lý nhất?",
+      "options": [
+        "`Execution Time` không gồm truyền kết quả qua mạng và xử lý ở ứng dụng; truy vấn còn có thể bị gọi lặp nhiều lần",
+        "`EXPLAIN ANALYZE` luôn đo thiếu đúng 10 lần so với thực tế",
+        "`Execution Time` đã gồm cả thời gian truyền qua mạng nên con số 3 giây là sai",
+        "`Planning Time` bị tính trùng vào `Execution Time`"
+      ],
+      "answer": 0,
+      "explanation": "`Execution Time` chỉ là thời gian chạy trong server. Nó không gồm truyền kết quả qua mạng, thời gian ứng dụng đọc và chuyển đổi dữ liệu, chờ lấy kết nối từ pool hay chờ khóa. Ứng dụng còn có thể chạy câu này hàng nghìn lần (N+1): 0,2 ms x 1000 đã là 200 ms.\n- Không có hệ số 10 cố định nào cả.\n- Phát biểu `đã gồm truyền mạng` ngược với tài liệu: đây chính là điểm hay bị hiểu nhầm.\n- `Planning Time` được in riêng, không tính vào `Execution Time`."
+    },
+    {
+      "id": "sql-d20-14",
+      "topic": "Index và ORDER BY LIMIT",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN",
+      "question": "Màn hình \"20 đơn mới nhất\" chạy `ORDER BY order_date DESC LIMIT 20` trên 1 triệu đơn. Sau khi tạo index trên `order_date`, plan không còn nút `Sort` và chạy chỉ ~0,1 ms. Vì sao?",
+      "options": [
+        "`LIMIT` tự sắp xếp ngầm nên không cần nút `Sort`",
+        "PostgreSQL bỏ qua `ORDER BY` khi có `LIMIT`",
+        "index lưu `order_date` theo thứ tự, nên đọc ngược từ cuối index và dừng sau 20 dòng",
+        "Index Only Scan không bao giờ cần đọc dữ liệu từ đĩa"
+      ],
+      "answer": 2,
+      "explanation": "Index lưu sẵn `order_date` đã sắp, nên planner dùng `Index Scan Backward`: đọc từ cuối index và `Limit` dừng sau 20 dòng. Không cần đọc cả bảng, không cần sắp xếp.\n- Không có chuyện `LIMIT` tự sắp xếp: khi chưa có index, plan phải đọc cả bảng rồi `Sort` kiểu top-N heapsort.\n- `ORDER BY` không bị bỏ qua; nếu bỏ thì kết quả sẽ không phải 20 đơn mới nhất.\n- Đây là Index Scan, không phải Index Only Scan (truy vấn lấy cả `order_id`, `total_amount` nên vẫn đọc bảng cho 20 dòng đó)."
+    }
+  ]
+}

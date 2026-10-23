@@ -1,0 +1,251 @@
+{
+  "id": "sql-d15",
+  "title": "Ngày 15: Chỉ mục (index)",
+  "description": "Tạo, xóa, liệt kê index; quy tắc tiền tố trái, độ chọn lọc, partial và expression index, chi phí ghi.",
+  "questions": [
+    {
+      "id": "sql-d15-01",
+      "topic": "pg_indexes",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Chạy truy vấn sau trên DSC Shop. Kết quả là bao nhiêu?",
+      "code": "SELECT COUNT(*)\nFROM pg_indexes\nWHERE schemaname = 'shop'\n  AND tablename = 'order_items';",
+      "codeLang": "sql",
+      "options": [
+        "2",
+        "0",
+        "1",
+        "3"
+      ],
+      "answer": 0,
+      "explanation": "Kết quả là **2**: `order_items_pkey` (sinh ra từ khóa chính `(order_id, product_id)`) và `order_items_product_id_idx` (tạo tay cho khóa ngoại `product_id`).\n- **0** sai vì khóa chính luôn tự có index.\n- **1** sai vì bỏ sót index tạo tay: khóa ngoại không tự có index, nên schema phải tạo tay cho `product_id`.\n- **3** sai vì `order_id` không cần index riêng, nó là cột đầu (tiền tố trái) của index khóa chính."
+    },
+    {
+      "id": "sql-d15-02",
+      "topic": "CREATE INDEX",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Trên DSC Shop, câu lệnh nào gây LỖI khi chạy?",
+      "options": [
+        "```sql\nCREATE INDEX idx_c_city\n  ON customers (city);\n```",
+        "```sql\nCREATE INDEX idx_o_status\n  ON orders (status, order_date);\n```",
+        "```sql\nCREATE INDEX customers_pkey\n  ON customers (city);\n```",
+        "```sql\nCREATE INDEX ON products\n  (lower(name));\n```"
+      ],
+      "answer": 2,
+      "explanation": "Câu tạo index tên `customers_pkey` lỗi vì tên đó đã được index khóa chính dùng: tên index phải khác tên mọi quan hệ có sẵn trong schema.\n- `idx_c_city` chạy được, index thường trên một cột.\n- `idx_o_status` chạy được, index nhiều cột `(status, order_date)`.\n- Câu bỏ tên chạy được: PostgreSQL tự đặt tên, và `lower(name)` là expression index hợp lệ."
+    },
+    {
+      "id": "sql-d15-03",
+      "topic": "DROP INDEX",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Câu `DROP INDEX` nào gây LỖI trên DSC Shop?",
+      "options": [
+        "```sql\nDROP INDEX orders_customer_id_idx;\n```",
+        "```sql\nDROP INDEX IF EXISTS no_such_idx;\n```",
+        "```sql\nDROP INDEX products_category_id_idx,\n  payments_order_id_idx;\n```",
+        "```sql\nDROP INDEX customers_email_key;\n```"
+      ],
+      "answer": 3,
+      "explanation": "`customers_email_key` là index đứng sau ràng buộc `UNIQUE` của cột `email`, nên không `DROP INDEX` trực tiếp được; muốn bỏ phải dùng `ALTER TABLE ... DROP CONSTRAINT`.\n- Xóa `orders_customer_id_idx` (index tạo tay) chạy được.\n- `DROP INDEX IF EXISTS` với tên không tồn tại chỉ báo notice, không lỗi.\n- Xóa hai index tạo tay trong một lệnh, cách nhau bằng dấu phẩy, cũng được."
+    },
+    {
+      "id": "sql-d15-04",
+      "topic": "Partial index",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Màn hình \"đơn chờ xử lý\" chỉ hỏi các đơn `pending`, sắp theo `order_date`. Câu nào tạo đúng partial index `idx_pending`, chỉ chứa các đơn `pending`, khóa là `order_date`?",
+      "options": [
+        "```sql\nCREATE INDEX idx_pending\n  ON orders (order_date, status);\n```",
+        "```sql\nCREATE INDEX idx_pending\n  ON orders (status)\n  WHERE order_date IS NOT NULL;\n```",
+        "```sql\nCREATE INDEX idx_pending\n  ON orders WHERE status = 'pending'\n  (order_date);\n```",
+        "```sql\nCREATE INDEX idx_pending\n  ON orders (order_date)\n  WHERE status = 'pending';\n```"
+      ],
+      "answer": 3,
+      "explanation": "Partial index đặt mệnh đề `WHERE` ở cuối, sau danh sách cột: chỉ các dòng thỏa điều kiện mới vào index.\n- `(order_date, status)` là index hai cột trên toàn bộ bảng, không hề \"một phần\".\n- `(status) WHERE order_date IS NOT NULL` đảo vai trò: khóa là `status`, điều kiện lại gần như đúng với mọi dòng.\n- Câu để `WHERE` trước danh sách cột sai cú pháp, PostgreSQL báo lỗi."
+    },
+    {
+      "id": "sql-d15-05",
+      "topic": "Expression index",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Cần một UNIQUE index tên `idx_email_lower` để không cho hai email chỉ khác chữ hoa/chữ thường cùng tồn tại trong `customers`. Chọn câu đúng.",
+      "options": [
+        "```sql\nCREATE UNIQUE INDEX idx_email_lower\n  ON customers (email);\n```",
+        "```sql\nCREATE INDEX idx_email_lower\n  ON customers (lower(email));\n```",
+        "```sql\nCREATE UNIQUE INDEX idx_email_lower\n  ON customers lower(email);\n```",
+        "```sql\nCREATE UNIQUE INDEX idx_email_lower\n  ON customers (lower(email));\n```"
+      ],
+      "answer": 3,
+      "explanation": "Cần cả hai: `UNIQUE` để chặn trùng, và biểu thức `lower(email)` để so sánh sau khi đã đưa về chữ thường.\n- `UNIQUE` trên `(email)` lập index trên giá trị gốc, vẫn cho `A@x.com` và `a@x.com` cùng tồn tại.\n- `(lower(email))` không có `UNIQUE` chỉ tăng tốc tìm kiếm, không chặn trùng.\n- Câu viết `ON customers lower(email)` thiếu cặp ngoặc bao danh sách cột nên lỗi cú pháp."
+    },
+    {
+      "id": "sql-d15-06",
+      "topic": "pg_indexes",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Câu nào liệt kê đúng các index của riêng bảng `products` trong schema `shop`?",
+      "options": [
+        "```sql\nSELECT indexname FROM pg_indexes\nWHERE schemaname = 'shop'\n  AND tablename = 'products';\n```",
+        "```sql\nSELECT indexname FROM pg_indexes\nWHERE tablename = 'products'\n   OR schemaname = 'shop';\n```",
+        "```sql\nSELECT indexname FROM pg_indexes\nWHERE tablename = 'shop.products';\n```",
+        "```sql\nSELECT indexname FROM pg_index\nWHERE tablename = 'products';\n```"
+      ],
+      "answer": 0,
+      "explanation": "View `pg_indexes` tách `schemaname` và `tablename` thành hai cột; lọc cả hai bằng AND.\n- `tablename = 'shop.products'` sai vì `tablename` chỉ chứa `products`, không có tiền tố schema, nên trả về rỗng.\n- Điều kiện nối bằng OR lấy index của mọi bảng trong schema `shop` (và bảng tên `products` ở schema khác).\n- `pg_index` là catalog khác, không có cột `tablename`, nên báo lỗi."
+    },
+    {
+      "id": "sql-d15-07",
+      "topic": "Tạo trùng index",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Bảng `orders` của DSC Shop ban đầu có 2 index (`orders_pkey` và `orders_customer_id_idx`). Chạy ba câu dưới đây rồi đếm index của `orders`. Kết quả là bao nhiêu?",
+      "code": "CREATE INDEX ON orders (status);\nCREATE INDEX ON orders (status);\nDROP INDEX orders_customer_id_idx;",
+      "codeLang": "sql",
+      "options": [
+        "1",
+        "2",
+        "4",
+        "3"
+      ],
+      "answer": 3,
+      "explanation": "Kết quả là **3**. Bỏ tên thì PostgreSQL tự đặt (`orders_status_idx`, rồi `orders_status_idx1`), và nó **không** từ chối index trùng định nghĩa, nên hai lệnh đầu thêm 2 index: 2 + 2 = 4. Lệnh thứ ba xóa 1: còn 3.\n- **4** sai vì quên lệnh `DROP INDEX`.\n- **2** sai vì tưởng lệnh tạo thứ hai bị bỏ qua do trùng.\n- **1** sai vì tưởng `DROP INDEX` xóa hết index của cột.\nĐây là lý do index trùng là lỗi thường gặp: tốn chỗ và làm chậm ghi."
+    },
+    {
+      "id": "sql-d15-08",
+      "topic": "UNIQUE index",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Với dữ liệu seed hiện tại của DSC Shop, câu tạo UNIQUE index nào gây LỖI? (Biết `customers.phone` có vài giá trị NULL nhưng các số khác nhau từng đôi một.)",
+      "options": [
+        "```sql\nCREATE UNIQUE INDEX ON customers\n  (phone);\n```",
+        "```sql\nCREATE UNIQUE INDEX ON customers\n  (lower(email));\n```",
+        "```sql\nCREATE UNIQUE INDEX ON customers\n  (city);\n```",
+        "```sql\nCREATE UNIQUE INDEX ON products\n  (lower(name));\n```"
+      ],
+      "answer": 2,
+      "explanation": "Tạo UNIQUE index trên dữ liệu đã có thì dữ liệu phải sẵn không trùng. Cột `city` có nhiều khách cùng thành phố (Hà Nội có 4 khách), nên lệnh thất bại.\n- UNIQUE trên `phone` vẫn được: NULL không bị coi là trùng nhau, các số còn lại khác nhau.\n- UNIQUE trên `lower(email)` được vì không có hai email nào chỉ khác hoa/thường.\n- UNIQUE trên `lower(name)` của sản phẩm được vì tên sản phẩm không trùng nhau."
+    },
+    {
+      "id": "sql-d15-09",
+      "topic": "Quy tắc tiền tố trái",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Có index nhiều cột `(status, order_date)` trên bảng đơn hàng. Điều kiện lọc nào **không** tận dụng được index này một cách hiệu quả?",
+      "options": [
+        "```sql\nWHERE order_date >= '2026-10-10'\n```",
+        "```sql\nWHERE status = 'pending'\n```",
+        "```sql\nWHERE status = 'pending'\n  AND order_date >= '2026-10-01'\n```",
+        "```sql\nWHERE status = 'pending'\nORDER BY order_date DESC LIMIT 10\n```"
+      ],
+      "answer": 0,
+      "explanation": "Quy tắc tiền tố trái: index `(a, b)` dùng tốt khi lọc theo `a`, hoặc `a` và `b`. Lọc chỉ theo `order_date` thì các ngày nằm rải rác dưới từng `status`, giống tìm mọi người tên \"An\" trong danh bạ xếp theo họ.\n- Lọc chỉ theo `status` dùng cột đầu, được.\n- Lọc theo cả `status` và `order_date` dùng cả hai cột, được.\n- Lọc `status` rồi `ORDER BY order_date DESC LIMIT 10` cũng được: trong mỗi `status` các dòng đã xếp sẵn theo `order_date`, chỉ cần đọc ngược mà không phải sắp xếp."
+    },
+    {
+      "id": "sql-d15-10",
+      "topic": "Độ chọn lọc",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Bảng 1 triệu đơn có index trên `status`, trong đó 85% đơn là `'delivered'`. Vì sao `WHERE status = 'delivered'` vẫn chạy Seq Scan?",
+      "options": [
+        "index trên cột chữ không dùng được cho phép so sánh `=`",
+        "điều kiện khớp phần lớn bảng, đọc cả bảng một lượt rẻ hơn tra index",
+        "PostgreSQL bỏ qua mọi index khi bảng có hơn 100.000 dòng",
+        "index bị hỏng và phải xóa đi tạo lại"
+      ],
+      "answer": 1,
+      "explanation": "Độ chọn lọc thấp: khi điều kiện khớp phần lớn bảng, tra index hàng trăm nghìn lần rồi nhảy qua lại trong bảng đắt hơn đọc tuần tự. Planner biết tỷ lệ này nhờ thống kê, nên chọn Seq Scan là **đúng**.\n- B-tree phục vụ tốt phép `=` trên cột chữ, nên \"không dùng được cho `=`\" sai.\n- Bảng lớn thì index càng có ích, miễn là điều kiện chọn lọc cao, nên \"bỏ qua mọi index khi bảng lớn\" sai.\n- Không có gì hỏng: với `'pending'` (1%) cùng index đó vẫn được dùng."
+    },
+    {
+      "id": "sql-d15-11",
+      "topic": "Expression index",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Ứng dụng hay chạy `WHERE lower(city) = 'hà nội'` trên `customers`. Index nào giúp truy vấn này dùng được index?",
+      "options": [
+        "```sql\nCREATE INDEX ON customers\n  (city);\n```",
+        "```sql\nCREATE INDEX ON customers\n  (city, birth_date);\n```",
+        "```sql\nCREATE INDEX ON customers\n  (upper(city));\n```",
+        "```sql\nCREATE INDEX ON customers\n  (lower(city));\n```"
+      ],
+      "answer": 3,
+      "explanation": "Index phải khớp với **cách viết điều kiện**: expression index `(lower(city))` lưu sẵn kết quả `lower(city)` nên điều kiện dùng đúng biểu thức đó tận dụng được.\n- Index `(city)` lưu giá trị gốc, hàm bọc quanh cột làm nó vô dụng với điều kiện này.\n- Index `(city, birth_date)` cũng lưu `city` gốc nên cùng lý do.\n- Index `(upper(city))` là biểu thức khác, `lower(city)` không khớp."
+    },
+    {
+      "id": "sql-d15-12",
+      "topic": "Chi phí ghi",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Một bảng đơn hàng ghi rất nhiều, đọc ít, bị gắn 8 index \"cho chắc\". Hệ quả chính là gì?",
+      "options": [
+        "truy vấn đọc luôn nhanh hơn, mỗi index chỉ có lợi",
+        "các thao tác ghi chậm đi và tốn thêm dung lượng đĩa",
+        "dữ liệu trong bảng bị sắp xếp lại theo từng index",
+        "PostgreSQL tự xóa các index không dùng đến"
+      ],
+      "answer": 1,
+      "explanation": "Mỗi lần ghi, PostgreSQL phải cập nhật bảng **và** từng index, nên ghi chậm đi (bài đo chèn 200.000 dòng chậm khoảng 10 lần với 4 index) và index còn có thể chiếm nhiều chỗ hơn dữ liệu.\n- \"Mỗi index chỉ có lợi\" sai: index thừa không giúp truy vấn nào, chỉ tốn kém.\n- \"Dữ liệu bị sắp xếp lại\" sai: index là cấu trúc riêng, thứ tự lưu của bảng không đổi.\n- \"Tự xóa index không dùng\" sai: PostgreSQL không tự xóa, người quản trị phải xem `idx_scan` rồi tự `DROP INDEX`."
+    },
+    {
+      "id": "sql-d15-13",
+      "topic": "Index cho khóa ngoại",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Khóa ngoại `orders.customer_id` chưa có index. Khi `DELETE` một khách hàng, điều gì xảy ra trong PostgreSQL?",
+      "options": [
+        "PostgreSQL tự tạo index cho cột khóa ngoại ở lần xóa đầu tiên",
+        "việc kiểm tra khóa ngoại phải quét cả bảng `orders` mỗi lần xóa",
+        "câu `DELETE` bị từ chối vì khóa ngoại thiếu index",
+        "chỉ bảng `customers` bị khóa, `orders` không bị đọc"
+      ],
+      "answer": 1,
+      "explanation": "PostgreSQL phải kiểm tra xem còn đơn nào trỏ tới khách vừa xóa không; không có index thì mỗi lần kiểm tra là một lần quét cả bảng (bài đo: khoảng 79 ms so với 0,4 ms khi có index).\n- Khóa ngoại không tự có index trong PostgreSQL (khác MySQL InnoDB), nên \"tự tạo index\" sai.\n- Thiếu index không bị từ chối, chỉ chậm.\n- Bảng `orders` vẫn bị đọc để kiểm tra ràng buộc, nên \"orders không bị đọc\" sai."
+    },
+    {
+      "id": "sql-d15-14",
+      "topic": "Index thừa",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Đồng nghiệp tạo cả hai index trên `orders`: `(customer_id)` và `(customer_id, order_date)`. Nhận xét nào đúng?",
+      "options": [
+        "index `(customer_id, order_date)` thừa vì index một cột nhanh hơn",
+        "cả hai đều cần: index hai cột không thể lọc theo mình `customer_id`",
+        "index `(customer_id)` gần như thừa vì là tiền tố trái của index kia",
+        "phải xóa cả hai vì PostgreSQL cấm hai index cùng cột đầu"
+      ],
+      "answer": 2,
+      "explanation": "`(customer_id)` là tiền tố trái của `(customer_id, order_date)`, nên truy vấn lọc theo `customer_id` vẫn dùng được index hai cột; giữ cả hai chỉ tốn chỗ và làm ghi chậm.\n- \"Index hai cột thừa\" đảo ngược: nó còn phục vụ được `ORDER BY order_date`, nên không thừa.\n- \"Index hai cột không lọc được theo mình `customer_id`\" sai vì quy tắc tiền tố trái cho phép lọc chỉ theo cột đầu.\n- \"PostgreSQL cấm\" sai: nó vẫn cho tạo (xem câu về index trùng)."
+    },
+    {
+      "id": "sql-d15-15",
+      "topic": "Partial UNIQUE index",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Trên dữ liệu seed hiện tại của DSC Shop, câu tạo UNIQUE index (partial) nào gây LỖI?",
+      "options": [
+        "```sql\nCREATE UNIQUE INDEX ON orders\n  (customer_id)\n  WHERE status = 'pending';\n```",
+        "```sql\nCREATE UNIQUE INDEX ON orders\n  (customer_id)\n  WHERE status = 'delivered';\n```",
+        "```sql\nCREATE UNIQUE INDEX ON orders\n  (customer_id)\n  WHERE status = 'cancelled';\n```",
+        "```sql\nCREATE UNIQUE INDEX ON orders\n  (customer_id, status)\n  WHERE status <> 'delivered';\n```"
+      ],
+      "answer": 1,
+      "explanation": "UNIQUE partial index chỉ kiểm tra trùng trong các dòng thỏa điều kiện `WHERE`. Nhiều khách có từ 2 đơn `delivered` trở lên (khách 1 có 4 đơn), nên index trên `customer_id` với `status = 'delivered'` thất bại.\n- Với `pending`, chỉ có một đơn nên không trùng.\n- Với `cancelled`, mỗi khách chỉ có một đơn bị hủy nên không trùng.\n- Câu `(customer_id, status)` bỏ `delivered` đi: mỗi cặp khách và trạng thái còn lại chỉ xuất hiện một lần nên vẫn tạo được."
+    },
+    {
+      "id": "sql-d15-16",
+      "topic": "Index tự sinh",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Chạy các lệnh dưới đây trên DSC Shop, rồi đếm số index của bảng `t`. Kết quả là bao nhiêu?",
+      "code": "CREATE TABLE t (\n  id    INT PRIMARY KEY,\n  email TEXT UNIQUE,\n  name  TEXT\n);\nCREATE INDEX ON t (id);",
+      "codeLang": "sql",
+      "options": [
+        "2",
+        "4",
+        "3",
+        "1"
+      ],
+      "answer": 2,
+      "explanation": "Kết quả là **3**: `PRIMARY KEY` tự tạo một index, `UNIQUE` trên `email` tự tạo một index, và `CREATE INDEX ON t (id)` thêm một index nữa.\n- **1** sai vì chỉ tính khóa chính, quên index của `UNIQUE` và index tạo tay.\n- **2** sai vì cho rằng PostgreSQL nhận ra `(id)` đã có index nên bỏ qua; nó không làm vậy, nên có một bản sao thừa của khóa chính.\n- **4** sai vì không có index nào sinh ra cho cột `name`.\nBài học: đừng tự tạo index trùng với khóa chính hoặc UNIQUE."
+    },
+    {
+      "id": "sql-d15-17",
+      "topic": "Partial index",
+      "source": "Ngày 15 - Chỉ mục (index)",
+      "question": "Có partial index `ON orders (order_date) WHERE status = 'pending'`. Truy vấn nào dùng được index này?",
+      "options": [
+        "```sql\nWHERE status = 'pending'\nORDER BY order_date LIMIT 5\n```",
+        "```sql\nWHERE status = 'paid'\nORDER BY order_date LIMIT 5\n```",
+        "```sql\nORDER BY order_date LIMIT 5\n```",
+        "```sql\nWHERE status <> 'delivered'\nORDER BY order_date LIMIT 5\n```"
+      ],
+      "answer": 0,
+      "explanation": "Partial index chỉ dùng được khi điều kiện của truy vấn nằm gọn trong điều kiện của index: ở đây truy vấn phải lọc `status = 'pending'`.\n- Lọc `paid` thì các dòng cần tìm không có trong index (index chỉ chứa đơn `pending`).\n- Không lọc gì thì cần mọi đơn, mà index chỉ có một phần nhỏ nên không thể trả lời đủ.\n- `status <> 'delivered'` gồm cả `paid`, `shipped`, `cancelled`..., không suy ra được là `pending`, nên planner không dùng index này."
+    }
+  ]
+}
