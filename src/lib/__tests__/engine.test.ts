@@ -141,12 +141,20 @@ describe('progress import/export', () => {
     expect(getProgress().xp).toBe(before.xp);
   });
   it('settings mặc định, cập nhật và lưu localStorage', () => {
-    expect(getProgress().settings).toEqual({shuffleOptions: true, theme: 'auto', examSize: 30, examMinutes: 45});
+    expect(getProgress().settings).toEqual({style: 'obsidian', shuffleOptions: true, theme: 'auto', examSize: 30, examMinutes: 45});
     const ref = getProgress();
     updateSettings({theme: 'dark', examSize: 10});
     expect(getProgress()).not.toBe(ref);
     expect(getProgress().settings.theme).toBe('dark');
     expect(JSON.parse(localStorage.getItem('itquiz.v1')!).settings.examSize).toBe(10);
+  });
+  it('style hợp lệ được lưu, style lạ bị đưa về mặc định khi import', () => {
+    updateSettings({style: 'terminal'});
+    expect(getProgress().settings.style).toBe('terminal');
+    const raw = JSON.parse(exportProgress());
+    raw.settings.style = 'khong-ton-tai';
+    expect(importProgress(JSON.stringify(raw))).toBe(true);
+    expect(getProgress().settings.style).toBe('obsidian');
   });
 });
 
