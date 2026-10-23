@@ -1,0 +1,37 @@
+/* ============================================================
+   Màn hình gập hai mảnh (Surface Duo, Duo 2, ...) khi ứng dụng trải rộng qua cả hai màn.
+   Nội dung chảy thành 2 cột, cột 1 ở màn trái, cột 2 ở màn phải; khoảng cách giữa hai cột
+   đúng bằng khe gập nên không có chữ nào bị cắt bởi bản lề.
+   Giá trị dự phòng sau dấu phẩy chỉ để kiểm thử khi không có thiết bị thật.
+   ============================================================ */
+@media (horizontal-viewport-segments: 2) {
+  :root {
+    --seg0-right: env(viewport-segment-right 0 0, calc(50vw - 12px));
+    --seg1-left: env(viewport-segment-left 1 0, calc(50vw + 12px));
+    --hinge: calc(var(--seg1-left) - var(--seg0-right));
+  }
+  .container, .app-header-inner { max-width: none; }
+
+  /* hai cột, như hai trang sách */
+  .page { column-count: 2; column-gap: var(--hinge); }
+  .card, .grid > *, .stat-grid > *, details.acc, .history li, .style-card { break-inside: avoid; }
+  .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .grid { grid-template-columns: 1fr; }
+
+  /* màn làm bài: đề bài + code bên trái, phương án + giải thích bên phải */
+  .q-card { background: none; border: 0; box-shadow: none; padding: 0; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .q-card::before { display: none; }
+  .q-opts { break-before: column; margin-top: 0; }
+  .play, .q-card { break-inside: auto; }
+
+  /* thanh hành động nằm trên màn bên phải (ngón cái thường ở đó cùng các phương án) */
+  .actionbar { left: calc(var(--seg1-left) + 12px); right: 12px; max-width: none; margin: 0; }
+  /* dock đi cùng thanh hành động ở màn phải khi ở dạng nổi */
+  .sheet-back { padding-left: var(--seg1-left); }
+  .toast { left: calc(var(--seg1-left) + (100vw - var(--seg1-left)) / 2); }
+}
+
+/* Lỗi ở màn rộng: nội dung bị thanh hành động cố định che mất */
+@media (min-width: 900px) {
+  .app-main.play-main { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+}

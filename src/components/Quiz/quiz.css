@@ -125,3 +125,21 @@ details.acc[open] > div { animation: rise 0.45s var(--ease) backwards; }
   .q-opts { gap: 12px; }
   .stat-big { font-size: 1.9rem; }
 }
+
+/* ---------- Thống kê ---------- */
+.bars { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+.bars-grid { display: grid; gap: 6px 6px; min-width: min-content; grid-auto-flow: row; }
+.bar-col { grid-row: 1; height: 140px; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+.bar-val { font-size: 0.7rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar-fill { width: 100%; border-radius: 8px 8px 3px 3px; transform-origin: bottom; animation: growY 0.8s var(--ease) backwards; }
+.bar-label { grid-row: 2; text-align: center; font-size: 0.7rem; color: var(--muted); }
+@keyframes growY { from { transform: scaleY(0); } }
+.history { list-style: none; margin: 0; padding: 6px 16px; }
+.history li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; min-height: 56px; }
+.history li + li { border-top: var(--bw) solid var(--border); }
+.h-main { display: grid; min-width: 0; font-size: 0.82rem; }
+.h-main strong { font-size: 0.95rem; }
+.h-score { flex: none; font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+.h-score small { display: block; font-weight: 600; opacity: 0.8; }
+.h-score.good { color: var(--success); }
+.h-score.bad { color: var(--danger); }

@@ -80,7 +80,7 @@ export default function Stats() {
                           · sai {w.wrong}/{w.total}
                         </span>
                       </span>
-                      <Link to={`/play/${s.id}/review`}>Luyện</Link>
+                      <Link className="btn sm" to={`/play/${s.id}/review`}>Luyện</Link>
                     </li>
                   ))}
                 </ul>
@@ -96,30 +96,24 @@ export default function Stats() {
           <p className="muted">Chưa có phiên nào.</p>
         </div>
       ) : (
-        <div className="card" style={{padding: 0, overflowX: 'auto'}}>
-          <table style={{width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem'}}>
-            <thead>
-              <tr style={{textAlign: 'left'}}>
-                <th style={{padding: 10}}>Chế độ</th>
-                <th style={{padding: 10}}>Điểm</th>
-                <th style={{padding: 10}}>Thời gian</th>
-                <th style={{padding: 10}}>Lúc</th>
-              </tr>
-            </thead>
-            <tbody>
-              {progress.history.map((r) => (
-                <tr key={r.sessionId} style={{borderTop: '1px solid var(--border)'}}>
-                  <td style={{padding: 10}}>{MODE_LABEL[r.mode] ?? r.mode}</td>
-                  <td style={{padding: 10}}>
-                    {r.correct}/{r.total} ({r.total ? Math.round((r.correct / r.total) * 100) : 0}%)
-                  </td>
-                  <td style={{padding: 10}}>{fmtDuration(r.durationMs)}</td>
-                  <td style={{padding: 10}}>{new Date(r.at).toLocaleString('vi-VN')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul className="history card">
+          {progress.history.map((r) => {
+            const p = r.total ? Math.round((r.correct / r.total) * 100) : 0;
+            return (
+              <li key={r.sessionId}>
+                <div className="h-main">
+                  <strong>{MODE_LABEL[r.mode] ?? r.mode}</strong>
+                  <span className="muted">
+                    {fmtDuration(r.durationMs)} · {new Date(r.at).toLocaleString('vi-VN', {day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'})}
+                  </span>
+                </div>
+                <div className={p >= 50 ? 'h-score good' : 'h-score bad'}>
+                  {r.correct}/{r.total} <small>{p}%</small>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       )}
     </div>
   );
