@@ -11,9 +11,14 @@
     "import:os": "node --experimental-strip-types scripts/import-os.mjs",
     "validate": "node --experimental-strip-types scripts/validate-content.mjs",
     "sql:subject": "node scripts/build-subject.mjs sql",
-    "sql:lint": "node scripts/sql-lint.mjs",
+    "sql:lint": "node scripts/quiz-lint.mjs sql",
     "sql:verify": "node scripts/sql-verify.mjs",
-    "sql:run": "node scripts/sql-run.mjs"
+    "sql:run": "node scripts/sql-run.mjs",
+    "dotnet:lint": "node scripts/quiz-lint.mjs dotnet",
+    "dotnet:verify": "node scripts/cs-verify.mjs",
+    "dotnet:run": "node scripts/cs-run.mjs",
+    "dotnet:merge": "node scripts/merge-parts.mjs dotnet",
+    "dotnet:subject": "node scripts/build-subject.mjs dotnet"
   },
   "dependencies": {
     "@fontsource/be-vietnam-pro": "^5.3.0",

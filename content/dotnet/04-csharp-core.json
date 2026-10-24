@@ -1,0 +1,328 @@
+{
+  "id": "dotnet-m04",
+  "title": "Module 4: C# Core",
+  "description": "OOP thực dụng trong C#: class/struct, đóng gói, kế thừa, interface, mức truy cập và record.",
+  "questions": [
+    {
+      "id": "dotnet-m04-01",
+      "topic": "class và struct",
+      "source": "Module 4 - Class và Object",
+      "question": "Đoạn code dưới đây in ra gì?",
+      "code": "var c1 = new Box { V = 1 };\nvar c2 = c1;\nc2.V = 2;\nvar s1 = new Pt { V = 1 };\nvar s2 = s1;\ns2.V = 2;\nConsole.WriteLine($\"{c1.V} {s1.V}\");\n\nclass Box { public int V; }\nstruct Pt { public int V; }",
+      "codeLang": "csharp",
+      "options": [
+        "2 2",
+        "2 1",
+        "1 1",
+        "1 2"
+      ],
+      "answer": 1,
+      "explanation": "`Box` là class (kiểu tham chiếu): `c2 = c1` chỉ chép địa chỉ, hai biến trỏ cùng một object nên `c2.V = 2` làm `c1.V` cũng thành 2.\n`Pt` là struct (kiểu giá trị): `s2 = s1` chép toàn bộ dữ liệu, sửa `s2` không đụng tới `s1` nên `s1.V` vẫn là 1.\nKết quả đúng là `2 1`. Phương án `2 2` coi struct như class; `1 1` và `1 2` coi class như struct (hoặc đảo ngược hoàn toàn)."
+    },
+    {
+      "id": "dotnet-m04-02",
+      "topic": "required và init",
+      "source": "Module 4 - Class và Object",
+      "question": "Đoạn code sau cho kết quả nào khi build?",
+      "code": "var c = new Customer { Name = \"A\" };\nConsole.WriteLine(c.Name);\n\nclass Customer\n{\n    public required string Name { get; init; }\n    public required string Email { get; init; }\n}",
+      "codeLang": "csharp",
+      "options": [
+        "Biên dịch được, in A, Email là null",
+        "Biên dịch được, ném NullReferenceException",
+        "Lỗi CS8852: init chỉ gán được lúc khởi tạo",
+        "Lỗi CS9035: thiếu thành viên required Email"
+      ],
+      "answer": 3,
+      "explanation": "`required` buộc người tạo object phải gán trường đó trong object initializer; thiếu `Email` là lỗi biên dịch CS9035.\nPhương án 'biên dịch được, Email là null' bỏ qua đúng tác dụng của `required`. Lỗi sẽ không đợi tới lúc chạy nên cũng không có NullReferenceException.\nCS8852 chỉ xuất hiện khi gán lại một thuộc tính `init` sau khi object đã được tạo, ở đây không có dòng nào làm vậy."
+    },
+    {
+      "id": "dotnet-m04-03",
+      "topic": "struct trong List",
+      "source": "Module 4 - Class và Object",
+      "question": "Chọn đoạn code thay vào chỗ `// <-- đoạn code cần chọn` làm chương trình **không biên dịch được**.",
+      "code": "var items = new List<Pt> { new Pt { X = 1 } };\nvar arr = new Pt[] { new Pt { X = 1 } };\nvar boxes = new List<Box> { new Box { X = 1 } };\n// <-- đoạn code cần chọn\nConsole.WriteLine(\"done\");\n\nstruct Pt { public int X; }\nclass Box { public int X; }",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nitems[0].X = 99;\n```",
+        "```csharp\narr[0].X = 99;\n```",
+        "```csharp\nboxes[0].X = 99;\n```",
+        "```csharp\nvar t = items[0];\nt.X = 99;\nitems[0] = t;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Bộ chỉ mục của `List<T>` là một phương thức; với struct nó trả về một **bản sao**, nên sửa `items[0].X` bị trình biên dịch chặn bằng lỗi CS1612.\nMảng thì khác: `arr[0]` truy cập thẳng ô nhớ nên sửa được. `boxes[0]` trả về tham chiếu tới object class nên sửa được.\nPhương án cuối là cách đúng cho struct trong List: lấy ra, sửa, rồi gán ngược lại vào danh sách."
+    },
+    {
+      "id": "dotnet-m04-04",
+      "topic": "override và new",
+      "source": "Module 4 - Kế thừa và đa hình",
+      "question": "Chương trình sau in ra gì (mỗi giá trị một dòng)?",
+      "code": "A x = new B();\nA y = new C();\nConsole.WriteLine(x.Who());\nConsole.WriteLine(y.Who());\nConsole.WriteLine(((C)y).Who());\n\nclass A { public virtual string Who() => \"A\"; }\nclass B : A { public override string Who() => \"B\"; }\nclass C : A { public new string Who() => \"C\"; }",
+      "codeLang": "csharp",
+      "options": [
+        "A\nA\nA",
+        "B\nC\nC",
+        "B\nA\nC",
+        "B\nB\nC"
+      ],
+      "answer": 2,
+      "explanation": "`override` thay thế phương thức trong bảng ảo, nên `x` kiểu `A` nhưng object thật là `B` thì gọi ra `B` (đa hình).\n`new` chỉ **che** phương thức của lớp cha, không đa hình: gọi qua biến kiểu `A` vẫn ra `A`; chỉ khi ép sang `C` mới ra `C`.\nKết quả `B`, `A`, `C`. `A A A` bỏ qua đa hình của override; `B C C` và `B B C` tưởng `new` cũng đa hình."
+    },
+    {
+      "id": "dotnet-m04-05",
+      "topic": "virtual trong constructor",
+      "source": "Module 4 - Kế thừa và đa hình",
+      "question": "Chương trình sau in ra gì?",
+      "code": "var d = new Derived(\"hi\");\n\nclass Base\n{\n    public Base() { Console.WriteLine($\"Base: {Describe()}\"); }\n    public virtual string Describe() => \"base\";\n}\nclass Derived : Base\n{\n    private readonly string _text;\n    public Derived(string text)\n    {\n        _text = text;\n        Console.WriteLine($\"Derived: {Describe()}\");\n    }\n    public override string Describe() => $\"text={_text ?? \"null\"}\";\n}",
+      "codeLang": "csharp",
+      "options": [
+        "Base: text=null\nDerived: text=hi",
+        "Base: base\nDerived: text=hi",
+        "Base: text=hi\nDerived: text=hi",
+        "Derived: text=hi"
+      ],
+      "answer": 0,
+      "explanation": "Constructor của `Base` chạy **trước** thân constructor của `Derived`. Lúc đó `_text` chưa được gán, nhưng lời gọi `virtual` vẫn được chuyển tới bản `override` của `Derived`, nên in `text=null`.\nSau khi `_text = text` chạy xong, dòng của `Derived` in `text=hi`.\n`Base: base` tưởng gọi virtual trong constructor sẽ dùng bản của lớp cha. `Base: text=hi` tưởng field đã có giá trị. Bỏ dòng `Base:` là quên rằng constructor cha luôn chạy. Đây là lý do không nên gọi phương thức virtual trong constructor."
+    },
+    {
+      "id": "dotnet-m04-06",
+      "topic": "Đóng gói collection",
+      "source": "Module 4 - Encapsulation",
+      "question": "Class `Order` cần phơi ra `Lines` sao cho code bên ngoài **không thể** xoá sạch danh sách nội bộ, kể cả khi cố tình ép kiểu. Dòng nào thay vào chỗ `// <-- đoạn code cần chọn` làm chương trình in `1`?",
+      "code": "var o = new Order();\no.Add(1);\nif (o.Lines is List<int> list) list.Clear();\nConsole.WriteLine(o.Count);\n\nclass Order\n{\n    private readonly List<int> _l = new();\n    public void Add(int n) => _l.Add(n);\n    public int Count => _l.Count;\n    // <-- đoạn code cần chọn\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\npublic List<int> Lines => _l;\n```",
+        "```csharp\npublic IReadOnlyList<int> Lines => _l;\n```",
+        "```csharp\npublic IReadOnlyList<int> Lines\n    => _l.AsReadOnly();\n```",
+        "```csharp\npublic IEnumerable<int> Lines => _l;\n```"
+      ],
+      "answer": 2,
+      "explanation": "`AsReadOnly()` bọc list trong một `ReadOnlyCollection<int>`; nó không phải `List<int>` nên phép ép kiểu thất bại, `Clear()` không chạy và `Count` vẫn là 1.\n`List<int> Lines` trao quyền sửa trực tiếp. `IReadOnlyList<int> Lines => _l` và `IEnumerable<int> Lines => _l` chỉ đổi kiểu khai báo; đối tượng thật vẫn là `List<int>` nên người gọi ép kiểu ngược lại và xoá được, chương trình in 0.\n`IReadOnlyList` là hàng rào cho người trung thực, muốn bảo đảm chắc hơn thì dùng `AsReadOnly()` hoặc trả bản sao."
+    },
+    {
+      "id": "dotnet-m04-07",
+      "topic": "Cài đặt interface tường minh",
+      "source": "Module 4 - Interface",
+      "question": "Đoạn code sau cho kết quả nào?",
+      "code": "var h = new Greeter();\nh.Hello();\n\ninterface IGreeter { void Hello(); }\nclass Greeter : IGreeter\n{\n    void IGreeter.Hello() => Console.WriteLine(\"hi\");\n}",
+      "codeLang": "csharp",
+      "options": [
+        "Biên dịch được, in hi",
+        "Lỗi CS1061: Greeter không có thành viên Hello",
+        "Lỗi CS0535: Greeter chưa cài đặt IGreeter.Hello",
+        "Biên dịch được, ném InvalidCastException lúc chạy"
+      ],
+      "answer": 1,
+      "explanation": "Cài đặt **tường minh** (`void IGreeter.Hello()`) chỉ gọi được qua biến kiểu interface, ví dụ `((IGreeter)h).Hello()`. Gọi trực tiếp trên `Greeter` là lỗi CS1061.\nCS0535 chỉ xuất hiện khi class khai báo kế thừa interface mà không cài thành viên nào; ở đây đã cài (dưới dạng tường minh) nên không lỗi.\nKhông có phép ép kiểu nào xảy ra lúc chạy, và vì lỗi ở bước biên dịch nên cũng không in `hi`."
+    },
+    {
+      "id": "dotnet-m04-08",
+      "topic": "record và so sánh theo giá trị",
+      "source": "Module 4 - Records và Value Objects",
+      "question": "Chương trình sau in ra gì (mỗi giá trị một dòng)?",
+      "code": "var a = new Cart(\"x\", [1]);\nvar b = a with { };\nb.Items.Add(2);\nConsole.WriteLine(a.Items.Count);\nConsole.WriteLine(a == b);\nConsole.WriteLine(a == new Cart(\"x\", [1, 2]));\n\nrecord Cart(string Name, List<int> Items);",
+      "codeLang": "csharp",
+      "options": [
+        "1\nFalse\nFalse",
+        "2\nFalse\nTrue",
+        "2\nTrue\nTrue",
+        "2\nTrue\nFalse"
+      ],
+      "answer": 3,
+      "explanation": "`with` chỉ sao chép **nông**: `b` và `a` cùng trỏ vào một `List`, nên `Add(2)` làm `a.Items.Count` thành 2.\n`a == b` là `True` vì từng thành phần bằng nhau (cùng tên, cùng một list). Record so sánh từng thuộc tính bằng `Equals` của kiểu đó.\n`List<int>` không so sánh theo nội dung mà theo tham chiếu, nên `new Cart(\"x\", [1, 2])` với list khác là `False` dù nội dung giống hệt.\nCác phương án còn lại sai ở một trong ba điểm: tưởng `with` sao chép sâu (1), tưởng `a == b` sai, hoặc tưởng List so sánh theo nội dung."
+    },
+    {
+      "id": "dotnet-m04-09",
+      "topic": "Mức truy cập mặc định",
+      "source": "Module 4 - Access Modifiers",
+      "question": "Đoạn code sau cho kết quả nào?",
+      "code": "var a = new Account();\nConsole.WriteLine(a.Balance);\n\nclass Account { decimal Balance; }",
+      "codeLang": "csharp",
+      "options": [
+        "Lỗi CS0122: Balance không truy cập được do mức bảo vệ",
+        "Biên dịch được, in 0 vì decimal mặc định là 0",
+        "Biên dịch được, ném NullReferenceException",
+        "Lỗi CS8618: field không nullable chưa được khởi tạo"
+      ],
+      "answer": 0,
+      "explanation": "Thành viên của class không ghi mức truy cập thì mặc định là `private`, nên code bên ngoài không thấy `Balance`: lỗi CS0122.\nVì lỗi xảy ra lúc biên dịch nên không có chuyện in 0 hay ném NullReferenceException lúc chạy.\nCS8618 là cảnh báo về kiểu tham chiếu không nullable chưa gán; `decimal` là kiểu giá trị nên không liên quan."
+    },
+    {
+      "id": "dotnet-m04-10",
+      "topic": "Mức truy cập kết hợp",
+      "source": "Module 4 - Access Modifiers",
+      "question": "`protected internal` (cái đầu) khác `private protected` (cái sau) ở điểm nào?",
+      "options": [
+        "Giống hệt nhau, chỉ khác thứ tự viết hai từ khoá",
+        "Cái đầu chỉ cho class con cùng assembly, còn cái sau cho class con hoặc code cùng assembly",
+        "Cái đầu cho class con (mọi assembly) hoặc code cùng assembly, còn cái sau chỉ cho class con cùng assembly",
+        "Cái sau cho mọi class con ở assembly bất kỳ, nhưng không cho code không phải class con"
+      ],
+      "answer": 2,
+      "explanation": "`protected internal` là phép HOẶC: truy cập được từ class con (kể cả ở assembly khác) hoặc từ bất kỳ code nào trong cùng assembly. Nó mở rộng hơn cả `protected`.\n`private protected` là phép VÀ: chỉ class con **và** nằm trong cùng assembly, chặt hơn `protected`.\nCâu trả lời 'giống hệt nhau' sai vì hai tổ hợp có ngữ nghĩa khác. Cách hiểu đảo ngược định nghĩa của hai mức là sai. Cách hiểu cho rằng `private protected` mở cho class con ở assembly bất kỳ là nhầm với `protected`: class con ở assembly khác không được phép."
+    },
+    {
+      "id": "dotnet-m04-11",
+      "topic": "Property pattern và null",
+      "source": "Module 4 - Pattern Matching",
+      "question": "Đoạn code dưới đây in ra gì khi chạy?",
+      "code": "Console.WriteLine(Fee(null));\nConsole.WriteLine(Fee(new Order(null, 900_000m)));\nConsole.WriteLine(Fee(new Order(new Customer(true), 400_000m)));\nConsole.WriteLine(Fee(new Order(new Customer(true), 500_000m)));\n\nstatic string Fee(Order? o) =>\n    o is { Customer.IsVip: true, Total: >= 500_000m } ? \"giam\" : \"khong\";\n\nrecord Customer(bool IsVip);\nrecord Order(Customer? Customer, decimal Total);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nNullReferenceException\nở lệnh in đầu tiên\n```",
+        "```text\nkhong\nkhong\nkhong\ngiam\n```",
+        "```text\nkhong\nkhong\ngiam\ngiam\n```",
+        "```text\nkhong\ngiam\nkhong\ngiam\n```"
+      ],
+      "answer": 1,
+      "explanation": "Property pattern tự kiểm tra null ở mọi cấp: `o` là null thì pattern không khớp, `Customer` là null thì `Customer.IsVip: true` cũng không khớp, nên cả hai trường hợp đầu đều rơi vào \"khong\" mà không ném exception.\nDòng thứ ba: VIP nhưng Total = 400.000 nhỏ hơn 500.000 nên không khớp `>= 500_000m`. Dòng thứ tư: VIP và đúng 500.000 nên `>=` khớp, in \"giam\".\nĐáp án NullReferenceException sai vì pattern không bao giờ khớp với null chứ không truy cập vào null. Đáp án in `giam` cho đơn 400.000 coi ngưỡng là đủ điều kiện, sai vì nhầm ngưỡng. Đáp án in `giam` cho đơn có Customer null cho rằng khách null vẫn được giảm, sai vì thiếu IsVip: true.\nKết quả thật khi chạy: khong, khong, khong, giam."
+    },
+    {
+      "id": "dotnet-m04-12",
+      "topic": "List pattern",
+      "source": "Module 4 - Pattern Matching",
+      "question": "Hàm `Route` dùng list pattern. Chương trình in ra gì?",
+      "code": "Console.WriteLine(Route(\"GET api orders 7\"));\nConsole.WriteLine(Route(\"GET api orders\"));\nConsole.WriteLine(Route(\"DELETE api orders 7\"));\nConsole.WriteLine(Route(\"\"));\n\nstatic string Route(string request)\n{\n    string[] p = request.Split(' ', StringSplitOptions.RemoveEmptyEntries);\n    return p switch\n    {\n        [\"GET\", \"api\", \"orders\"] => \"list\",\n        [\"GET\", \"api\", \"orders\", var id] => $\"detail {id}\",\n        [var m, ..] => $\"unsupported {m}\",\n        [] => \"empty\"\n    };\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nlist\nlist\nunsupported DELETE\nempty\n```",
+        "```text\ndetail 7\nlist\ndetail 7\nempty\n```",
+        "```text\ndetail 7\nlist\nunsupported DELETE\nunsupported\n```",
+        "```text\ndetail 7\nlist\nunsupported DELETE\nempty\n```"
+      ],
+      "answer": 3,
+      "explanation": "`[\"GET\", \"api\", \"orders\", var id]` khớp đúng 4 phần tử và bắt phần tử cuối vào `id`, nên dòng 1 là \"detail 7\". Dòng 2 có đúng 3 phần tử nên khớp nhánh đầu: \"list\".\nDòng 3 bắt đầu bằng \"DELETE\" nên không khớp hai nhánh GET, rơi vào `[var m, ..]` và in \"unsupported DELETE\". Chuỗi rỗng sau khi Split với RemoveEmptyEntries là mảng rỗng, khớp `[]` nên in \"empty\".\nPhương án bắt đầu bằng \"list\" sai vì nhánh 3 phần tử không khớp request có 4 phần tử. Phương án có hai dòng \"detail 7\" sai vì \"DELETE\" không phải \"GET\". Phương án có \"unsupported\" ở cuối sai vì mảng rỗng không có phần tử đầu để khớp `[var m, ..]`, nó khớp `[]`."
+    },
+    {
+      "id": "dotnet-m04-13",
+      "topic": "Relational và logical pattern",
+      "source": "Module 4 - Pattern Matching",
+      "question": "Cần kiểm tra tuổi lao động: từ 18 tuổi trở lên và nhỏ hơn 65. Chọn biểu thức đúng để điền vào `{{X}}` (kết quả mong đợi với dãy tuổi bên dưới là `NYYNN`).",
+      "code": "int[] ages = [17, 18, 30, 65, 70];\nforeach (var age in ages)\n    Console.Write({{X}} ? \"Y\" : \"N\");",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nage is >= 18 and < 65\n```",
+        "```csharp\nage is >= 18 && < 65\n```",
+        "```csharp\nage is >= 18 or < 65\n```",
+        "```csharp\nage is > 18 and <= 65\n```"
+      ],
+      "answer": 0,
+      "explanation": "Logical pattern dùng từ khoá `and`, `or`, `not`: `age is >= 18 and < 65` cho NYYNN đúng yêu cầu.\n`>= 18 && < 65` là lỗi biên dịch, vì `&&` là toán tử trên biểu thức bool, không ghép được hai pattern; trong pattern phải dùng `and`.\n`>= 18 or < 65` biên dịch được nhưng sai logic: mọi số nguyên đều thoả ít nhất một vế nên luôn trả YYYYY.\n`> 18 and <= 65` sai biên: loại 18 và nhận 65, cho NNYYN.",
+      "kind": "cs-choose"
+    },
+    {
+      "id": "dotnet-m04-14",
+      "topic": "Vét cạn switch expression",
+      "source": "Module 4 - Pattern Matching",
+      "question": "`switch` expression trên enum dưới đây không có nhánh `_` và liệt kê đủ ba giá trị có tên. Điều gì xảy ra?",
+      "code": "Console.WriteLine(Describe(Status.Draft));\nConsole.WriteLine(Describe((Status)7));\n\nstatic string Describe(Status s) => s switch\n{\n    Status.Draft => \"Nhap\",\n    Status.Shipped => \"Giao\",\n    Status.Done => \"Xong\"\n};\n\nenum Status { Draft, Shipped, Done }",
+      "codeLang": "csharp",
+      "options": [
+        "Lỗi biên dịch CS8509 vì `switch` thiếu nhánh `_`",
+        "In `Nhap` rồi in dòng rỗng, vì giá trị không khớp thì trả về mặc định",
+        "Biên dịch được (chỉ cảnh báo CS8524), in `Nhap` rồi ném `SwitchExpressionException`",
+        "In `Nhap` rồi in `Xong`, vì 7 bị ép về giá trị enum gần nhất"
+      ],
+      "answer": 2,
+      "explanation": "Enum thực chất là số nguyên nên `(Status)7` là giá trị hợp lệ về kiểu dù không có tên. Ba nhánh đã phủ mọi giá trị có tên, nên không có CS8509; trình biên dịch chỉ phát cảnh báo CS8524 (thiếu giá trị không tên), không phải lỗi.\nLúc chạy, dòng đầu in `Nhap`; dòng hai không khớp nhánh nào nên ném `SwitchExpressionException` (Unmatched value was 7). Kết quả thật là runtime error.\nCS8509 chỉ xuất hiện khi thiếu một giá trị CÓ TÊN, và cũng chỉ là cảnh báo trừ khi bạn biến nó thành lỗi. Switch expression không có \"giá trị mặc định\" nên không in dòng rỗng. Và C# không tự đưa giá trị lạ về giá trị gần nhất.",
+      "kind": "cs-outcome"
+    },
+    {
+      "id": "dotnet-m04-15",
+      "topic": "abstract class",
+      "source": "Module 4 - Abstraction",
+      "question": "Lớp `Shape` có phương thức `abstract`. Đoạn code `{{X}}` nào gây LỖI BIÊN DỊCH?",
+      "code": "Console.WriteLine(\"ok\");\n\nabstract class Shape\n{\n    public abstract double Area();\n}\n\n{{X}}",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nclass Sq(double s) : Shape\n{\n    public override double Area() => s * s;\n}\n```",
+        "```csharp\nclass Sq(double s) : Shape\n{\n    public double Area() => s * s;\n}\n```",
+        "```csharp\nabstract class Sq : Shape\n{\n}\n```",
+        "```csharp\nclass Sq(double s) : Shape\n{\n    public override double Area() => s * s;\n    public virtual string Name => \"sq\";\n}\n```"
+      ],
+      "answer": 1,
+      "explanation": "Lớp con không `abstract` bắt buộc phải `override` mọi thành viên abstract. Phương thức `Area` viết thiếu `override` chỉ che tên, không cài đặt hợp đồng, nên lỗi CS0534 (Sq không cài đặt thành viên abstract Shape.Area).\nLớp con có `override Area` là cách làm đúng. Lớp con tự khai báo `abstract` thì được hoãn việc cài đặt xuống lớp cháu, không lỗi. Lớp có thêm thành viên `virtual` riêng chỉ là mở rộng, không ảnh hưởng tới việc đã override `Area`.",
+      "kind": "cs-find-error"
+    },
+    {
+      "id": "dotnet-m04-16",
+      "topic": "Primary constructor",
+      "source": "Module 4 - C# hiện đại cho class",
+      "question": "Lớp `Counter` dùng primary constructor. Chương trình biên dịch và in ra gì?",
+      "code": "var c = new Counter(5);\nc.Inc();\nc.Inc();\nvar d = new Counter(5);\nd.Inc();\nConsole.WriteLine($\"{c.Current} {d.Current}\");\n\nclass Counter(int start)\n{\n    public void Inc() => start++;\n    public int Current => start;\n}",
+      "codeLang": "csharp",
+      "options": [
+        "Lỗi biên dịch vì không gán lại được tham số primary constructor",
+        "5 5, vì tham số là `readonly` nên `start++` bị bỏ qua",
+        "7 6",
+        "6 6, vì hai đối tượng dùng chung một giá trị `start`"
+      ],
+      "answer": 2,
+      "explanation": "Tham số primary constructor của `class` KHÔNG tự động `readonly` (khác với field gán trong constructor kiểu `readonly`), nên `start++` biên dịch được. Trình biên dịch tạo một trường ẩn riêng cho MỖI đối tượng để giữ tham số.\nHai lần `Inc` trên `c` cho 7, một lần trên `d` cho 6, nên in `7 6`.\nPhương án lỗi biên dịch sai vì tham số có thể bị đổi. Phương án `5 5` sai vì không có cơ chế bỏ qua nào. Phương án `6 6` sai vì mỗi instance có trường ẩn riêng, không chia sẻ với nhau. Muốn chắc chắn không đổi, hãy gán vào trường `readonly`."
+    },
+    {
+      "id": "dotnet-m04-17",
+      "topic": "Equals và GetHashCode",
+      "source": "Module 4 - Bug so sánh đối tượng",
+      "question": "Lớp `Addr` ghi đè `Equals` nhưng KHÔNG ghi đè `GetHashCode`. Ba dòng in ra lần lượt là gì?",
+      "code": "var a = new Addr(\"12\", \"Hue\");\nvar b = new Addr(\"12\", \"Hue\");\nConsole.WriteLine(a.Equals(b));\nConsole.WriteLine(new List<Addr> { a }.Contains(b));\nConsole.WriteLine(new HashSet<Addr> { a }.Contains(b));\n\nclass Addr(string no, string street)\n{\n    public string No { get; } = no;\n    public string Street { get; } = street;\n    public override bool Equals(object? obj) =>\n        obj is Addr o && o.No == No && o.Street == Street;\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nTrue\nTrue\nFalse\n```",
+        "```text\nTrue\nTrue\nTrue\n```",
+        "```text\nFalse\nFalse\nFalse\n```",
+        "```text\nTrue\nFalse\nFalse\n```"
+      ],
+      "answer": 0,
+      "explanation": "`Equals` được ghi đè nên `a.Equals(b)` là True. `List.Contains` chỉ gọi `Equals` cho từng phần tử, nên cũng True.\n`HashSet` tìm theo hai bước: dùng `GetHashCode` để chọn ngăn rồi mới gọi `Equals`. `GetHashCode` mặc định tính theo tham chiếu nên `a` và `b` có mã băm khác nhau, rơi vào hai ngăn khác nhau, `Equals` không bao giờ được gọi và kết quả là False (chương trình chỉ có cảnh báo CS0659).\nPhương án toàn True quên mất bước băm. Phương án toàn False quên rằng `Equals` đã được ghi đè. Phương án `True False False` sai ở dòng hai vì `List.Contains` không dùng mã băm.",
+      "kind": "cs-predict"
+    },
+    {
+      "id": "dotnet-m04-18",
+      "topic": "IDisposable và using",
+      "source": "Module 4 - C# hiện đại cho class",
+      "question": "Lớp `Res` cài `IDisposable`, mỗi lần `Dispose` in tên của nó. Chương trình in ra gì?",
+      "code": "using (var a = new Res(\"A\"))\n{\n    using var b = new Res(\"B\");\n    using var c = new Res(\"C\");\n    Console.WriteLine(\"work\");\n}\n\nclass Res(string name) : IDisposable\n{\n    public void Dispose() => Console.WriteLine($\"dispose {name}\");\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nwork\ndispose A\ndispose B\ndispose C\n```",
+        "```text\ndispose A\ndispose B\ndispose C\nwork\n```",
+        "```text\nwork\ndispose A\ndispose C\ndispose B\n```",
+        "```text\nwork\ndispose C\ndispose B\ndispose A\n```"
+      ],
+      "answer": 3,
+      "explanation": "Dạng `using var` gọi `Dispose` ở cuối khối chứa nó, và các đối tượng được giải phóng theo thứ tự NGƯỢC với thứ tự khai báo: `C` rồi `B`. Khối `using (var a ...)` đóng sau cùng nên `A` được giải phóng cuối.\nKết quả: work, dispose C, dispose B, dispose A.\nThứ tự A, B, C là thứ tự khai báo, sai vì giải phóng theo kiểu ngăn xếp. Phương án in dispose trước work sai vì `Dispose` chỉ chạy khi rời khối. Phương án `A, C, B` sai vì A bao ngoài cùng nên phải đóng sau B và C."
+    },
+    {
+      "id": "dotnet-m04-19",
+      "topic": "So sánh chuỗi và văn hoá",
+      "source": "Module 4 - Những lỗi thường gặp",
+      "question": "Văn hoá hiện tại được đặt là Thổ Nhĩ Kỳ (`tr-TR`). Ba dòng in ra lần lượt là gì?",
+      "code": "using System.Globalization;\n\nCultureInfo.CurrentCulture = new CultureInfo(\"tr-TR\");\nConsole.WriteLine(\"admin\".ToUpper() == \"ADMIN\");\nConsole.WriteLine(\"admin\".ToUpperInvariant() == \"ADMIN\");\nConsole.WriteLine(string.Equals(\"admin\", \"ADMIN\",\n    StringComparison.OrdinalIgnoreCase));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nFalse\nTrue\nTrue\n```",
+        "```text\nTrue\nTrue\nTrue\n```",
+        "```text\nFalse\nFalse\nTrue\n```",
+        "```text\nFalse\nTrue\nFalse\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đây là Turkish I problem: trong `tr-TR`, `\"admin\".ToUpper()` cho `ADMİN` (chữ I có chấm), khác `\"ADMIN\"` nên dòng 1 là False.\n`ToUpperInvariant()` không phụ thuộc văn hoá, cho đúng `ADMIN` nên dòng 2 True. `OrdinalIgnoreCase` so từng ký tự không theo văn hoá nên dòng 3 True.\nPhương án toàn True là cách nghĩ \"chữ hoa luôn như nhau\", sai trên máy `tr-TR`. Phương án `False False True` tưởng Invariant cũng bị ảnh hưởng văn hoá. Phương án cuối tưởng Ordinal không so được khác hoa thường, trong khi `OrdinalIgnoreCase` làm đúng việc đó.",
+      "kind": "cs-predict"
+    },
+    {
+      "id": "dotnet-m04-20",
+      "topic": "Composition và kế thừa",
+      "source": "Module 4 - Case study composition",
+      "question": "Hệ thống CRM có `PhysicalProduct` (giao hàng, tồn kho) và `SubscriptionProduct` (thu tiền định kỳ). Nay cần bán máy in kèm gói mực hàng tháng: vừa giao hàng vừa thu định kỳ, sau này còn dịch vụ cũng bán theo gói. Thiết kế nào hợp lý nhất?",
+      "options": [
+        "Cho lớp mới kế thừa cả hai: `class X : A, B`",
+        "`Product` giữ `Shipping?` và `Subscription?` tuỳ chọn, bật tắt từng khả năng",
+        "Tạo lớp riêng cho từng tổ hợp, chép code từ hai lớp cũ vào",
+        "Dồn mọi thuộc tính lên `Product`, khả năng nào không dùng thì để rỗng"
+      ],
+      "answer": 1,
+      "explanation": "Giao hàng và thu định kỳ là KHẢ NĂNG có thể thêm bớt chứ không phải bản chất cố định của sản phẩm, nên mô hình bằng composition: một lớp `Product` có `ShippingInfo?`, `SubscriptionInfo?`, `ServiceInfo?` (record bất biến). Máy in chỉ cần gọi `EnableShipping` và `EnableSubscription`, không cần lớp mới, và bỏ khả năng chỉ là `DisableSubscription()`.\nKế thừa hai lớp cơ sở không được C# cho phép (lỗi CS1721). Lớp riêng cho từng tổ hợp làm số lớp tăng theo tổ hợp và buộc phải sửa nhiều chỗ khi đổi quy tắc. Dồn mọi thứ lên lớp cơ sở làm nó phình to và có những thuộc tính vô nghĩa, ví dụ hàng vật lý có `AutoRenew`.\nCâu hỏi phân biệt: một đối tượng có thể thuộc hai loại con cùng lúc không? Có thể thì dùng composition."
+    }
+  ]
+}

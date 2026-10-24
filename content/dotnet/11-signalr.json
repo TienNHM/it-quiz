@@ -1,0 +1,327 @@
+{
+  "id": "dotnet-m11",
+  "title": "Module 11: SignalR",
+  "description": "SignalR phía server và client: vòng đời Hub, định danh người dùng, nhóm, xác thực và đẩy tin từ ngoài Hub (nửa đầu).",
+  "questions": [
+    {
+      "id": "dotnet-m11-01",
+      "topic": "Vòng đời Hub",
+      "source": "Module 11 - SignalR Architecture",
+      "question": "Client gọi `Hit` ba lần liên tiếp trên **cùng một kết nối** và in kết quả ba lần gọi. Đoạn code in ra gì?",
+      "code": "class CounterHub : Hub\n{\n    private int _count;\n    public int Hit() => ++_count;\n}\n\n// client, cùng một HubConnection:\nvar a = await conn.InvokeAsync<int>(\"Hit\");\nvar b = await conn.InvokeAsync<int>(\"Hit\");\nvar c = await conn.InvokeAsync<int>(\"Hit\");\nConsole.WriteLine($\"{a} {b} {c}\");",
+      "codeLang": "csharp",
+      "options": [
+        "1 2 3",
+        "1 1 1",
+        "3 3 3",
+        "Ném exception lúc chạy"
+      ],
+      "answer": 1,
+      "explanation": "SignalR tạo **một instance Hub mới cho mỗi lời gọi** (không phải mỗi kết nối) rồi huỷ ngay, giống controller. Vì vậy `_count` luôn bắt đầu từ 0 và mỗi lần gọi trả `1`. Chạy thật in `1 1 1`.\nPhương án `1 2 3` coi Hub là singleton hoặc sống theo kết nối nên field giữ được giá trị: sai. `3 3 3` không có cơ chế nào chia sẻ như vậy.\nKhông có exception: field instance trong Hub vẫn hợp lệ về cú pháp, chỉ là vô dụng để giữ trạng thái. Trạng thái phải để ở service singleton, cache hoặc database (hoặc `Context.Items` nếu chỉ cần theo kết nối)."
+    },
+    {
+      "id": "dotnet-m11-02",
+      "topic": "Hub mạnh kiểu (strongly-typed)",
+      "source": "Module 11 - Setup SignalR Server",
+      "question": "Cho `interface INotificationClient { Task ReceiveNotification(string message); }`. Đoạn nào dưới đây **gây lỗi biên dịch**?",
+      "options": [
+        "```csharp\nclass A : Hub\n{\n    Task M() =>\n        Clients.All.SendAsync(\"ReceiveNotifcation\", \"x\");\n}\n```",
+        "```csharp\nclass B : Hub<INotificationClient>\n{\n    Task M() =>\n        Clients.All.ReceiveNotifcation(\"x\");\n}\n```",
+        "```csharp\nclass C : Hub<INotificationClient>\n{\n    Task M() =>\n        Clients.Caller.ReceiveNotification(\"x\");\n}\n```",
+        "```csharp\nclass D(IHubContext<BaseHub, INotificationClient> h)\n{\n    Task M() =>\n        h.Clients.All.ReceiveNotification(\"x\");\n}\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đoạn `B` dùng `Hub<INotificationClient>` nên `Clients.All` có kiểu `INotificationClient`; gõ sai tên thành `ReceiveNotifcation` là lỗi biên dịch CS1061 (không có định nghĩa). Đó chính là giá trị của Hub mạnh kiểu.\nĐoạn `A` dùng `Hub` thường với `SendAsync(\"ReceiveNotifcation\", ...)`: tên là chuỗi nên **vẫn biên dịch**, chạy cũng không lỗi, chỉ là tin không bao giờ tới handler của client. Đây là kiểu lỗi im lặng khó thấy nhất.\nĐoạn `C` gọi đúng tên qua `Clients.Caller`. Đoạn `D` dùng `IHubContext<THub, TClient>` hai generic với đúng tên method, cũng biên dịch tốt."
+    },
+    {
+      "id": "dotnet-m11-03",
+      "topic": "UserIdentifier và claim sub",
+      "source": "Module 11 - SignalR Authentication",
+      "question": "Hệ thống dùng JWT với `MapInboundClaims = false`, token có claim `\"sub\": \"u-42\"`, **không** đăng ký `IUserIdProvider` nào. Client kết nối bằng token đó, gọi `Who()`, rồi server gửi `Clients.User(\"u-42\").SendAsync(\"Msg\", ...)`. Kết quả (dòng 1: giá trị `Who()` trả về, dòng 2: số tin client nhận) là gì?",
+      "code": "[Authorize]\nclass MeHub : Hub\n{\n    public string Who() => Context.UserIdentifier ?? \"(null)\";\n}\n\n// in ra:\n// UserIdentifier: <kết quả Who()>\n// tin toi u-42: <số tin client nhận được>",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nUserIdentifier: (null)\ntin toi u-42: 0\n```",
+        "```text\nUserIdentifier: u-42\ntin toi u-42: 1\n```",
+        "```text\nUserIdentifier: (null)\ntin toi u-42: 1\n```",
+        "```text\nUserIdentifier: u-42\ntin toi u-42: 0\n```"
+      ],
+      "answer": 0,
+      "explanation": "`UserIdentifier` mặc định lấy từ claim `ClaimTypes.NameIdentifier`. Với `MapInboundClaims = false` claim `sub` giữ nguyên tên `\"sub\"`, không thành `NameIdentifier`, nên `UserIdentifier` là `null`. Kết nối vẫn thành công (token hợp lệ).\nVì không có người dùng nào mang id `u-42` theo SignalR, `Clients.User(\"u-42\")` không tìm được kết nối nào: tin biến mất, không lỗi, không log. Chạy thật in `(null)` và `0`.\nCác phương án có `u-42` hoặc nhận được tin đều giả định SignalR tự đọc `sub`; muốn vậy phải viết `IUserIdProvider` trả về claim `sub`. Phương án `(null)` kèm 1 tin tự mâu thuẫn: nếu id null thì không thể nhận tin theo user."
+    },
+    {
+      "id": "dotnet-m11-04",
+      "topic": "IUserIdProvider",
+      "source": "Module 11 - SignalR Authentication",
+      "question": "Token JWT có claim `sub` (id người dùng) và `MapInboundClaims = false`. Biểu thức nào điền vào `GetUserId` để `Clients.User(id)` gửi đúng tới người đó, trên **mọi** thiết bị của họ?",
+      "code": "class SubUserIdProvider : IUserIdProvider\n{\n    public string? GetUserId(HubConnectionContext connection)\n        => /* ??? */;\n}\n\nbuilder.Services.AddSingleton<IUserIdProvider,\n    SubUserIdProvider>();",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nconnection.User.FindFirst(ClaimTypes.NameIdentifier)?.Value\n```",
+        "```csharp\nconnection.ConnectionId\n```",
+        "```csharp\nconnection.User.FindFirst(\"sub\")?.Value\n```",
+        "```csharp\nconnection.User.Identity?.Name\n```"
+      ],
+      "answer": 2,
+      "explanation": "Với `MapInboundClaims = false`, id người dùng nằm ở claim tên `\"sub\"`, nên `FindFirst(\"sub\")?.Value` cho `UserIdentifier = u-42` và `Clients.User(\"u-42\")` tới được. Chạy thật: `Who()` trả `u-42`, client nhận 1 tin.\n`FindFirst(ClaimTypes.NameIdentifier)` tìm claim đã bị map đi mất nên trả `null`: lỗi y hệt không có provider, tin biến mất trong im lặng.\n`connection.ConnectionId` là id của **một kết nối**, đổi mỗi lần kết nối lại và khác nhau giữa các tab; `Clients.User(\"u-42\")` không khớp, nên không gửi được tới người dùng.\n`Identity?.Name` cũng ra `null` (token này không có claim tên theo kiểu mà `Name` đọc), và dù có giá trị thì tên hiển thị không phải định danh ổn định."
+    },
+    {
+      "id": "dotnet-m11-05",
+      "topic": "Nhóm sau khi kết nối lại",
+      "source": "Module 11 - Client-side Integration",
+      "question": "Client vào nhóm `deals`, server gửi vào nhóm (1 tin). Sau đó client `StopAsync()` rồi `StartAsync()` lại (mô phỏng kết nối lại) và server gửi thêm 1 tin vào nhóm `deals`. Client **không** gọi lại `Join`. Kết quả in ra?",
+      "code": "class RoomHub : Hub\n{\n    public Task Join(string group) =>\n        Groups.AddToGroupAsync(Context.ConnectionId, group);\n}\n\nawait conn.StartAsync();\nvar idBefore = conn.ConnectionId;\nawait conn.InvokeAsync(\"Join\", \"deals\");\n// server: Clients.Group(\"deals\").SendAsync(\"Msg\", \"1\")\nConsole.WriteLine(\"truoc: \" + received);\nawait conn.StopAsync();\nawait conn.StartAsync();\nConsole.WriteLine(\"id doi: \" + (conn.ConnectionId != idBefore));\n// server: Clients.Group(\"deals\").SendAsync(\"Msg\", \"2\")\nConsole.WriteLine(\"sau: \" + received);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\ntruoc: 1\nid doi: False\nsau: 2\n```",
+        "```text\ntruoc: 1\nid doi: True\nsau: 1\n```",
+        "```text\ntruoc: 1\nid doi: True\nsau: 2\n```",
+        "```text\ntruoc: 0\nid doi: True\nsau: 0\n```"
+      ],
+      "answer": 1,
+      "explanation": "Nhóm gắn với **`ConnectionId`**. Kết nối lại tạo `ConnectionId` mới (`id doi: True`) và nhóm của id cũ biến mất, nên tin thứ hai không tới: `received` vẫn là 1. Đúng như chạy thật.\n`sau: 2` cho rằng nhóm sống theo người dùng và tự khôi phục; không phải, SignalR không lưu nhóm ở đâu cả. `id doi: False` sai vì mỗi lần kết nối mới luôn cấp id mới.\n`truoc: 0` sai vì lúc đầu client đã `Join` thành công và nhận đúng 1 tin.\nCách sửa trong bài: server tự gán nhóm trong `OnConnectedAsync` theo claim (chạy lại mỗi lần nối lại), hoặc client join lại trong `onreconnected`."
+    },
+    {
+      "id": "dotnet-m11-06",
+      "topic": "HubException",
+      "source": "Module 11 - Setup SignalR Server",
+      "question": "Client gọi lần lượt `Plain` rồi `Business`, bắt `HubException` và in xem **thông điệp client nhận** có chứa chuỗi gốc server ném hay không. Server không bật `EnableDetailedErrors`. In ra gì?",
+      "code": "class DemoHub : Hub\n{\n    public Task Plain() =>\n        throw new InvalidOperationException(\"db password is hunter2\");\n\n    public Task Business() =>\n        throw new HubException(\"Phong khong ton tai\");\n}\n\n// client:\ncatch (HubException ex)\n{\n    var needle = method == \"Plain\" ? \"hunter2\" : \"Phong khong ton tai\";\n    Console.WriteLine($\"{method}: \" + ex.Message.Contains(needle));\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nPlain: True\nBusiness: True\n```",
+        "```text\nPlain: True\nBusiness: False\n```",
+        "```text\nPlain: False\nBusiness: False\n```",
+        "```text\nPlain: False\nBusiness: True\n```"
+      ],
+      "answer": 3,
+      "explanation": "Exception thường bị **che**: client chỉ nhận \"An unexpected error occurred invoking 'Plain' on the server.\" nên không chứa `hunter2` (`Plain: False`). Đó là mặc định đúng để không lộ thông tin nội bộ; chi tiết vẫn nằm trong log server.\n`HubException` là kênh duy nhất để đưa thông điệp có ý nghĩa tới client khi `EnableDetailedErrors` tắt: message của nó được nối vào câu mặc định, nên `Business: True`.\nCác phương án có `Plain: True` giả định mọi exception đều lộ message (chỉ đúng khi bật `EnableDetailedErrors`, mà cũng chỉ nên ở Development). `Business: False` giả định `HubException` cũng bị che, sai."
+    },
+    {
+      "id": "dotnet-m11-07",
+      "topic": "Dùng Clients ngoài vòng đời lời gọi",
+      "source": "Module 11 - SignalR Architecture",
+      "question": "Hub method khởi động một việc nền bằng `Task.Run`, 300ms sau việc nền gửi tin về `Clients.Caller`. Phần catch ghi lại tên exception (nếu có). Client gọi `StartJob()` rồi chờ. Chương trình in ra gì?",
+      "code": "class JobHub(Probe probe) : Hub\n{\n    public Task StartJob()\n    {\n        _ = Task.Run(async () =>\n        {\n            await Task.Delay(300);\n            try { await Clients.Caller.SendAsync(\"Done\", \"xong\"); }\n            catch (Exception ex)\n            {\n                probe.Error.TrySetResult(ex.GetType().Name);\n            }\n        });\n        return Task.CompletedTask;\n    }\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nserver loi: ObjectDisposedException\n```",
+        "```text\nclient nhan: xong\n```",
+        "```text\nserver loi: NullReferenceException\n```",
+        "```text\nserver loi: InvalidOperationException\n```"
+      ],
+      "answer": 0,
+      "explanation": "Hub là transient: instance bị huỷ ngay khi lời gọi `StartJob` kết thúc, trước khi `Task.Delay(300)` xong. Dùng `Clients` của một Hub đã bị huỷ ném `ObjectDisposedException`. Chạy thật in `server loi: ObjectDisposedException`.\n`client nhan: xong` sẽ đúng nếu Hub sống tới khi việc nền chạy, nhưng không phải vậy. `NullReferenceException` và `InvalidOperationException` là loại lỗi khác, không phải thứ SignalR ném ở đây.\nLưu ý nếu không có `try/catch`, exception này nằm im trong `Task` không ai chờ. Cách đúng: chụp lại giá trị (`ConnectionId`) rồi gửi qua `IHubContext` (singleton), hoặc tốt hơn là đưa việc vào hàng đợi cho `BackgroundService`."
+    },
+    {
+      "id": "dotnet-m11-08",
+      "topic": "Polling và real-time",
+      "source": "Module 11 - Tại sao cần Real-time",
+      "question": "Trang thông báo có 1.000 người dùng mở cùng lúc, mỗi tab polling `GET /notifications/unread` **mỗi 5 giây**, và khoảng 99% phản hồi là mảng rỗng. Nhận định nào đúng?",
+      "options": [
+        "Tải khoảng 5 request/giây vì chỉ 1% có dữ liệu mới",
+        "Tải khoảng 1.000 request/giây vì mỗi người gửi liên tục",
+        "Tải khoảng 200 request/giây, gần như toàn bộ là \"không có gì mới\"",
+        "Tải khoảng 5.000 request/giây vì mỗi request mở 5 kết nối"
+      ],
+      "answer": 2,
+      "explanation": "1.000 người / 5 giây = **200 request mỗi giây**, và mỗi request vẫn trả đủ chi phí: header HTTP, parse JWT, truy vấn database, serialize JSON, dù kết quả gần như luôn rỗng.\nPhương án 5 request/giây nhầm: server không biết trước request nào rỗng, nên phải xử lý hết cả 200. 1.000 request/giây tính như thể chu kỳ là 1 giây. 5.000 là phép tính không có cơ sở.\nĐiều này không có nghĩa polling luôn sai: với trang nội bộ vài chục người, polling 10 giây là lựa chọn đơn giản và đúng. Chuyển sang SSE hoặc SignalR khi đo được chi phí thật."
+    },
+    {
+      "id": "dotnet-m11-09",
+      "topic": "Push thông báo và transaction",
+      "source": "Module 11 - IHubContext - Server push từ ngoài Hub",
+      "question": "Một service giao lead mở transaction, gọi `SaveChangesAsync`, push thông báo cho người nhận qua `IHubContext`, rồi gọi `SomethingElseAsync()` trước khi `CommitAsync()`. Lần này `SomethingElseAsync()` ném exception. Vấn đề và cách sửa nào đúng?",
+      "options": [
+        "Hub bị huỷ giữa chừng, nên cần chuyển việc push vào Hub method",
+        "Người nhận đã thấy thông báo cho thay đổi bị rollback, push sau CommitAsync",
+        "SignalR tự thu hồi thông báo khi rollback, không cần sửa gì cả",
+        "Push làm transaction deadlock, phải bỏ await và dùng _ = cho push"
+      ],
+      "answer": 1,
+      "explanation": "Push là **tác dụng phụ bên ngoài** (cùng loại với gửi email, gọi API bên thứ ba) và không tham gia transaction. Push trước `CommitAsync` thì khi có lỗi phía sau, dữ liệu rollback nhưng client **đã nhận** \"Lead đã được giao cho bạn\" và bấm vào thì không thấy gì. Sửa: commit xong mới push, bọc `try/catch` để lỗi push không hỏng nghiệp vụ.\n`IHubContext` là singleton, không liên quan tới việc Hub bị huỷ, nên phương án đầu sai. SignalR không có cơ chế thu hồi tin đã gửi, nên phương án \"tự thu hồi\" sai.\nPush không gây deadlock database; bỏ `await` (`_ =`) còn tệ hơn vì exception biến mất và việc có thể bị cắt khi request kết thúc.\nVới thông báo không được phép mất, dùng thêm mẫu outbox: ghi bản ghi gửi trong cùng transaction rồi worker đọc và push."
+    },
+    {
+      "id": "dotnet-m11-10",
+      "topic": "Token hết hạn giữa kết nối",
+      "source": "Module 11 - SignalR Authentication",
+      "question": "Access token JWT sống 15 phút, người dùng giữ một kết nối WebSocket SignalR mở 8 tiếng, cấu hình mặc định. Điều gì đúng, và cách siết chặt nào có sẵn trong ASP.NET Core?",
+      "options": [
+        "Vẫn sống, token chỉ kiểm tra lúc nối, bật CloseOnAuthenticationExpiration",
+        "Server tự đóng ngay khi token hết hạn, không cần cấu hình gì",
+        "Mỗi lời gọi Hub kiểm tra lại token, RequireAuthorization() đủ",
+        "Bị cắt sau 15 phút vì ClientTimeoutInterval, hãy tăng nó"
+      ],
+      "answer": 0,
+      "explanation": "Mặc định SignalR chỉ xác thực token **một lần, lúc thiết lập kết nối**. Qua WebSocket không còn request HTTP nào để gắn token mới, nên kết nối sống suốt 8 tiếng: thu hồi quyền hoặc khoá tài khoản không ngắt được nó. Với `options.CloseOnAuthenticationExpiration = true` trong `MapHub` khiến server đóng kết nối khi tới claim `exp`; client có `withAutomaticReconnect` sẽ nối lại và gọi `accessTokenFactory` lấy token mới.\nPhương án \"tự đóng không cần cấu hình\" sai vì tuỳ chọn đó mặc định tắt. `RequireAuthorization()` chặn lúc `negotiate`, không kiểm tra lại mỗi lời gọi.\n`ClientTimeoutInterval` liên quan tới việc server không nghe thấy ping của client (mặc định 30 giây), không phải tuổi thọ token."
+    },
+    {
+      "id": "dotnet-m11-11",
+      "topic": "Khử trùng thông báo",
+      "source": "Module 11 - Notification Center Pattern",
+      "question": "Client giữ thông báo trong một Dictionary theo `id` và đếm chưa đọc đúng như `upsert` trong bài học (chỉ tăng đếm khi `id` là mới và chưa đọc). Đoạn code in ra gì (mỗi giá trị một dòng, dạng `số-phần-tử/chưa-đọc`)?",
+      "code": "var items = new Dictionary<int, DateTime?>();\nvar unread = 0;\nvoid Upsert(int id, DateTime? readAt)\n{\n    if (!items.ContainsKey(id) && readAt is null)\n        unread++;\n    items[id] = readAt;\n}\nUpsert(1, null); Upsert(1, null); Upsert(2, null);\nConsole.WriteLine($\"{items.Count}/{unread}\");\nUpsert(3, DateTime.UtcNow); Upsert(2, null);\nConsole.WriteLine($\"{items.Count}/{unread}\");",
+      "codeLang": "csharp",
+      "options": [
+        "3/3\n4/3",
+        "2/2\n3/2",
+        "2/2\n3/3",
+        "2/3\n3/3"
+      ],
+      "answer": 1,
+      "explanation": "Thông báo 1 tới hai lần (qua push rồi qua đồng bộ REST) nhưng chỉ được tính một lần vì lần hai `ContainsKey` đã đúng. Sau ba lệnh đầu: 2 phần tử, 2 chưa đọc. Thông báo 3 đã có `readAt` nên không làm tăng bộ đếm; gửi lại thông báo 2 chỉ ghi đè. Kết quả chạy thật: `2/2` rồi `3/2`.\n- `3/3` và `4/3` là kết quả nếu dùng danh sách thay cho Dictionary: tới hai lần là hiện hai dòng.\n- `2/2` rồi `3/3` sai vì thông báo đã đọc sẵn không được cộng vào bộ đếm chưa đọc.\n- `2/3` sai ngay từ đầu: lần `Upsert(1, null)` thứ hai không được đếm lại."
+    },
+    {
+      "id": "dotnet-m11-12",
+      "topic": "Bộ đếm chưa đọc",
+      "source": "Module 11 - Notification Center Pattern",
+      "question": "Thiết bị có 1 thông báo chưa đọc. Người dùng bấm đọc (`MarkRead(\"a\")`), sự kiện `NotificationRead` của server cũng gọi lại `MarkRead(\"a\")`, rồi một sự kiện cũ gọi `MarkRead(\"zzz\")` (id không tồn tại). Phần thân nào của `MarkRead` cho bộ đếm cuối cùng là `0` mà không ném lỗi?",
+      "code": "class Item { public DateTime? ReadAt; }\nvar map = new Dictionary<string, Item>\n    { [\"a\"] = new Item() };\nvar unread = 1;\nvoid MarkRead(string id)\n{\n{{X}}\n}\nMarkRead(\"a\"); MarkRead(\"a\"); MarkRead(\"zzz\");\nConsole.WriteLine(unread);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nvar x = map[id];\nif (x.ReadAt is null)\n{ x.ReadAt = DateTime.UtcNow; unread--; }\n```",
+        "```csharp\nif (map.TryGetValue(id, out var x))\n{ x.ReadAt ??= DateTime.UtcNow; unread--; }\n```",
+        "```csharp\nunread--;\nif (map.TryGetValue(id, out var x))\n    x.ReadAt = DateTime.UtcNow;\n```",
+        "```csharp\nif (map.TryGetValue(id, out var x)\n    && x.ReadAt is null)\n{ x.ReadAt = DateTime.UtcNow; unread--; }\n```"
+      ],
+      "answer": 3,
+      "explanation": "Thao tác phải **idempotent**: chỉ giảm bộ đếm khi thông báo tồn tại **và** chưa đọc. Phương án đúng kiểm cả hai điều kiện trước khi giảm, nên `\"a\"` lần hai và `\"zzz\"` không đổi gì, kết quả `0`.\n- Phương án dùng `map[id]` ném `KeyNotFoundException` ở lần gọi `\"zzz\"`.\n- Phương án `??=` vẫn giảm ở lần gọi thứ hai cho `\"a\"` (chỉ không ghi đè `ReadAt`), kết quả `-1`.\n- Phương án giảm vô điều kiện cho mọi lần gọi, kể cả id lạ, nên ra `-2`.\nĐây chính là lỗi bộ đếm xuống dưới 0 khi thiết bị vừa bấm đọc lại nhận sự kiện của chính mình."
+    },
+    {
+      "id": "dotnet-m11-13",
+      "topic": "Guid.CreateVersion7",
+      "source": "Module 11 - Notification Center Pattern",
+      "question": "Chạy trên .NET 10, đoạn code sau in ra gì (mỗi giá trị một dòng)?",
+      "code": "var ids = new List<Guid>();\nfor (var i = 0; i < 5; i++)\n{\n    ids.Add(Guid.CreateVersion7());\n    Thread.Sleep(2);\n}\nConsole.WriteLine(ids.SequenceEqual(ids.OrderBy(g => g)));\nConsole.WriteLine(Guid.NewGuid().Version);\nConsole.WriteLine(ids[0].Version);",
+      "codeLang": "csharp",
+      "options": [
+        "True\n4\n7",
+        "False\n4\n7",
+        "True\n7\n7",
+        "True\n4\n4"
+      ],
+      "answer": 0,
+      "explanation": "`Guid.CreateVersion7()` đặt dấu thời gian ở đầu GUID nên các giá trị tạo sau lớn hơn giá trị trước: danh sách đã sắp sẵn, `True`. Vì vậy dùng làm khoá chính tránh được việc chèn vào giữa index. `Guid.NewGuid()` sinh GUID **version 4** (ngẫu nhiên) nên in `4`, còn `CreateVersion7()` in `7`. Kết quả chạy thật: `True`, `4`, `7`.\n- `False` ở dòng đầu sai: chính tính sắp xếp theo thời gian là lý do bài học chọn version 7.\n- `7` ở dòng hai sai: `NewGuid()` không phải version 7.\n- `4` ở dòng ba sai: `CreateVersion7()` mang version 7."
+    },
+    {
+      "id": "dotnet-m11-14",
+      "topic": "Gom nhóm và partial unique index",
+      "source": "Module 11 - Notification Center Pattern",
+      "question": "Bảng `Notifications` có unique index trên `(UserId, GroupKey)` **chỉ cho các dòng có `ReadAt IS NULL`**. `Send` thêm một thông báo mới và trả `\"ok\"`, hoặc `\"conflict\"` nếu `SaveChangesAsync` ném `DbUpdateException`. `MarkAllRead` đặt `ReadAt` cho mọi thông báo của nhóm. Đoạn code in ra gì (mỗi giá trị một dòng)?",
+      "code": "// unique (UserId, GroupKey) WHERE ReadAt IS NULL\nConsole.WriteLine(await Send(\"deal:7\"));\nConsole.WriteLine(await Send(\"deal:7\"));\nConsole.WriteLine(await Send(\"deal:8\"));\nawait MarkAllRead(\"deal:7\");\nConsole.WriteLine(await Send(\"deal:7\"));",
+      "codeLang": "csharp",
+      "options": [
+        "ok\nconflict\nok\nconflict",
+        "ok\nok\nok\nok",
+        "ok\nconflict\nconflict\nok",
+        "ok\nconflict\nok\nok"
+      ],
+      "answer": 3,
+      "explanation": "Index chỉ ràng buộc các dòng **chưa đọc**. Lần gửi thứ hai cùng nhóm khi dòng đầu còn chưa đọc bị từ chối: `conflict`. Nhóm `deal:8` khác khoá nên `ok`. Sau khi đánh dấu đã đọc, dòng cũ rời khỏi phạm vi của index (`ReadAt` không còn null), nên gửi lại `deal:7` được: `ok`. Kết quả chạy thật trên SQLite: `ok`, `conflict`, `ok`, `ok`; PostgreSQL và SQL Server cũng cư xử như vậy.\n- `ok,ok,ok,ok` bỏ qua tác dụng của index: đó là tình huống hai lời gọi đồng thời tạo hai nhóm.\n- Dòng cuối `conflict` coi index là unique toàn bảng, không tính điều kiện lọc.\n- Dòng ba `conflict` sai vì `deal:8` là nhóm khác."
+    },
+    {
+      "id": "dotnet-m11-15",
+      "topic": "ExecuteUpdateAsync",
+      "source": "Module 11 - Notification Center Pattern",
+      "question": "Endpoint đánh dấu đã đọc dùng `ExecuteUpdateAsync` với điều kiện `Id`, `UserId` và `ReadAt == null`, rồi trả số dòng bị ảnh hưởng. Thông báo 1 và 2 đều của user 1 và chưa đọc. Đoạn code in ra gì (mỗi giá trị một dòng)?",
+      "code": "Task<int> MarkRead(int id, int userId) =>\n    db.Notes\n      .Where(n => n.Id == id\n               && n.UserId == userId\n               && n.ReadAt == null)\n      .ExecuteUpdateAsync(s =>\n          s.SetProperty(n => n.ReadAt, DateTime.UtcNow));\nConsole.WriteLine(await MarkRead(1, 1));\nConsole.WriteLine(await MarkRead(1, 1));\nConsole.WriteLine(await MarkRead(2, 2));",
+      "codeLang": "csharp",
+      "options": [
+        "1\n1\n0",
+        "1\n0\n0",
+        "1\n1\n1",
+        "1\n0\n1"
+      ],
+      "answer": 1,
+      "explanation": "Lần đầu cập nhật được 1 dòng. Lần hai cùng thông báo nhưng `ReadAt` đã khác null nên không dòng nào khớp: `0` (controller sẽ trả `404` và **không** phát lại sự kiện `NotificationRead`). Lần ba user 2 không sở hữu thông báo 2 nên điều kiện `UserId` loại nó: `0`. Điều kiện `UserId` vừa là phân quyền vừa là bộ lọc. Kết quả chạy thật: `1`, `0`, `0`.\n- `1,1,0` quên điều kiện `ReadAt == null`: cho phép đọc lại và phát sự kiện nhiều lần.\n- `1,1,1` bỏ cả điều kiện `ReadAt` lẫn `UserId`.\n- `1,0,1` bỏ điều kiện `UserId`: người khác đánh dấu đọc được thông báo của bạn."
+    },
+    {
+      "id": "dotnet-m11-16",
+      "topic": "Một người, nhiều kết nối",
+      "source": "Module 11 - Presence Online/Offline",
+      "question": "Một người mở 3 tab rồi đóng lần lượt từng tab. `Connect` trả `true` khi đây là kết nối đầu tiên, `Disconnect` trả `true` khi không còn kết nối nào. Đoạn code in ra gì (mỗi giá trị một dòng)?",
+      "code": "var conns = new Dictionary<string, HashSet<string>>();\nbool Connect(string u, string c)\n{\n    if (!conns.TryGetValue(u, out var set))\n        conns[u] = set = new();\n    set.Add(c);\n    return set.Count == 1;\n}\nbool Disconnect(string u, string c)\n{\n    conns[u].Remove(c);\n    return conns[u].Count == 0;\n}\nvar on = new[] { \"t1\", \"t2\", \"t3\" }\n    .Select(t => Connect(\"an\", t));\nConsole.WriteLine(string.Join(\",\", on));\nvar off = new[] { \"t1\", \"t2\", \"t3\" }\n    .Select(t => Disconnect(\"an\", t));\nConsole.WriteLine(string.Join(\",\", off));",
+      "codeLang": "csharp",
+      "options": [
+        "True,True,True\nTrue,True,True",
+        "True,False,False\nTrue,True,True",
+        "True,True,True\nFalse,False,True",
+        "True,False,False\nFalse,False,True"
+      ],
+      "answer": 3,
+      "explanation": "Chỉ tab đầu tiên đưa người dùng từ offline sang online (`True`), hai tab sau trả `False`. Khi đóng, chỉ **kết nối cuối cùng** làm số kết nối về 0 (`True`); đóng tab 1 và tab 2 vẫn còn kết nối nên `False`. Kết quả chạy thật: `True,False,False` rồi `False,False,True`.\n- `True,True,True` ở dòng đầu là Hub phát sự kiện online vô điều kiện: mỗi tab một sự kiện thừa.\n- `True,True,True` ở dòng hai là phát offline vô điều kiện: đóng tab 1 báo offline **sai** trong khi người dùng còn 2 tab.\n- Các phương án còn lại ghép một dòng đúng với một dòng sai.\nTrên Redis, bước thêm kết nối rồi đếm phải nguyên tử (Lua script) thì hai tab mở cùng lúc mới không cùng thấy mình là kết nối đầu tiên."
+    },
+    {
+      "id": "dotnet-m11-17",
+      "topic": "Streaming và EnumeratorCancellation",
+      "source": "Module 11 - SSE, streaming và giới hạn tài nguyên",
+      "question": "Hub method kiểu stream được viết **không** có `[EnumeratorCancellation]`. Phía gọi truyền token qua `WithCancellation` rồi huỷ sau khi nhận phần tử 2. Đoạn code in ra gì (mỗi giá trị một dòng)?",
+      "code": "async IAsyncEnumerable<int> Gen(int n, CancellationToken ct = default)\n{\n    for (var i = 1; i <= n; i++)\n    {\n        await Task.Delay(1, ct);\n        yield return i;\n    }\n}\nvar cts = new CancellationTokenSource();\ntry\n{\n    await foreach (var x in Gen(5).WithCancellation(cts.Token))\n    {\n        Console.WriteLine(x);\n        if (x == 2) cts.Cancel();\n    }\n    Console.WriteLine(\"done\");\n}\ncatch (OperationCanceledException)\n{ Console.WriteLine(\"canceled\"); }",
+      "codeLang": "csharp",
+      "options": [
+        "1\n2\n3\n4\n5\ndone",
+        "1\n2\ncanceled",
+        "1\n2\ndone",
+        "1\n2\n3\ncanceled"
+      ],
+      "answer": 0,
+      "explanation": "Thiếu `[EnumeratorCancellation]` trên tham số `CancellationToken` thì token mà `WithCancellation` truyền vào **không tới được** thân phương thức; `ct` bên trong luôn là giá trị mặc định nên không bao giờ bị huỷ. Vòng lặp chạy hết 5 phần tử rồi in `done` (trình biên dịch chỉ cảnh báo CS8425, không báo lỗi). Kết quả chạy thật: `1` đến `5` rồi `done`.\n- `1,2,canceled` là kết quả khi **có** attribute: lần `Task.Delay` kế tiếp ném `OperationCanceledException`.\n- `1,2,done` giả định vòng lặp dừng lặng lẽ, không có cơ chế nào làm vậy.\n- `1,2,3,canceled` sai: huỷ có hiệu lực hoặc ngay sau phần tử 2, hoặc không bao giờ.\nVới Hub, hậu quả là `dispose()` ở client không dừng được truy vấn database ở server."
+    },
+    {
+      "id": "dotnet-m11-18",
+      "topic": "Scale-out không có backplane",
+      "source": "Module 11 - Scale-out và Production",
+      "question": "Ứng dụng chạy 2 pod, **chưa có backplane**. Pod A giữ kết nối của user-1 và user-3, pod B giữ kết nối của user-2. user-1 (trên pod A) gọi hub method gửi tin cho user-2 bằng `Clients.User(\"user-2\")`. Chuyện gì xảy ra?",
+      "options": [
+        "Pod A ném exception vì không tìm thấy user-2",
+        "Pod A chuyển tiếp yêu cầu qua load balancer sang pod B",
+        "Tin biến mất: không lỗi, không log, user-2 không nhận gì",
+        "Tin được xếp hàng và giao khi user-2 nối vào pod A"
+      ],
+      "answer": 2,
+      "explanation": "Mỗi instance chỉ biết kết nối **của chính nó**. Pod A tìm user-2 trong danh sách cục bộ, không thấy, gửi cho những ai có (không ai) rồi kết thúc bình thường. Đây là kiểu lỗi tệ nhất: chạy hoàn hảo trên máy dev một instance, hỏng ngẫu nhiên trên production.\n- Ném exception sai: SignalR coi \"không có kết nối nào khớp\" là bình thường.\n- Pod không tự gọi sang pod khác; muốn vậy phải có backplane (Redis pub/sub hoặc dịch vụ như Azure SignalR).\n- Không có hàng đợi nào: SignalR không lưu tin cho người chưa nhận được, nên thông báo quan trọng phải ghi database trước."
+    },
+    {
+      "id": "dotnet-m11-19",
+      "topic": "Redis backplane và health check",
+      "source": "Module 11 - Scale-out và Production",
+      "question": "Ứng dụng dùng Redis backplane, `AbortOnConnectFail = false`. Redis chết. Phát biểu nào đúng về hành vi và cách đặt health check cho backplane?",
+      "options": [
+        "Tin giữa hai người cùng instance vẫn tới, đặt Degraded",
+        "Mọi tin real-time ngừng, REST vẫn chạy, đặt Degraded để pod ở lại",
+        "Mọi tin ngừng, đặt Unhealthy để Kubernetes khởi động lại pod",
+        "Ứng dụng sập ngay, health check không còn ý nghĩa"
+      ],
+      "answer": 1,
+      "explanation": "Với Redis backplane, **mọi** lời gửi đều được publish lên Redis, kể cả khi người nhận ở cùng instance. Redis chết thì không tin nào tới (client vẫn `Connected`), lời push không tới được ai và kết nối mới cũng không mở được. `AbortOnConnectFail = false` giữ cho ứng dụng không sập và REST vẫn phục vụ được, nên health check là `Degraded`.\n- Phương án cho rằng tin cùng instance vẫn tới sai: không có đường vòng nào cho tin cùng instance.\n- Phương án `Unhealthy` làm mọi pod cùng bị rút khỏi Service một lúc, cả ứng dụng sập vì một tính năng phụ.\n- Phương án ứng dụng sập ngay sai: ứng dụng không sập, và Redis chết là lúc health check có ích nhất."
+    },
+    {
+      "id": "dotnet-m11-20",
+      "topic": "Presence với Redis TTL",
+      "source": "Module 11 - Presence Online/Offline",
+      "question": "Presence lưu trong Redis: mỗi kết nối một khoá TTL 90 giây, mỗi người một Set chứa các `ConnectionId` cũng TTL 90 giây. Do một lỗi, heartbeat 30 giây chỉ gia hạn khoá của từng kết nối, **không** gia hạn Set. Sau vài phút, triệu chứng nào xảy ra?",
+      "options": [
+        "Người đã đóng tab vẫn hiện online mãi mãi",
+        "Redis đầy bộ nhớ vì khoá không bao giờ hết hạn",
+        "Không có gì, vì `OnDisconnectedAsync` sẽ dọn lại Set",
+        "Người đang online bị báo offline do Set hết hạn"
+      ],
+      "answer": 3,
+      "explanation": "`IsOnlineAsync` đọc Set để biết các kết nối của người dùng. Set không được gia hạn nên sau 90 giây nó biến mất dù các kết nối vẫn sống, và người đang online bị báo offline. Heartbeat phải gia hạn **mọi** khoá liên quan (cả khoá kết nối lẫn Set).\n- \"Online mãi\" là triệu chứng của việc không có TTL: kết nối của instance bị kill nằm lại vĩnh viễn.\n- Khoá không hết hạn cũng không đúng: Set vẫn có TTL, và chính nó là thứ hết hạn quá sớm.\n- `OnDisconnectedAsync` chỉ chạy lúc đóng kết nối, không thêm lại Set cho kết nối đang sống, và còn không chạy khi tiến trình bị kill."
+    },
+    {
+      "id": "dotnet-m11-21",
+      "topic": "Sticky session và negotiate",
+      "source": "Module 11 - Scale-out và production",
+      "question": "Ứng dụng chạy 2 pod sau load balancer **round-robin** (không sticky), client dùng cấu hình mặc định (có bước `negotiate`). Điều nào đúng?",
+      "options": [
+        "Bước `negotiate` và kết nối thật có thể rơi vào hai pod khác nhau, nên có thể lỗi",
+        "Không vấn đề gì vì Hub là transient nên pod nào xử lý cũng được",
+        "Mọi tin sẽ tự được chuyển giữa hai pod mà không cần cấu hình thêm",
+        "WebSocket không bao giờ cần `negotiate`, nên cấu hình này luôn an toàn"
+      ],
+      "answer": 0,
+      "explanation": "Mặc định client gọi `negotiate` (một request HTTP) rồi mới mở kết nối với `connectionToken` nhận được. Pod nhận `negotiate` biết token đó; nếu round-robin đưa lần kết nối thật sang pod kia thì pod đó không nhận ra token và kết nối thất bại. Cách xử lý: sticky session, hoặc chỉ dùng WebSocket và bỏ `negotiate` (mất khả năng dự phòng), hoặc dùng Azure SignalR Service.\nHub là transient chỉ nói về vòng đời instance Hub, không liên quan tới việc kết nối nằm ở pod nào. Việc chuyển tin giữa các pod là của backplane, không phải của load balancer. Còn WebSocket **có** thể bỏ `negotiate` nếu cấu hình `skipNegotiation`, nhưng mặc định thì client vẫn gọi nó."
+    }
+  ]
+}

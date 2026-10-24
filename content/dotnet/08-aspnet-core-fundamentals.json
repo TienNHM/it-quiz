@@ -1,0 +1,321 @@
+{
+  "id": "dotnet-m08",
+  "title": "Module 8: ASP.NET Core Fundamentals",
+  "description": "Pipeline và middleware, routing, validation, hệ thống cấu hình, logging có cấu trúc và vận hành sau reverse proxy.",
+  "questions": [
+    {
+      "id": "dotnet-m08-01",
+      "topic": "Pipeline và middleware",
+      "source": "Module 8 - Request Pipeline và Middleware",
+      "question": "Pipeline dưới đây được dựng bằng `ApplicationBuilder`, rồi gọi lần lượt với path `/ok` và `/stop`, sau mỗi lần có một `Console.WriteLine()`. Stdout là gì?",
+      "code": "app.Use(async (ctx, next) =>\n{\n    Console.Write(\"A1 \");\n    await next(ctx);\n    Console.Write(\"A2 \");\n});\napp.Use(async (ctx, next) =>\n{\n    Console.Write(\"B1 \");\n    if (ctx.Request.Path == \"/stop\") return;\n    await next(ctx);\n    Console.Write(\"B2 \");\n});\napp.Run(_ =>\n{\n    Console.Write(\"END \");\n    return Task.CompletedTask;\n});",
+      "codeLang": "csharp",
+      "options": [
+        "A1 B1 END A2 B2\nA1 B1 A2",
+        "A1 B1 END B2 A2\nA1 B1 END B2 A2",
+        "A1 B1 END B2 A2\nA1 B1 A2",
+        "A1 B1 END B2 A2\nA1 B1 B2 A2"
+      ],
+      "answer": 2,
+      "explanation": "Pipeline là các lớp bọc nhau: code trước `next` chạy chiều đi, code sau `next` chạy chiều về, nên request `/ok` cho `A1 B1 END B2 A2` (đối xứng như ngoặc lồng nhau).\nVới `/stop`, middleware B `return` mà không gọi `next` nên bị short-circuit: `END` và `B2` không chạy, nhưng A vẫn nằm ngoài B nên `A2` vẫn chạy. Kết quả thật là `A1 B1 A2`.\n- Phương án đảo `A2 B2` sai vì lớp ngoài luôn ra sau lớp trong.\n- Phương án lặp `END` ở lần hai bỏ qua short-circuit.\n- Phương án có `B2` ở lần hai sai vì sau `return` các dòng phía sau `next` của B không bao giờ chạy."
+    },
+    {
+      "id": "dotnet-m08-02",
+      "topic": "Pipeline và middleware",
+      "source": "Module 8 - Request Pipeline và Middleware",
+      "question": "Hai middleware dưới đây đăng ký theo thứ tự rồi gọi `GET /` tới endpoint trả `\"hi\"`. Client in ra: mã trạng thái, có header `X-Late` không, có header `X-Start` không, và body. Kết quả là gì?",
+      "code": "app.Use(async (ctx, next) =>\n{\n    await next();\n    if (!ctx.Response.HasStarted)\n        ctx.Response.Headers[\"X-Late\"] = \"1\";\n});\napp.Use(async (ctx, next) =>\n{\n    ctx.Response.OnStarting(() =>\n    {\n        ctx.Response.Headers[\"X-Start\"] = \"1\";\n        return Task.CompletedTask;\n    });\n    await next();\n});\napp.MapGet(\"/\", () => \"hi\");\n// client in: status late=<có?> start=<có?> body=<nội dung>",
+      "codeLang": "csharp",
+      "options": [
+        "200 late=False start=True body=hi",
+        "200 late=True start=True body=hi",
+        "500 late=False start=False body=",
+        "200 late=True start=False body=hi"
+      ],
+      "answer": 0,
+      "explanation": "Sau `await next()` endpoint đã ghi body nên response đã bắt đầu gửi (`HasStarted` là true): header đi trước body và không lấy lại được. Vì có `HasStarted` kiểm tra nên `X-Late` bị bỏ qua, không có exception.\n`OnStarting` thì khác: callback chạy ngay trước khi header rời server, nên `X-Start` có mặt. Kết quả thật: `200 late=False start=True body=hi`.\n- `late=True` sai vì không thể thêm header sau khi response đã bắt đầu.\n- Mã 500 sai: không có gì ném lỗi, nhờ đã kiểm tra `HasStarted`.\n- `start=False` sai vì `OnStarting` chính là cách đúng để đặt header muộn."
+    },
+    {
+      "id": "dotnet-m08-03",
+      "topic": "Pipeline và middleware",
+      "source": "Module 8 - Request Pipeline và Middleware",
+      "question": "Bạn muốn đoạn `mark` chỉ chạy cho request bắt đầu bằng `/api`, rồi vẫn quay lại pipeline chính để endpoint `GET /api/items` chạy bình thường (kết quả mong muốn `200 items`). Đoạn nào thay vào chỗ `<ĐOẠN CODE>`?",
+      "code": "Func<HttpContext, Func<Task>, Task> mark = (c, n) =>\n{\n    c.Response.Headers[\"X-Checked\"] = \"1\";\n    return n();\n};\n// <ĐOẠN CODE>\napp.MapGet(\"/api/items\", () => \"items\");\n// gọi GET /api/items, in: mã trạng thái + body",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\napp.MapWhen(\n    c => c.Request.Path.StartsWithSegments(\"/api\"),\n    b => b.Use(mark));\n```",
+        "```csharp\napp.MapWhen(\n    c => c.Request.Path.StartsWithSegments(\"/api\"),\n    b => b.Run(c => c.Response.WriteAsync(\"ok\")));\n```",
+        "```csharp\napp.Map(\"/api\", b => b.Use(mark));\n```",
+        "```csharp\napp.UseWhen(\n    c => c.Request.Path.StartsWithSegments(\"/api\"),\n    b => b.Use(mark));\n```"
+      ],
+      "answer": 3,
+      "explanation": "`UseWhen` chèn middleware có điều kiện rồi quay lại pipeline chính, nên endpoint vẫn chạy: kết quả thật `200 items`.\n- `MapWhen` với `b.Use(mark)` tạo nhánh cụt: request vào nhánh và không bao giờ quay lại để thực thi endpoint đã chọn, nên chạy thật nhận 500 (request đến cuối pipeline mà chưa thực thi endpoint).\n- `MapWhen` với `Run` là terminal middleware nên endpoint bị che, response là `200 ok` thay vì `items`.\n- `Map(\"/api\", ...)` cũng rẽ nhánh riêng không quay lại, nên cũng lỗi 500.\nQuy tắc: chỉ muốn thêm một bước kiểm tra thì dùng `UseWhen`, không phải `MapWhen`."
+    },
+    {
+      "id": "dotnet-m08-04",
+      "topic": "Routing",
+      "source": "Module 8 - Routing",
+      "question": "Chương trình khởi động host, gọi `GET /items/5` rồi ném exception nếu response không phải 2xx. Cặp route nào khiến chương trình **ném exception**?",
+      "code": "// <ĐOẠN CODE> đăng ký route\nawait app.StartAsync();\nvar r = await http.GetAsync(\"/items/5\");\nawait app.StopAsync();\nif (!r.IsSuccessStatusCode)\n    throw new Exception(\"HTTP \" + (int)r.StatusCode);\nConsole.WriteLine(\"ok\");",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\napp.MapGet(\"/items/{id:int}\", (int id) => \"id\");\napp.MapGet(\"/items/active\", () => \"active\");\n```",
+        "```csharp\napp.MapGet(\"/items/{id:int}\", (int id) => \"id\");\napp.MapGet(\"/items/{code:int}\", (int code) => \"code\");\n```",
+        "```csharp\napp.MapGet(\"/items/{id:int}\", (int id) => \"id\");\napp.MapGet(\"/items/{name}\", (string name) => \"name\");\n```",
+        "```csharp\napp.MapGet(\"/items/{id:int}\", (int id) => \"id\");\napp.MapGet(\"/items/{**rest}\", (string rest) => \"rest\");\n```"
+      ],
+      "answer": 1,
+      "explanation": "Khi nhiều route khớp, ASP.NET Core chấm điểm theo độ cụ thể chứ không theo thứ tự đăng ký. Hai route `{id:int}` và `{code:int}` có cùng điểm và cùng HTTP method, nên lúc nhận `/items/5` framework ném `AmbiguousMatchException` (client thấy 500). Lỗi này chỉ lộ lúc chạy, không phải lúc biên dịch.\n- `/items/active` là chữ cố định, `/items/5` không khớp nó, nên chỉ route `{id:int}` khớp: chạy OK.\n- `{id:int}` có constraint thắng `{name}` trần: chạy OK.\n- `{id:int}` thắng catch-all `{**rest}`, vì catch-all thua tất cả: chạy OK."
+    },
+    {
+      "id": "dotnet-m08-05",
+      "topic": "Routing",
+      "source": "Module 8 - Routing",
+      "question": "Ba route được đăng ký như dưới (route `active` đăng ký **sau**). Client gọi lần lượt ba đường dẫn, in `path -> mã nội dung`. Stdout là gì?",
+      "code": "app.MapGet(\"/customers/{id:int}\", (int id) => $\"id {id}\");\napp.MapGet(\"/customers/active\", () => \"active\");\n// gọi lần lượt:\n//   /customers/7\n//   /customers/active\n//   /customers/abc\n// in: $\"{path} -> {status} {body}\" (bỏ khoảng trắng cuối)",
+      "codeLang": "csharp",
+      "options": [
+        "/customers/7 -> 200 id 7\n/customers/active -> 200 active\n/customers/abc -> 400",
+        "/customers/7 -> 200 id 7\n/customers/active -> 500\n/customers/abc -> 404",
+        "/customers/7 -> 200 id 7\n/customers/active -> 200 active\n/customers/abc -> 404",
+        "/customers/7 -> 200 id 7\n/customers/active -> 200 active\n/customers/abc -> 500"
+      ],
+      "answer": 2,
+      "explanation": "Đoạn chữ cố định `active` thắng tham số có constraint, nên `/customers/active` vào đúng route dù đăng ký sau, không có xung đột. `/customers/7` khớp `{id:int}`.\nVới `/customers/abc`, constraint `:int` không khớp và cũng không có route nào khác, nên kết quả là **404** chứ không phải 400: constraint sai nghĩa là không có tài nguyên ở URL đó, và action không bao giờ được gọi.\n- 400 sai vì constraint chỉ lọc ở tầng định tuyến, không tạo lỗi validation.\n- 500 ở `active` sai vì hai route không cùng điểm, không mơ hồ.\n- 500 ở `abc` sai vì không có lỗi ép kiểu nào xảy ra: request không vào handler."
+    },
+    {
+      "id": "dotnet-m08-06",
+      "topic": "Hệ thống cấu hình",
+      "source": "Module 8 - Configuration System",
+      "question": "Hai nguồn JSON cùng khai báo mảng `Origins`, nguồn thứ hai được thêm sau (`J` đổi chuỗi sang `MemoryStream`). Stdout là gì?",
+      "code": "var config = new ConfigurationBuilder()\n    .AddJsonStream(J(\"\"\"{ \"Origins\": [\"a.com\", \"b.com\", \"c.com\"] }\"\"\"))\n    .AddJsonStream(J(\"\"\"{ \"Origins\": [\"x.com\"] }\"\"\"))\n    .Build();\nvar origins = config.GetSection(\"Origins\")\n    .GetChildren().Select(c => c.Value);\nConsole.WriteLine(string.Join(\",\", origins));",
+      "codeLang": "csharp",
+      "options": [
+        "x.com,b.com,c.com",
+        "x.com",
+        "a.com,b.com,c.com,x.com",
+        "a.com,b.com,c.com"
+      ],
+      "answer": 0,
+      "explanation": "Cấu hình là một từ điển phẳng: mảng bị làm phẳng theo chỉ số thành `Origins:0`, `Origins:1`, `Origins:2`. Nguồn sau không thay cả mảng mà chỉ đè từng chỉ số: nguồn hai chỉ có `Origins:0 = x.com`, nên `:1` và `:2` còn nguyên. Kết quả thật: `x.com,b.com,c.com`.\n- `x.com` sai vì mảng không bị thay toàn bộ.\n- `a.com,b.com,c.com,x.com` sai vì mảng không được nối thêm; phần tử `x.com` ghi đè chỉ số 0.\n- `a.com,b.com,c.com` sai vì nguồn sau vẫn có hiệu lực ở chỉ số 0.\nĐây là nguồn của lỗi CORS khó hiểu: một origin lẽ ra đã bị xoá vẫn được chấp nhận."
+    },
+    {
+      "id": "dotnet-m08-07",
+      "topic": "Hệ thống cấu hình",
+      "source": "Module 8 - Configuration System",
+      "question": "Đặt hai biến môi trường rồi đọc qua `IConfiguration`. Stdout là gì (giá trị không tồn tại hiển thị `null`)?",
+      "code": "Environment.SetEnvironmentVariable(\"Email__Smtp__Port\", \"587\");\nEnvironment.SetEnvironmentVariable(\"Email_Smtp_Host\", \"mail.local\");\nvar config = new ConfigurationBuilder()\n    .AddEnvironmentVariables()\n    .Build();\nConsole.WriteLine(\n    $\"{config[\"Email:Smtp:Port\"] ?? \"null\"} \" +\n    $\"{config[\"Email:Smtp:Host\"] ?? \"null\"}\");",
+      "codeLang": "csharp",
+      "options": [
+        "587 mail.local",
+        "null null",
+        "null mail.local",
+        "587 null"
+      ],
+      "answer": 3,
+      "explanation": "Dấu hai chấm không dùng được trong tên biến môi trường trên nhiều shell, nên .NET quy ước **hai dấu gạch dưới** `__` thay cho `:`. `Email__Smtp__Port` thành khoá `Email:Smtp:Port` nên đọc ra `587`.\n`Email_Smtp_Host` chỉ có một dấu gạch dưới: nó là một khoá hoàn toàn khác tên `Email_Smtp_Host`, nên `Email:Smtp:Host` là `null` và không có cảnh báo nào.\n- `587 mail.local` sai vì một dấu gạch dưới không có tác dụng phân cấp.\n- `null null` sai vì biến dùng `__` đã được ánh xạ.\n- `null mail.local` đảo ngược đúng và sai."
+    },
+    {
+      "id": "dotnet-m08-08",
+      "topic": "Logging",
+      "source": "Module 8 - Logging với Serilog",
+      "question": "Một `ILoggerProvider` tự viết in ra tên và giá trị các trường có cấu trúc của mỗi sự kiện (bỏ trường `{OriginalFormat}`), dạng `fields=[Tên=Giá trị,...]`. Hai lời gọi log dưới sinh ra stdout nào?",
+      "code": "int id = 42;\nlogger.LogInformation(\"Customer {CustomerId} created\", id);\nlogger.LogInformation($\"Customer {id} created\");\n// provider in mỗi sự kiện: fields=[Tên=Giá trị,...]",
+      "codeLang": "csharp",
+      "options": [
+        "fields=[CustomerId=42]\nfields=[CustomerId=42]",
+        "fields=[CustomerId=42]\nfields=[]",
+        "fields=[CustomerId=42]\nfields=[id=42]",
+        "fields=[]\nfields=[]"
+      ],
+      "answer": 1,
+      "explanation": "Với message template `{CustomerId}`, giá trị `42` được giữ thành một trường có cấu trúc tên `CustomerId`, nên truy vấn được theo trường.\nVới nội suy chuỗi `$\"...{id}...\"`, C# đã nấu thành một chuỗi hoàn chỉnh trước khi gọi logger: không còn trường nào, chỉ còn văn bản. Kết quả thật: `fields=[CustomerId=42]` rồi `fields=[]`.\n- Hai dòng đều có `CustomerId` sai vì nội suy không tạo placeholder.\n- `id=42` sai vì tên biến C# không được logger biết tới.\n- Cả hai rỗng sai vì template đúng vẫn sinh trường.\nNội suy còn luôn chạy dù mức log đang tắt, và mất khả năng gom nhóm theo template."
+    },
+    {
+      "id": "dotnet-m08-09",
+      "topic": "Model validation",
+      "source": "Module 8 - Model Validation",
+      "question": "`Validator.TryValidateObject(..., validateAllProperties: true)` được gọi trên ba object; mỗi lần in các thông điệp lỗi nối bằng `|` trên một dòng. Stdout là gì?",
+      "code": "class Campaign : IValidatableObject\n{\n    [Required(ErrorMessage = \"Start?\")] public DateOnly? Start { get; init; }\n    [Required(ErrorMessage = \"End?\")] public DateOnly? End { get; init; }\n    public IEnumerable<ValidationResult> Validate(ValidationContext c)\n    {\n        if (End <= Start)\n            yield return new ValidationResult(\"End<=Start\");\n    }\n}\n// ba object, theo thứ tự:\n//  1) Start = 1/5/2026, End = null\n//  2) Start = 10/5/2026, End = 1/5/2026\n//  3) Start = null, End = 1/5/2026",
+      "codeLang": "csharp",
+      "options": [
+        "End?|End<=Start\nEnd<=Start\nStart?",
+        "End?\nEnd<=Start\nStart?|End<=Start",
+        "End?\nEnd<=Start\nStart?",
+        "End<=Start\nEnd<=Start\nStart?"
+      ],
+      "answer": 2,
+      "explanation": "`Validate` của `IValidatableObject` chạy **sau** mọi DataAnnotations và **chỉ khi** chúng đều qua. Vì vậy:\n- Object 1 thiếu `End`: chỉ có lỗi `End?`, `Validate` không được gọi.\n- Object 2 hợp lệ ở mức thuộc tính, rồi `Validate` thấy `End <= Start`: lỗi `End<=Start`.\n- Object 3 thiếu `Start`: chỉ có `Start?`, `Validate` không chạy.\nKết quả thật: `End?`, `End<=Start`, `Start?`.\n- Phương án có `End?|End<=Start` sai vì không có hai lỗi cùng lúc ở object 1.\n- Phương án `Start?|End<=Start` sai tương tự ở object 3.\n- Phương án mở đầu bằng `End<=Start` sai vì `DateOnly?` với `[Required]` vẫn phát hiện được giá trị thiếu."
+    },
+    {
+      "id": "dotnet-m08-10",
+      "topic": "Kiến trúc ASP.NET Core",
+      "source": "Module 8 - Kiến trúc ASP.NET Core",
+      "question": "API chạy trong một container, Nginx ở mạng khác đứng trước và gửi `X-Forwarded-For`. Bạn gọi `app.UseForwardedHeaders()` với `ForwardedHeaders = XForwardedFor | XForwardedProto` nhưng `RemoteIpAddress` vẫn là IP của Nginx. Nguyên nhân và cách khắc phục đúng đắn là gì?",
+      "options": [
+        "Mặc định chỉ tin proxy loopback, cần khai mạng proxy trong KnownIPNetworks hoặc KnownProxies.",
+        "Cần đặt ForwardLimit bằng 0 để middleware đọc header từ bất kỳ nguồn nào gửi tới.",
+        "Cần xoá cả KnownIPNetworks lẫn KnownProxies để middleware tin mọi nguồn gửi header.",
+        "Kestrel bỏ qua X-Forwarded-For, nên Nginx phải đổi sang header Forwarded của RFC 7239."
+      ],
+      "answer": 0,
+      "explanation": "Mặc định `UseForwardedHeaders` chỉ tin proxy chạy trên cùng máy (loopback `127.0.0.1` và `::1`). Proxy ở container hay máy khác bị coi là không tin cậy nên header bị bỏ qua trong im lặng. Cách đúng là khai báo mạng của proxy trong `KnownIPNetworks` hoặc địa chỉ cụ thể trong `KnownProxies`.\n- `ForwardLimit` chỉ giới hạn số tầng proxy được xử lý, không quyết định nguồn nào được tin.\n- Xoá danh sách để tin mọi nguồn có thể làm header đọc được, nhưng là lỗ hổng: client tự gửi `X-Forwarded-For: 127.0.0.1` để vượt danh sách trắng IP.\n- Kestrel không bỏ qua `X-Forwarded-For`; middleware vẫn đọc được header này khi nguồn đáng tin.\nNhớ đặt `UseForwardedHeaders` trước mọi middleware đọc IP hoặc scheme."
+    },
+    {
+      "id": "dotnet-m08-11",
+      "topic": "Chuỗi IExceptionHandler",
+      "source": "Module 8 - Global Exception Handling",
+      "question": "Hai `IExceptionHandler` được đăng ký như dưới đây, môi trường Production. `CatchAllHandler` luôn đặt `StatusCode = 500` rồi trả `true`. `ArgumentHandler` trả `false` nếu exception không phải `ArgumentException`, còn lại đặt `StatusCode = 422` rồi trả `true`. Client gọi `GET /` và in mã trạng thái nhận được. Kết quả là gì?",
+      "code": "builder.Services.AddProblemDetails();\nbuilder.Services.AddExceptionHandler<CatchAllHandler>();\nbuilder.Services.AddExceptionHandler<ArgumentHandler>();\n\nvar app = builder.Build();\napp.UseExceptionHandler();\napp.MapGet(\"/\", () => { throw new ArgumentException(\"x\"); });",
+      "codeLang": "csharp",
+      "options": [
+        "422",
+        "500",
+        "404",
+        "200"
+      ],
+      "answer": 1,
+      "explanation": "Các handler chạy **theo thứ tự đăng ký** và dừng ở handler đầu tiên trả `true`. `CatchAllHandler` được đăng ký trước nên nhận exception trước, trả `true` ngay, và `ArgumentHandler` không bao giờ được gọi. Mã trạng thái cuối cùng là 500.\nMã 422 chỉ xảy ra nếu `ArgumentHandler` đứng trước, đúng như quy tắc của bài: handler bắt-tất-cả phải đăng ký **cuối cùng**. Mã 404 không có handler nào đặt ra. Mã 200 sai vì exception đã được bắt và status bị ghi đè, không có chuyện trả thành công.\nKết quả thật khi chạy: 500."
+    },
+    {
+      "id": "dotnet-m08-12",
+      "topic": "Thứ tự nhánh switch theo kiểu exception",
+      "source": "Module 8 - Global Exception Handling",
+      "question": "Cây exception nghiệp vụ: `NotFoundException` kế thừa `DomainException`. Một lập trình viên ánh xạ exception sang mã HTTP như dưới đây. Chương trình cho kết quả nào?",
+      "code": "var e = new NotFoundException(\"Customer\", 2);\nvar status = e switch\n{\n    DomainException => 400,\n    NotFoundException => 404,\n    _ => 500\n};\nConsole.WriteLine(status);\n\npublic abstract class DomainException(string message) : Exception(message);\npublic sealed class NotFoundException(string entity, object id)\n    : DomainException($\"Không tìm thấy {entity} với id '{id}'\");",
+      "codeLang": "csharp",
+      "options": [
+        "Biên dịch được và in `404`",
+        "Biên dịch được và in `400`",
+        "Biên dịch được và ném exception lúc chạy vì hai nhánh trùng nhau",
+        "Lỗi biên dịch CS8510: nhánh `NotFoundException` không bao giờ khớp được"
+      ],
+      "answer": 3,
+      "explanation": "Nhánh `DomainException` đứng trước và đã khớp mọi `NotFoundException` (vì kế thừa), nên nhánh `NotFoundException` phía sau là **không thể tới được**. Trình biên dịch phát hiện và báo lỗi `CS8510: The pattern is unreachable`.\nIn `404` sai vì chương trình còn không biên dịch được, chưa nói tới chuyện chạy. In `400` là kết quả mà người viết lo sợ nếu trình biên dịch im lặng, nhưng C# chặn ngay từ lúc build. Phương án ném exception lúc chạy sai: `switch` expression chỉ ném `SwitchExpressionException` khi không nhánh nào khớp, mà ở đây đã có nhánh `_`.\nQuy tắc: nhánh cụ thể đặt trước, nhánh kiểu cha đặt sau."
+    },
+    {
+      "id": "dotnet-m08-13",
+      "topic": "Health check và failureStatus",
+      "source": "Module 8 - Health Checks",
+      "question": "Hai check đều ném exception, nhưng một check khai `failureStatus: HealthStatus.Degraded`. Client gọi `/a` rồi `/b` và in `đường-dẫn mã-HTTP nội-dung`. Kết quả là gì?",
+      "code": "builder.Services.AddHealthChecks()\n    .AddCheck<BrokenCheck>(\"cache\",\n        failureStatus: HealthStatus.Degraded, tags: [\"a\"])\n    .AddCheck<BrokenCheck>(\"db\", tags: [\"b\"]);\n\napp.MapHealthChecks(\"/a\", new() { Predicate = c => c.Tags.Contains(\"a\") });\napp.MapHealthChecks(\"/b\", new() { Predicate = c => c.Tags.Contains(\"b\") });\n\nclass BrokenCheck : IHealthCheck\n{\n    public Task<HealthCheckResult> CheckHealthAsync(\n        HealthCheckContext context, CancellationToken ct = default)\n        => throw new InvalidOperationException(\"kết nối thất bại\");\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n/a 503 Unhealthy\n/b 503 Unhealthy\n```",
+        "```text\n/a 500\n/b 500\n```",
+        "```text\n/a 200 Degraded\n/b 503 Unhealthy\n```",
+        "```text\n/a 200 Healthy\n/b 503 Unhealthy\n```"
+      ],
+      "answer": 2,
+      "explanation": "Framework tự bắt exception thoát ra từ check và ghi nhận theo `failureStatus` của check đó. Check `cache` khai `Degraded` nên `/a` trả **200** với nội dung `Degraded`: có vấn đề nhưng vẫn phục vụ được, load balancer vẫn gửi request tới. Check `db` dùng mặc định `Unhealthy` nên `/b` trả **503**.\n- Kết quả cả hai đều `503 Unhealthy` sai vì quên `failureStatus` đã chỉnh cho `cache`.\n- Kết quả `500` sai vì health check middleware không để exception của check lan ra thành lỗi 500.\n- Kết quả `/a 200 Healthy` sai vì exception không bao giờ được coi là khỏe mạnh.\nKết quả thật khi chạy: `/a 200 Degraded` và `/b 503 Unhealthy`."
+    },
+    {
+      "id": "dotnet-m08-14",
+      "topic": "Vị trí UseExceptionHandler",
+      "source": "Module 8 - Global Exception Handling",
+      "question": "Một middleware ném `InvalidOperationException` cho đường dẫn `/boom`. Handler đã đăng ký đặt status 503 và ghi chữ `Loi he thong` vào body. Môi trường Production. Hàm `Run` được gọi hai lần: lần \"dau\" đặt `UseExceptionHandler()` **trước** middleware ném lỗi, lần \"sau\" đặt **sau** nó. Chương trình in `tên-lần: mã-HTTP có-body-hay-rỗng`. Kết quả là gì?",
+      "code": "app.UseExceptionHandler();      // chỉ chạy ở lần \"dau\"\n\napp.Use(async (ctx, next) =>\n{\n    if (ctx.Request.Path == \"/boom\")\n        throw new InvalidOperationException(\"nổ\");\n    await next();\n});\n\napp.UseExceptionHandler();      // chỉ chạy ở lần \"sau\"\napp.MapGet(\"/boom\", () => \"ok\");",
+      "codeLang": "csharp",
+      "options": [
+        "```text\ndau: 503 co-body\nsau: 500 rong\n```",
+        "```text\ndau: 503 co-body\nsau: 503 co-body\n```",
+        "```text\ndau: 500 rong\nsau: 503 co-body\n```",
+        "```text\ndau: 500 rong\nsau: 500 rong\n```"
+      ],
+      "answer": 0,
+      "explanation": "`UseExceptionHandler` chỉ bắt được exception phát sinh từ các lớp **bên trong** nó, theo mô hình pipeline lồng nhau giống `try/catch`. Lần \"dau\": handler bọc ngoài middleware ném lỗi nên bắt được, trả 503 cùng body.\nLần \"sau\": middleware ném lỗi nằm **ngoài** handler, không ai bọc nó, nên ở Production client chỉ nhận 500 trống rỗng (không `ProblemDetails`, không `traceId`).\n- Kết quả cả hai lần đều 503 sai vì cho rằng vị trí đặt handler không quan trọng.\n- Kết quả đảo ngược (dau 500, sau 503) sai vì handler đứng sau lại không bọc được middleware phía trước.\n- Kết quả cả hai lần đều 500 sai vì ở lần \"dau\" handler đã chạy và xử lý lỗi.\nKết quả thật khi chạy: `dau: 503 co-body` rồi `sau: 500 rong`."
+    },
+    {
+      "id": "dotnet-m08-15",
+      "topic": "EF Core: Add và SaveChanges",
+      "source": "Module 8 - EF Core tối thiểu",
+      "question": "Đoạn dưới đây tạo khách hàng `c` trong một `CrmDbContext`, rồi một context **mới** đếm số dòng trong bảng `Customers` và in ra. Thay phần `// ... đoạn cần chọn` bằng đoạn nào để chương trình in `1`?",
+      "code": "await using (var db = new CrmDbContext(options))\n{\n    var c = new Customer { Name = \"An\", Email = \"an@example.com\" };\n    // ... đoạn cần chọn\n}\n\nawait using (var db = new CrmDbContext(options))\n    Console.WriteLine(await db.Customers.CountAsync());",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\ndb.Customers.Add(c);\n```",
+        "```csharp\nvar list = await db.Customers.ToListAsync();\nlist.Add(c);\nawait db.SaveChangesAsync();\n```",
+        "```csharp\ndb.Customers.AsNoTracking().ToList().Add(c);\nawait db.SaveChangesAsync();\n```",
+        "```csharp\ndb.Customers.Add(c);\nawait db.SaveChangesAsync();\n```"
+      ],
+      "answer": 3,
+      "explanation": "`Add` chỉ **đánh dấu** object là \"sẽ thêm\"; câu `INSERT` chỉ được gửi khi gọi `SaveChangesAsync`. Vì vậy phải có cả hai dòng.\nPhương án chỉ có `Add` sai vì quên `SaveChangesAsync`: bảng vẫn rỗng, in `0`. Phương án `ToListAsync` rồi `list.Add(c)` sai vì thêm vào `List<T>` thường, EF Core không theo dõi danh sách đó. Phương án `AsNoTracking().ToList().Add(c)` cũng chỉ thêm vào một `List<T>` rời, nên `SaveChangesAsync` không có gì để ghi.\nĐây chính là lỗi \"POST trả 201 nhưng GET không thấy dữ liệu\" trong bài. Kết quả thật khi chạy với đáp án đúng: 1."
+    },
+    {
+      "id": "dotnet-m08-16",
+      "topic": "403 so với 404 và liệt kê id",
+      "source": "Module 8 - Tình huống: API lộ stack trace",
+      "question": "API đa tenant có endpoint `GET /leads/{id}`. Code hiện tại lấy lead theo `id` từ database, rồi nếu `lead.TenantId` khác tenant của người gọi thì trả `403 Forbidden`; nếu không có lead nào thì trả `404`. Điểm yếu nào của thiết kế này và cách sửa nào đúng?",
+      "options": [
+        "Mã 403 sai chuẩn HTTP cho trường hợp này, nên đổi sang 401 cho lead của tenant khác",
+        "Lộ id nào có thật qua 403/404. Lọc `TenantId` trong truy vấn, trả 404 cho cả hai",
+        "Không có điểm yếu: 403 đúng ngữ nghĩa, còn id tự tăng nên vốn đã đoán được từ đầu",
+        "Thiếu log: cần ghi mọi lần trả 403 để phát hiện kẻ dò, còn mã trạng thái giữ nguyên"
+      ],
+      "answer": 1,
+      "explanation": "Khi 403 nghĩa là \"id có thật nhưng không phải của bạn\" còn 404 nghĩa là \"không có id này\", kẻ tấn công chỉ cần duyệt id từ 1 trở đi là biết id nào tồn tại và ước lượng được quy mô dữ liệu: đây là kiểu dò *enumeration*. Cách sửa của bài là lọc tenant **trong** truy vấn (`Where(l => l.Id == id && l.TenantId == tenant)`), nhờ đó \"không có\" và \"không phải của bạn\" đi chung một đường code, cùng một mã 404.\nĐổi sang 401 sai: 401 nghĩa là chưa xác thực, và người gọi đã đăng nhập rồi. Cho rằng không có điểm yếu là sai, vì id đoán được không có nghĩa là nên xác nhận giúp kẻ tấn công. Chỉ thêm log không đổi gì ở phía client, thông tin vẫn lộ qua mã trạng thái."
+    },
+    {
+      "id": "dotnet-m08-17",
+      "topic": "DateTime và SQLite",
+      "source": "Module 8 - EF Core tối thiểu",
+      "question": "Entity `Customer` có `DateTime CreatedAt`, dùng provider SQLite. Ghi một khách hàng bằng `DateTime.UtcNow`, rồi đọc lại bằng một context khác. Chương trình in ra gì?",
+      "code": "await using (var db = new CrmDbContext(options))\n{\n    var c = new Customer { Name = \"An\", CreatedAt = DateTime.UtcNow };\n    Console.WriteLine(c.CreatedAt.Kind);\n    db.Customers.Add(c);\n    await db.SaveChangesAsync();\n}\n\nawait using (var db = new CrmDbContext(options))\n{\n    var c = await db.Customers.AsNoTracking().FirstAsync();\n    Console.WriteLine(c.CreatedAt.Kind);\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nUtc\nUtc\n```",
+        "```text\nUtc\nLocal\n```",
+        "```text\nUtc\nUnspecified\n```",
+        "```text\nUnspecified\nUnspecified\n```"
+      ],
+      "answer": 2,
+      "explanation": "`DateTime.UtcNow` có `Kind` là `Utc`, nên dòng đầu in `Utc`. SQLite không có kiểu ngày giờ riêng: EF Core lưu `DateTime` thành chuỗi chữ và khi đọc lại **không biết** đó là giờ UTC hay giờ địa phương, nên `Kind` là `Unspecified`. Đây là lý do JSON mất chữ `Z` sau khi khởi động lại API.\n- `Utc` rồi `Utc` sai vì tin rằng EF Core giữ nguyên `Kind`.\n- `Utc` rồi `Local` sai vì EF Core không tự chuyển sang giờ địa phương.\n- `Unspecified` ở cả hai dòng sai vì dòng đầu in trước khi lưu, giá trị vẫn là `Utc`.\nKết quả thật khi chạy: `Utc` rồi `Unspecified`."
+    },
+    {
+      "id": "dotnet-m08-18",
+      "topic": "Liveness và readiness",
+      "source": "Module 8 - Health Checks",
+      "question": "Một nhóm dùng **một** endpoint `/health` có kiểm tra database cho cả liveness lẫn readiness probe trên Kubernetes. Database chậm khoảng 30 giây vì một truy vấn nặng. Điều gì có khả năng xảy ra nhất?",
+      "options": [
+        "Các pod bị rút khỏi load balancer rồi tự quay lại khi database hồi phục",
+        "Mọi pod thất bại probe và bị restart, rồi dồn kết nối làm database quá tải hơn",
+        "Không có gì xảy ra vì `Degraded` luôn trả 200",
+        "Chỉ pod có kết nối chậm nhất bị khởi động lại, các pod còn lại chạy bình thường"
+      ],
+      "answer": 1,
+      "explanation": "Liveness thất bại nghĩa là **restart**. Vì `/health` kiểm tra database nên mọi pod đều thất bại cùng lúc, bị giết hàng loạt, rồi các pod mới khởi động đồng loạt mở kết nối làm database yếu thêm: một vòng lặp tự nuôi, biến sự cố database thành sự cố toàn hệ thống. Quy tắc của bài: liveness **không kiểm tra gì bên ngoài tiến trình**; phần database thuộc readiness.\n- Kịch bản \"rút khỏi load balancer rồi tự quay lại\" chỉ đúng nếu đã **tách** readiness khỏi liveness, không phải tình huống này.\n- Khẳng định \"không có gì xảy ra vì Degraded trả 200\" sai vì không có thông tin nào cho thấy check được cấu hình `Degraded`.\n- Khẳng định \"chỉ pod chậm nhất bị restart\" sai vì lỗi do database nên xảy ra đồng loạt trên mọi pod."
+    },
+    {
+      "id": "dotnet-m08-19",
+      "topic": "Rate limiting theo partition",
+      "source": "Module 8 - Minimal API, endpoint filter, Kestrel và nén",
+      "question": "Bộ giới hạn dưới đây phân vùng theo tên người dùng, mỗi người 2 request mỗi phút. Sáu request đến liên tiếp, lần lượt từ `an`, `an`, `an`, `binh`, `an`, `binh`. Chương trình in ra gì?",
+      "code": "var limiter = PartitionedRateLimiter.Create<string, string>(user =>\n    RateLimitPartition.GetFixedWindowLimiter(user, _ =>\n        new FixedWindowRateLimiterOptions\n        {\n            PermitLimit = 2,\n            Window = TimeSpan.FromMinutes(1),\n            QueueLimit = 0\n        }));\n\nstring[] requests = [\"an\", \"an\", \"an\", \"binh\", \"an\", \"binh\"];\nConsole.WriteLine(string.Join(\" \", requests.Select(u =>\n    limiter.AttemptAcquire(u).IsAcquired ? \"200\" : \"429\")));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n200 200 429 429 429 429\n```",
+        "```text\n200 200 200 200 200 200\n```",
+        "```text\n200 200 429 200 200 200\n```",
+        "```text\n200 200 429 200 429 200\n```"
+      ],
+      "answer": 3,
+      "explanation": "Mỗi giá trị `partitionKey` có **bộ đếm riêng**. `an` được 2 lượt rồi bị từ chối ở lần gọi thứ 3 và thứ 5; `binh` có bộ đếm của mình nên cả hai request của `binh` đều qua. Kết quả: `200 200 429 200 429 200`.\nPhương án `200 200 429 429 429 429` là hành vi của **một bộ đếm chung cho cả hệ thống** (kiểu `AddFixedWindowLimiter`), nơi một người gọi nhiều chặn luôn mọi người. Phương án toàn `200` quên rằng `PermitLimit = 2`. Phương án `200 200 429 200 200 200` sai vì cửa sổ 1 phút chưa hết, nên `an` vẫn bị chặn ở lần thứ 5.\nKết quả thật khi chạy: `200 200 429 200 429 200`."
+    },
+    {
+      "id": "dotnet-m08-20",
+      "topic": "Thứ tự UseRouting và UseAuthorization",
+      "source": "Module 8 - Tình huống: đảo thứ tự middleware",
+      "question": "Hệ thống đặt **fallback policy** `RequireAuthenticatedUser()`. `/status` có `AllowAnonymous()`, `/leads` thì không. Client không mang token gọi `/status` rồi `/leads`. Chương trình chạy hai pipeline (\"dung\" và \"sai\" khác nhau ở thứ tự `UseRouting`/`UseAuthorization`) và in `tên-lần: mã-/status mã-/leads`. Kết quả là gì?",
+      "code": "// \"dung\"\napp.UseAuthentication();\napp.UseRouting();\napp.UseAuthorization();\n\n// \"sai\"\napp.UseAuthentication();\napp.UseAuthorization();\napp.UseRouting();\n\napp.MapGet(\"/status\", () => \"ok\").AllowAnonymous();\napp.MapGet(\"/leads\", () => \"secret\");",
+      "codeLang": "csharp",
+      "options": [
+        "```text\ndung: 200 401\nsai: 200 401\n```",
+        "```text\ndung: 200 401\nsai: 401 401\n```",
+        "```text\ndung: 200 401\nsai: 200 500\n```",
+        "```text\ndung: 200 401\nsai: 200 200\n```"
+      ],
+      "answer": 1,
+      "explanation": "`UseAuthorization` cần endpoint để đọc `[AllowAnonymous]`, mà endpoint do `UseRouting` gắn vào `HttpContext`. Khi `UseAuthorization` đứng trước `UseRouting`, endpoint là `null`, không thấy metadata nào, nên áp **fallback policy**: đòi đăng nhập cho mọi request, kể cả `/status`. Kết quả \"sai\" là `401 401`.\n- Kết quả `sai: 200 401` quên rằng `AllowAnonymous` không được đọc khi thứ tự sai.\n- Kết quả `sai: 200 500` là hậu quả của thứ tự sai **khi không có** fallback policy (endpoint `[Authorize]` ném `InvalidOperationException`), không phải tình huống này.\n- Kết quả `sai: 200 200` sai nặng: không có chuyện endpoint được bảo vệ mở toang, framework chặn lại.\nKết quả thật khi chạy: `dung: 200 401` và `sai: 401 401`."
+    }
+  ]
+}

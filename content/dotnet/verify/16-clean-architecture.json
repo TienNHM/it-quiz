@@ -1,0 +1,100 @@
+[
+  {
+    "id": "dotnet-m16-01",
+    "kind": "cs-predict",
+    "program": "Money a = new(100, \"VND\"), b = new(100, \"VND\");\nConsole.WriteLine(a == b);\nvar l1 = new Lead(1);\nvar l2 = new Lead(1);\nConsole.WriteLine(l1 == l2);\nConsole.WriteLine(l1.Equals(l2));\nConsole.WriteLine(a.Equals(b));\n\nreadonly record struct Money(decimal Amount, string Currency);\nclass Lead(int id) { public int Id { get; } = id; }"
+  },
+  {
+    "id": "dotnet-m16-02",
+    "kind": "cs-predict",
+    "program": "var order = new Order();\nvar view = order.Lines;\norder.Add(\"A\");\nConsole.WriteLine(view.Count);\norder.Add(\"B\");\nConsole.WriteLine(view.Count);\nConsole.WriteLine(order.Lines.Count);\n\nclass Order\n{\n    private readonly List<string> _lines = [];\n    public IReadOnlyList<string> Lines => _lines.AsReadOnly();\n    public void Add(string s) => _lines.Add(s);\n}"
+  },
+  {
+    "id": "dotnet-m16-03",
+    "kind": "cs-find-error",
+    "template": "var lead = Lead.Create();\n{{X}}\nConsole.WriteLine(\"done\");\n\nenum LeadStatus { New, Won }\nclass Lead\n{\n    private readonly List<string> _lines = [];\n    public LeadStatus Status { get; private set; }\n    public IReadOnlyList<string> Lines => _lines.AsReadOnly();\n    public static Lead Create() => new();\n    public void Convert() => Status = LeadStatus.Won;\n}",
+    "options": [
+      "lead.Convert();",
+      "lead.Status = LeadStatus.Won;",
+      "var s = lead.Status;",
+      "var copy = lead.Lines.ToList(); copy.Add(\"x\");"
+    ],
+    "errorKind": "compile",
+    "code": "CS0272"
+  },
+  {
+    "id": "dotnet-m16-04",
+    "kind": "cs-outcome",
+    "program": "var a = Money.Vnd(100);\nvar b = new Money(5, \"USD\");\nvar c = a.Add(b);\nConsole.WriteLine(c);\n\nclass DomainException(string m) : Exception(m);\nreadonly record struct Money(decimal Amount, string Currency)\n{\n    public static Money Vnd(decimal x) => new(x, \"VND\");\n    public Money Add(Money o)\n    {\n        if (Currency != o.Currency) throw new DomainException(\"khac tien te\");\n        return this with { Amount = Amount + o.Amount };\n    }\n}",
+    "expect": "runtime-error"
+  },
+  {
+    "id": "dotnet-m16-05",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\nvar sp = new ServiceCollection()\n    .AddSingleton<IValidator<B>, BValidator>()\n    .BuildServiceProvider();\nConsole.WriteLine(sp.GetServices<IValidator<A>>().Count());\nConsole.WriteLine(sp.GetService<IValidator<A>>() is null);\nConsole.WriteLine(sp.GetServices<IValidator<B>>().Count());\ntry { sp.GetRequiredService<IValidator<A>>(); Console.WriteLine(\"ok\"); }\ncatch (InvalidOperationException) { Console.WriteLine(\"throws\"); }\n\ninterface IValidator<T> { }\nclass A; class B;\nclass BValidator : IValidator<B> { }"
+  },
+  {
+    "id": "dotnet-m16-06",
+    "kind": "cs-predict",
+    "program": "var names = new[] { \"Logging\", \"Validation\", \"Transaction\" };\nFunc<string, string> handler = n => { Console.WriteLine(\"Handler \" + n); return \"ok\"; };\nFunc<string, string> next = handler;\nfor (int i = names.Length - 1; i >= 0; i--)\n{\n    var inner = next; var name = names[i];\n    next = req =>\n    {\n        Console.WriteLine(name + \" >\");\n        try\n        {\n            if (name == \"Validation\" && req == \"\") throw new ArgumentException(\"Name\");\n            return inner(req);\n        }\n        finally { Console.WriteLine(name + \" <\"); }\n    };\n}\ntry { next(\"\"); } catch (ArgumentException) { Console.WriteLine(\"400\"); }"
+  },
+  {
+    "id": "dotnet-m16-07",
+    "kind": "cs-choose",
+    "template": "var lead = new Lead();\nlead.Raise(\"LeadConverted\");\nvar log = new List<string>();\nvar guard = false;\n\nvoid Handle(string e)\n{\n    log.Add(e);\n    if (!guard) { guard = true; Save(); }\n}\n\nvoid Save()\n{\n{{X}}\n}\n\nSave();\nConsole.WriteLine(log.Count);\n\nclass Lead\n{\n    private readonly List<string> _events = [];\n    public IReadOnlyList<string> Events => _events;\n    public void Raise(string e) => _events.Add(e);\n    public void ClearEvents() => _events.Clear();\n}",
+    "expectOutput": "1",
+    "options": [
+      "    var events = lead.Events.ToList();\n    lead.ClearEvents();\n    foreach (var e in events) Handle(e);",
+      "    var events = lead.Events.ToList();\n    foreach (var e in events) Handle(e);\n    lead.ClearEvents();",
+      "    foreach (var e in lead.Events.ToList()) Handle(e);",
+      "    var events = lead.Events;\n    lead.ClearEvents();\n    foreach (var e in events) Handle(e);"
+    ]
+  },
+  {
+    "id": "dotnet-m16-11",
+    "kind": "cs-predict",
+    "program": "var lead = Lead.Create(1000);\nlead.Convert(new DateTime(2026, 3, 15));\nvar first = lead.ConvertedAtUtc;\nlead.Convert(new DateTime(2026, 9, 1));\nConsole.WriteLine(lead.Status);\nConsole.WriteLine(lead.ConvertedAtUtc == first);\nConsole.WriteLine(lead.Events);\n\nenum LeadStatus { New, Won, Lost }\n\nsealed class Lead\n{\n    public LeadStatus Status { get; private set; }\n    public decimal Value { get; private set; }\n    public DateTime? ConvertedAtUtc { get; private set; }\n    public int Events { get; private set; }\n    private Lead() { }\n    public static Lead Create(decimal v)\n    {\n        if (v <= 0) throw new InvalidOperationException(\"Giá trị phải > 0\");\n        return new Lead { Value = v, Status = LeadStatus.New };\n    }\n    public void Convert(DateTime utcNow)\n    {\n        if (Status == LeadStatus.Lost) throw new InvalidOperationException(\"mat\");\n        if (Status == LeadStatus.Won) return;\n        Status = LeadStatus.Won;\n        ConvertedAtUtc = utcNow;\n        Events++;\n    }\n}\n"
+  },
+  {
+    "id": "dotnet-m16-12",
+    "kind": "cs-outcome",
+    "program": "var lead = Lead.Create(1000);\nlead.Status = LeadStatus.Won;\nConsole.WriteLine(lead.Status);\n\nenum LeadStatus { New, Won }\nsealed class Lead\n{\n    public LeadStatus Status { get; private set; }\n    public static Lead Create(decimal v) => new Lead { Status = LeadStatus.New };\n}\n",
+    "expect": "compile-error",
+    "code": "CS0272"
+  },
+  {
+    "id": "dotnet-m16-13",
+    "kind": "cs-find-error",
+    "template": "var customerId = CustomerId.New();\nvar leadId = LeadId.New();\nvar svc = new Svc();\n{{X}}\nConsole.WriteLine(\"ok\");\n\nreadonly record struct LeadId(Guid Value) { public static LeadId New() => new(Guid.NewGuid()); }\nreadonly record struct CustomerId(Guid Value) { public static CustomerId New() => new(Guid.NewGuid()); }\nclass Svc { public void Convert(LeadId id) { } }",
+    "options": [
+      "svc.Convert(customerId);",
+      "svc.Convert(leadId);",
+      "svc.Convert(new LeadId(customerId.Value));",
+      "svc.Convert(LeadId.New());"
+    ],
+    "errorKind": "compile",
+    "code": "CS1503"
+  },
+  {
+    "id": "dotnet-m16-14",
+    "kind": "cs-predict",
+    "program": "#:package FluentValidation@11.*\nusing FluentValidation;\n\nvar v = new CreateLeadValidator();\nvar r1 = v.Validate(new Cmd(\"\", \"\", null));\nConsole.WriteLine(r1.Errors.Count);\nvar r2 = v.Validate(new Cmd(\"An\", \"an@x.vn\", \"\"));\nConsole.WriteLine(r2.IsValid);\nvar r3 = v.Validate(new Cmd(\"An\", \"an@x.vn\", \"123\"));\nConsole.WriteLine(r3.Errors.Count);\n\nrecord Cmd(string Name, string Email, string? Phone);\nclass CreateLeadValidator : AbstractValidator<Cmd>\n{\n    public CreateLeadValidator()\n    {\n        RuleLevelCascadeMode = CascadeMode.Stop;\n        RuleFor(x => x.Name).NotEmpty().Length(2, 200);\n        RuleFor(x => x.Email).NotEmpty().EmailAddress();\n        RuleFor(x => x.Phone).Matches(@\"^(0|\\+84)[0-9]{9}$\")\n            .When(x => !string.IsNullOrEmpty(x.Phone));\n    }\n}\n"
+  },
+  {
+    "id": "dotnet-m16-15",
+    "kind": "cs-choose",
+    "template": "#:package Microsoft.Extensions.TimeProvider.Testing@*\nusing Microsoft.Extensions.Time.Testing;\n\nvar clock = new FakeTimeProvider(new DateTimeOffset(2026, 3, 15, 10, 0, 0, TimeSpan.Zero));\nvar token = new Token(clock);\n{{X}}\nConsole.WriteLine(token.IsExpired());\n\nsealed class Token(TimeProvider clock)\n{\n    private readonly DateTimeOffset _expires = clock.GetUtcNow().AddMinutes(30);\n    public bool IsExpired() => clock.GetUtcNow() > _expires;\n}",
+    "options": [
+      "clock.Advance(TimeSpan.FromSeconds(31));",
+      "clock.Advance(TimeSpan.FromMinutes(31));",
+      "clock.Advance(TimeSpan.FromMinutes(30));",
+      "clock.SetUtcNow(clock.GetUtcNow().AddMinutes(-31));"
+    ],
+    "expectOutput": "True"
+  },
+  {
+    "id": "dotnet-m16-16",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\nusing Microsoft.Data.Sqlite;\nusing Microsoft.EntityFrameworkCore;\n\nusing var conn = new SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nvar opts = new DbContextOptionsBuilder<Db>().UseSqlite(conn).Options;\nusing var db = new Db(opts);\ndb.Database.EnsureCreated();\ndb.Leads.AddRange(new Lead { Id = 1 }, new Lead { Id = 2 });\ndb.SaveChanges();\ndb.Raised = 0;\n\nvar a = db.Leads.Find(1)!;\na.Convert();\ndb.SaveChanges();\nConsole.WriteLine($\"{a.Status} events={db.Raised}\");\n\ndb.Leads.Where(l => l.Id == 2).ExecuteUpdate(s => s.SetProperty(l => l.Status, \"Won\"));\nvar b = db.Leads.AsNoTracking().First(l => l.Id == 2);\nConsole.WriteLine($\"{b.Status} events={db.Raised}\");\n\nclass Lead\n{\n    public int Id { get; set; }\n    public string Status { get; private set; } = \"New\";\n    public int Pending { get; private set; }\n    public void Convert() { Status = \"Won\"; Pending++; }\n    public void Setter(string s) => Status = s;\n    public void Clear() => Pending = 0;\n}\nclass Db(DbContextOptions<Db> o) : DbContext(o)\n{\n    public DbSet<Lead> Leads => Set<Lead>();\n    public int Raised;\n    public override int SaveChanges()\n    {\n        foreach (var l in ChangeTracker.Entries<Lead>().Select(e => e.Entity).ToList()) { Raised += l.Pending; l.Clear(); }\n        return base.SaveChanges();\n    }\n}\n"
+  }
+]

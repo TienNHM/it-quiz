@@ -1,0 +1,88 @@
+[
+  {
+    "id": "dotnet-m00-05",
+    "kind": "cs-predict",
+    "program": "var total = 86;\nvar n = 4;\nConsole.WriteLine(total / n * n);\nConsole.WriteLine((double)total / n * n);\n"
+  },
+  {
+    "id": "dotnet-m00-06",
+    "kind": "cs-predict",
+    "program": "Console.WriteLine($\"|{\"ab\",-5}|{12,4}|{\"xyz\",5}|\");\n"
+  },
+  {
+    "id": "dotnet-m00-07",
+    "kind": "cs-outcome",
+    "program": "string[] ys = [\"2005\", \"2004\", \"hai nghìn lẻ năm\"];\nvar sum = 0;\nforeach (var y in ys)\n    sum += 2026 - int.Parse(y);\nConsole.WriteLine(sum);\n",
+    "expect": "runtime-error"
+  },
+  {
+    "id": "dotnet-m00-08",
+    "kind": "cs-find-error",
+    "template": "var y = {{X}};\nConsole.WriteLine(y);\n",
+    "options": [
+      "int.Parse(\" 2005 \")",
+      "int.Parse(\"+2005\")",
+      "int.Parse(\"2,005\")",
+      "int.TryParse(\"2005 năm\", out var z) ? z : -1"
+    ],
+    "errorKind": "runtime"
+  },
+  {
+    "id": "dotnet-m00-09",
+    "kind": "cs-choose",
+    "template": "int[] arr = [10, 20, 30];\nvar sum = 0;\n{{X}}\nConsole.WriteLine(sum);\n",
+    "options": [
+      "for (var i = 0; i < arr.Length; i++)\n    sum += arr[i];",
+      "for (var i = 0; i <= arr.Length; i++)\n    sum += arr[i];",
+      "for (var i = 1; i < arr.Length; i++)\n    sum += arr[i];",
+      "for (var i = 0; i < arr.Length - 1; i++)\n    sum += arr[i];"
+    ],
+    "expectOutput": "60"
+  },
+  {
+    "id": "dotnet-m00-10",
+    "kind": "cs-outcome",
+    "program": "var s = \"2005\";\nif (!int.TryParse(s, out var year))\n{\n    Console.WriteLine(\"sai\");\n}\nConsole.WriteLine(2026 - year);\n",
+    "expect": "ok"
+  },
+  {
+    "id": "dotnet-m00-11",
+    "kind": "cs-predict",
+    "program": "System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;\nConsole.WriteLine(D.F(1_000_000m, false));\nConsole.WriteLine(D.F(2_000_000m, true));\nConsole.WriteLine(D.F(500_000m, true));\n\nstatic class D\n{\n    public static decimal F(decimal total, bool vip)\n    {\n        var rate = 0m;\n        if (vip) rate += 0.10m;\n        if (total > 1_000_000m) rate += 0.05m;\n        return total * (1 - rate);\n    }\n}\n"
+  },
+  {
+    "id": "dotnet-m00-12",
+    "kind": "cs-outcome",
+    "expect": "runtime-error",
+    "program": "Console.WriteLine(Rank(120));\nConsole.WriteLine(Rank(-5));\n\nstatic string Rank(int points)\n{\n    if (points < 0)\n        throw new ArgumentOutOfRangeException(nameof(points));\n    if (points >= 100) return \"Nòng cốt\";\n    if (points >= 50) return \"Tích cực\";\n    return \"Thành viên\";\n}\n"
+  },
+  {
+    "id": "dotnet-m00-13",
+    "kind": "cs-find-error",
+    "errorKind": "runtime",
+    "template": "var xs = new List<int>();\nvar nextId = {{X}};\nConsole.WriteLine(nextId);\n",
+    "options": [
+      "xs.Max() + 1",
+      "xs.Count == 0 ? 1 : xs.Max() + 1",
+      "(xs.Count == 0 ? 0 : xs.Max()) + 1",
+      "xs.DefaultIfEmpty(0).Max() + 1"
+    ]
+  },
+  {
+    "id": "dotnet-m00-14",
+    "kind": "cs-choose",
+    "template": "var customers = new List<Customer>\n{\n    new(1, \"An\"), new(2, \"Bình\")\n};\nvar id = 9;\nConsole.WriteLine({{X}});\n\nrecord Customer(int Id, string Name);\n",
+    "expectOutput": "404",
+    "options": [
+      "customers.First(c => c.Id == id).Name",
+      "customers.FirstOrDefault(c => c.Id == id).Name",
+      "customers[id].Name",
+      "customers.FirstOrDefault(c => c.Id == id)\n  is { } customer ? customer.Name : \"404\""
+    ]
+  },
+  {
+    "id": "dotnet-m00-15",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property JsonSerializerIsReflectionEnabledByDefault=true\n#:property EnableRequestDelegateGenerator=false\n#:property NoWarn=IL2026;IL3050;$(NoWarn)\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.Logging.ClearProviders();\nvar app = builder.Build();\nvar customers = new List<Customer> { new(1, \"An\"), new(2, \"Binh\") };\napp.MapGet(\"/customers/{id:int}\", (int id) =>\n    customers.FirstOrDefault(c => c.Id == id) is { } c\n        ? Results.Ok(c)\n        : Results.NotFound());\napp.MapPost(\"/customers\", (CreateReq r) =>\n{\n    var c = new Customer(customers.Max(x => x.Id) + 1, r.Name);\n    customers.Add(c);\n    return Results.Created($\"/customers/{c.Id}\", c);\n});\napp.Urls.Add(\"http://127.0.0.1:5187\");\nawait app.StartAsync();\nusing var http = new HttpClient { BaseAddress = new Uri(\"http://127.0.0.1:5187\") };\nConsole.WriteLine((int)(await http.GetAsync(\"/customers/9\")).StatusCode);\nConsole.WriteLine((int)(await http.GetAsync(\"/customers/abc\")).StatusCode);\nConsole.WriteLine((int)(await http.GetAsync(\"/customers/2\")).StatusCode);\nvar resp = await http.PostAsync(\"/customers\", new StringContent(\"{\\\"name\\\":\\\"C\\\"}\", System.Text.Encoding.UTF8, \"application/json\"));\nConsole.WriteLine((int)resp.StatusCode + \" \" + resp.Headers.Location);\nawait app.StopAsync();\nrecord Customer(int Id, string Name);\nrecord CreateReq(string Name);\n"
+  }
+]

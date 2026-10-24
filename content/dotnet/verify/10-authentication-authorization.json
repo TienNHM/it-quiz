@@ -1,0 +1,117 @@
+[
+  {
+    "id": "dotnet-m10-01",
+    "kind": "cs-predict",
+    "program": "using System.Security.Claims;\n\nvar claims = new[] {\n    new Claim(ClaimTypes.NameIdentifier, \"42\"),\n    new Claim(ClaimTypes.Role, \"Admin\") };\n\nvar a = new ClaimsPrincipal(new ClaimsIdentity(claims));\nvar b = new ClaimsPrincipal(new ClaimsIdentity(claims, \"Test\"));\n\nConsole.WriteLine(a.Identity!.IsAuthenticated);\nConsole.WriteLine(b.Identity!.IsAuthenticated);\nConsole.WriteLine(a.IsInRole(\"Admin\"));\n"
+  },
+  {
+    "id": "dotnet-m10-02",
+    "kind": "cs-find-error",
+    "template": "#:package Microsoft.IdentityModel.JsonWebTokens@8.*\nusing System.Security.Claims;\nusing System.Text;\nusing Microsoft.IdentityModel.JsonWebTokens;\nusing Microsoft.IdentityModel.Tokens;\n\nvar secret = {{X}};\nvar key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));\nvar token = new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor\n{\n    Subject = new ClaimsIdentity([new Claim(\"sub\", \"1\")]),\n    SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256)\n});\nConsole.WriteLine(token.Length > 0);\n",
+    "options": [
+      "\"0123456789abcdef\"",
+      "new string('k', 32)",
+      "Convert.ToBase64String(new byte[48])",
+      "\"crm-api-secret\".PadRight(40, 'x')"
+    ],
+    "errorKind": "runtime"
+  },
+  {
+    "id": "dotnet-m10-03",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.IdentityModel.JsonWebTokens@8.*\nusing System.Security.Claims;\nusing System.Text;\nusing System.Text.Json;\nusing Microsoft.IdentityModel.JsonWebTokens;\nusing Microsoft.IdentityModel.Tokens;\n\nvar key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(\n    \"0123456789-0123456789-0123456789-ab\"));\nvar token = new JsonWebTokenHandler().CreateToken(\n    new SecurityTokenDescriptor\n{\n    Subject = new ClaimsIdentity([new Claim(\"sub\", \"7\"),\n                                  new Claim(\"role\", \"Admin\")]),\n    SigningCredentials = new SigningCredentials(\n        key, SecurityAlgorithms.HmacSha256)\n});\n\nvar parts = token.Split('.');\nvar json = Encoding.UTF8.GetString(\n    Base64UrlEncoder.DecodeBytes(parts[1]));   // KHÔNG dùng key\nusing var doc = JsonDocument.Parse(json);\nConsole.WriteLine(doc.RootElement.GetProperty(\"role\").GetString());\nConsole.WriteLine(parts.Length);\n"
+  },
+  {
+    "id": "dotnet-m10-04",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.IdentityModel.JsonWebTokens@8.*\nusing System.Security.Claims;\nusing System.Text;\nusing Microsoft.IdentityModel.JsonWebTokens;\nusing Microsoft.IdentityModel.Tokens;\n\nvar handler = new JsonWebTokenHandler();\nvar key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(\"0123456789-0123456789-0123456789-ab\"));\nvar creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);\n\nvar now = DateTime.UtcNow;\nvar token = handler.CreateToken(new SecurityTokenDescriptor\n{\n    Subject = new ClaimsIdentity([new Claim(\"sub\", \"1\")]),\n    IssuedAt = now.AddMinutes(-17),\n    NotBefore = now.AddMinutes(-17),\n    Expires = now.AddMinutes(-2),          // đã hết hạn 2 phút\n    SigningCredentials = creds\n});\n\nvar p1 = new TokenValidationParameters {\n    IssuerSigningKey = key,\n    ValidateIssuer = false, ValidateAudience = false };\nvar p2 = p1.Clone();\np2.ClockSkew = TimeSpan.Zero;\n\nConsole.WriteLine((await handler.ValidateTokenAsync(token, p1)).IsValid);\nConsole.WriteLine((await handler.ValidateTokenAsync(token, p2)).IsValid);\n"
+  },
+  {
+    "id": "dotnet-m10-05",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property NoWarn=ASP0000\n#:property ReportSuppressedDiagnostics=false\nusing System.Security.Claims;\nusing Microsoft.AspNetCore.Authorization;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar sp = new ServiceCollection().AddLogging().AddAuthorization().BuildServiceProvider();\nvar provider = sp.GetRequiredService<IAuthorizationPolicyProvider>();\nvar authz = sp.GetRequiredService<IAuthorizationService>();\n\n// Controller:  [Authorize(Roles = \"SalesRep,Manager\")]\n// Action:      [Authorize(Roles = \"Manager\")]\nvar policy = await AuthorizationPolicy.CombineAsync(provider,\n[\n    new AuthorizeAttribute { Roles = \"SalesRep,Manager\" },\n    new AuthorizeAttribute { Roles = \"Manager\" },\n]);\n\nforeach (var role in new[] { \"Admin\", \"SalesRep\", \"Manager\" })\n{\n    var user = new ClaimsPrincipal(new ClaimsIdentity(\n        [new Claim(ClaimTypes.Role, role)], \"t\"));\n    var r = await authz.AuthorizeAsync(user, policy!);\n    Console.WriteLine($\"{role}: {r.Succeeded}\");\n}\n"
+  },
+  {
+    "id": "dotnet-m10-06",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property NoWarn=ASP0000\n#:property ReportSuppressedDiagnostics=false\nusing System.Security.Claims;\nusing Microsoft.AspNetCore.Authorization;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar sp = new ServiceCollection().AddLogging().AddAuthorization()\n    .AddSingleton<IAuthorizationHandler>(new ByRole(\"Owner\"))\n    .AddSingleton<IAuthorizationHandler>(new ByRole(\"Manager\"))\n    .AddSingleton<IAuthorizationHandler, Block>()\n    .BuildServiceProvider();\nvar authz = sp.GetRequiredService<IAuthorizationService>();\nvar policy = new AuthorizationPolicyBuilder().AddRequirements(new Req()).Build();\n\nClaimsPrincipal U(params Claim[] cs) => new(new ClaimsIdentity(cs, \"t\"));\nvar users = new[]\n{\n    U(new Claim(ClaimTypes.Role, \"Owner\")),\n    U(new Claim(ClaimTypes.Role, \"Manager\")),\n    U(),\n    U(new Claim(ClaimTypes.Role, \"Owner\"), new Claim(\"status\", \"banned\")),\n};\nforeach (var u in users)\n    Console.WriteLine((await authz.AuthorizeAsync(u, policy)).Succeeded);\n\nclass Req : IAuthorizationRequirement;\n\nclass ByRole(string role) : AuthorizationHandler<Req> {\n    protected override Task HandleRequirementAsync(\n        AuthorizationHandlerContext c, Req r) {\n        if (c.User.IsInRole(role)) c.Succeed(r);\n        return Task.CompletedTask;\n    }\n}\n\nclass Block : IAuthorizationHandler {\n    public Task HandleAsync(AuthorizationHandlerContext c) {\n        if (c.User.HasClaim(\"status\", \"banned\")) c.Fail();\n        return Task.CompletedTask;\n    }\n}\n// DI: ByRole(\"Owner\"), ByRole(\"Manager\"), Block\n// Policy: AddRequirements(new Req())\n"
+  },
+  {
+    "id": "dotnet-m10-07",
+    "kind": "cs-choose",
+    "template": "#:sdk Microsoft.NET.Sdk.Web\n#:property NoWarn=ASP0000\n#:property ReportSuppressedDiagnostics=false\nusing System.Security.Claims;\nusing Microsoft.AspNetCore.Authorization;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar sp = new ServiceCollection().AddLogging().AddAuthorization()\n    .AddSingleton<IAuthorizationHandler, ExpHandler>()\n    .BuildServiceProvider();\nvar authz = sp.GetRequiredService<IAuthorizationService>();\nvar user = new ClaimsPrincipal(new ClaimsIdentity(\n    [new Claim(ClaimTypes.Name, \"an\")], \"t\"));   // KHÔNG có claim \"years\"\nvar policy = new AuthorizationPolicyBuilder()\n    .AddRequirements(new ExpReq()).Build();\nConsole.WriteLine((await authz.AuthorizeAsync(user, policy)).Succeeded);\n\nclass ExpReq : IAuthorizationRequirement;\n\nclass ExpHandler : AuthorizationHandler<ExpReq>\n{\n    protected override Task HandleRequirementAsync(\n        AuthorizationHandlerContext context, ExpReq requirement)\n    {\n        {{X}}\n        return Task.CompletedTask;\n    }\n}\n",
+    "options": [
+      "var y = int.Parse(\n    context.User.FindFirstValue(\"years\")!);\nif (y >= 3) context.Succeed(requirement);",
+      "var raw = context.User.FindFirstValue(\"years\");\nif (!int.TryParse(raw, out var y) || y >= 3)\n    context.Succeed(requirement);",
+      "var raw = context.User.FindFirstValue(\"years\");\nif (raw >= 3) context.Succeed(requirement);",
+      "var raw = context.User.FindFirstValue(\"years\");\nif (int.TryParse(raw, out var y) && y >= 3)\n    context.Succeed(requirement);"
+    ],
+    "expectOutput": "False"
+  },
+  {
+    "id": "dotnet-m10-08",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property NoWarn=ASP0000\n#:property PublishAot=false\n#:property ReportSuppressedDiagnostics=false\nusing System.Security.Claims;\nusing System.Text.Encodings.Web;\nusing Microsoft.AspNetCore.Authentication;\nusing Microsoft.AspNetCore.Authorization;\nusing Microsoft.Extensions.Options;\n\nvar builder = WebApplication.CreateBuilder();\nbuilder.Logging.ClearProviders();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Services.AddAuthentication(\"hdr\")\n    .AddScheme<AuthenticationSchemeOptions, HdrAuth>(\"hdr\", _ => { });\nbuilder.Services.AddAuthorization(o =>\n{\n    // Endpoint KHÔNG có attribute phân quyền nào\n    o.FallbackPolicy = new AuthorizationPolicyBuilder()\n        .RequireAuthenticatedUser().Build();\n    // Endpoint có [Authorize] / RequireAuthorization() trần\n    o.DefaultPolicy = new AuthorizationPolicyBuilder()\n        .RequireAuthenticatedUser()\n        .RequireClaim(\"vip\").Build();\n});\nvar app = builder.Build();\napp.UseAuthentication();\napp.UseAuthorization();\napp.MapGet(\"/a\", () => \"a\");\napp.MapGet(\"/b\", () => \"b\").AllowAnonymous();\napp.MapGet(\"/c\", () => \"c\").RequireAuthorization();\n\nawait app.StartAsync();\nusing var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };\nforeach (var p in new[] { \"/a\", \"/b\", \"/c\" })\n    Console.WriteLine((int)(await http.GetAsync(p)).StatusCode);\nawait app.StopAsync();\n\nclass HdrAuth(IOptionsMonitor<AuthenticationSchemeOptions> o, ILoggerFactory l, UrlEncoder e)\n    : AuthenticationHandler<AuthenticationSchemeOptions>(o, l, e)\n{\n    protected override Task<AuthenticateResult> HandleAuthenticateAsync() =>\n        Task.FromResult(AuthenticateResult.Success(new AuthenticationTicket(\n            new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.Name, \"an\")], \"hdr\")), \"hdr\")));\n}\n"
+  },
+  {
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.AspNetCore.Identity.EntityFrameworkCore@10.0.0\n#:package Microsoft.EntityFrameworkCore.InMemory@10.0.0\nusing Microsoft.AspNetCore.Identity;\nusing Microsoft.AspNetCore.Identity.EntityFrameworkCore;\nusing Microsoft.EntityFrameworkCore;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\nservices.AddLogging();\nservices.AddDbContext<AppDb>(o => o.UseInMemoryDatabase(\"a\"));\nservices.AddIdentityCore<IdentityUser>(o =>\n{\n    o.Password.RequiredLength = 8;\n    o.Password.RequireDigit = true;\n    o.Password.RequireUppercase = true;\n    o.Password.RequireNonAlphanumeric = false;\n    o.Password.RequireLowercase = false;\n}).AddEntityFrameworkStores<AppDb>();\n\nusing var sp = services.BuildServiceProvider();\nusing var scope = sp.CreateScope();\nvar um = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();\nvar r = await um.CreateAsync(new IdentityUser(\"an\"), \"abc\");\nConsole.WriteLine(r.Succeeded);\nforeach (var e in r.Errors) Console.WriteLine(e.Code);\n\nclass AppDb(DbContextOptions<AppDb> o) : IdentityDbContext<IdentityUser>(o) { }\n",
+    "id": "dotnet-m10-11"
+  },
+  {
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:package Microsoft.AspNetCore.Identity.EntityFrameworkCore@10.0.0\n#:package Microsoft.EntityFrameworkCore.InMemory@10.0.0\nusing Microsoft.AspNetCore.Identity;\nusing Microsoft.AspNetCore.Identity.EntityFrameworkCore;\nusing Microsoft.EntityFrameworkCore;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\nservices.AddLogging();\nservices.AddDbContext<AppDb>(o => o.UseInMemoryDatabase(\"b\"));\nservices.AddIdentityCore<IdentityUser>(o =>\n{\n    o.Lockout.MaxFailedAccessAttempts = 3;\n    o.Lockout.AllowedForNewUsers = true;\n}).AddEntityFrameworkStores<AppDb>();\n\nusing var sp = services.BuildServiceProvider();\nusing var scope = sp.CreateScope();\nvar um = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();\nvar a = new IdentityUser(\"a\");\nvar b = new IdentityUser(\"b\");\nawait um.CreateAsync(a, \"Passw0rd!x\");\nawait um.CreateAsync(b, \"Passw0rd!x\");\n\nfor (var i = 0; i < 5; i++)\n{\n    if (!await um.CheckPasswordAsync(a, \"sai\"))\n        Console.Write(\"\");\n}\nfor (var i = 0; i < 5; i++)\n{\n    if (!await um.CheckPasswordAsync(b, \"sai\"))\n        await um.AccessFailedAsync(b);\n}\nConsole.WriteLine(await um.IsLockedOutAsync(a));\nConsole.WriteLine(await um.IsLockedOutAsync(b));\n\nclass AppDb(DbContextOptions<AppDb> o) : IdentityDbContext<IdentityUser>(o) { }\n",
+    "id": "dotnet-m10-12"
+  },
+  {
+    "kind": "cs-find-error",
+    "template": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\n#:package Microsoft.AspNetCore.Identity.EntityFrameworkCore@10.0.0\n#:package Microsoft.EntityFrameworkCore.InMemory@10.0.0\nusing Microsoft.AspNetCore.Identity;\nusing Microsoft.AspNetCore.Identity.EntityFrameworkCore;\nusing Microsoft.EntityFrameworkCore;\n\nvar builder = WebApplication.CreateBuilder();\nbuilder.Logging.ClearProviders();\nbuilder.Services.AddDataProtection();\nbuilder.Services.AddDbContext<AppDb>(o => o.UseInMemoryDatabase(\"tok\"));\n{{X}}\n\nvar app = builder.Build();\nusing var scope = app.Services.CreateScope();\nvar um = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();\nvar user = new IdentityUser(\"an\") { Email = \"an@x.vn\" };\nawait um.CreateAsync(user, \"Passw0rd!x\");\nvar token = await um.GeneratePasswordResetTokenAsync(user);\nConsole.WriteLine(token.Length > 0);\n\nclass AppDb(DbContextOptions<AppDb> o) : IdentityDbContext<IdentityUser>(o) { }\n",
+    "options": [
+      "builder.Services.AddIdentityCore<IdentityUser>()\n    .AddEntityFrameworkStores<AppDb>()\n    .AddDefaultTokenProviders();",
+      "builder.Services.AddIdentityCore<IdentityUser>()\n    .AddRoles<IdentityRole>()\n    .AddEntityFrameworkStores<AppDb>()\n    .AddDefaultTokenProviders();",
+      "builder.Services.AddIdentityCore<IdentityUser>()\n    .AddRoles<IdentityRole>()\n    .AddEntityFrameworkStores<AppDb>()\n    .AddSignInManager();",
+      "builder.Services.AddIdentityCore<IdentityUser>()\n    .AddEntityFrameworkStores<AppDb>()\n    .AddSignInManager()\n    .AddDefaultTokenProviders();"
+    ],
+    "errorKind": "runtime",
+    "id": "dotnet-m10-13"
+  },
+  {
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:package Microsoft.AspNetCore.Identity.EntityFrameworkCore@10.0.0\n#:package Microsoft.EntityFrameworkCore.InMemory@10.0.0\nusing Microsoft.AspNetCore.Identity;\nusing Microsoft.AspNetCore.Identity.EntityFrameworkCore;\nusing Microsoft.EntityFrameworkCore;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\nservices.AddLogging();\nservices.AddDbContext<AppDb>(o => o.UseInMemoryDatabase(\"c\"));\nservices.AddIdentityCore<IdentityUser>()\n    .AddRoles<IdentityRole>()\n    .AddEntityFrameworkStores<AppDb>();\n\nusing var sp = services.BuildServiceProvider();\nusing var scope = sp.CreateScope();\nvar um = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();\nvar rm = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();\nawait rm.CreateAsync(new IdentityRole(\"Admin\"));\nvar u = new IdentityUser(\"an\");\nawait um.CreateAsync(u, \"Passw0rd!x\");\n\nvar s0 = await um.GetSecurityStampAsync(u);\nawait um.AddToRoleAsync(u, \"Admin\");\nConsole.WriteLine(\"role: \" + (s0 == await um.GetSecurityStampAsync(u)));\nawait um.RemoveFromRoleAsync(u, \"Admin\");\nConsole.WriteLine(\"remove: \" + (s0 == await um.GetSecurityStampAsync(u)));\nawait um.ChangePasswordAsync(u, \"Passw0rd!x\", \"Passw0rd!y\");\nConsole.WriteLine(\"password: \" + (s0 == await um.GetSecurityStampAsync(u)));\n\nclass AppDb(DbContextOptions<AppDb> o) : IdentityDbContext<IdentityUser>(o) { }\n",
+    "id": "dotnet-m10-14"
+  },
+  {
+    "kind": "cs-predict",
+    "program": "using System.Web;\n\nvar raw = new byte[] { 0x6b, 0xef, 0xdb };\nvar std = Convert.ToBase64String(raw);\nConsole.WriteLine(std);\nvar query = HttpUtility.ParseQueryString(\"token=\" + std);\nConsole.WriteLine(query[\"token\"]);\n",
+    "id": "dotnet-m10-15"
+  },
+  {
+    "kind": "cs-find-error",
+    "template": "#:sdk Microsoft.NET.Sdk.Web\nvar builder = WebApplication.CreateBuilder();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Logging.ClearProviders();\nbuilder.Services.AddCors(options =>\n{\n    options.AddPolicy(\"app\", policy =>\n    {\n        {{X}}\n    });\n});\nvar app = builder.Build();\napp.UseCors(\"app\");\napp.MapGet(\"/\", () => \"ok\");\nawait app.StartAsync();\n\nusing var http = new HttpClient();\nvar req = new HttpRequestMessage(HttpMethod.Get, app.Urls.First());\nreq.Headers.Add(\"Origin\", \"https://app.crm.vn\");\nvar res = await http.SendAsync(req);\nConsole.WriteLine((int)res.StatusCode);\nawait app.StopAsync();\n",
+    "options": [
+      "policy.WithOrigins(\"https://app.crm.vn\")\n    .AllowCredentials();",
+      "policy.AllowAnyOrigin()\n    .AllowCredentials();",
+      "policy.AllowAnyOrigin()\n    .AllowAnyMethod()\n    .AllowAnyHeader();",
+      "policy.SetIsOriginAllowed(_ => true)\n    .AllowCredentials();"
+    ],
+    "errorKind": "runtime",
+    "id": "dotnet-m10-16"
+  },
+  {
+    "id": "dotnet-m10-17",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property NoWarn=ASP0000\n#:property PublishAot=false\n#:property ReportSuppressedDiagnostics=false\nusing System.Security.Claims;\nusing Microsoft.AspNetCore.Authorization;\nusing Microsoft.AspNetCore.Authorization.Infrastructure;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar sp = new ServiceCollection().AddLogging().AddAuthorization()\n    .AddSingleton<IAuthorizationHandler, OwnerHandler>()\n    .BuildServiceProvider();\nvar authz = sp.GetRequiredService<IAuthorizationService>();\nvar edit = new OperationAuthorizationRequirement { Name = \"Edit\" };\n\nClaimsPrincipal U(string id) => new(new ClaimsIdentity(\n    [new Claim(ClaimTypes.NameIdentifier, id)], \"t\"));\nvar doc = new Doc(\"u1\");\n\nConsole.WriteLine((await authz.AuthorizeAsync(U(\"u1\"), doc, edit)).Succeeded);\nConsole.WriteLine((await authz.AuthorizeAsync(U(\"u2\"), doc, edit)).Succeeded);\nConsole.WriteLine((await authz.AuthorizeAsync(U(\"u1\"), null, edit)).Succeeded);\n\nrecord Doc(string OwnerId);\n\nclass OwnerHandler : AuthorizationHandler<OperationAuthorizationRequirement, Doc>\n{\n    protected override Task HandleRequirementAsync(\n        AuthorizationHandlerContext c, OperationAuthorizationRequirement r, Doc d)\n    {\n        if (c.User.FindFirstValue(ClaimTypes.NameIdentifier) == d.OwnerId)\n            c.Succeed(r);\n        return Task.CompletedTask;\n    }\n}\n"
+  },
+  {
+    "kind": "cs-choose",
+    "template": "#:property PublishAot=false\n#:package Microsoft.EntityFrameworkCore.InMemory@10.0.0\nusing Microsoft.EntityFrameworkCore;\n\nLead[] seed = [new(\"a1\", \"A\"), new(\"a2\", \"A\"), new(\"b1\", \"B\"), new(\"c1\", \"C\")];\n\nusing (var setup = new CrmDb(\"A\"))\n{\n    setup.Leads.AddRange(seed);\n    setup.SaveChanges();\n}\n\nforeach (var tenant in new[] { \"A\", \"B\" })\n{\n    using var db = new CrmDb(tenant);\n    var ids = db.Leads.OrderBy(l => l.Id).Select(l => l.Id).ToList();\n    Console.WriteLine($\"{tenant}: {string.Join(\",\", ids)}\");\n}\n\nrecord Lead(string Id, string TenantId);\n\nclass CrmDb(string tenantId) : DbContext\n{\n    public string TenantId { get; } = tenantId;\n    public DbSet<Lead> Leads => Set<Lead>();\n\n    protected override void OnConfiguring(DbContextOptionsBuilder b)\n        => b.UseInMemoryDatabase(\"crm\");\n\n    protected override void OnModelCreating(ModelBuilder modelBuilder)\n    {\n        modelBuilder.Entity<Lead>().HasKey(l => l.Id);\n        {{X}}\n    }\n}\n",
+    "options": [
+      "modelBuilder.Entity<Lead>()\n    .HasQueryFilter(l => l.TenantId == TenantId);",
+      "var t = TenantId;\nmodelBuilder.Entity<Lead>()\n    .HasQueryFilter(l => l.TenantId == t);",
+      "// Chỉ lọc tenant ở controller, model không có filter",
+      "const string t = \"A\";\nmodelBuilder.Entity<Lead>()\n    .HasQueryFilter(l => l.TenantId == t);"
+    ],
+    "expectOutput": "A: a1,a2\nB: b1",
+    "id": "dotnet-m10-18"
+  }
+]

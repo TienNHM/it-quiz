@@ -1,0 +1,29 @@
+[
+  {
+    "id": "dotnet-m03-10",
+    "kind": "cs-outcome",
+    "program": "var service = new OrderService();\nConsole.WriteLine(service.CalculateTotal(10m, 3));\n\nclass OrderService\n{\n    public decimal ComputeTotal(decimal price, int qty)\n        => price * qty;\n}\n",
+    "expect": "compile-error",
+    "code": "CS1061"
+  },
+  {
+    "id": "dotnet-m03-11",
+    "kind": "cs-predict",
+    "program": "string[] commits = [\"fix: handle null\", \"feat(api): add filter\", \"refactor: split class\", \"docs: update readme\"];\nvar (major, minor, patch) = (1, 2, 3);\nvar level = 0; // 0 none, 1 patch, 2 minor, 3 major\nforeach (var c in commits)\n{\n    var header = c.Split(':')[0];\n    var l = header.EndsWith('!') ? 3 : header.StartsWith(\"feat\") ? 2 : header.StartsWith(\"fix\") ? 1 : 0;\n    level = Math.Max(level, l);\n}\nif (level == 3) (major, minor, patch) = (major + 1, 0, 0);\nelse if (level == 2) (minor, patch) = (minor + 1, 0);\nelse if (level == 1) patch++;\nConsole.WriteLine($\"{major}.{minor}.{patch}\");"
+  },
+  {
+    "id": "dotnet-m03-12",
+    "kind": "cs-predict",
+    "program": "int first = 1, last = 10_000, firstBad = 6_000;\nint tests = 0;\nint good = first, bad = last;\nwhile (bad - good > 1)\n{\n    int mid = (good + bad) / 2;\n    tests++;\n    if (mid >= firstBad) bad = mid; else good = mid;\n}\nConsole.WriteLine($\"{bad} {tests}\");"
+  },
+  {
+    "id": "dotnet-m03-13",
+    "kind": "cs-predict",
+    "program": "static string Verdict(int code) => code switch\n{\n    0 => \"good\",\n    125 => \"skip\",\n    >= 1 and <= 127 => \"bad\",\n    _ => \"abort\"\n};\nforeach (var code in new[] { 0, 1, 2, 125, 127 })\n    Console.WriteLine($\"{code}: {Verdict(code)}\");"
+  },
+  {
+    "id": "dotnet-m03-14",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Logging@10.0.0\nusing Microsoft.Extensions.Logging;\n\nvar factory = LoggerFactory.Create(b => b.AddProvider(new KeyProvider()));\nvar logger = factory.CreateLogger(\"demo\");\nint orderId = 4729, customerId = 7;\n\nlogger.LogInformation($\"Xu ly don {orderId} cho khach {customerId}\");\nlogger.LogInformation(\"Xu ly don {OrderId} cho khach {CustomerId}\", orderId, customerId);\n\nclass KeyProvider : ILoggerProvider\n{\n    public ILogger CreateLogger(string name) => new L();\n    public void Dispose() { }\n    class L : ILogger\n    {\n        public IDisposable? BeginScope<T>(T state) where T : notnull => null;\n        public bool IsEnabled(LogLevel l) => true;\n        public void Log<T>(LogLevel l, EventId id, T state, Exception? ex, Func<T, Exception?, string> f)\n        {\n            var keys = ((IReadOnlyList<KeyValuePair<string, object?>>)state!).Select(kv => kv.Key);\n            Console.WriteLine(string.Join(\",\", keys));\n        }\n    }\n}"
+  }
+]

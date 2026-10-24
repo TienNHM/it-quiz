@@ -1,0 +1,313 @@
+{
+  "id": "dotnet-m18",
+  "title": "Module 18: Microservices",
+  "description": "Khi nào nên và không nên microservices, tách service, API Gateway, giao tiếp, observability và identity trong hệ phân tán.",
+  "questions": [
+    {
+      "id": "dotnet-m18-01",
+      "topic": "Lỗi tích luỹ",
+      "source": "Module 18 - Giao tiếp giữa các service",
+      "question": "Chuỗi gọi đồng bộ API -> Sales -> Billing -> Inventory, mỗi service đạt 99,9% uptime. Chương trình dưới in ra uptime của cả chuỗi và số giờ downtime trong 30 ngày. Kết quả là gì?",
+      "code": "using System.Globalization;\nvar up = Math.Pow(0.999, 4);\nConsole.WriteLine((up * 100).ToString(\"F2\", CultureInfo.InvariantCulture) + \"%\");\nConsole.WriteLine(((1 - up) * 30 * 24).ToString(\"F1\", CultureInfo.InvariantCulture) + \"h\");",
+      "codeLang": "csharp",
+      "options": [
+        "99.90%\n0.7h",
+        "96.00%\n28.8h",
+        "99.60%\n2.9h",
+        "99.60%\n0.4h"
+      ],
+      "answer": 2,
+      "explanation": "Xác suất cả chuỗi sống = 0,999^4 = 0,996006, tức **99.60%**. Phần thiếu 0,3994% của 720 giờ (30 ngày) là khoảng **2.9 giờ**: không service nào \"có vấn đề\", nhưng hệ thống vẫn chết gần 3 giờ mỗi tháng.\n- Phương án 99.90% / 0.7h quên mất phép nhân: nó chỉ là uptime của MỘT service, bỏ qua việc bốn xác suất cộng dồn.\n- Phương án 96.00% / 28.8h trừ 1% cho mỗi service (4 x 1%), nhưng 99,9% chỉ thiếu 0,1% mỗi service, không phải 1%.\n- Phương án 99.60% / 0.4h tính đúng uptime nhưng nhầm 0,4% thành 0,4 giờ; 0,4% của 720 giờ mới là 2.9 giờ.\nBài học: mỗi lời gọi đồng bộ nhân xác suất lỗi, chuỗi càng dài hệ càng giòn."
+    },
+    {
+      "id": "dotnet-m18-02",
+      "topic": "Observability",
+      "source": "Module 18 - Observability - bộ ba",
+      "question": "Một endpoint nhận 100 request: 99 cái mất 50 ms và 1 cái mất 10000 ms. Chương trình in trung bình, p99 (nearest-rank) và max. Kết quả là gì?",
+      "code": "using System.Globalization;\nvar times = new List<double>();\nfor (var i = 0; i < 99; i++) times.Add(50);\ntimes.Add(10000);\ntimes.Sort();\n\nvar avg = times.Average();\nvar p99 = times[(int)Math.Ceiling(0.99 * times.Count) - 1];\nvar max = times[^1];\nConsole.WriteLine(string.Join(\"\\n\", new[] { avg, p99, max }.Select(x => x.ToString(CultureInfo.InvariantCulture))));",
+      "codeLang": "csharp",
+      "options": [
+        "149.5\n50\n10000",
+        "149.5\n10000\n10000",
+        "50\n50\n10000",
+        "149.5\n149.5\n10000"
+      ],
+      "answer": 0,
+      "explanation": "Tổng = 99 x 50 + 10000 = 14950 ms, chia 100 request = **149.5**. Với 100 mẫu, p99 là phần tử xếp hạng thứ 99 (index 98) nên vẫn là **50**: đúng 1% chậm nằm ở p99,5 trở lên, còn max mới là **10000**.\n- Phương án có p99 = 10000 tưởng rằng \"1% chậm\" sẽ hiện ngay ở p99; thực tế nó chỉ hiện khi tăng lên p99.5/p99.9 hoặc khi tỉ lệ chậm vượt 1%.\n- Phương án trung bình = 50 bỏ quên request 10 giây; trung bình luôn bị kéo bởi giá trị ngoại lai.\n- Phương án p99 = 149.5 lẫn lộn trung bình với phân vị: phân vị luôn là một giá trị có thật trong tập mẫu, không phải trung bình.\nÝ nghĩa: trung bình 149.5 ms trông \"bình thường\" và che giấu một người dùng đợi 10 giây; hãy nhìn p95/p99/p99.9 theo từng route."
+    },
+    {
+      "id": "dotnet-m18-03",
+      "topic": "Gọi song song",
+      "source": "Module 18 - API Gateway - YARP",
+      "question": "BFF gọi song song hai service bằng Task.WhenAll; service Billing ném lỗi. Chương trình in ra gì?",
+      "code": "async Task<string> GetLead()\n{\n    await Task.Delay(10);\n    return \"lead\";\n}\n\nasync Task<string> GetInvoices()\n{\n    await Task.Delay(20);\n    throw new InvalidOperationException(\"billing down\");\n}\n\nvar leadTask = GetLead();\nvar invoiceTask = GetInvoices();\ntry\n{\n    await Task.WhenAll(leadTask, invoiceTask);\n    Console.WriteLine(\"both ok\");\n}\ncatch (Exception ex)\n{\n    Console.WriteLine($\"{ex.Message}|{leadTask.Result}|{invoiceTask.Status}\");\n}",
+      "codeLang": "csharp",
+      "options": [
+        "both ok",
+        "billing down|lead|RanToCompletion",
+        "billing down||Faulted",
+        "billing down|lead|Faulted"
+      ],
+      "answer": 3,
+      "explanation": "`await Task.WhenAll` chờ cả hai task xong rồi ném exception của task lỗi, nên vào `catch` với message \"billing down\". Lúc đó task Lead đã hoàn thành bình thường nên `leadTask.Result` vẫn là \"lead\", còn task Billing có trạng thái **Faulted**.\n- \"both ok\" sai: một task lỗi thì WhenAll không thể chạy tới dòng in thành công.\n- Phương án trạng thái RanToCompletion cho Billing sai: task có exception luôn ở trạng thái Faulted.\n- Phương án để trống phần lead sai: kết quả của task thành công không bị mất, chỉ là `await` trên WhenAll không trả nó cho bạn.\nHệ quả thiết kế: không bọc từng lời gọi thì một service chết làm cả endpoint BFF trả 500 dù lead đã lấy được. Cách đúng là bắt lỗi từng task để trả về dữ liệu một phần kèm cảnh báo."
+    },
+    {
+      "id": "dotnet-m18-04",
+      "topic": "Nhân bản dữ liệu qua event",
+      "source": "Module 18 - Service decomposition",
+      "question": "Order Service giữ snapshot khách hàng, cập nhật qua event. Broker giao event sai thứ tự (Version 2 đến trước Version 1). Đoạn nào thay vào chỗ trống để snapshot cuối cùng là \"ABC Viet Nam\"?",
+      "code": "var snapshot = (Name: \"\", Version: 0L);\nvar events = new[] { (Name: \"ABC Viet Nam\", Version: 2L), (Name: \"ABC\", Version: 1L) };\nforeach (var e in events)\n{\n    // <- đoạn cần chọn\n}\nConsole.WriteLine(snapshot.Name);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nsnapshot = e;\n```",
+        "```csharp\nif (snapshot.Version < e.Version) snapshot = e;\n```",
+        "```csharp\nif (snapshot.Version > e.Version) snapshot = e;\n```",
+        "```csharp\nif (e.Version == 1) snapshot = e;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Chỉ cập nhật khi event **mới hơn** snapshot hiện có (`snapshot.Version < e.Version`): Version 2 được áp dụng, Version 1 đến muộn bị bỏ qua, kết quả \"ABC Viet Nam\". Dùng số phiên bản còn tốt hơn dấu thời gian vì không phụ thuộc đồng hồ giữa các máy.\n- `snapshot = e;` ghi đè vô điều kiện nên event cũ đến sau ghi đè bản mới, kết quả \"ABC\".\n- `snapshot.Version > e.Version` đảo chiều so sánh: chỉ nhận event CŨ hơn, nên không event nào được áp dụng và snapshot vẫn rỗng.\n- `e.Version == 1` chỉ nhận cứng một phiên bản, vô tình chọn đúng event cũ, kết quả \"ABC\".\nThứ tự message không được bảo đảm, nên consumer phải tự chống event cũ."
+    },
+    {
+      "id": "dotnet-m18-05",
+      "topic": "Structured logging",
+      "source": "Module 18 - Observability - bộ ba",
+      "question": "Lớp Capture ghi ra các thuộc tính có cấu trúc (bỏ {OriginalFormat}) của mỗi lần log, hoặc (none) nếu không có. Hai lệnh log dưới in ra gì?",
+      "code": "using Microsoft.Extensions.Logging;\n\nILogger log = new Capture();\nvar id = 42; var total = 100;\nlog.LogError($\"Fail for {id}, total {total}\");\nlog.LogError(\"Fail for {CustomerId}, total {Total}\", id, total);\n\nsealed class Capture : ILogger\n{\n    public IDisposable? BeginScope<T>(T s) where T : notnull => null;\n    public bool IsEnabled(LogLevel l) => true;\n    public void Log<T>(LogLevel l, EventId e, T state, Exception? x, Func<T, Exception?, string> f)\n    {\n        var props = ((IReadOnlyList<KeyValuePair<string, object?>>)state!)\n            .Where(p => p.Key != \"{OriginalFormat}\").Select(p => $\"{p.Key}={p.Value}\");\n        Console.WriteLine(string.Join(\",\", props) is { Length: > 0 } s ? s : \"(none)\");\n    }\n}",
+      "codeLang": "csharp",
+      "options": [
+        "CustomerId=42,Total=100\nCustomerId=42,Total=100",
+        "(none)\nCustomerId=42,Total=100",
+        "(none)\n(none)",
+        "id=42,total=100\nCustomerId=42,Total=100"
+      ],
+      "answer": 1,
+      "explanation": "Chuỗi nội suy `$\"...\"` được C# ghép thành một string hoàn chỉnh TRƯỚC khi vào logger, nên logger chỉ nhận một thông điệp trơn, không có thuộc tính nào: **(none)**. Lệnh thứ hai dùng message template với `{CustomerId}` và `{Total}` nên mỗi tham số trở thành một trường: `CustomerId=42,Total=100`.\n- Phương án hai dòng đều có thuộc tính nhầm rằng nội suy cũng tạo trường; thực tế \"khách 42\" chỉ còn là văn bản.\n- Phương án hai dòng (none) nhầm rằng template không tạo trường; template chính là cách tạo trường.\n- Phương án `id=42,total=100` nhầm tên trường lấy từ tên biến C#; tên trường lấy từ tên trong dấu ngoặc nhọn của template.\nVì vậy log lỗi phải viết theo template để truy vấn được \"mọi lỗi của CustomerId X\" bằng một câu lọc."
+    },
+    {
+      "id": "dotnet-m18-06",
+      "topic": "Cardinality của metric",
+      "source": "Module 18 - Observability - bộ ba",
+      "question": "Hệ thống nhận 12 request từ 6 người dùng. Một counter gắn tag user_id, counter kia gắn tag tier (free/pro). Chương trình đếm số chuỗi metric (tổ hợp tag khác nhau) của từng counter. Kết quả là gì?",
+      "code": "using System.Diagnostics.Metrics;\nvar meter = new Meter(\"Crm\");\nvar byUser = meter.CreateCounter<long>(\"by_user\");\nvar byTier = meter.CreateCounter<long>(\"by_tier\");\nvar series = new Dictionary<string, HashSet<string>>();\nusing var l = new MeterListener();\nl.InstrumentPublished = (i, ml) => ml.EnableMeasurementEvents(i);\nl.SetMeasurementEventCallback<long>((i, v, tags, _) =>\n    (series.TryGetValue(i.Name, out var s) ? s : series[i.Name] = []).Add(tags[0].Value!.ToString()!));\nl.Start();\nfor (var r = 0; r < 2; r++)\n    for (var n = 1; n <= 6; n++)\n    {\n        byUser.Add(1, new KeyValuePair<string, object?>(\"user_id\", $\"u{n}\"));\n        byTier.Add(1, new KeyValuePair<string, object?>(\"tier\", n % 2 == 0 ? \"free\" : \"pro\"));\n    }\nforeach (var (name, set) in series) Console.WriteLine($\"{name}={set.Count}\");",
+      "codeLang": "csharp",
+      "options": [
+        "by_user=12\nby_tier=2",
+        "by_user=2\nby_tier=2",
+        "by_user=6\nby_tier=2",
+        "by_user=6\nby_tier=6"
+      ],
+      "answer": 2,
+      "explanation": "Mỗi tổ hợp giá trị tag là một chuỗi metric riêng. Tag `user_id` có 6 giá trị (u1..u6) nên cho **6 chuỗi**, tag `tier` chỉ có \"free\" và \"pro\" nên cho **2 chuỗi**. Số request (12) không làm tăng số chuỗi, chỉ làm tăng giá trị của chuỗi.\n- `by_user=12` nhầm số chuỗi với số lần ghi nhận; ghi thêm vào cùng một tổ hợp tag chỉ cộng dồn giá trị.\n- `by_user=2` coi user_id như tier; số chuỗi theo số giá trị phân biệt của tag, không theo số lần gọi.\n- `by_tier=6` cho rằng tier cũng nhiều như người dùng; nó chỉ có hai giá trị hữu hạn.\nVới 8.000 người dùng, tag user_id sinh 8.000 chuỗi cho mỗi tổ hợp tag còn lại, đó là lý do id người dùng thuộc về log và trace, không thuộc về nhãn metric."
+    },
+    {
+      "id": "dotnet-m18-07",
+      "topic": "JWT và ClockSkew",
+      "source": "Module 18 - Identity trong hệ phân tán",
+      "question": "Một JWT đã hết hạn cách đây 2 phút được kiểm tra với ba cấu hình ClockSkew: mặc định, TimeSpan.Zero và 30 giây. Chương trình in ra gì?",
+      "code": "// token đã tạo sẵn: hết hạn cách đây 2 phút\n// Check(p) trả \"valid\" hoặc \"expired\"\nvar p = new TokenValidationParameters\n{\n    IssuerSigningKey = key,\n    ValidateIssuer = false,\n    ValidateAudience = false,\n    ValidateLifetime = true,\n};\nConsole.WriteLine(Check(p));\np.ClockSkew = TimeSpan.Zero;\nConsole.WriteLine(Check(p));\np.ClockSkew = TimeSpan.FromSeconds(30);\nConsole.WriteLine(Check(p));",
+      "codeLang": "csharp",
+      "options": [
+        "valid\nexpired\nexpired",
+        "expired\nexpired\nexpired",
+        "valid\nvalid\nexpired",
+        "valid\nvalid\nvalid"
+      ],
+      "answer": 0,
+      "explanation": "`ClockSkew` mặc định của TokenValidationParameters là **5 phút**: token hết hạn 2 phút trước vẫn nằm trong dung sai nên được coi là `valid`. Với `TimeSpan.Zero` và 30 giây, dung sai nhỏ hơn 2 phút nên token bị từ chối là `expired` (cả hai dòng sau).\n- Phương án ba dòng đều expired quên rằng mặc định có dung sai 5 phút.\n- Phương án valid, valid, expired cho rằng Zero vẫn chấp nhận token; Zero nghĩa là không có dung sai nào.\n- Phương án cả ba valid cho rằng 30 giây vẫn đủ rộng; 30 giây < 2 phút nên token đã quá hạn.\nÝ nghĩa thực tế: token sống 15 phút thực ra dùng được 20 phút nếu không chỉnh ClockSkew, nên với hệ có NTP hãy đặt 30 giây hoặc Zero."
+    },
+    {
+      "id": "dotnet-m18-08",
+      "topic": "Khi nào dùng microservices",
+      "source": "Module 18 - Khi nào không nên microservices",
+      "question": "Công ty có 5 kỹ sư backend, vẫn deploy thủ công, chưa có distributed tracing. Sếp muốn chuyển sang microservices \"để dễ scale sau này\". Hướng nào hợp lý nhất?",
+      "options": [
+        "Tách ngay thành 8 service để sẵn sàng scale",
+        "Tách theo tầng thành Auth, Validation, Database Service",
+        "Giữ nguyên monolith hiện tại, không đổi gì cả",
+        "Modular monolith, tự động hoá deploy và tracing trước"
+      ],
+      "answer": 3,
+      "explanation": "Microservices trả phí vận hành ngay từ đầu, còn lợi ích chỉ có khi đội và hệ thống đủ lớn. Đội 5 người, deploy thủ công, chưa có tracing là thiếu cả ba điều kiện tiên quyết, nên hướng hợp lý là **modular monolith** (module chỉ tham chiếu Contracts của nhau, tách schema, có kiến trúc test), bổ sung CI/CD và tracing, và chỉ tách khi có số liệu chứng minh.\n- Tách ngay 8 service: \"dễ scale sau này\" không phải vấn đề cụ thể có số liệu; 5 người chia 8 service thì không ai thật sự sở hữu service nào.\n- Tách theo tầng kỹ thuật: mọi tính năng phải đi qua tất cả các service, mỗi thay đổi đều cần phối hợp triển khai, đúng thứ microservices muốn tránh.\n- Giữ nguyên không đổi: bỏ qua việc ranh giới module và CI/CD/tracing vốn có giá trị ngay cả khi không bao giờ tách, và làm sau này tách rất tốn."
+    },
+    {
+      "id": "dotnet-m18-09",
+      "topic": "API Gateway",
+      "source": "Module 18 - API Gateway - YARP",
+      "question": "Quyết định nào phù hợp để đặt trong API Gateway (YARP)?",
+      "options": [
+        "Duyệt tự động mọi đơn có tổng dưới 10 triệu",
+        "Giới hạn 100 request mỗi phút cho mỗi người dùng",
+        "Từ chối đơn của khách đang nằm trong danh sách đen",
+        "Chọn mức giảm giá theo hạng khách hàng"
+      ],
+      "answer": 1,
+      "explanation": "Gateway chỉ nên ra quyết định dựa trên **HTTP** (đường dẫn, header, token, tần suất request): rate limit theo người dùng đúng là mối quan tâm chung của biên hệ thống.\n- Duyệt tự động theo tổng tiền là quy tắc nghiệp vụ của Order Service; đặt ở gateway thì đội Order không đổi được quy tắc của chính mình mà không sửa gateway.\n- Từ chối đơn của khách trong danh sách đen cần dữ liệu khách hàng và là nghiệp vụ; gateway còn không được gọi database hay giữ trạng thái.\n- Chọn mức giảm giá theo hạng khách là nghiệp vụ giá của Pricing/Sales.\nNếu cho nghiệp vụ vào gateway, sau vài tháng nó thành monolith mới mà mọi đội đều phải sửa, và vì nó là điểm chết đơn nên sai sót ở đó làm sập cả hệ thống."
+    },
+    {
+      "id": "dotnet-m18-10",
+      "topic": "Dữ liệu xuyên module",
+      "source": "Module 18 - Service decomposition",
+      "question": "Sau khi tách Billing khỏi Leads, hoá đơn cần hiển thị tên và giá trị lead tại thời điểm xuất. Nếu lead đổi tên sau đó, hoá đơn cũ vẫn phải ghi tên cũ. Cách xử lý đúng nhất?",
+      "options": [
+        "Lưu tên và giá trị lead ngay trong bản ghi Invoice lúc tạo",
+        "Gọi API Leads mỗi lần xem hoá đơn để luôn có tên mới",
+        "Billing giữ snapshot lead và cập nhật khi nhận event đổi tên",
+        "Cho Billing đọc thẳng bảng Leads qua một view chung"
+      ],
+      "answer": 0,
+      "explanation": "Hoá đơn là chứng từ: nó cần dữ liệu **tại thời điểm xảy ra**, nên cách đúng là lưu tên/giá trị lead vào chính Invoice lúc tạo. Cách này loại bỏ hẳn phụ thuộc vào Leads, truy vấn nhanh nhất và đúng nghiệp vụ.\n- Gọi API Leads mỗi lần xem luôn trả tên mới nhất, nên hoá đơn cũ bị đổi tên theo, sai bản chất chứng từ, lại thêm coupling thời gian và N+1 qua mạng.\n- Snapshot cập nhật theo event cũng đổi tên theo lead; nó hợp cho dữ liệu \"hiện tại\" như trạng thái lead lọc danh sách, không hợp cho dữ liệu cần đóng băng.\n- Đọc thẳng bảng Leads qua view là dùng chung database: mỗi lần đổi schema phải phối hợp triển khai, mất triển khai độc lập.\nNhiều JOIN xuyên module thực ra là dấu hiệu mô hình dữ liệu chưa đúng: thông tin cần đóng băng lại đang được tra cứu động."
+    },
+    {
+      "id": "dotnet-m18-11",
+      "topic": "Khuếch đại retry",
+      "source": "Module 18 - Giao tiếp giữa các service",
+      "question": "Gateway, Sales và Billing mỗi tầng đều bọc lời gọi xuống tầng dưới bằng retry tối đa 3 lần. Billing đang chết hẳn. Chương trình mô phỏng ba tầng retry lồng nhau và đếm số lần Billing thực sự bị gọi. Nó in ra gì?",
+      "code": "var calls = 0;\nvoid Billing() { calls++; throw new HttpRequestException(\"down\"); }\nvoid Retry(Action a, int attempts)\n{\n    for (var i = 1; i <= attempts; i++)\n    {\n        try { a(); return; }\n        catch (HttpRequestException) when (i < attempts) { }\n    }\n}\ntry { Retry(() => Retry(() => Retry(Billing, 3), 3), 3); }\ncatch (HttpRequestException) { }\nConsole.WriteLine(calls);",
+      "codeLang": "csharp",
+      "options": [
+        "3",
+        "9",
+        "27",
+        "81"
+      ],
+      "answer": 2,
+      "explanation": "Mỗi tầng thử 3 lần, và mỗi lần thử của tầng trên lại kích hoạt đủ 3 lần thử của tầng dưới, nên số lời gọi nhân lên: 3 x 3 x 3 = **27**. Chạy thật in `27`.\n- `3` chỉ đếm retry của một tầng, quên rằng các tầng lồng nhau.\n- `9` chỉ nhân hai tầng, bỏ sót một tầng retry.\n- `81` nhân bốn lần, trong khi chỉ có ba tầng.\nBài học: retry ở mọi tầng gây retry storm đúng lúc dịch vụ phía dưới đang yếu nhất; chỉ nên retry ở một tầng (thường gần nguồn gọi nhất), kèm backoff có jitter và circuit breaker."
+    },
+    {
+      "id": "dotnet-m18-12",
+      "topic": "Anti-corruption layer",
+      "source": "Module 18 - Mở rộng và đào sâu",
+      "question": "Hệ thống đối tác trả `credit_cents` (số nguyên, đơn vị cent) và domain của bạn cần giá trị `decimal` giữ nguyên phần lẻ (ví dụ `12550` cent thành `125.5`). Trong lớp anti-corruption layer, biểu thức nào đổi đúng?",
+      "code": "var external = new { client_ref = 7, credit_cents = 12550 };\nvar credit = {{X}};\nConsole.WriteLine(credit.ToString(\n    System.Globalization.CultureInfo.InvariantCulture));",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nexternal.credit_cents / 100m\n```",
+        "```csharp\nexternal.credit_cents / 100\n```",
+        "```csharp\nexternal.credit_cents * 100m\n```",
+        "```csharp\nexternal.credit_cents % 100\n```"
+      ],
+      "answer": 0,
+      "explanation": "`credit_cents` là `int`; chia cho literal `100m` (decimal) khiến phép chia thực hiện trên decimal nên giữ được phần lẻ, kết quả in ra `125.5`. Việc đổi đơn vị và tên trường phải làm ngay trong lớp ACL để mô hình ngoài không lọt vào domain.\n- `/ 100` là chia số nguyên: cho `125`, mất 50 cent âm thầm và không báo lỗi.\n- `* 100m` đổi sai chiều, ra `1255000`.\n- `% 100` chỉ lấy phần dư, ra `50`."
+    },
+    {
+      "id": "dotnet-m18-13",
+      "topic": "Health check",
+      "source": "Module 18 - Ví dụ thực tế nhanh",
+      "question": "Service đăng ký 3 health check như dưới đây. Liveness dùng `Predicate = _ => false`, readiness dùng `Predicate = check => check.Tags.Contains(\"ready\")`. Đoạn mô phỏng này in ra gì (số check chạy ở liveness, số check chạy ở readiness, tên các check ở readiness)?",
+      "code": "var checks = new (string Name, string[] Tags)[]\n{\n    (\"sql\", [\"ready\"]),\n    (\"redis\", [\"ready\"]),\n    (\"self\", []),\n};\nFunc<(string Name, string[] Tags), bool> live = _ => false;\nFunc<(string Name, string[] Tags), bool> ready =\n    c => c.Tags.Contains(\"ready\");\nConsole.WriteLine(checks.Count(live));\nConsole.WriteLine(checks.Count(ready));\nConsole.WriteLine(string.Join(\",\", checks.Where(ready).Select(c => c.Name)));",
+      "codeLang": "csharp",
+      "options": [
+        "3\n2\nsql,redis",
+        "0\n2\nsql,redis",
+        "0\n3\nsql,redis,self",
+        "0\n2\nsql,self"
+      ],
+      "answer": 1,
+      "explanation": "Predicate `_ => false` loại mọi check, nên liveness chạy 0 check: nó chỉ trả lời tiến trình còn sống, không đụng database hay Redis. Readiness chỉ chạy các check gắn tag `ready` là `sql` và `redis`; `self` không có tag nên bị bỏ.\n- `3` ở dòng đầu nhầm với mặc định không lọc (chạy hết mọi check).\n- `sql,redis,self` quên rằng `Contains(\"ready\")` trên mảng rỗng là `false`.\n- `sql,self` sai vì `redis` có tag `ready` còn `self` thì không."
+    },
+    {
+      "id": "dotnet-m18-14",
+      "topic": "Bản sao dữ liệu qua event",
+      "source": "Module 18 - Liên hệ CRM",
+      "question": "Sales giữ bản sao `UserSnapshot` cập nhật bằng event `UserUpdated`. Cùng một người dùng có thể phát nhiều event (đổi tên hai lần). Thân `OnUserUpdated` nào luôn giữ tên mới nhất và không ném lỗi ở lần thứ hai?",
+      "code": "var snaps = new Dictionary<int, string>();\nvoid OnUserUpdated(int id, string name)\n{\n    {{X}}\n}\nOnUserUpdated(1, \"An\");\nOnUserUpdated(1, \"Binh\");\nConsole.WriteLine(snaps[1]);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nsnaps.Add(id, name);\n```",
+        "```csharp\nsnaps.TryAdd(id, name);\n```",
+        "```csharp\nif (!snaps.ContainsKey(id))\n    snaps[id] = name;\n```",
+        "```csharp\nsnaps[id] = name;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Consumer của event cập nhật phải là upsert: ghi đè giá trị cũ bằng indexer `snaps[id] = name`. Chạy thật in `Binh`.\n- `Add` ném `ArgumentException` ở event thứ hai vì khoá đã tồn tại, consumer sẽ lỗi và retry mãi.\n- `TryAdd` không ném lỗi nhưng bỏ qua giá trị mới, bản sao giữ `An` và dần lỗi thời.\n- `if (!ContainsKey)` cũng chỉ ghi lần đầu, kết quả `An`: bản sao không bao giờ được cập nhật."
+    },
+    {
+      "id": "dotnet-m18-15",
+      "topic": "Chống gửi trùng",
+      "source": "Module 18 - Mini case study",
+      "question": "Trong giai đoạn chạy song song, cùng một `NotificationId` có thể tới tay handler nhiều lần. Handler dưới đây được gọi ba lần với cùng một id; thân nào chỉ gửi đúng một email (in ra `1`)?",
+      "code": "var sent = new HashSet<Guid>();\nvar emails = 0;\nvoid Handle(Guid id)\n{\n    {{X}}\n    emails++;\n}\nvar n = Guid.NewGuid();\nHandle(n); Handle(n); Handle(n);\nConsole.WriteLine(emails);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nif (sent.Contains(id)) return;\n```",
+        "```csharp\nsent.Add(id);\n```",
+        "```csharp\nif (!sent.Add(id)) return;\n```",
+        "```csharp\nif (sent.Add(id)) return;\n```"
+      ],
+      "answer": 2,
+      "explanation": "`HashSet.Add` trả về `false` khi phần tử đã có, nên `if (!sent.Add(id)) return;` vừa kiểm tra vừa ghi nhận trong một bước: lần đầu gửi, hai lần sau bị chặn. Trong hệ thật, vai trò này do bảng `SentNotification` với PRIMARY KEY đảm nhận, và việc kiểm tra-rồi-ghi phải nguyên tử.\n- `Contains` chỉ kiểm tra mà không bao giờ ghi nhận, nên mọi lần đều gửi (in `3`).\n- `sent.Add(id);` ghi nhận nhưng không chặn gì, vẫn gửi cả 3 lần.\n- Điều kiện đảo ngược chặn lần đầu rồi gửi hai lần sau (in `2`): ngược hoàn toàn."
+    },
+    {
+      "id": "dotnet-m18-16",
+      "topic": "Bulkhead",
+      "source": "Module 18 - Mở rộng và đào sâu",
+      "question": "Bulkhead giới hạn số lời gọi đồng thời tới mỗi phụ thuộc. Mô phỏng bằng `SemaphoreSlim(2)` cho Billing: bốn lời gọi tới cùng lúc (không cái nào kết thúc), sau đó một lời gọi hoàn tất và giải phóng chỗ. Chương trình in ra gì?",
+      "code": "var billing = new SemaphoreSlim(2);\nvar results = new List<string>();\nfor (var i = 0; i < 4; i++)\n    results.Add(billing.Wait(0) ? \"run\" : \"reject\");\nConsole.WriteLine(string.Join(\",\", results));\nbilling.Release();\nConsole.WriteLine(billing.Wait(0));\nConsole.WriteLine(billing.CurrentCount);",
+      "codeLang": "csharp",
+      "options": [
+        "run,run,run,run\nTrue\n0",
+        "run,run,reject,reject\nTrue\n0",
+        "run,run,reject,reject\nFalse\n0",
+        "run,run,reject,reject\nTrue\n1"
+      ],
+      "answer": 1,
+      "explanation": "`Wait(0)` không chờ: lấy được chỗ thì `true`, hết chỗ thì `false` ngay. Có 2 chỗ nên hai lời gọi đầu chạy, hai lời gọi sau bị từ chối nhanh thay vì chiếm thêm thread và connection. Sau `Release()` có 1 chỗ trống nên `Wait(0)` lại thành `True` và `CurrentCount` về `0`.\n- `run,run,run,run` là trường hợp không có bulkhead: phụ thuộc chậm nuốt hết tài nguyên.\n- `False` ở dòng hai sai vì `Release()` đã trả một chỗ.\n- `CurrentCount` bằng `1` sai: chỗ vừa trả đã bị lời gọi `Wait(0)` lấy lại."
+    },
+    {
+      "id": "dotnet-m18-17",
+      "topic": "Liveness và readiness",
+      "source": "Module 18 - Ví dụ thực tế nhanh",
+      "question": "Database chuyển dự phòng và chậm khoảng 12 giây. Mọi pod của 6 service có `livenessProbe` trỏ vào `/health` (endpoint này kiểm tra cả database). Điều gì xảy ra và cách sửa nào đúng?",
+      "options": [
+        "Probe timeout nên pod bị giết hàng loạt rồi khởi động lại liên tục, cách sửa là bỏ kiểm tra DB khỏi liveness và đặt vào readiness",
+        "Pod chỉ bị gỡ khỏi load balancer tới khi database hồi phục, nên không cần sửa gì trong cấu hình probe của dự án",
+        "Kubernetes tự thêm pod cho tới khi database nhanh lại, nên cách sửa là tăng số replica của cả 6 service lên cao hơn",
+        "Chỉ pod đang xử lý request chậm bị giết, nên cách sửa là tăng periodSeconds của liveness lên một giờ cho đỡ nhạy"
+      ],
+      "answer": 0,
+      "explanation": "Liveness thất bại nghĩa là Kubernetes giết và khởi động lại pod. Khởi động lại không chữa được database chậm; pod mới gặp đúng database đó nên cũng timeout, và cả cụm rơi vào vòng giết-khởi động lặp lại lâu hơn nhiều so với 12 giây của sự cố gốc. Liveness chỉ nên trả lời tiến trình còn sống không; phụ thuộc ngoài thuộc về readiness, vốn chỉ gỡ pod khỏi load balancer.\n- Gỡ khỏi load balancer là hành động của readiness, không phải liveness.\n- Probe không điều khiển việc scale pod; thêm replica cũng bị giết như nhau.\n- Probe áp dụng cho mọi pod, không phân biệt pod nào đang bận; nới `periodSeconds` quá mức chỉ làm chậm phát hiện pod chết thật."
+    },
+    {
+      "id": "dotnet-m18-18",
+      "topic": "Tenant ở gateway",
+      "source": "Module 18 - Liên hệ CRM",
+      "question": "Gateway của CRM multi-tenant đọc subdomain `acme.crm.example.com` và gắn header `X-Tenant-Id: acme` trước khi chuyển tiếp tới các service. Cách dùng header này nào đúng?",
+      "options": [
+        "Mọi service tin header và bỏ lọc tenant ở truy vấn, vì gateway đã lọc trước rồi",
+        "Dùng header để phân quyền truy cập, còn claim trong token chỉ dùng để hiển thị",
+        "Cho phép client tự gửi header này để chọn tenant bất kỳ mà họ muốn làm việc",
+        "Chỉ để định tuyến, quyền lấy từ claim đã ký và mỗi service tự lọc theo tenant"
+      ],
+      "answer": 3,
+      "explanation": "Header chỉ là dữ liệu định tuyến: nếu ai đó gọi thẳng vào service (bỏ qua gateway) thì họ có thể đặt header tuỳ ý. Quyền thật phải dựa trên claim trong token đã ký, và mỗi service tự áp bộ lọc tenant thay vì tin rằng gateway đã làm.\n- Bỏ lọc tenant ở service là tin tuyệt đối vào gateway, mở đường rò dữ liệu giữa tenant.\n- Phân quyền bằng header làm ngược: header giả mạo được, claim ký thì không.\n- Cho client tự chọn tenant qua header là lỗ hổng truy cập chéo tenant kinh điển."
+    },
+    {
+      "id": "dotnet-m18-19",
+      "topic": "Chữa distributed monolith",
+      "source": "Module 18 - Anti-pattern: distributed monolith",
+      "question": "Màn hình danh sách của Sales gọi đồng bộ `CheckCreditAsync` sang Billing cho mỗi khách hàng; khi Billing chậm, Sales chậm theo. Theo thứ tự các cách chữa từ rẻ tới đắt, bước đầu tiên nên thử là gì?",
+      "options": [
+        "Gộp Sales và Billing thành một service ngay lập tức",
+        "Cài service mesh để Billing tự retry thay cho Sales",
+        "Chuyển sang event: Billing phát event, Sales giữ bản sao tối thiểu `CustomerBillingInfo` và đọc cục bộ",
+        "Tăng timeout và số lần retry của lời gọi tới Billing"
+      ],
+      "answer": 2,
+      "explanation": "Bài học xếp thứ tự chi phí tăng dần: đổi lời gọi đồng bộ thành event rẻ nhất và thường đủ, vì loại bỏ coupling thời gian và độ trễ mà không đụng vào ranh giới service. Sales đọc dữ liệu cục bộ nên Billing chậm hay chết không còn ảnh hưởng màn hình danh sách.\n- Gộp service là cách cuối, dành cho hai service luôn đi cùng nhau; chưa cần khi còn cách rẻ hơn.\n- Service mesh chỉ đáng khi trên khoảng 10 service, và vẫn không bỏ được lời gọi đồng bộ.\n- Tăng timeout và retry giữ nguyên phụ thuộc, lại có thể nhân tải lên Billing đang chậm."
+    },
+    {
+      "id": "dotnet-m18-20",
+      "topic": "Message tự chứa",
+      "source": "Module 18 - Mini case study",
+      "question": "Notification Service mới nhận 50.000 command mỗi giờ. Với mỗi command nó gọi HTTP ngược về monolith để lấy email người nhận, nên độ trễ tăng từ 40ms lên 380ms và monolith bị tăng tải. Cách sửa nào đúng nhất?",
+      "options": [
+        "Cho service mới đọc thẳng bảng `Users` trong database của monolith",
+        "Đưa tên và email người nhận vào chính message để consumer không phải gọi ngược",
+        "Tăng số instance monolith để chịu nổi 50.000 lời gọi mỗi giờ",
+        "Thêm retry vào lời gọi HTTP để giảm số lần thất bại"
+      ],
+      "answer": 1,
+      "explanation": "Integration event phải tự chứa: producer đã biết người nhận, nên đưa `RecipientEmail` và `RecipientName` vào message. Consumer không còn gọi ngược, độ trễ về cỡ 35ms và tải lên monolith về 0. Nếu consumer cần gọi ngược về producer để hiểu message, bạn chỉ thêm một chặng mạng chứ chưa tách thật.\n- Đọc thẳng bảng của monolith là dùng chung database, anti-pattern làm hai service dính chặt.\n- Thêm instance chỉ chữa triệu chứng, vẫn giữ lời gọi ngược và chi phí tăng.\n- Retry không giảm số lời gọi, thậm chí làm tải tăng khi monolith chậm."
+    }
+  ]
+}

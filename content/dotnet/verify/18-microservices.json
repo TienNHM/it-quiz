@@ -1,0 +1,94 @@
+[
+  {
+    "id": "dotnet-m18-01",
+    "kind": "cs-predict",
+    "program": "using System.Globalization;\nvar up = Math.Pow(0.999, 4);\nConsole.WriteLine((up * 100).ToString(\"F2\", CultureInfo.InvariantCulture) + \"%\");\nConsole.WriteLine(((1 - up) * 30 * 24).ToString(\"F1\", CultureInfo.InvariantCulture) + \"h\");"
+  },
+  {
+    "id": "dotnet-m18-02",
+    "kind": "cs-predict",
+    "program": "using System.Globalization;\nvar times = new List<double>();\nfor (var i = 0; i < 99; i++) times.Add(50);\ntimes.Add(10000);\ntimes.Sort();\n\nvar avg = times.Average();\nvar p99 = times[(int)Math.Ceiling(0.99 * times.Count) - 1];\nvar max = times[^1];\nConsole.WriteLine(string.Join(\"\\n\", new[] { avg, p99, max }.Select(x => x.ToString(CultureInfo.InvariantCulture))));"
+  },
+  {
+    "id": "dotnet-m18-03",
+    "kind": "cs-predict",
+    "program": "async Task<string> GetLead()\n{\n    await Task.Delay(10);\n    return \"lead\";\n}\n\nasync Task<string> GetInvoices()\n{\n    await Task.Delay(20);\n    throw new InvalidOperationException(\"billing down\");\n}\n\nvar leadTask = GetLead();\nvar invoiceTask = GetInvoices();\ntry\n{\n    await Task.WhenAll(leadTask, invoiceTask);\n    Console.WriteLine(\"both ok\");\n}\ncatch (Exception ex)\n{\n    Console.WriteLine($\"{ex.Message}|{leadTask.Result}|{invoiceTask.Status}\");\n}"
+  },
+  {
+    "id": "dotnet-m18-04",
+    "kind": "cs-choose",
+    "template": "var snapshot = (Name: \"\", Version: 0L);\nvar events = new[] { (Name: \"ABC Viet Nam\", Version: 2L), (Name: \"ABC\", Version: 1L) };\nforeach (var e in events)\n{\n    {{X}}\n}\nConsole.WriteLine(snapshot.Name);",
+    "options": [
+      "snapshot = e;",
+      "if (snapshot.Version < e.Version) snapshot = e;",
+      "if (snapshot.Version > e.Version) snapshot = e;",
+      "if (e.Version == 1) snapshot = e;"
+    ]
+  },
+  {
+    "id": "dotnet-m18-05",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Logging@10.0.0\nusing Microsoft.Extensions.Logging;\n\nILogger log = new Capture();\nvar id = 42; var total = 100;\nlog.LogError($\"Fail for {id}, total {total}\");\nlog.LogError(\"Fail for {CustomerId}, total {Total}\", id, total);\n\nsealed class Capture : ILogger\n{\n    public IDisposable? BeginScope<T>(T s) where T : notnull => null;\n    public bool IsEnabled(LogLevel l) => true;\n    public void Log<T>(LogLevel l, EventId e, T state, Exception? x, Func<T, Exception?, string> f)\n    {\n        var props = ((IReadOnlyList<KeyValuePair<string, object?>>)state!)\n            .Where(p => p.Key != \"{OriginalFormat}\").Select(p => $\"{p.Key}={p.Value}\");\n        Console.WriteLine(string.Join(\",\", props) is { Length: > 0 } s ? s : \"(none)\");\n    }\n}"
+  },
+  {
+    "id": "dotnet-m18-06",
+    "kind": "cs-predict",
+    "program": "using System.Diagnostics.Metrics;\nvar meter = new Meter(\"Crm\");\nvar byUser = meter.CreateCounter<long>(\"by_user\");\nvar byTier = meter.CreateCounter<long>(\"by_tier\");\nvar series = new Dictionary<string, HashSet<string>>();\nusing var l = new MeterListener();\nl.InstrumentPublished = (i, ml) => ml.EnableMeasurementEvents(i);\nl.SetMeasurementEventCallback<long>((i, v, tags, _) =>\n    (series.TryGetValue(i.Name, out var s) ? s : series[i.Name] = []).Add(tags[0].Value!.ToString()!));\nl.Start();\nfor (var r = 0; r < 2; r++)\n    for (var n = 1; n <= 6; n++)\n    {\n        byUser.Add(1, new KeyValuePair<string, object?>(\"user_id\", $\"u{n}\"));\n        byTier.Add(1, new KeyValuePair<string, object?>(\"tier\", n % 2 == 0 ? \"free\" : \"pro\"));\n    }\nforeach (var (name, set) in series) Console.WriteLine($\"{name}={set.Count}\");"
+  },
+  {
+    "id": "dotnet-m18-07",
+    "kind": "cs-predict",
+    "program": "#:package System.IdentityModel.Tokens.Jwt@8.3.0\nusing System.IdentityModel.Tokens.Jwt;\nusing System.Text;\nusing Microsoft.IdentityModel.Tokens;\n\nvar key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(new string('k', 32)));\nvar now = DateTime.UtcNow;\nvar jwt = new JwtSecurityToken(\n    notBefore: now.AddMinutes(-10),\n    expires: now.AddMinutes(-2),\n    signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));\nvar token = new JwtSecurityTokenHandler().WriteToken(jwt);\n\nstring Check(TokenValidationParameters p)\n{\n    try\n    {\n        new JwtSecurityTokenHandler().ValidateToken(token, p, out _);\n        return \"valid\";\n    }\n    catch (SecurityTokenExpiredException)\n    {\n        return \"expired\";\n    }\n}\n\nvar p = new TokenValidationParameters\n{\n    IssuerSigningKey = key,\n    ValidateIssuer = false,\n    ValidateAudience = false,\n    ValidateLifetime = true,\n};\nConsole.WriteLine(Check(p));\np.ClockSkew = TimeSpan.Zero;\nConsole.WriteLine(Check(p));\np.ClockSkew = TimeSpan.FromSeconds(30);\nConsole.WriteLine(Check(p));"
+  },
+  {
+    "id": "dotnet-m18-11",
+    "kind": "cs-predict",
+    "program": "var calls = 0;\nvoid Billing() { calls++; throw new HttpRequestException(\"down\"); }\nvoid Retry(Action a, int attempts)\n{\n    for (var i = 1; i <= attempts; i++)\n    {\n        try { a(); return; }\n        catch (HttpRequestException) when (i < attempts) { }\n    }\n}\ntry { Retry(() => Retry(() => Retry(Billing, 3), 3), 3); }\ncatch (HttpRequestException) { }\nConsole.WriteLine(calls);"
+  },
+  {
+    "id": "dotnet-m18-12",
+    "kind": "cs-choose",
+    "template": "var external = new { client_ref = 7, credit_cents = 12550 };\nvar credit = {{X}};\nConsole.WriteLine(credit.ToString(\n    System.Globalization.CultureInfo.InvariantCulture));\n",
+    "expectOutput": "125.5",
+    "options": [
+      "external.credit_cents / 100m",
+      "external.credit_cents / 100",
+      "external.credit_cents * 100m",
+      "external.credit_cents % 100"
+    ]
+  },
+  {
+    "id": "dotnet-m18-13",
+    "kind": "cs-predict",
+    "program": "var checks = new (string Name, string[] Tags)[]\n{\n    (\"sql\", [\"ready\"]),\n    (\"redis\", [\"ready\"]),\n    (\"self\", []),\n};\nFunc<(string Name, string[] Tags), bool> live = _ => false;\nFunc<(string Name, string[] Tags), bool> ready = c => c.Tags.Contains(\"ready\");\nConsole.WriteLine(checks.Count(live));\nConsole.WriteLine(checks.Count(ready));\nConsole.WriteLine(string.Join(\",\", checks.Where(ready).Select(c => c.Name)));\n"
+  },
+  {
+    "id": "dotnet-m18-14",
+    "kind": "cs-choose",
+    "template": "var snaps = new Dictionary<int, string>();\nvoid OnUserUpdated(int id, string name)\n{\n    {{X}}\n}\nOnUserUpdated(1, \"An\");\nOnUserUpdated(1, \"Binh\");\nConsole.WriteLine(snaps[1]);\n",
+    "expectOutput": "Binh",
+    "options": [
+      "snaps.Add(id, name);",
+      "snaps.TryAdd(id, name);",
+      "if (!snaps.ContainsKey(id))\n    snaps[id] = name;",
+      "snaps[id] = name;"
+    ]
+  },
+  {
+    "id": "dotnet-m18-15",
+    "kind": "cs-choose",
+    "template": "var sent = new HashSet<Guid>();\nvar emails = 0;\nvoid Handle(Guid id)\n{\n    {{X}}\n    emails++;\n}\nvar n = Guid.NewGuid();\nHandle(n); Handle(n); Handle(n);\nConsole.WriteLine(emails);\n",
+    "expectOutput": "1",
+    "options": [
+      "if (sent.Contains(id)) return;",
+      "sent.Add(id);",
+      "if (!sent.Add(id)) return;",
+      "if (sent.Add(id)) return;"
+    ]
+  },
+  {
+    "id": "dotnet-m18-16",
+    "kind": "cs-predict",
+    "program": "var billing = new SemaphoreSlim(2);\nvar results = new List<string>();\nfor (var i = 0; i < 4; i++)\n    results.Add(billing.Wait(0) ? \"run\" : \"reject\");\nConsole.WriteLine(string.Join(\",\", results));\nbilling.Release();\nConsole.WriteLine(billing.Wait(0));\nConsole.WriteLine(billing.CurrentCount);\n"
+  }
+]

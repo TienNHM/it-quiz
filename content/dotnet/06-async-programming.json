@@ -1,0 +1,313 @@
+{
+  "id": "dotnet-m06",
+  "title": "Module 6: Async Programming",
+  "description": "Task, async/await, ConfigureAwait, CancellationToken, TPL và các bẫy phổ biến khi lập trình bất đồng bộ trong .NET 10.",
+  "questions": [
+    {
+      "topic": "Luồng chạy của await",
+      "source": "Module 6 - Async Programming - Task và async/await",
+      "question": "Chương trình sau in ra những dòng nào, theo thứ tự?",
+      "code": "Console.WriteLine(\"A\");\nvar t = Foo();\nConsole.WriteLine(\"C\");\nawait t;\n\nasync Task Foo()\n{\n    Console.WriteLine(\"B\");\n    await Task.Delay(50);\n    Console.WriteLine(\"D\");\n}",
+      "codeLang": "csharp",
+      "options": [
+        "A\nC\nB\nD",
+        "A\nB\nC\nD",
+        "A\nB\nD\nC",
+        "A\nC\nD\nB"
+      ],
+      "answer": 1,
+      "explanation": "Phần của `Foo` **trước** `await` chạy đồng bộ ngay trên luồng gọi, nên \"B\" in ngay khi `Foo()` được gọi, trước \"C\". Gặp `await` trên task chưa xong, `Foo` trả `Task` về cho caller và phần còn lại (\"D\") được hẹn chạy sau; caller in \"C\" rồi mới `await t`.\n- `A C B D`: sai vì tưởng `Foo()` chỉ tạo task rồi chờ; thực ra thân chạy đồng bộ tới `await` đầu tiên.\n- `A B D C`: sai vì tưởng `Foo()` chờ xong mới trả về; `await` không chặn caller.\n- `A C D B`: sai cả hai chỗ, \"B\" nằm trước \"D\" trong chính `Foo`.\nKết quả chạy thật: A, B, C, D.",
+      "id": "dotnet-m06-01"
+    },
+    {
+      "topic": "lock và await",
+      "source": "Module 6 - Async Programming - Common Pitfalls",
+      "question": "Muốn chặn hai lời gọi `SaveAsync` chạy chồng nhau, một bạn viết như sau. Kết quả là gì?",
+      "code": "var gate = new object();\n\nasync Task SaveAsync()\n{\n    lock (gate)\n    {\n        await Task.Delay(10);\n    }\n}\n\nawait SaveAsync();",
+      "codeLang": "csharp",
+      "options": [
+        "Biên dịch được, chạy bình thường",
+        "Biên dịch được, ném exception lúc chạy",
+        "Lỗi biên dịch vì `SaveAsync` phải trả `Task<T>`",
+        "Lỗi biên dịch: không được `await` trong `lock`"
+      ],
+      "answer": 3,
+      "explanation": "Trình biên dịch từ chối với **CS1996** (`Cannot await in the body of a lock statement`). Lý do: `lock` gắn với thread, phải được nhả bởi đúng thread đã lấy, còn sau `await` mã có thể chạy tiếp trên thread khác. Cách đúng là `SemaphoreSlim(1, 1)` với `await WaitAsync()` và `Release()` trong `finally`.\n- Hai phương án \"biên dịch được\": sai, đây là lỗi biên dịch chứ không phải lỗi runtime.\n- \"Phải trả `Task<T>`\": sai, `async Task` hoàn toàn hợp lệ, vấn đề nằm ở `lock`.\nChạy thật: compile-error CS1996.",
+      "id": "dotnet-m06-02"
+    },
+    {
+      "topic": "LINQ với lambda async",
+      "source": "Module 6 - Async Programming - Common Pitfalls",
+      "question": "Cho `Task<bool> Even(int n)` (kiểm tra bất đồng bộ). Đoạn nào **không biên dịch được**?",
+      "options": [
+        "```csharp\nvar r = nums.Select(async n => await Even(n)).ToList();\n```",
+        "```csharp\nvar r = await Task.WhenAll(nums.Select(Even));\n```",
+        "```csharp\nvar r = nums.Where(async n => await Even(n)).ToList();\n```",
+        "```csharp\nvar r = nums.Select(n => Even(n)).ToList();\n```"
+      ],
+      "answer": 2,
+      "explanation": "`Where` cần delegate trả `bool`, còn lambda `async` luôn trả `Task<bool>`, nên `Where(async ...)` lỗi biên dịch: không thể lọc theo kết quả của một Task chưa await.\n- `Select(async n => ...)`: hợp lệ, cho `List<Task<bool>>`.\n- `await Task.WhenAll(nums.Select(Even))`: hợp lệ, chờ tất cả rồi trả `bool[]`.\n- `Select(n => Even(n))`: hợp lệ, cũng cho danh sách Task.\nCách lọc đúng: `await Task.WhenAll` rồi lọc theo mảng kết quả.",
+      "id": "dotnet-m06-03"
+    },
+    {
+      "topic": "LINQ Select lười",
+      "source": "Module 6 - Async Programming - Common Pitfalls",
+      "question": "Chương trình in ra hai số. Đó là những số nào?",
+      "code": "var calls = 0;\nvar tasks = new[] { 1, 2, 3 }.Select(async n =>\n{\n    calls++;\n    await Task.Delay(10);\n    return n;\n});\n\nawait Task.WhenAll(tasks);\nConsole.WriteLine(calls);\nvar total = tasks.Count();\nawait Task.WhenAll(tasks);\nConsole.WriteLine(calls);",
+      "codeLang": "csharp",
+      "options": [
+        "3\n9",
+        "3\n3",
+        "3\n6",
+        "6\n9"
+      ],
+      "answer": 0,
+      "explanation": "`Select` là lười: `tasks` chỉ là một truy vấn, mỗi lần duyệt lại chạy lại lambda cho cả 3 phần tử. `WhenAll` duyệt lần 1: calls = 3. `Count()` duyệt lần 2: thêm 3 lần gọi (calls = 6). `WhenAll` lần 2 duyệt lần 3: calls = 9. In ra 3 rồi 9.\n- `3 3`: tưởng `tasks` là danh sách đã chốt; cần `.ToList()` mới đúng như vậy.\n- `3 6`: quên rằng `WhenAll` lần hai lại duyệt tiếp.\n- `6 9`: quên rằng lần in đầu mới chỉ qua một lượt duyệt.\nChạy thật cho 3 và 9. Với thao tác ghi, việc chạy trùng này gây ghi lặp.",
+      "id": "dotnet-m06-04"
+    },
+    {
+      "topic": "Gom kết quả từ nhiều task",
+      "source": "Module 6 - Async Programming - Task Parallel Library",
+      "question": "Cần in tổng 60 (10+20+30) sau khi mọi `Work` hoàn thành. Đoạn nào đúng?",
+      "options": [
+        "```csharp\nvar total = 0;\nArray.ForEach(ids, async i => total += await Work(i));\n```",
+        "```csharp\nvar all = await Task.WhenAll(ids.Select(Work));\nvar total = all.Sum();\n```",
+        "```csharp\nvar total = ids.Sum(async i => await Work(i));\n```",
+        "```csharp\nvar total = 0;\nids.Select(async i => total += await Work(i));\n```"
+      ],
+      "answer": 1,
+      "explanation": "`await Task.WhenAll(...)` chờ mọi task xong và trả mảng kết quả, không cần biến chia sẻ.\n- `Array.ForEach(ids, async i => ...)`: tham số là `Action<T>` nên lambda thành `async void`; vòng lặp xong ngay, chương trình in 0 trước khi các `Work` kịp chạy xong.\n- `ids.Sum(async i => ...)`: `Sum` cần số, lambda trả `Task<int>`, lỗi biên dịch.\n- `ids.Select(async ...)` không duyệt: `Select` lười nên không lambda nào chạy, in 0.\nChạy thật: hai phương án sai chạy được cho ra 0, phương án còn lại không biên dịch.",
+      "id": "dotnet-m06-05"
+    },
+    {
+      "topic": "Task.Run trong ASP.NET Core",
+      "source": "Module 6 - Async Programming - Common Pitfalls",
+      "question": "Một action ASP.NET Core viết `await Task.Run(() => HeavyCalculation())` với hy vọng giúp API chịu tải tốt hơn. Nhận định nào đúng?",
+      "options": [
+        "Tăng throughput vì thread của request được trả về pool",
+        "Tính toán chạy song song nên request xong nhanh hơn",
+        "Không tăng khả năng chịu tải: vẫn chiếm một thread cùng pool",
+        "Gây deadlock vì request mất `SynchronizationContext`"
+      ],
+      "answer": 2,
+      "explanation": "Request đã chạy trên một thread của thread pool. `Task.Run` trả thread đó về pool nhưng lại chiếm **một thread khác của cùng pool** cho phần tính toán: tổng số thread bận không đổi, còn tốn thêm chi phí xếp lịch.\n- \"Tăng throughput\": sai, thread được trả lại nhưng thread khác bị lấy ngay.\n- \"Xong nhanh hơn\": sai, vì `await` ngay sau đó, phần tính toán vẫn là đường đi bắt buộc của request, không có gì chạy song song.\n- \"Deadlock\": sai, ASP.NET Core không có `SynchronizationContext`; hơn nữa code dùng `await` chứ không chặn bằng `.Result`.\n`Task.Run` có ích cho CPU-bound ở ứng dụng desktop để giải phóng luồng giao diện.",
+      "id": "dotnet-m06-06"
+    },
+    {
+      "topic": "WhenAll và exception",
+      "source": "Module 6 - Async Programming - Task Parallel Library",
+      "question": "Hai task đã lỗi sẵn (A đứng trước B trong danh sách truyền vào). Chương trình in ra gì?",
+      "code": "Task Fail(string m) =>\n    Task.FromException(new InvalidOperationException(m));\n\nvar all = Task.WhenAll(Fail(\"A\"), Fail(\"B\"));\ntry { await all; }\ncatch (Exception ex) { Console.WriteLine(ex.Message); }\nConsole.WriteLine(all.Exception!.InnerExceptions.Count);",
+      "codeLang": "csharp",
+      "options": [
+        "A\n1",
+        "B\n1",
+        "B\n2",
+        "A\n2"
+      ],
+      "answer": 3,
+      "explanation": "`WhenAll` gom lỗi của **mọi** task vào một `AggregateException`. `await` chỉ ném lại **một** exception (cái đầu tiên trong danh sách, ở đây là của A), nhưng `all.Exception.InnerExceptions` chứa đủ cả 2.\n- `B` cho message: sai, `await` không ném cái cuối; với task đã lỗi sẵn, exception đầu là của task đứng đầu danh sách.\n- Số 1: sai, `InnerExceptions` giữ cả hai, đó là cách xem lỗi bị \"mất\" khi chỉ bắt ở `await`.\nChạy thật: A rồi 2. Lưu ý: nếu các task lỗi vào những thời điểm khác nhau thì thứ tự trong `InnerExceptions` theo lúc chúng hoàn thành, nên đừng dựa vào thứ tự này.",
+      "id": "dotnet-m06-07"
+    },
+    {
+      "topic": "Exception khi huỷ",
+      "source": "Module 6 - Async Programming - CancellationToken",
+      "question": "Token đã bị huỷ trước khi gọi `Task.Delay`. Chương trình in ra tên kiểu exception nào?",
+      "code": "using var cts = new CancellationTokenSource();\ncts.Cancel();\ntry\n{\n    await Task.Delay(1000, cts.Token);\n}\ncatch (OperationCanceledException ex)\n{\n    Console.WriteLine(ex.GetType().Name);\n}",
+      "codeLang": "csharp",
+      "options": [
+        "TaskCanceledException",
+        "OperationCanceledException",
+        "InvalidOperationException",
+        "TimeoutException"
+      ],
+      "answer": 0,
+      "explanation": "`Task.Delay` huỷ qua token sẽ ném `TaskCanceledException`, là lớp **con** của `OperationCanceledException`. Vì vậy `catch (OperationCanceledException)` vẫn bắt được, nhưng `GetType().Name` trả tên kiểu thật là `TaskCanceledException`.\n- `OperationCanceledException`: là kiểu của khối catch, không phải kiểu thật của đối tượng.\n- `InvalidOperationException`, `TimeoutException`: không liên quan; huỷ không bao giờ được báo bằng các kiểu này, và code còn chẳng bắt được chúng ở đây.\nChạy thật: TaskCanceledException. Nên bắt kiểu cha để chắc chắn bao hết.",
+      "id": "dotnet-m06-08"
+    },
+    {
+      "topic": "Huỷ là hợp tác",
+      "source": "Module 6 - Async Programming - CancellationToken",
+      "question": "Chương trình in ra gì? (Gợi ý: `Cancel()` làm gì với vòng lặp không hỏi token?)",
+      "code": "int a = 0, b = 0;\nusing var cts1 = new CancellationTokenSource();\nfor (int i = 0; i < 5; i++)\n{\n    if (i == 2) cts1.Cancel();\n    a++;\n}\nusing var cts2 = new CancellationTokenSource();\ntry\n{\n    for (int i = 0; i < 5; i++)\n    {\n        if (i == 2) cts2.Cancel();\n        cts2.Token.ThrowIfCancellationRequested();\n        b++;\n    }\n}\ncatch (OperationCanceledException) { }\nConsole.WriteLine($\"{a} {b}\");",
+      "codeLang": "csharp",
+      "options": [
+        "2 2",
+        "5 2",
+        "5 5",
+        "5 3"
+      ],
+      "answer": 1,
+      "explanation": "Huỷ trong .NET là **hợp tác**: `Cancel()` chỉ đặt cờ, không dừng được code. Vòng thứ nhất không bao giờ hỏi token nên chạy đủ 5 lần: a = 5. Vòng thứ hai gọi `ThrowIfCancellationRequested()`: ở i = 0, 1 tăng b (b = 2); ở i = 2 gọi `Cancel()` rồi bị ném exception trước khi tăng, nên b = 2.\n- `2 2`: tưởng `Cancel()` tự dừng vòng lặp thứ nhất.\n- `5 5`: tưởng `ThrowIfCancellationRequested` không có tác dụng.\n- `5 3`: đếm sai, ở i = 2 token đã huỷ nên không tăng b.\nChạy thật: 5 2.",
+      "id": "dotnet-m06-09"
+    },
+    {
+      "topic": "Khử trùng lặp bằng Task<T>",
+      "source": "Module 6 - Async Programming - Async Patterns",
+      "question": "Nhiều request đồng thời cần cùng một dữ liệu đắt (gọi API ngoài). Muốn mỗi khoá chỉ gọi **một lần**. Thiết kế nào đúng?",
+      "options": [
+        "Cache `T`: kiểm tra, gọi API, gán sau khi `await` xong",
+        "Đặt `lock` quanh lời gọi, `await` nằm trong lock",
+        "Cache chính `Task<T>`, mọi request chung một Task",
+        "Bọc lời gọi trong `Task.Run` cho mỗi request"
+      ],
+      "answer": 2,
+      "explanation": "Lưu **Task** (vd `ConcurrentDictionary<string, Task<T>>`) vào cache ngay khi bắt đầu gọi; request đến sau, kể cả lúc việc chưa xong, lấy cùng Task và `await` chung kết quả.\n- Cache `T`: trong khoảng chờ `await` cache còn rỗng, nên các request đến lúc đó đều gọi API lại.\n- `lock` quanh `await`: không biên dịch được (CS1996); dùng `SemaphoreSlim` mới được, và cũng chậm hơn.\n- `Task.Run` mỗi request: càng nhiều lời gọi trùng hơn, lại chiếm thêm thread pool.\nLưu ý: nếu Task lỗi thì cần gỡ nó khỏi cache để lần sau thử lại.",
+      "id": "dotnet-m06-10"
+    },
+    {
+      "id": "dotnet-m06-11",
+      "topic": "Bounded channel",
+      "source": "Module 6 - Channels và Producer-Consumer",
+      "question": "Channel bounded sức chứa 2, chưa có consumer nào đọc. Chương trình in ra gì (mỗi giá trị một dòng)?",
+      "code": "var ch = Channel.CreateBounded<int>(\n    new BoundedChannelOptions(2)\n    {\n        FullMode = BoundedChannelFullMode.Wait\n    });\nConsole.WriteLine(ch.Writer.TryWrite(1));\nConsole.WriteLine(ch.Writer.TryWrite(2));\nConsole.WriteLine(ch.Writer.TryWrite(3));\nConsole.WriteLine(ch.Reader.Count);",
+      "codeLang": "csharp",
+      "options": [
+        "True\nTrue\nTrue\n3",
+        "True\nTrue\nFalse\n3",
+        "True\nTrue\nFalse\n2",
+        "True\nFalse\nFalse\n1"
+      ],
+      "answer": 2,
+      "explanation": "Hai lần `TryWrite` đầu lấp đầy sức chứa 2 nên trả `True`. Lần thứ ba channel đã đầy: `TryWrite` **không chờ** mà trả `False` ngay (nếu dùng `WriteAsync` thì producer mới bị chờ, đó là backpressure). Item thứ ba không được ghi nên `Reader.Count` vẫn là 2.\n- `True,True,True,3` sai vì channel bounded không nhận quá sức chứa, `FullMode.Wait` chỉ làm `WriteAsync` chờ chứ không nới chỗ.\n- `True,True,False,3` sai ở cuối: item bị từ chối không nằm trong hàng đợi.\n- `True,False,False,1` sai vì sức chứa là 2, nên lần ghi thứ hai vẫn thành công."
+    },
+    {
+      "id": "dotnet-m06-12",
+      "topic": "FullMode",
+      "source": "Module 6 - Channels và Producer-Consumer",
+      "question": "Channel bounded sức chứa 3 dùng `DropNewest`. Ghi lần lượt 1 đến 5 rồi đọc hết. Kết quả in ra là gì?",
+      "code": "var ch = Channel.CreateBounded<int>(\n    new BoundedChannelOptions(3)\n    {\n        FullMode = BoundedChannelFullMode.DropNewest\n    });\nfor (var i = 1; i <= 5; i++)\n    ch.Writer.TryWrite(i);\nch.Writer.Complete();\nvar items = new List<int>();\nawait foreach (var x in ch.Reader.ReadAllAsync())\n    items.Add(x);\nConsole.WriteLine(string.Join(\",\", items));",
+      "codeLang": "csharp",
+      "options": [
+        "1,2,5",
+        "3,4,5",
+        "1,2,3",
+        "1,4,5"
+      ],
+      "answer": 0,
+      "explanation": "Sau khi 1,2,3 đã đầy hàng, `DropNewest` **bỏ item mới nhất đang nằm trong hàng** để nhường chỗ cho item đang ghi. Ghi 4: bỏ 3, hàng là 1,2,4. Ghi 5: bỏ 4, hàng là 1,2,5. Kết quả chạy thật: `1,2,5`.\n- `3,4,5` là kết quả của `DropOldest` (bỏ item cũ nhất).\n- `1,2,3` là kết quả của `DropWrite` (bỏ chính item đang ghi).\n- `1,4,5` không chế độ nào cho ra: các chế độ chỉ bỏ ở đầu hoặc cuối hàng, không bỏ ở giữa."
+    },
+    {
+      "id": "dotnet-m06-13",
+      "topic": "Complete và đọc hết",
+      "source": "Module 6 - Channels và Producer-Consumer",
+      "question": "Đoạn code dưới in ra gì (mỗi giá trị một dòng)?",
+      "code": "var ch = Channel.CreateUnbounded<int>();\nch.Writer.TryWrite(1);\nch.Writer.TryWrite(2);\nch.Writer.Complete();\nConsole.WriteLine(ch.Writer.TryWrite(3));\nConsole.WriteLine(ch.Reader.Completion.IsCompleted);\nawait foreach (var x in ch.Reader.ReadAllAsync())\n    Console.WriteLine(x);\nConsole.WriteLine(ch.Reader.Completion.IsCompleted);",
+      "codeLang": "csharp",
+      "options": [
+        "False\nTrue\n1\n2\nTrue",
+        "True\nFalse\n1\n2\nTrue",
+        "False\nFalse\n1\n2\nFalse",
+        "False\nFalse\n1\n2\nTrue"
+      ],
+      "answer": 3,
+      "explanation": "Sau `Complete()` channel không nhận thêm item: `TryWrite(3)` trả `False`. Nhưng hai item đã có vẫn nằm trong hàng, nên `Reader.Completion` **chưa hoàn tất** (`False`) cho tới khi consumer đọc hết. `ReadAllAsync` trả 1, 2 rồi kết thúc, lúc đó `Completion.IsCompleted` thành `True`.\n- Phương án mở đầu `False,True` sai vì channel còn item chưa đọc nên chưa xong.\n- Phương án mở đầu `True` sai vì ghi vào writer đã `Complete` bị từ chối.\n- Phương án kết thúc bằng `False` sai vì đã đọc cạn và writer đã đóng thì reader hoàn tất.\nĐây chính là cơ chế \"drain\" khi shutdown."
+    },
+    {
+      "id": "dotnet-m06-14",
+      "topic": "Ghi sau Complete",
+      "source": "Module 6 - Channels và Producer-Consumer",
+      "question": "Chương trình dưới chạy sẽ có kết quả nào?",
+      "code": "var ch = Channel.CreateUnbounded<string>();\nawait ch.Writer.WriteAsync(\"a\");\nch.Writer.Complete();\nawait ch.Writer.WriteAsync(\"b\");\nConsole.WriteLine(\"done\");",
+      "codeLang": "csharp",
+      "options": [
+        "Lỗi biên dịch vì Writer đã Complete",
+        "Ném ChannelClosedException ở lần ghi \"b\"",
+        "In done, lần ghi \"b\" bị bỏ lặng lẽ",
+        "Lần ghi \"b\" chờ mãi vì không còn reader"
+      ],
+      "answer": 1,
+      "explanation": "Trạng thái `Complete` chỉ biết lúc chạy nên không thể là lỗi biên dịch. `WriteAsync` trên writer đã đóng trả về `ValueTask` bị lỗi, và `await` ném `ChannelClosedException` (kết quả chạy thật: \"The channel has been closed\").\n- Không bỏ lặng lẽ: chỉ `DropWrite` của bounded channel đầy mới bỏ item lặng lẽ, và đó là lúc channel đầy chứ không phải đã đóng.\n- Không chờ mãi: channel unbounded không bao giờ đầy, và đã đóng thì không có gì để chờ.\nNếu muốn không ném, dùng `TryWrite` và kiểm tra giá trị trả về."
+    },
+    {
+      "id": "dotnet-m06-15",
+      "topic": "TimeProvider",
+      "source": "Module 6 - Đọc thêm: TimeProvider, PeriodicTimer",
+      "question": "Dùng `FakeTimeProvider` để \"tua\" thời gian. Đoạn code dưới in ra gì (mỗi giá trị một dòng)?",
+      "code": "var time = new FakeTimeProvider(\n    new DateTimeOffset(2026, 3, 15, 10, 0, 0, TimeSpan.Zero));\nvar expires = time.GetUtcNow().AddMinutes(15);\ntime.Advance(TimeSpan.FromMinutes(14));\nConsole.WriteLine(expires > time.GetUtcNow());\ntime.Advance(TimeSpan.FromMinutes(1));\nConsole.WriteLine(expires > time.GetUtcNow());\nConsole.WriteLine(time.GetUtcNow().Minute);",
+      "codeLang": "csharp",
+      "options": [
+        "True\nTrue\n15",
+        "True\nFalse\n15",
+        "True\nFalse\n14",
+        "False\nFalse\n15"
+      ],
+      "answer": 1,
+      "explanation": "Mốc hết hạn là 10:15. Sau 14 phút đồng hồ giả chỉ 10:14 nên `expires > now` là `True`. Sau thêm 1 phút, đồng hồ đúng 10:15: `expires > now` là `False` vì phép so sánh `>` là chặt, nên **đúng ranh giới thì đã hết hạn**. `Minute` là 15.\n- `True,True,15` sai vì quên rằng ở đúng mốc, `>` không còn thoả.\n- `True,False,14` sai vì `Advance` cộng dồn, tổng là 15 phút chứ không phải 14.\n- `False,...` sai vì sau 14 phút vẫn chưa tới hạn.\nLợi ích: test kiểm tra chính xác ranh giới mà không cần `Thread.Sleep`."
+    },
+    {
+      "id": "dotnet-m06-16",
+      "topic": "PeriodicTimer và huỷ",
+      "source": "Module 6 - Đọc thêm: TimeProvider, PeriodicTimer",
+      "question": "Đoạn nào làm chương trình **ném exception chưa được bắt** lúc chạy? (Ba đoạn còn lại chạy xong bình thường.)",
+      "code": "using var cts = new CancellationTokenSource();\nvar timer = new PeriodicTimer(\n    TimeSpan.FromMilliseconds(30));\n// ... đoạn code được chọn nằm ở đây ...\nConsole.WriteLine(\"xong\");",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\ncts.Cancel();\ntry\n{\n    await timer.WaitForNextTickAsync(cts.Token);\n}\ncatch (OperationCanceledException) { }\n```",
+        "```csharp\ncts.Cancel();\nawait timer.WaitForNextTickAsync(cts.Token);\n```",
+        "```csharp\ntimer.Dispose();\nConsole.WriteLine(\n    await timer.WaitForNextTickAsync());\n```",
+        "```csharp\ncts.CancelAfter(1000);\nawait timer.WaitForNextTickAsync(cts.Token);\n```"
+      ],
+      "answer": 1,
+      "explanation": "Khi `CancellationToken` truyền vào `WaitForNextTickAsync` **đã bị huỷ**, nó ném `OperationCanceledException` (cụ thể `TaskCanceledException`). Đoạn này không có `try/catch` nên chương trình sập.\n- Đoạn có `try/catch (OperationCanceledException)` bắt đúng ngoại lệ đó nên chạy OK.\n- Đoạn `Dispose()` rồi chờ: khác với huỷ token, timer đã dispose làm `WaitForNextTickAsync` trả `false` chứ không ném.\n- Đoạn `CancelAfter(1000)`: tick đến sau 30 ms, trước khi token bị huỷ, nên trả `true` bình thường.\nTrong `BackgroundService`, vì vậy hay bọc vòng lặp trong `catch (OperationCanceledException) when (ct.IsCancellationRequested)`."
+    },
+    {
+      "id": "dotnet-m06-17",
+      "topic": "Drain khi shutdown",
+      "source": "Module 6 - Channels và Producer-Consumer",
+      "question": "Channel đã có 3 item và đã `Complete()`; `stopping` (mô phỏng `stoppingToken`) cũng đã bị huỷ. Đoạn nào làm consumer **xử lý đủ 3 item** để chương trình in `3`?",
+      "code": "var ch = Channel.CreateBounded<int>(10);\nfor (var i = 1; i <= 3; i++)\n    await ch.Writer.WriteAsync(i);\nusing var stopping = new CancellationTokenSource();\nch.Writer.Complete();\nstopping.Cancel();\nvar n = 0;\n// ... đoạn code được chọn nằm ở đây ...\nConsole.WriteLine(n);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\ntry\n{\n    await foreach (var _ in\n        ch.Reader.ReadAllAsync(stopping.Token))\n        n++;\n}\ncatch (OperationCanceledException) { }\n```",
+        "```csharp\nawait foreach (var _ in ch.Reader.ReadAllAsync())\n    n++;\n```",
+        "```csharp\nwhile (await ch.Reader.WaitToReadAsync(\n    stopping.Token))\n{\n    ch.Reader.TryRead(out _);\n    n++;\n}\n```",
+        "```csharp\nawait ch.Reader.ReadAsync();\nn++;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Muốn drain thì consumer **không được đọc theo token đã huỷ**: `ReadAllAsync()` không token sẽ trả hết 3 item rồi tự kết thúc vì channel đã `Complete` và rỗng, nên `n = 3`.\n- `ReadAllAsync(stopping.Token)` với token đã huỷ dừng ngay, bị bắt, `n = 0`: đây đúng là lỗi \"drain\" không hoạt động khi đọc theo `stoppingToken`.\n- `WaitToReadAsync(stopping.Token)` ném `TaskCanceledException` không được bắt, chương trình sập.\n- `ReadAsync()` một lần chỉ lấy 1 item, `n = 1`, và không có vòng lặp nên bỏ sót 2 item còn lại."
+    },
+    {
+      "id": "dotnet-m06-18",
+      "topic": "BackgroundService",
+      "source": "Module 6 - Channels và Producer-Consumer",
+      "question": "Một developer viết consumer channel bằng vòng `await foreach` ngay trong `IHostedService.StartAsync`. Chuyện gì xảy ra khi chạy ứng dụng ASP.NET Core?",
+      "options": [
+        "Ứng dụng treo ở khởi động, không bao giờ nhận request",
+        "Ứng dụng chạy bình thường, consumer chạy ngầm song song",
+        "Lỗi biên dịch vì StartAsync không được chứa vòng lặp",
+        "Consumer chạy một vòng rồi dừng, ứng dụng vẫn lên bình thường"
+      ],
+      "answer": 0,
+      "explanation": "Host gọi `StartAsync` của từng hosted service **tuần tự** và chờ từng cái hoàn tất trước khi mở cổng HTTP. Vòng `await foreach` trên channel không bao giờ kết thúc (nó chỉ dừng khi channel `Complete`), nên `StartAsync` không bao giờ trả về và ứng dụng treo ở bước khởi động, thậm chí không có log lỗi.\n- Không chạy \"ngầm\": `await` chặn luồng khởi động chứ không đẩy việc ra nền.\n- Không có lỗi biên dịch: code hợp lệ, chỉ sai về thiết kế.\n- Consumer không dừng sau một vòng: nó chặn mãi chứ không thoát.\nCách đúng: kế thừa `BackgroundService` và ghi đè `ExecuteAsync`; `IHostedService` chỉ hợp cho việc có điểm kết thúc, ví dụ chạy migration lúc khởi động."
+    },
+    {
+      "id": "dotnet-m06-19",
+      "topic": "Xử lý lỗi trong consumer",
+      "source": "Module 6 - Channels và Producer-Consumer",
+      "question": "Consumer không có `try/catch` quanh từng job, và dự án đặt `BackgroundServiceExceptionBehavior.Ignore` cho khỏi bị tắt ứng dụng. Một job ném exception. Hậu quả đúng là gì?",
+      "options": [
+        "Cả ứng dụng dừng ngay và lỗi hiện rõ trong log",
+        "Host tự khởi động lại consumer rồi xử lý tiếp hàng đợi",
+        "Chỉ job lỗi bị bỏ, các job sau vẫn được xử lý bình thường",
+        "Consumer chết im lặng, API vẫn chạy, hàng đợi tồn đọng mãi"
+      ],
+      "answer": 3,
+      "explanation": "Exception thoát ra khỏi `ExecuteAsync` làm vòng đọc kết thúc hẳn. `BackgroundService` **không tự khởi động lại** nó. Với `Ignore`, host chỉ ghi một dòng log rồi để ứng dụng chạy tiếp: API và health check vẫn xanh nhưng không còn ai xử lý hàng đợi, đây là kiểu sự cố khó phát hiện nhất.\n- \"Cả ứng dụng dừng\" là hành vi của cấu hình mặc định `StopHost`, không phải của `Ignore`.\n- \"Tự khởi động lại\" không có trong `BackgroundService`.\n- \"Chỉ job lỗi bị bỏ\" chỉ đúng khi bạn tự `try/catch` quanh từng job.\nBài học: luôn bắt lỗi từng job, và theo dõi consumer bằng health check hoặc độ dài hàng đợi."
+    },
+    {
+      "id": "dotnet-m06-20",
+      "topic": "Thread pool starvation",
+      "source": "Module 6 - Sự cố thực tế: .Result làm treo API",
+      "question": "API chậm dần giờ cao điểm: mọi endpoint đều chậm (cả endpoint không có lỗi), CPU dưới 10%, hàng đợi thread pool dài hàng trăm việc. Nguyên nhân khả dĩ nhất là gì?",
+      "options": [
+        "Rò rỉ bộ nhớ làm GC chạy liên tục suốt giờ cao điểm",
+        "Truy vấn database thiếu index nên mọi request đều chậm",
+        "Thread bị chiếm bởi .Result hoặc .Wait() trong code async",
+        "Kestrel giới hạn số kết nối nên request bị từ chối ngay"
+      ],
+      "answer": 2,
+      "explanation": "Triệu chứng kinh điển của **thread pool starvation**: nhiều request cùng gọi `.Result` / `.Wait()` nên thread bị **chiếm trong lúc chờ** I/O, phần code sau `await` lại cần một thread rảnh để chạy, nên việc xếp hàng dài trong khi CPU rảnh (thread chỉ chờ, không tính toán). Vì thread pool dùng chung nên cả endpoint vô can cũng chậm theo. Cách sửa: async suốt chuỗi, không phải tăng `SetMinThreads`.\n- GC liên tục sẽ làm CPU cao, trái với dữ kiện.\n- Thiếu index chỉ làm các endpoint dùng truy vấn đó chậm, không kéo cả endpoint không dính database.\n- Giới hạn kết nối làm request bị từ chối hoặc xếp hàng ở tầng khác, không tạo hàng đợi dài trong thread pool."
+    }
+  ]
+}

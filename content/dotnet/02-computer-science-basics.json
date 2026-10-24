@@ -1,0 +1,321 @@
+{
+  "id": "dotnet-m02",
+  "title": "Module 2: Computer Science Basics",
+  "description": "Internet, HTTP, API/JSON, database và xác thực - nền tảng mà mọi backend developer phải nắm.",
+  "questions": [
+    {
+      "id": "dotnet-m02-01",
+      "topic": "JSON số nguyên lớn",
+      "source": "Module 2 - API và JSON",
+      "question": "Server dùng `System.Text.Json` để trả `Id` kiểu `long` cho client JavaScript. Chương trình sau in ra gì?",
+      "code": "using System.Text.Json;\nusing System.Text.Json.Serialization;\n\nvar dto = new Dto { Id = 9007199254740993, Total = 12 };\nConsole.WriteLine(JsonSerializer.Serialize(dto));\n\npublic class Dto\n{\n    [JsonNumberHandling(JsonNumberHandling.WriteAsString)]\n    public long Id { get; set; }\n    public int Total { get; set; }\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```json\n{\"Id\":9007199254740993,\"Total\":12}\n```",
+        "```json\n{\"Id\":\"9007199254740993\",\"Total\":12}\n```",
+        "```json\n{\"Id\":\"9007199254740993\",\"Total\":\"12\"}\n```",
+        "```json\n{\"Id\":9007199254740992,\"Total\":12}\n```"
+      ],
+      "answer": 1,
+      "explanation": "Thuộc tính `[JsonNumberHandling(WriteAsString)]` chỉ tác dụng lên đúng thuộc tính nó gắn vào, nên `Id` thành chuỗi còn `Total` vẫn là số. Đây là cách bảo vệ `Id` lớn hơn 2^53 - 1 trước việc `JSON.parse` làm tròn.\n- Phương án để `Id` là số: quên mất thuộc tính trên Id, client JavaScript sẽ đọc thành 9007199254740992 mà không báo lỗi.\n- Phương án đổi cả `Total` thành chuỗi: chỉ xảy ra khi cấu hình `NumberHandling` toàn cục, không phải thuộc tính trên một trường.\n- Phương án 9007199254740992: đó là giá trị mà JavaScript nhận được khi parse số lớn, không phải thứ server in ra; server luôn ghi đúng chữ số."
+    },
+    {
+      "id": "dotnet-m02-02",
+      "topic": "JSON số nguyên lớn",
+      "source": "Module 2 - API và JSON",
+      "question": "Một lập trình viên cấu hình toàn cục `NumberHandling = WriteAsString` cho cả API để \"giải quyết Id lớn một lần\". Kết quả với đối tượng dưới đây là gì?",
+      "code": "using System.Text.Json;\nusing System.Text.Json.Serialization;\n\nvar o = new JsonSerializerOptions\n{\n    NumberHandling = JsonNumberHandling.WriteAsString\n};\nvar obj = new { Id = 42L, Ok = true, Price = 1.5m };\nConsole.WriteLine(JsonSerializer.Serialize(obj, o));",
+      "codeLang": "csharp",
+      "options": [
+        "```json\n{\"Id\":42,\"Ok\":true,\"Price\":1.5}\n```",
+        "```json\n{\"Id\":\"42\",\"Ok\":\"true\",\"Price\":\"1.5\"}\n```",
+        "```json\n{\"Id\":\"42\",\"Ok\":true,\"Price\":\"1.5\"}\n```",
+        "```json\n{\"Id\":\"42\",\"Ok\":true,\"Price\":1.5}\n```"
+      ],
+      "answer": 2,
+      "explanation": "Cấu hình toàn cục biến MỌI kiểu số (`long`, `decimal`, `int`...) thành chuỗi, nhưng `bool` không phải kiểu số nên vẫn là `true`. Vì vậy `Id` và `Price` đều thành chuỗi.\n- Phương án giữ nguyên toàn bộ số: tuỳ chọn không có tác dụng, điều này sai vì `WriteAsString` đã được bật.\n- Phương án biến cả `true` thành \"true\": `NumberHandling` chỉ ảnh hưởng số, không đụng tới boolean.\n- Phương án chỉ đổi `Id` và giữ `Price` là số: `decimal` cũng là kiểu số nên bị đổi theo.\nĐây là lý do bài học khuyên đặt thuộc tính trên từng trường id thay vì cấu hình toàn cục."
+    },
+    {
+      "id": "dotnet-m02-03",
+      "topic": "Header chỉ chứa ASCII",
+      "source": "Module 2 - HTTP/HTTPS",
+      "question": "Đoạn code gắn header có tiếng Việt vào request rồi gửi tới một server đang chạy bình thường ở `localhost:5077`. Chương trình in ra gì?",
+      "code": "using var c = new HttpClient();\nvar req = new HttpRequestMessage(HttpMethod.Get, \"http://localhost:5077/\");\ntry\n{\n    req.Headers.Add(\"X-City\", \"Hà Nội\");\n    Console.WriteLine(\"added\");\n    await c.SendAsync(req);\n    Console.WriteLine(\"sent\");\n}\ncatch (Exception ex)\n{\n    Console.WriteLine(ex.GetType().Name);\n    Console.WriteLine(ex.Message.Contains(\"ASCII\"));\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nadded\nHttpRequestException\nTrue\n```",
+        "```text\nHttpRequestException\nTrue\n```",
+        "```text\nadded\nsent\n```",
+        "```text\nadded\nFormatException\nFalse\n```"
+      ],
+      "answer": 0,
+      "explanation": "`Headers.Add` không kiểm tra ký tự, nên dòng \"added\" vẫn in ra. Ngoại lệ chỉ bị ném lúc `SendAsync`, là `HttpRequestException` với thông báo nói header chỉ được chứa ký tự ASCII, tức là lỗi chỉ lộ ra khi thật sự gọi mạng.\n- Phương án bỏ dòng \"added\": giả định `Add` ném ngoại lệ, trong khi bài học nhấn mạnh nó KHÔNG ném ở đó (nên unit test chỉ dựng request vẫn pass).\n- Phương án \"added\" rồi \"sent\": request không thể gửi được vì header sai.\n- Phương án FormatException: .NET dùng `HttpRequestException`, và thông báo có nhắc ASCII nên dòng cuối là True."
+    },
+    {
+      "id": "dotnet-m02-04",
+      "topic": "System.Text.Json",
+      "source": "Module 2 - API và JSON",
+      "question": "Trong ứng dụng console, JSON dùng `camelCase` nhưng class dùng `PascalCase`. Chương trình in ra gì?",
+      "code": "using System.Text.Json;\n\nvar json = \"{\\\"name\\\":\\\"An\\\"}\";\nvar a = JsonSerializer.Deserialize<Cust>(json);\nvar b = JsonSerializer.Deserialize<Cust>(\n    json, JsonSerializerOptions.Web);\nConsole.WriteLine(a?.Name ?? \"null\");\nConsole.WriteLine(b?.Name ?? \"null\");\n\npublic class Cust\n{\n    public string? Name { get; set; }\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nnull\nnull\n```",
+        "```text\nAn\nAn\n```",
+        "```text\nAn\nnull\n```",
+        "```text\nnull\nAn\n```"
+      ],
+      "answer": 3,
+      "explanation": "`System.Text.Json` mặc định PHÂN BIỆT hoa thường, nên \"name\" không khớp thuộc tính `Name` và `a.Name` là null mà không có lỗi nào. `JsonSerializerOptions.Web` (bộ tuỳ chọn ASP.NET Core dùng) không phân biệt hoa thường nên `b.Name` là \"An\".\n- \"null\" và \"null\": quên rằng `Web` đã bật khớp không phân biệt hoa thường.\n- \"An\" và \"An\": nhầm tưởng mặc định giống `Newtonsoft.Json` (không phân biệt hoa thường).\n- \"An\" rồi \"null\": đảo ngược hai trường hợp."
+    },
+    {
+      "id": "dotnet-m02-05",
+      "topic": "Vắng mặt và null",
+      "source": "Module 2 - API và JSON",
+      "question": "Với DTO thông thường cho `PATCH`, chương trình duyệt ba thân request: `{}`, `{\"phone\":\"09\"}` và `{\"phone\":null}`. Nó in ra gì?",
+      "code": "using System.Text.Json;\n\nvar bodies = new[]\n{\n    \"{}\", \"{\\\"phone\\\":\\\"09\\\"}\", \"{\\\"phone\\\":null}\"\n};\nforeach (var b in bodies)\n{\n    var dto = JsonSerializer.Deserialize<Upd>(\n        b, JsonSerializerOptions.Web)!;\n    Console.WriteLine(dto.Phone is null);\n}\n\npublic class Upd\n{\n    public string? Phone { get; set; }\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nTrue\nFalse\nFalse\n```",
+        "```text\nTrue\nFalse\nTrue\n```",
+        "```text\nFalse\nFalse\nFalse\n```",
+        "```text\nFalse\nFalse\nTrue\n```"
+      ],
+      "answer": 1,
+      "explanation": "Thân `{}` (không gửi trường) và `{\"phone\":null}` (gửi null) đều cho `Phone == null`, nên dòng 1 và 3 đều là True; chỉ thân có giá trị cho False. Thông tin \"giữ nguyên\" và \"xoá\" đã lẫn vào nhau ngay khi giải mã, đó là lý do `PATCH` cần `JsonElement` hoặc kiểu bọc riêng.\n- True, False, False: coi `null` tường minh là có giá trị, trong khi `string?` nhận null bình thường.\n- Cả ba False: nhầm rằng trường vắng mặt cho chuỗi rỗng.\n- False, False, True: nhầm rằng trường vắng mặt khác null, chính là điều DTO thường không phân biệt được."
+    },
+    {
+      "id": "dotnet-m02-06",
+      "topic": "JSON số nguyên lớn",
+      "source": "Module 2 - API và JSON",
+      "question": "Client gửi lên `{\"Id\":\"42\"}` (Id là chuỗi) cho class có `long Id`. Cấu hình `JsonSerializerOptions` NÀO sẽ làm `Deserialize` ném `JsonException`?",
+      "code": "using System.Text.Json;\nusing System.Text.Json.Serialization;\n\nvar o = {{X}};\nvar json = \"{\\\"Id\\\":\\\"42\\\"}\";\nvar d = JsonSerializer.Deserialize<Dto>(json, o);\nConsole.WriteLine(d!.Id);\n\npublic class Dto\n{\n    public long Id { get; set; }\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nnew JsonSerializerOptions\n{\n    NumberHandling = JsonNumberHandling.WriteAsString\n}\n```",
+        "```csharp\nnew JsonSerializerOptions\n{\n    NumberHandling =\n        JsonNumberHandling.AllowReadingFromString\n}\n```",
+        "```csharp\nnew JsonSerializerOptions\n{\n    NumberHandling =\n        JsonNumberHandling.AllowReadingFromString\n        | JsonNumberHandling.WriteAsString\n}\n```",
+        "```csharp\nJsonSerializerOptions.Web\n```"
+      ],
+      "answer": 0,
+      "explanation": "Chỉ có `WriteAsString` thì server GHI số thành chuỗi nhưng không cho ĐỌC chuỗi thành số, nên `{\"Id\":\"42\"}` gây `JsonException` (\"could not be converted to System.Int64\"): server từ chối chính kiểu dữ liệu nó vừa gửi đi.\n- `AllowReadingFromString` một mình: cho phép đọc chuỗi thành số, chạy tốt.\n- Kết hợp `AllowReadingFromString | WriteAsString`: đúng cấu hình bài học khuyên dùng, chạy tốt.\n- `JsonSerializerOptions.Web`: bộ tuỳ chọn web đã bật `AllowReadingFromString`, nên cũng chạy."
+    },
+    {
+      "id": "dotnet-m02-07",
+      "topic": "Vắng mặt và null",
+      "source": "Module 2 - API và JSON",
+      "question": "Hàm `State` phải phân biệt ba thân request cho trường `phone`: vắng mặt trả \"keep\", `null` trả \"clear\", có giá trị trả \"set\". Chương trình phải in ba dòng `keep`, `clear`, `set`. Thân hàm nào đúng?",
+      "code": "using System.Text.Json;\n\nvar bodies = new[]\n{\n    \"{}\", \"{\\\"phone\\\":null}\", \"{\\\"phone\\\":\\\"09\\\"}\"\n};\nforeach (var s in bodies)\n    Console.WriteLine(State(JsonDocument.Parse(s).RootElement));\n\nstatic string State(JsonElement b)\n{\n    // thân hàm\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nvar p = b.GetProperty(\"phone\");\nreturn p.ValueKind == JsonValueKind.Null\n    ? \"clear\" : \"set\";\n```",
+        "```csharp\nvar has = b.TryGetProperty(\"phone\", out var p);\nreturn has && p.GetString() is not null\n    ? \"set\" : \"clear\";\n```",
+        "```csharp\nif (!b.TryGetProperty(\"phone\", out var p))\n    return \"keep\";\nreturn p.ValueKind == JsonValueKind.Null\n    ? \"clear\" : \"set\";\n```",
+        "```csharp\nb.TryGetProperty(\"phone\", out var p);\nreturn p.ValueKind == JsonValueKind.Null\n    ? \"clear\" : \"set\";\n```"
+      ],
+      "answer": 2,
+      "explanation": "`TryGetProperty` trả `false` khi trường VẮNG MẶT và `ValueKind == Null` khi trường có mặt nhưng bằng null: đủ ba trạng thái.\n- `GetProperty` trực tiếp: ném `KeyNotFoundException` ngay ở thân `{}` vì trường không tồn tại.\n- Gộp \"vắng mặt\" với \"null\" bằng `has && GetString() is not null`: thân `{}` bị coi là \"clear\", nghĩa là xoá nhầm số điện thoại của người dùng.\n- Bỏ qua kết quả `TryGetProperty`: khi vắng mặt, `p` là giá trị mặc định (kiểu `Undefined`), không phải `Null`, nên `{}` bị trả \"set\" thay vì \"keep\"."
+    },
+    {
+      "id": "dotnet-m02-08",
+      "topic": "Băm mật khẩu",
+      "source": "Module 2 - Xác thực và phân quyền",
+      "question": "Hai lần băm cùng mật khẩu: một lần bằng SHA-256 trơn, một lần bằng PBKDF2 với salt ngẫu nhiên khác nhau. Mỗi dòng so sánh hai kết quả. Chương trình in ra gì?",
+      "code": "using System.Security.Cryptography;\n\nvar pw = \"Secret123\"u8.ToArray();\nvar s1 = SHA256.HashData(pw);\nvar s2 = SHA256.HashData(pw);\nConsole.WriteLine(s1.SequenceEqual(s2));\n\nvar h1 = Rfc2898DeriveBytes.Pbkdf2(pw,\n    RandomNumberGenerator.GetBytes(16),\n    100_000, HashAlgorithmName.SHA512, 32);\nvar h2 = Rfc2898DeriveBytes.Pbkdf2(pw,\n    RandomNumberGenerator.GetBytes(16),\n    100_000, HashAlgorithmName.SHA512, 32);\nConsole.WriteLine(h1.SequenceEqual(h2));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nTrue\nTrue\n```",
+        "```text\nFalse\nFalse\n```",
+        "```text\nFalse\nTrue\n```",
+        "```text\nTrue\nFalse\n```"
+      ],
+      "answer": 3,
+      "explanation": "SHA-256 là hàm băm tất định và không có salt: cùng mật khẩu luôn ra cùng chuỗi, nên kẻ tấn công dùng được bảng tra sẵn và GPU dò rất nhanh. PBKDF2 có salt ngẫu nhiên riêng cho từng người nên cùng mật khẩu vẫn ra hai kết quả khác nhau, và nó cố tình chậm (100.000 vòng).\n- True, True: nhầm rằng salt không làm đổi kết quả băm.\n- False, False: nhầm rằng SHA-256 mỗi lần băm ra giá trị khác.\n- False, True: đảo ngược vai trò của hai hàm.\nTrong thực tế đừng tự viết, hãy dùng `PasswordHasher<TUser>` của ASP.NET Core Identity."
+    },
+    {
+      "id": "dotnet-m02-09",
+      "topic": "IDOR và mã trạng thái",
+      "source": "Module 2 - Xác thực và phân quyền",
+      "question": "Nhân viên sales A đã đăng nhập hợp lệ, gọi `GET /api/customers/7` nhưng khách 7 thuộc về sales B. Theo khuyến nghị của bài học, endpoint nên trả gì để vừa chặn truy cập vừa không giúp kẻ tấn công dò id hợp lệ?",
+      "options": [
+        "200 OK kèm thân báo success là false",
+        "401 Unauthorized",
+        "404 Not Found",
+        "500 Internal Server Error"
+      ],
+      "answer": 2,
+      "explanation": "Trả `404` khiến bản ghi \"không tồn tại với bạn\", nên kẻ tấn công thử từng id không biết id nào có thật. Bên cạnh đó cần lọc theo `userId` lấy từ claim trong token, không kiểm tra mỗi vai trò, để tránh IDOR.\n- `403` thường cũng chặn được, nhưng vô tình xác nhận bản ghi này CÓ tồn tại.\n- `200` kèm `success:false`: giám sát, cache và retry chỉ nhìn status code nên thấy đây là thành công; lại là lỗi nghiêm trọng nhất theo bài học.\n- `401`: người dùng đã được xác thực, nên sai ý nghĩa và khiến frontend đá họ về trang đăng nhập vô lý.\n- `500`: đây là lỗi của client chứ không phải server hỏng, làm nhiễu cảnh báo."
+    },
+    {
+      "id": "dotnet-m02-10",
+      "topic": "JWT",
+      "source": "Module 2 - Xác thực và phân quyền",
+      "question": "Công ty sa thải một nhân viên đang giữ JWT còn hạn một giờ. Máy chủ chỉ kiểm tra chữ ký token, không tra database. Cách xử lý nào là mặc định hợp lý nhất?",
+      "options": [
+        "Token ngắn hạn cộng refresh token lưu trong DB",
+        "Sửa trường `exp` trong payload của token đã cấp",
+        "Xoá token khỏi `localStorage` của người đó",
+        "Chặn header `Authorization` trên toàn hệ thống"
+      ],
+      "answer": 0,
+      "explanation": "JWT được xác minh chỉ bằng chữ ký nên máy chủ không biết token đã bị thu hồi. Dùng access token sống ngắn (5-15 phút) cùng refresh token có lưu trong database: thu hồi refresh token thì tối đa vài phút sau người đó mất quyền.\n- Sửa `exp` trong payload: payload chỉ mã hoá Base64 và được chữ ký bảo vệ, sửa là chữ ký không khớp và token bị từ chối, vả lại chỉ máy chủ ký mới tạo được token mới.\n- Xoá khỏi `localStorage`: chỉ xoá bản sao trên máy người dùng, kẻ cầm bản sao token vẫn dùng được tới khi hết hạn.\n- Cấm header `Authorization`: chặn luôn mọi người dùng chứ không thu hồi được một token cụ thể."
+    },
+    {
+      "id": "dotnet-m02-11",
+      "topic": "Garbage Collector và thế hệ",
+      "source": "Module 2 - .NET Runtime và Ecosystem",
+      "question": "Đoạn code dưới đây in ra gì? (`o` luôn còn được tham chiếu, nên sống sót qua mỗi lần `GC.Collect()`.)",
+      "code": "var o = new object();\nConsole.WriteLine(GC.GetGeneration(o));\nGC.Collect();\nConsole.WriteLine(GC.GetGeneration(o));\nGC.Collect();\nConsole.WriteLine(GC.GetGeneration(o));\nvar big = new byte[100_000];\nConsole.WriteLine(GC.GetGeneration(big));\nGC.KeepAlive(o);\nGC.KeepAlive(big);",
+      "codeLang": "csharp",
+      "options": [
+        "0\n0\n0\n0",
+        "0\n1\n2\n0",
+        "0\n1\n2\n2",
+        "0\n1\n1\n2"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng in 0, 1, 2, 2 (đã chạy thật).\n- Đối tượng mới sinh nằm ở Gen 0. Mỗi lần GC.Collect() mà nó còn sống thì được đôn lên một thế hệ: Gen 1, rồi Gen 2 (tối đa là Gen 2).\n- Mảng byte[100_000] lớn hơn 85.000 byte nên đi thẳng vào Large Object Heap. LOH được dọn cùng Gen 2, nên GC.GetGeneration báo 2 ngay lập tức.\n- Phương án 0/0/0/0 quên rằng đối tượng sống sót được đôn thế hệ. Phương án kết thúc bằng 0 coi mảng lớn như đối tượng thường. Phương án 0/1/1/2 sai ở lần Collect thứ hai: đối tượng đang ở Gen 1 sẽ lên Gen 2."
+    },
+    {
+      "id": "dotnet-m02-12",
+      "topic": "CORS",
+      "source": "Module 2 - CORS: đọc lỗi, preflight và thứ tự middleware",
+      "question": "Với ASP.NET Core trên .NET 10, đoạn code dưới đây cho kết quả nào?",
+      "code": "using Microsoft.AspNetCore.Cors.Infrastructure;\n\nvar policy = new CorsPolicyBuilder()\n    .AllowAnyOrigin()\n    .AllowCredentials()\n    .Build();\nConsole.WriteLine(\"OK\");",
+      "codeLang": "csharp",
+      "options": [
+        "Biên dịch được và in `OK`",
+        "Lỗi biên dịch: không có `AllowCredentials`",
+        "Ném `InvalidOperationException` lúc chạy",
+        "In `OK`, nhưng trình duyệt chặn mọi request"
+      ],
+      "answer": 2,
+      "explanation": "Đã chạy thật: Build() ném InvalidOperationException với thông điệp \"The CORS protocol does not allow specifying a wildcard (any) origin and credentials at the same time\".\n- Đặc tả CORS cấm tổ hợp \"mọi origin\" cùng \"credentials\", vì như vậy trang web bất kỳ đọc được dữ liệu của người dùng đang đăng nhập. Thư viện chặn ngay khi dựng policy, chứ không đợi trình duyệt.\n- AllowCredentials() là phương thức có thật, nên không có lỗi biên dịch.\n- Phương án \"in OK\" bỏ sót việc kiểm tra này; phương án cuối nhầm lỗi này thành lỗi phía trình duyệt, trong khi code đã dừng trước khi tới trình duyệt.\nCách sửa: liệt kê origin cụ thể bằng WithOrigins(\"https://crm.company.com\").AllowCredentials()."
+    },
+    {
+      "id": "dotnet-m02-13",
+      "topic": "Thứ tự middleware CORS",
+      "source": "Module 2 - CORS: đọc lỗi, preflight và thứ tự middleware",
+      "question": "Ứng dụng yêu cầu đăng nhập cho mọi endpoint (`FallbackPolicy`). Trình duyệt tại `https://crm.company.com` gửi preflight `OPTIONS /api/leads` **không kèm token**. Đoạn middleware nào khiến preflight được trả lời `204` kèm header `Access-Control-Allow-Origin`?",
+      "code": "builder.Services.AddCors(o => o.AddPolicy(\"Crm\", p => p\n    .WithOrigins(\"https://crm.company.com\")\n    .AllowAnyHeader().AllowAnyMethod()));\nbuilder.Services.AddAuthentication(\"Bearer\").AddJwtBearer();\nbuilder.Services.AddAuthorizationBuilder()\n    .SetFallbackPolicy(new AuthorizationPolicyBuilder()\n        .RequireAuthenticatedUser().Build());\n\nvar app = builder.Build();\n\n// ... cắm đoạn middleware vào đây ...\n\napp.MapGet(\"/api/leads\", () => \"data\");",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\napp.UseAuthentication();\napp.UseAuthorization();\napp.UseCors(\"Crm\");\n```",
+        "```csharp\napp.UseCors(\"Crm\");\napp.UseAuthentication();\napp.UseAuthorization();\n```",
+        "```csharp\napp.UseAuthorization();\napp.UseCors(\"Crm\");\napp.UseAuthentication();\n```",
+        "```csharp\napp.UseAuthorization();\napp.UseAuthentication();\napp.UseCors(\"Crm\");\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đã chạy thật cả bốn đoạn. Chỉ đoạn đặt UseCors đứng đầu cho 204 và có header; ba đoạn còn lại đều trả 401 và không có header CORS.\n- UseCors đứng trước: middleware CORS nhận ra preflight, tự trả lời 204 kèm Access-Control-Allow-* rồi dừng chuỗi xử lý, nên xác thực không bao giờ chạy tới.\n- UseAuthentication, UseAuthorization rồi mới UseCors: preflight không mang token nên bị UseAuthorization chặn bằng 401 trước khi tới UseCors. Trình duyệt thấy phản hồi thiếu header và báo lỗi CORS, dù gốc rễ nằm ở thứ tự.\n- Hai đoạn còn lại cũng đặt UseAuthorization trước UseCors nên rơi vào đúng lỗi đó.\nQuy tắc: UseCors đặt trước UseAuthentication và UseAuthorization."
+    },
+    {
+      "id": "dotnet-m02-14",
+      "topic": "Cấu hình theo môi trường",
+      "source": "Module 2 - Hosting và Cloud cơ bản",
+      "question": "Nguồn cấu hình nào được thêm SAU thì ghi đè nguồn thêm trước. Đoạn code mô phỏng \"file cấu hình + biến môi trường\" dưới đây in ra gì?",
+      "code": "Environment.SetEnvironmentVariable(\n    \"ConnectionStrings__Default\", \"from-env\");\n\nvar cfg = new ConfigurationBuilder()\n    .AddInMemoryCollection(new Dictionary<string, string?>\n    {\n        [\"ConnectionStrings:Default\"] = \"from-file\",\n        [\"Logging:Level\"] = \"Info\"\n    })\n    .AddEnvironmentVariables()\n    .Build();\n\nConsole.WriteLine(cfg.GetConnectionString(\"Default\"));\nConsole.WriteLine(cfg[\"Logging:Level\"]);",
+      "codeLang": "csharp",
+      "options": [
+        "from-file\nInfo",
+        "from-file\nfrom-env",
+        "from-env\nfrom-env",
+        "from-env\nInfo"
+      ],
+      "answer": 3,
+      "explanation": "Đã chạy thật: from-env rồi Info.\n- Biến môi trường ConnectionStrings__Default (hai dấu gạch dưới) được ánh xạ thành khoá ConnectionStrings:Default. Vì AddEnvironmentVariables() đứng sau nguồn \"file\", giá trị from-env thắng from-file. Đây chính là lý do cùng một image chạy ở mọi môi trường, chỉ đổi biến truyền vào.\n- from-file ở dòng đầu sai vì quên rằng nguồn sau ghi đè nguồn trước.\n- Khoá Logging:Level chỉ tồn tại ở nguồn đầu và không có biến môi trường nào trùng, nên vẫn là Info. Hai phương án có from-env ở dòng hai nhầm rằng một biến môi trường tác động tới khoá khác."
+    },
+    {
+      "id": "dotnet-m02-15",
+      "topic": "Reverse proxy và ForwardedHeaders",
+      "source": "Module 2 - Hosting và Cloud cơ bản",
+      "question": "Một máy ở địa chỉ `127.0.0.1` (không nằm trong danh sách proxy tin cậy dưới đây) gọi `GET /ip` kèm header `X-Forwarded-For: 203.0.113.7`. Endpoint trả về gì?",
+      "code": "var opt = new ForwardedHeadersOptions\n{\n    ForwardedHeaders = ForwardedHeaders.XForwardedFor\n};\nopt.KnownProxies.Clear();\nopt.KnownIPNetworks.Clear();\nopt.KnownProxies.Add(IPAddress.Parse(\"10.0.0.5\"));\napp.UseForwardedHeaders(opt);\n\napp.MapGet(\"/ip\", (HttpContext c) =>\n    c.Connection.RemoteIpAddress!.ToString());",
+      "codeLang": "csharp",
+      "options": [
+        "127.0.0.1",
+        "203.0.113.7",
+        "10.0.0.5",
+        "::1"
+      ],
+      "answer": 0,
+      "explanation": "Đã chạy thật: trả về 127.0.0.1.\n- Middleware chỉ tin header X-Forwarded-For khi kết nối đến từ một proxy đã khai báo (KnownProxies hoặc KnownIPNetworks). Ở đây danh sách mặc định (gồm cả loopback) đã bị xoá, chỉ còn 10.0.0.5, mà người gọi là 127.0.0.1 nên header bị bỏ qua và RemoteIpAddress giữ nguyên.\n- 203.0.113.7 chỉ có khi bạn tin mọi nguồn gửi header, chính là lỗ hổng giả mạo IP mà bài học cảnh báo.\n- 10.0.0.5 là địa chỉ proxy được tin, không phải địa chỉ của người gọi hay của client trong header.\n- ::1 là loopback IPv6, không liên quan: kết nối ở đây đi qua IPv4."
+    },
+    {
+      "id": "dotnet-m02-16",
+      "topic": "Base image và dữ liệu ngôn ngữ",
+      "source": "Module 2 - Hosting và Cloud cơ bản",
+      "question": "Ứng dụng chạy trên image Alpine/chiseled, không có dữ liệu ngôn ngữ (ICU), tức chế độ `InvariantGlobalization` đang bật. Đoạn code dưới đây cho kết quả nào?",
+      "code": "using System.Globalization;\n\nvar culture = new CultureInfo(\"vi-VN\");\nConsole.WriteLine(culture.Name);",
+      "codeLang": "csharp",
+      "options": [
+        "In `vi-VN`",
+        "Ném `CultureNotFoundException` lúc chạy",
+        "Lỗi biên dịch: `CultureInfo` không nhận chuỗi",
+        "In chuỗi rỗng, tức culture bất biến"
+      ],
+      "answer": 1,
+      "explanation": "Đã chạy thật với InvariantGlobalization=true: CultureNotFoundException, thông điệp \"Only the invariant culture is supported in globalization-invariant mode\".\n- Chế độ bất biến chỉ cho phép culture bất biến, nên tạo vi-VN thất bại ngay lúc chạy, không phải lúc build hay lúc container khởi động. Đó là kiểu lỗi \"build xong, chạy lên rồi mới chết\" của bài học.\n- In vi-VN là kết quả trên image mặc định (Ubuntu, có dữ liệu ngôn ngữ), không phải ở đây.\n- CultureInfo(string) là hàm tạo có thật, nên không có lỗi biên dịch.\n- Ném ngoại lệ chứ không âm thầm trả về culture bất biến, nên phương án cuối sai."
+    },
+    {
+      "id": "dotnet-m02-17",
+      "topic": "JWT và lệch đồng hồ (ClockSkew)",
+      "source": "Module 2 - Ca chẩn đoán: đăng nhập được nhưng mọi trang báo 401",
+      "question": "Máy kiểm tra JWT dùng `TokenValidationParameters` mặc định (có kiểm tra hạn dùng). Chương trình sau in ra ba dòng nào?",
+      "code": "// Check(m): kiểm tra token có exp = bây giờ - m phút\n// (m âm: còn hạn; m dương: đã quá hạn m phút)\n// Dùng TokenValidationParameters mặc định, chỉ tắt\n// kiểm tra issuer và audience.\n\nforeach (var m in new[] { -5, 4, 6 })\n    Console.WriteLine(Check(m));",
+      "codeLang": "csharp",
+      "options": [
+        "valid\nvalid\nexpired",
+        "valid\nexpired\nexpired",
+        "valid\nvalid\nvalid",
+        "expired\nexpired\nexpired"
+      ],
+      "answer": 0,
+      "explanation": "Đã chạy thật: valid, valid, expired.\n- ClockSkew mặc định của thư viện kiểm tra JWT là 5 phút, tức dung sai khi so exp (và nbf) với đồng hồ của máy kiểm tra.\n- Token còn 5 phút: hiển nhiên còn hạn. Token đã quá hạn 4 phút: nằm trong dung sai nên vẫn valid.\n- Token đã quá hạn 6 phút: vượt dung sai nên bị SecurityTokenExpiredException, tức \"expired\".\n- valid, expired, expired nhầm rằng dung sai bằng 0. valid, valid, valid nhầm rằng hạn dùng không được kiểm tra. Tất cả expired quên cả hai điều trên.\nĐây là lý do một máy chạy lệch giờ vài phút không ai nhận ra, còn lệch 25 phút như ca trong bài thì làm token vừa cấp đã bị từ chối."
+    },
+    {
+      "id": "dotnet-m02-18",
+      "topic": "Liveness và readiness",
+      "source": "Module 2 - Hosting và Cloud cơ bản",
+      "question": "Database đang hỏng (check `db` luôn `Unhealthy`). Gọi lần lượt ba endpoint, chương trình in `tên + mã trạng thái`. Kết quả là gì?",
+      "code": "builder.Services.AddHealthChecks()\n    .AddCheck(\"self\", () => HealthCheckResult.Healthy(),\n        tags: [\"live\"])\n    .AddCheck(\"db\", () => HealthCheckResult.Unhealthy(\"down\"),\n        tags: [\"ready\"]);\napp.MapHealthChecks(\"/health/live\", new HealthCheckOptions\n{ Predicate = c => c.Tags.Contains(\"live\") });\napp.MapHealthChecks(\"/health/ready\", new HealthCheckOptions\n{ Predicate = c => c.Tags.Contains(\"ready\") });\napp.MapHealthChecks(\"/health/all\");",
+      "codeLang": "csharp",
+      "options": [
+        "live 200\nready 200\nall 200",
+        "live 503\nready 503\nall 503",
+        "live 200\nready 503\nall 200",
+        "live 200\nready 503\nall 503"
+      ],
+      "answer": 3,
+      "explanation": "Đã chạy thật: live 200, ready 503, all 503.\n- /health/live chỉ chạy kiểm tra gắn tag \"live\" (check self, luôn Healthy), nên trả 200: tiến trình còn sống, không có lý do khởi động lại container.\n- /health/ready chạy kiểm tra tag \"ready\", gồm db đang hỏng, nên trả 503: tạm ngừng gửi request tới instance này.\n- /health/all không có Predicate nên chạy MỌI kiểm tra, db hỏng kéo cả endpoint thành 503. Đây đúng là lỗi bài học cảnh báo: nếu liveness làm vậy, database chậm một chút là container bị giết và khởi động lại liên tục.\n- Phương án toàn 200 coi db không ảnh hưởng gì; phương án toàn 503 quên Predicate của /health/live; phương án còn lại quên rằng endpoint không có Predicate chạy mọi check."
+    },
+    {
+      "id": "dotnet-m02-19",
+      "topic": "So khớp origin trong CORS",
+      "source": "Module 2 - CORS: đọc lỗi, preflight và thứ tự middleware",
+      "question": "Frontend dev chạy ở `http://localhost:5173`. Đoạn code kiểm tra một policy CORS in ra ba dòng nào?",
+      "code": "var policy = new CorsPolicyBuilder()\n    .WithOrigins(\"http://localhost:5173\")\n    .Build();\n\nConsole.WriteLine(policy.IsOriginAllowed(\"http://localhost:5173\"));\nConsole.WriteLine(policy.IsOriginAllowed(\"http://127.0.0.1:5173\"));\nConsole.WriteLine(policy.IsOriginAllowed(\"http://localhost:5173/\"));",
+      "codeLang": "csharp",
+      "options": [
+        "True\nTrue\nTrue",
+        "True\nFalse\nFalse",
+        "True\nTrue\nFalse",
+        "True\nFalse\nTrue"
+      ],
+      "answer": 1,
+      "explanation": "Đã chạy thật: True, False, False.\n- Origin được so khớp chính xác từng ký tự (scheme, host, cổng).\n- localhost và 127.0.0.1 trỏ cùng một máy nhưng là hai origin khác nhau, nên dòng hai là False. Đây là lý do \"chạy được khi mở bằng localhost, lỗi CORS khi mở bằng 127.0.0.1\".\n- Origin có dấu gạch chéo cuối khác origin không có: dòng ba là False. (Trình duyệt vốn không gửi origin có dấu / ở cuối, nên cấu hình có dấu / cuối cũng không bao giờ khớp.)\n- Các phương án có True ở dòng hai hoặc dòng ba đều coi việc so khớp là mềm dẻo, trái với thực tế."
+    },
+    {
+      "id": "dotnet-m02-20",
+      "topic": "HTTP caching",
+      "source": "Module 2 - Đào sâu: cache HTTP, container, HTTP/2 và HTTP/3",
+      "question": "Endpoint `GET /api/me/orders` trả danh sách đơn hàng riêng của từng người dùng, đứng sau CDN. Một đồng nghiệp thêm `Cache-Control: public, max-age=3600` cho nhanh. Đánh giá nào đúng?",
+      "options": [
+        "Ổn, vì `max-age` chỉ ảnh hưởng tới trình duyệt",
+        "Ổn, vì đã đăng nhập thì CDN tự không cache",
+        "Sai: nên dùng `private` hoặc `no-store` cho dữ liệu cá nhân",
+        "Sai: nên thay bằng `ETag` vì `public` làm mất `304`"
+      ],
+      "answer": 2,
+      "explanation": "- Đáp án đúng: public cho phép CDN và proxy lưu phản hồi và phục vụ lại, nên đơn hàng của người này có thể bị trả cho người khác. Dữ liệu riêng phải dùng private (chỉ cache ở trình duyệt người dùng) hoặc no-store (không lưu ở đâu cả).\n- \"max-age chỉ ảnh hưởng trình duyệt\" sai: max-age đặt thời hạn tươi cho mọi bộ nhớ đệm được phép lưu, mà public cho phép cả CDN.\n- \"Đã đăng nhập thì CDN tự không cache\" sai: CDN chỉ làm theo chỉ thị trong header (và cấu hình của nó), không tự hiểu trạng thái đăng nhập.\n- ETag không phải thứ thay thế: ETag giúp tiết kiệm băng thông bằng 304, còn vấn đề ở đây là ai được phép lưu bản sao. public cũng không làm mất 304."
+    }
+  ]
+}

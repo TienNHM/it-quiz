@@ -1,0 +1,6 @@
+{
+  "id": "dotnet",
+  "title": ".NET Backend",
+  "icon": "code",
+  "description": "Lộ trình .NET backend từ nền tảng đến senior: C#, async, DI, ASP.NET Core, xác thực, EF Core, Docker, kiến trúc và hệ phân tán."
+}

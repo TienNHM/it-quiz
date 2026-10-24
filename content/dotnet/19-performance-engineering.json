@@ -1,0 +1,311 @@
+{
+  "id": "dotnet-m19",
+  "title": "Module 19: Performance Engineering",
+  "description": "Đo trước sau, BenchmarkDotNet, profiling server, database và caching.",
+  "questions": [
+    {
+      "id": "dotnet-m19-01",
+      "topic": "IMemoryCache SizeLimit",
+      "source": "Module 19 - Caching - ôn tập có hệ thống",
+      "question": "Đoạn code dưới đây dùng `MemoryCache` có đặt `SizeLimit`. Chuyện gì xảy ra khi chạy?",
+      "code": "var cache = new MemoryCache(new MemoryCacheOptions\n{\n    SizeLimit = 100\n});\n\ncache.Set(\"lead:1\", \"Nguyen Van An\", TimeSpan.FromMinutes(5));\nConsole.WriteLine(cache.Count);",
+      "codeLang": "csharp",
+      "options": [
+        "Biên dịch và chạy được, in ra `1`",
+        "Lỗi biên dịch vì `Set` bắt buộc có tham số `Size`",
+        "Ném `InvalidOperationException` lúc chạy vì entry thiếu `Size`",
+        "Chạy được, in `0` vì entry bị loại do không có `Size`"
+      ],
+      "answer": 2,
+      "explanation": "Khi `SizeLimit` được đặt, **mọi** entry phải khai báo `Size`. Overload `Set(key, value, TimeSpan)` không có chỗ nào cho `Size` nên lúc chạy ném `InvalidOperationException: Cache entry must specify a value for Size when SizeLimit is set` (đã chạy thật).\n- Phương án \"lỗi biên dịch\" sai: code biên dịch bình thường, lỗi chỉ lộ ra lúc chạy, đúng kiểu lỗi mà bài học cảnh báo.\n- Phương án \"chạy và in 1\" sai vì exception xảy ra ngay ở `Set`, chưa tới dòng `Console.WriteLine`.\n- Phương án \"in 0\" sai: cache không âm thầm bỏ entry, nó ném exception để bạn không quên khai báo kích thước.\nCách sửa: dùng `new MemoryCacheEntryOptions { Size = 1, AbsoluteExpirationRelativeToNow = ... }`."
+    },
+    {
+      "id": "dotnet-m19-02",
+      "topic": "AsNoTracking",
+      "source": "Module 19 - Database thường là nghẽn đầu tiên",
+      "question": "Bảng có 3 `Order` thuộc về 2 `Customer` khác nhau (cùng `DbContext`, change tracker đang rỗng). Đoạn code sau in ra gì?",
+      "code": "var a = db.Orders\n    .AsNoTracking()\n    .Include(o => o.Customer)\n    .ToList();\nConsole.WriteLine(db.ChangeTracker.Entries().Count());\n\nvar b = db.Orders\n    .Include(o => o.Customer)\n    .ToList();\nConsole.WriteLine(db.ChangeTracker.Entries().Count());",
+      "codeLang": "csharp",
+      "options": [
+        "0\n3",
+        "0\n5",
+        "5\n5",
+        "3\n5"
+      ],
+      "answer": 1,
+      "explanation": "Truy vấn đầu dùng `AsNoTracking` nên không entity nào vào change tracker: in `0`. Truy vấn thứ hai có tracking nên theo dõi cả 3 `Order` lẫn 2 `Customer`: 3 + 2 = `5` (đã chạy thật: `0` rồi `5`).\n- `0` rồi `3` sai vì quên rằng `Include` cũng kéo `Customer` vào tracker, nên tracker có 5 entity chứ không phải 3.\n- `5` rồi `5` sai vì `AsNoTracking` chính là để tắt tracking cho truy vấn đó, kể cả entity nạp qua `Include`.\n- `3` rồi `5` sai vì truy vấn đầu không theo dõi gì cả.\nĐây là lý do bài học khuyên dùng `AsNoTracking` cho mọi truy vấn chỉ đọc."
+    },
+    {
+      "id": "dotnet-m19-03",
+      "topic": "N+1 query",
+      "source": "Module 19 - Database thường là nghẽn đầu tiên",
+      "question": "Có 5 `Order` thuộc 2 `Customer`. Bạn cần đọc `Customer.Name` của từng `Order` mà EF Core chỉ được gửi **đúng 1 truy vấn** tới database (cùng một `DbContext`, change tracker đang rỗng). Đoạn nào làm được?",
+      "options": [
+        "```csharp\nvar orders = db.Orders.ToList();\nforeach (var o in orders)\n    _ = db.Customers.AsNoTracking()\n        .First(c => c.Id == o.CustomerId).Name;\n```",
+        "```csharp\nvar orders = db.Orders.ToList();\nvar customers = db.Customers.ToList();\nforeach (var o in orders)\n    _ = customers.First(c => c.Id == o.CustomerId).Name;\n```",
+        "```csharp\nvar orders = db.Orders.ToList();\nforeach (var o in orders)\n    db.Entry(o).Reference(x => x.Customer).Load();\n```",
+        "```csharp\nvar orders = db.Orders\n    .Include(o => o.Customer)\n    .ToList();\nforeach (var o in orders) _ = o.Customer.Name;\n```"
+      ],
+      "answer": 3,
+      "explanation": "`Include(o => o.Customer)` biến việc lấy order và customer thành một câu `JOIN` duy nhất nên chỉ có 1 truy vấn (đã đếm bằng interceptor: `1`).\n- Vòng lặp gọi `First(...)` trên `db.Customers` cho mỗi order là N+1 kinh điển: 1 + 5 = `6` truy vấn.\n- Nạp riêng danh sách `customers` rồi tra trong bộ nhớ chỉ giảm xuống `2` truy vấn, vẫn chưa phải 1.\n- `Entry(o).Reference(...).Load()` là nạp tường minh theo từng order, vẫn phát sinh thêm truy vấn (đo được `3`) nên cũng không đạt.\nTrong bài học: N+1 sửa bằng `Include` hoặc projection, và nên kiểm tra bằng test đếm truy vấn."
+    },
+    {
+      "id": "dotnet-m19-04",
+      "topic": "Cache stampede",
+      "source": "Module 19 - Caching - ôn tập có hệ thống",
+      "question": "Cache đang trống, 5 request đồng thời cùng gọi `GetAsync()`. Hàm dùng `SemaphoreSlim` để chống stampede nhưng **không** kiểm tra lại cache sau khi vào khoá. `dbCalls` in ra bao nhiêu?",
+      "code": "async Task<string> GetAsync()\n{\n    if (cache.TryGetValue(\"featured\", out string? v)) return v!;\n    await gate.WaitAsync();\n    try\n    {\n        dbCalls++;\n        await Task.Delay(50);\n        cache.Set(\"featured\", \"data\");\n        return \"data\";\n    }\n    finally { gate.Release(); }\n}\n\nawait Task.WhenAll(Enumerable.Range(0, 5).Select(_ => GetAsync()));\nConsole.WriteLine(dbCalls);",
+      "codeLang": "csharp",
+      "options": [
+        "5",
+        "1",
+        "2",
+        "0"
+      ],
+      "answer": 0,
+      "explanation": "In ra `5` (đã chạy thật). Cả 5 request đều kiểm tra cache khi nó còn trống, nên cả 5 đều đi tiếp tới khoá. Khoá chỉ khiến chúng chạy **lần lượt** chứ không ngăn chúng chạy truy vấn: request vào khoá sau vẫn `dbCalls++` dù cache đã được điền.\n- `1` là kết quả khi có lần kiểm tra thứ hai bên trong khoá (double-check), đúng như bài học nhấn mạnh, nhưng code này thiếu nó.\n- `2` không có cơ sở: không có điều kiện nào dừng nhóm request giữa chừng.\n- `0` sai vì ít nhất request đầu tiên chắc chắn chạy truy vấn.\nSửa: thêm `if (cache.TryGetValue(...)) return v!;` ngay sau `WaitAsync()`; hoặc dùng `HybridCache`."
+    },
+    {
+      "id": "dotnet-m19-05",
+      "topic": "Span và async",
+      "source": "Module 19 - BenchmarkDotNet",
+      "question": "Để giảm cấp phát, một bạn dùng `ReadOnlySpan<char>` trong phương thức `async`. Kết quả khi biên dịch và chạy là gì?",
+      "code": "async Task<int> LuuAsync(string dong)\n{\n    ReadOnlySpan<char> s = dong;\n    await Task.Delay(1);\n    return s.Length;\n}\n\nConsole.WriteLine(await LuuAsync(\"LEAD-1\"));",
+      "codeLang": "csharp",
+      "options": [
+        "Biên dịch được và in `6`",
+        "Biên dịch được nhưng ném exception lúc chạy sau `await`",
+        "Lỗi biên dịch vì không gán được `string` cho span",
+        "Lỗi biên dịch vì span không được giữ qua điểm `await`"
+      ],
+      "answer": 3,
+      "explanation": "`ReadOnlySpan<char>` là `ref struct`, chỉ được sống trên stack. Sau `await`, state machine của phương thức async phải lưu mọi biến cục bộ còn dùng vào heap, mà `ref struct` không thể lưu ở đó, nên compiler báo lỗi **CS4007** (đã chạy thật: \"cannot be preserved across await\"). Quan trọng là hiểu nguyên nhân, không phải nhớ mã lỗi.\n- \"Biên dịch được, in 6\" sai vì đây là lỗi thời gian biên dịch.\n- \"Exception lúc chạy\" sai: CLR không bao giờ nhận được code này, compiler chặn trước.\n- Gán `string` cho `ReadOnlySpan<char>` hoàn toàn hợp lệ nhờ chuyển đổi ngầm.\nCách vòng: tách phần dùng span ra hàm đồng bộ riêng, hoặc không dùng span sau `await`."
+    },
+    {
+      "id": "dotnet-m19-06",
+      "topic": "HybridCache",
+      "source": "Module 19 - Caching - ôn tập có hệ thống",
+      "question": "Một key phổ biến vừa hết hạn, 20 request đồng thời cùng gọi `GetOrCreateAsync` của `HybridCache` với cùng key. Factory (truy vấn nặng) được gọi bao nhiêu lần?",
+      "code": "var calls = 0;\nvar tasks = Enumerable.Range(0, 20)\n    .Select(_ => cache.GetOrCreateAsync(\"featured\", async ct =>\n    {\n        Interlocked.Increment(ref calls);\n        await Task.Delay(200, ct);\n        return \"data\";\n    }).AsTask());\nawait Task.WhenAll(tasks);\nConsole.WriteLine(calls);",
+      "codeLang": "csharp",
+      "options": [
+        "20",
+        "10",
+        "1",
+        "2"
+      ],
+      "answer": 2,
+      "explanation": "`HybridCache` chống stampede sẵn: các request cùng key chờ chung một lần chạy factory, nên `calls` là `1` (đã chạy thật).\n- `20` là hành vi của cache \"ngây thơ\" (kiểu `IMemoryCache` tự ghép), mỗi request miss rồi tự chạy truy vấn, chính là kịch bản làm sập database.\n- `10` và `2` không có cơ chế nào trong `HybridCache` chia request thành từng nhóm.\nĐây là lý do bài học khuyên dùng `HybridCache` làm mặc định thay vì tự viết khoá."
+    },
+    {
+      "id": "dotnet-m19-07",
+      "topic": "SLO",
+      "source": "Module 19 - Nguyên tắc: đo trước, đo sau",
+      "question": "Bạn cần đặt mục tiêu hiệu năng cho `/api/leads/search` (người dùng gõ và chờ kết quả). Mục tiêu nào được viết đúng cách nhất?",
+      "options": [
+        "p95 < 400 ms, p99 < 900 ms, lỗi < 0,1%, 150 rps, 2,5 triệu lead",
+        "p50 < 200 ms, đo một lần trên laptop với database rỗng, không nói gì về tải",
+        "Trung bình dưới 100 ms, ở bất kỳ mức tải nào và với mọi kích thước dữ liệu",
+        "Nhanh hơn 30% so với phiên bản hiện tại là đạt, không cần con số tuyệt đối"
+      ],
+      "answer": 0,
+      "explanation": "Một SLO dùng được cần đủ năm thành phần: hai phân vị (p95, p99), tỷ lệ lỗi, mức tải và kích thước dữ liệu. Phương án đầu có đủ cả năm.\n- p50 chỉ nói về nửa số request nhanh, người dùng khó chịu là người gặp đuôi p99; thêm nữa đo trên laptop với database rỗng cho một kế hoạch truy vấn khác hẳn production.\n- \"Trung bình\" che giấu đuôi chậm, và thiếu mức tải thì con số không so sánh được.\n- \"Nhanh hơn 30%\" là mục tiêu tương đối, không ai biết khi nào xong, và không nói gì về tải hay kích thước dữ liệu."
+    },
+    {
+      "id": "dotnet-m19-08",
+      "topic": "Thread pool starvation",
+      "source": "Module 19 - Profiling trên .NET server",
+      "question": "Một API .NET có p99 vọt lên vài giây khi tải tăng đột ngột. `dotnet-counters` cho thấy CPU chỉ 15%, `ThreadPool Queue Length` tăng liên tục, và trong code có nhiều chỗ `_service.GetLeadsAsync().Result`. Chẩn đoán và hướng sửa đúng là gì?",
+      "options": [
+        "Nghẽn CPU thật, dùng `dotnet-trace` tìm hot path rồi tối ưu vòng lặp",
+        "Thread pool starvation do sync-over-async, sửa bằng async suốt chuỗi",
+        "Cache stampede, thêm jitter vào TTL của các key",
+        "Parameter sniffing, thêm `OPTION (RECOMPILE)` cho truy vấn"
+      ],
+      "answer": 1,
+      "explanation": "CPU **thấp**, độ trễ **cao**, queue length **cao** là chữ ký của thread pool starvation. `.Result` giữ chặt một thread suốt thời gian chờ I/O, thread pool chỉ tăng thêm khoảng 1-2 thread mỗi giây nên không theo kịp tải. Sửa tận gốc: `await` suốt chuỗi và truyền `CancellationToken`; `SetMinThreads` chỉ che triệu chứng.\n- Nghẽn CPU thật cần CPU cao, ở đây CPU gần như nhàn rỗi.\n- Cache stampede gây tải dồn lên database khi key hết hạn, không liên quan tới `.Result` hay queue của thread pool.\n- Parameter sniffing là chuyện kế hoạch truy vấn SQL, không làm hàng đợi thread pool dài ra."
+    },
+    {
+      "id": "dotnet-m19-09",
+      "topic": "Parameter sniffing",
+      "source": "Module 19 - Database thường là nghẽn đầu tiên",
+      "question": "Sáng nay truy vấn lọc theo `TenantId` đột nhiên chậm hàng chục giây với tenant lớn, trong khi tenant nhỏ vẫn nhanh; không ai deploy gì, nhưng SQL Server vừa được restart tối qua. Giải thích nào hợp lý nhất?",
+      "options": [
+        "Kế hoạch cache theo lần chạy đầu, tối ưu cho tenant nhỏ",
+        "Index bị SQL Server tự xoá vì lâu không được dùng",
+        "`AsNoTracking` bị tắt sau khi restart máy chủ",
+        "Connection pool tự tăng gấp đôi nên database quá tải"
+      ],
+      "answer": 0,
+      "explanation": "Đây là **parameter sniffing**: sau khi plan cache bị xoá (restart, cập nhật thống kê, áp lực bộ nhớ), kế hoạch được biên dịch theo tham số của lần chạy đầu tiên rồi dùng lại cho mọi người. Nếu lần đầu là tenant nhỏ, kế hoạch nested loop + index seek rất tệ khi áp cho tenant 2 triệu dòng. Cách xử lý: `OPTIMIZE FOR UNKNOWN`, `RECOMPILE` hoặc ép kế hoạch tốt qua Query Store.\n- SQL Server không tự xoá index chỉ vì lâu không dùng.\n- `AsNoTracking` là tuỳ chọn trong code EF, restart máy chủ database không thay đổi nó.\n- Connection pool nằm ở phía ứng dụng, và việc nó tăng không giải thích vì sao chỉ tenant lớn bị chậm."
+    },
+    {
+      "id": "dotnet-m19-10",
+      "topic": "Đọc kết quả benchmark",
+      "source": "Module 19 - BenchmarkDotNet",
+      "question": "BenchmarkDotNet cho hai cách nối chuỗi: A có Mean 15,1 us (Error 3 us), Allocated 32,9 KB; B có Mean 17,0 us (Error 5,7 us), Allocated 15,8 KB. Mean của hai bên nằm trong khoảng sai số của nhau. Nên quyết định thế nào?",
+      "options": [
+        "Chọn A vì Mean thấp hơn khoảng 11%, nên chắc chắn nhanh hơn",
+        "Chọn theo Allocated: Mean nằm trong sai số, còn Allocated ổn định",
+        "Tăng số vòng lặp cho tới khi Mean của hai bên cho kết quả như mong muốn",
+        "Chạy lại bằng `Stopwatch` ở cấu hình Debug để chốt kết quả"
+      ],
+      "answer": 1,
+      "explanation": "Khi hai `Mean` chồng lên nhau trong khoảng sai số, chênh lệch 11% không cho phép kết luận gì. Cột `Allocated` thì đếm được, ổn định, không có nhiễu, nên dùng nó để quyết định: B cấp phát ít hơn hơn hai lần, nghĩa là ít áp lực GC hơn trên server.\n- Chọn A vì Mean thấp hơn là kết luận từ một chênh lệch không đáng tin.\n- Tăng vòng lặp để tìm đến con số \"mình thích\" là thiên vị; tăng số vòng lặp chỉ hợp lý khi mục đích là thu hẹp sai số, không phải đạt kết quả định sẵn.\n- `Stopwatch` ở Debug là cách đo tệ nhất: dính JIT, tiering, GC và không có thống kê."
+    },
+    {
+      "id": "dotnet-m19-11",
+      "topic": "Khoá phân tán - token sở hữu",
+      "source": "Module 19 - Distributed lock",
+      "question": "Mô phỏng khoá bằng `Dictionary` (có TTL), nhưng giải phóng khoá bằng cách xoá thẳng key, không kiểm tra chủ sở hữu. Chương trình in ra gì?",
+      "code": "var store = new Dictionary<string, (string Token, int Expires)>();\nvar now = 0;\nstring? Acquire(string key, string token, int ttl)\n{\n    if (store.TryGetValue(key, out var e) && e.Expires > now) return null;\n    store[key] = (token, now + ttl);\n    return token;\n}\nvoid ReleaseUnsafe(string key) => store.Remove(key);\n\nConsole.WriteLine(Acquire(\"job\", \"A\", 5) is not null);\nnow = 6;\nConsole.WriteLine(Acquire(\"job\", \"B\", 5) is not null);\nReleaseUnsafe(\"job\");\nConsole.WriteLine(Acquire(\"job\", \"C\", 5) is not null);\nConsole.WriteLine(store[\"job\"].Token);",
+      "codeLang": "csharp",
+      "options": [
+        "True\nTrue\nTrue\nB",
+        "True\nTrue\nTrue\nC",
+        "True\nTrue\nFalse\nB",
+        "True\nFalse\nTrue\nC"
+      ],
+      "answer": 1,
+      "explanation": "A lấy khoá lúc `now=0` với TTL 5, nên hết hạn ở thời điểm 5. Khi `now=6`, B lấy được khoá (vì khoá của A đã hết hạn) nên dòng 2 là `True`. Sau đó `ReleaseUnsafe` xoá key mà không biết khoá hiện tại là của B, nên C lấy khoá thành công (`True`) và token đang giữ là `C`: B và C cùng nghĩ mình giữ khoá.\n- `True/True/False/B` sai: giả định lệnh xoá có kiểm tra chủ sở hữu, nhưng code không có.\n- `True/False/True/C` sai: B bị từ chối, trong khi khoá của A đã quá TTL nên B vào được.\n- `True/True/True/B` sai: bỏ qua việc C ghi đè lên key đã bị xoá nên token cuối là `C`.\nĐây là lý do khoá Redis cần token và Lua script khi giải phóng."
+    },
+    {
+      "id": "dotnet-m19-12",
+      "topic": "Khoá phân tán - giải phóng an toàn",
+      "source": "Module 19 - Distributed lock",
+      "question": "A giữ khoá nhưng bị treo quá TTL, B lấy khoá, rồi A tỉnh dậy và gọi `Release`. Phần thân `Release` nào làm chương trình in `False` rồi `True` (khoá của B được bảo vệ, rồi được trả đúng)?",
+      "code": "var store = new Dictionary<string, (string Token, int Expires)>();\nvar now = 0;\nbool Acquire(string key, string token, int ttl)\n{\n    if (store.TryGetValue(key, out var e) && e.Expires > now) return false;\n    store[key] = (token, now + ttl);\n    return true;\n}\nvoid Release(string key, string token)\n{\n    // ... điền vào đây\n}\n\nAcquire(\"job\", \"A\", 5);\nnow = 6;\nAcquire(\"job\", \"B\", 5);\nRelease(\"job\", \"A\");\nConsole.WriteLine(Acquire(\"job\", \"C\", 5));\nRelease(\"job\", \"B\");\nConsole.WriteLine(Acquire(\"job\", \"D\", 5));\n",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nstore.Remove(key);\n```",
+        "```csharp\nif (store.TryGetValue(key, out var e)\n        && e.Token == key)\n        store.Remove(key);\n```",
+        "```csharp\nif (store.TryGetValue(key, out var e)\n        && e.Token == token)\n        store.Remove(key);\n```",
+        "```csharp\nif (store.TryGetValue(key, out var e)\n        && e.Expires > now)\n        store.Remove(key);\n```"
+      ],
+      "answer": 2,
+      "explanation": "Phương án đúng chỉ xoá khi token lưu trong store khớp với token của người gọi. A gọi `Release` với token `A` trong khi store đang giữ token `B` nên không xoá gì; C bị từ chối (`False`). Khi B tự trả khoá thì token khớp, key bị xoá và D lấy được (`True`).\n- Xoá thẳng key: A xoá nhầm khoá của B nên C lấy được ngay, in `True` (hai process cùng vào vùng loại trừ).\n- So sánh `e.Token == key`: so token với tên key nên không bao giờ khớp, không ai xoá được khoá; kết quả `False` rồi `False`, khoá chỉ nhả khi hết TTL.\n- Kiểm tra `e.Expires > now`: chỉ hỏi \"khoá còn hạn không\" chứ không hỏi \"của ai\", nên vẫn xoá nhầm khoá còn hạn của B.\nTrong Redis, thao tác kiểm tra token rồi xoá phải nguyên tử, nên dùng Lua script."
+    },
+    {
+      "id": "dotnet-m19-13",
+      "topic": "Fencing token",
+      "source": "Module 19 - Distributed lock",
+      "question": "Bảng `Reports` đang có `FencingToken = 40`. B (token 42) ghi trước, rồi A (token 41, vừa tỉnh dậy sau GC pause) ghi, rồi C (token 43) ghi. Mỗi `Exec` in số hàng bị ảnh hưởng, cuối cùng in `Data`. Kết quả?",
+      "code": "const string sql =\n  \"UPDATE Reports SET Data=@d, FencingToken=@t \" +\n  \"WHERE Id=1 AND FencingToken < @t\";\n\nExec(sql, (\"@d\", \"B\"), (\"@t\", 42));\nExec(sql, (\"@d\", \"A\"), (\"@t\", 41));\nExec(sql, (\"@d\", \"C\"), (\"@t\", 43));\n// Exec in cmd.ExecuteNonQuery(); cuối cùng:\n// SELECT Data FROM Reports",
+      "codeLang": "csharp",
+      "options": [
+        "1\n0\n1\nC",
+        "1\n1\n1\nC",
+        "1\n0\n0\nB",
+        "1\n1\n0\nA"
+      ],
+      "answer": 0,
+      "explanation": "Điều kiện `FencingToken < @t` chỉ cho ghi khi token mới lớn hơn token đang lưu. B (42 > 40) ghi được: 1 hàng. A (41 < 42) bị chặn: 0 hàng, đúng ý nghĩa fencing token. C (43 > 42) ghi được: 1 hàng, nên dữ liệu cuối là `C`. Chương trình thật cho đúng `1 0 1 C`.\n- `1/1/1/C`: giống tài nguyên đích không kiểm tra token, ghi cũ đè được.\n- `1/0/0/B`: nghĩ C bị chặn, nhưng 43 lớn hơn 42 nên vẫn hợp lệ.\n- `1/1/0/A`: hiểu ngược điều kiện, cho token nhỏ qua còn chặn token lớn.\nLưu ý: fencing chỉ hoạt động khi tài nguyên đích (database, blob ETag) tự kiểm tra được token."
+    },
+    {
+      "id": "dotnet-m19-14",
+      "topic": "Keyset pagination",
+      "source": "Module 19 - Liên hệ CRM",
+      "question": "Danh sách sắp xếp giảm dần theo `(At, Id)`, trang trước kết thúc ở `cursor = (Id 2, At 10)`. Điều kiện `Where` nào lấy đúng trang kế tiếp, không lặp và không sót bản ghi (kết quả `1,5,4`)?",
+      "code": "var rows = new List<(int Id, int At)>\n{\n    (1, 10), (2, 10), (3, 10), (4, 9), (5, 9), (6, 8)\n};\nvar cursor = (Id: 2, At: 10);\n\nvar page = rows\n    .Where(x => /* điều kiện */)\n    .OrderByDescending(x => x.At)\n    .ThenByDescending(x => x.Id)\n    .Take(3)\n    .Select(x => x.Id);\nConsole.WriteLine(string.Join(\",\", page));",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nx.At <= cursor.At\n```",
+        "```csharp\nx.At < cursor.At\n&& x.Id < cursor.Id\n```",
+        "```csharp\nx.Id < cursor.Id\n```",
+        "```csharp\nx.At < cursor.At\n|| (x.At == cursor.At && x.Id < cursor.Id)\n```"
+      ],
+      "answer": 3,
+      "explanation": "Keyset pagination so sánh cặp `(At, Id)` theo thứ tự sắp xếp: lấy dòng có `At` nhỏ hơn, hoặc `At` bằng nhau và `Id` nhỏ hơn (tie-breaker). Với dữ liệu mẫu cho `1,5,4`: dòng (1,10) vẫn đứng sau cursor trong cùng nhóm At=10.\n- `x.At <= cursor.At`: lặp lại chính dòng cursor và dòng 3; kết quả `3,2,1`.\n- `x.At < cursor.At && x.Id < cursor.Id`: đòi cả hai cùng nhỏ hơn nên loại sạch; kết quả rỗng.\n- `x.Id < cursor.Id`: bỏ qua cột sắp xếp chính, chỉ lấy dòng Id=1.\nSai kiểu `x.At < cursor.At` đơn thuần cũng làm sót các dòng cùng At, đó là lý do tie-breaker là bắt buộc."
+    },
+    {
+      "id": "dotnet-m19-15",
+      "topic": "ArrayPool",
+      "source": "Module 19 - Mở rộng và đào sâu",
+      "question": "`ArrayPool<byte>.Shared.Rent(n)` trả về mảng có độ dài bao nhiêu? Đoạn code in ra gì?",
+      "code": "using System.Buffers;\n\nvar a = ArrayPool<byte>.Shared.Rent(100);\nvar b = ArrayPool<byte>.Shared.Rent(4096);\nvar c = ArrayPool<byte>.Shared.Rent(5000);\nConsole.WriteLine(a.Length);\nConsole.WriteLine(b.Length);\nConsole.WriteLine(c.Length);",
+      "codeLang": "csharp",
+      "options": [
+        "100\n4096\n5000",
+        "128\n4096\n8192",
+        "128\n8192\n8192",
+        "128\n4096\n5000"
+      ],
+      "answer": 1,
+      "explanation": "`Rent` có thể trả mảng **lớn hơn** yêu cầu: pool làm tròn lên lũy thừa của 2. 100 thành 128, 4096 giữ nguyên 4096, 5000 thành 8192. Vì vậy phải dùng độ dài thật (ví dụ số byte đã đọc) chứ không dùng `buffer.Length`, và phải `Return` trong `finally`.\n- `100/4096/5000`: tưởng `Rent` trả đúng kích thước yêu cầu.\n- `128/8192/8192`: làm tròn sai, 4096 đã là lũy thừa của 2 nên không đổi.\n- `128/4096/5000`: chỉ làm tròn kích thước nhỏ, quên rằng 5000 cũng bị làm tròn lên 8192."
+    },
+    {
+      "id": "dotnet-m19-16",
+      "topic": "Import theo lô",
+      "source": "Module 19 - Liên hệ CRM",
+      "question": "Import 10 dòng theo lô bằng `Chunk(4)` (mỗi lô một `DbContext` mới). Số lô và kích thước từng lô là gì?",
+      "code": "var rows = Enumerable.Range(1, 10);\nvar batches = rows.Chunk(4).ToList();\n\nConsole.WriteLine(batches.Count);\nConsole.WriteLine(string.Join(\",\", batches.Select(b => b.Length)));",
+      "codeLang": "csharp",
+      "options": [
+        "2\n5,5",
+        "3\n4,4,4",
+        "3\n4,4,2",
+        "4\n4,4,1,1"
+      ],
+      "answer": 2,
+      "explanation": "`Chunk(4)` chia tuần tự thành các mảng tối đa 4 phần tử; phần dư nằm ở lô cuối. 10 phần tử cho 3 lô: 4, 4 và 2. Với import 50.000 dòng, cách này giúp mỗi lần `SaveChanges` gửi một lô và change tracker được giải phóng khi context của lô bị huỷ.\n- `2 / 5,5`: chia đều thành 2 phần, nhưng `Chunk(size)` quy định kích thước lô, không phải số lô.\n- `3 / 4,4,4`: quên rằng lô cuối chỉ chứa phần còn lại (2), `Chunk` không đệm thêm.\n- `4 / 4,4,1,1`: tưởng phần dư bị tách tiếp thành các lô nhỏ hơn."
+    },
+    {
+      "id": "dotnet-m19-17",
+      "topic": "Large Object Heap",
+      "source": "Module 19 - Mở rộng và đào sâu",
+      "question": "Object từ khoảng 85.000 byte trở lên đi thẳng vào Large Object Heap (LOH), được coi như Gen 2. Đoạn code in ra gì?",
+      "code": "Console.WriteLine(GC.GetGeneration(new byte[1000]));\nConsole.WriteLine(GC.GetGeneration(new byte[100_000]));",
+      "codeLang": "csharp",
+      "options": [
+        "0\n2",
+        "0\n0",
+        "0\n1",
+        "2\n2"
+      ],
+      "answer": 0,
+      "explanation": "Mảng 1000 byte là object nhỏ, mới cấp phát nên ở Gen 0. Mảng 100.000 byte vượt ngưỡng ~85.000 byte nên được cấp phát thẳng vào LOH; LOH được thu gom cùng Gen 2 nên `GetGeneration` trả `2`. Hệ quả: mảng lớn cấp phát liên tục gây phân mảnh LOH (mặc định không nén) và có thể dẫn đến `OutOfMemoryException` dù tổng bộ nhớ còn trống.\n- `0/0`: không biết ngưỡng LOH, coi mọi object mới đều ở Gen 0.\n- `0/1`: object lớn không được \"thăng hạng\" từng bước qua Gen 1.\n- `2/2`: coi mọi mảng đều vào LOH, trong khi 1000 byte là object nhỏ."
+    },
+    {
+      "id": "dotnet-m19-18",
+      "topic": "Khoá cho tính đúng đắn",
+      "source": "Module 19 - Distributed lock",
+      "question": "Hệ thống chạy 6 pod; job cuối tháng tạo `MonthlyReport` và **không được phép** có hai bản ghi cho cùng một kỳ. Thiết kế nào đúng nhất?",
+      "options": [
+        "Khoá Redis có token và Lua script giải phóng là đủ, vì khoá phân tán đảm bảo loại trừ tuyệt đối.",
+        "Đặt TTL của khoá thật lớn (24 giờ) để khoá không thể hết hạn khi job còn chạy.",
+        "Bỏ khoá, kiểm tra bản ghi đã tồn tại chưa rồi mới thêm mới, vì thao tác này rất nhanh.",
+        "Dùng khoá để giảm chạy trùng, và thêm unique constraint theo kỳ để database chặn bản ghi thứ hai."
+      ],
+      "answer": 3,
+      "explanation": "Khoá phân tán tốt cho mục đích **hiệu quả** (tránh làm thừa), nhưng không đủ cho **tính đúng đắn**: tiến trình có thể bị GC pause hay VM tạm dừng, khoá hết hạn, và nó vẫn tin mình đang giữ khoá. Unique constraint là lớp chặn cuối vì dựa vào tính nguyên tử của database, không dựa vào giả định thời gian.\n- Chỉ token và Lua: sửa lỗi xoá nhầm khoá nhưng không loại bỏ được tình huống khoá hết hạn lúc tiến trình đang bị dừng.\n- TTL 24 giờ: không loại bỏ khả năng phá vỡ, chỉ làm hiếm hơn; còn khiến mọi pod chờ rất lâu nếu pod giữ khoá bị chết.\n- Kiểm tra tồn tại rồi mới thêm: là check-then-act, hai pod cùng thấy \"chưa có\" rồi cùng thêm, nếu không có ràng buộc unique."
+    },
+    {
+      "id": "dotnet-m19-19",
+      "topic": "Streaming và bộ nhớ",
+      "source": "Module 19 - Ví dụ thực tế nhanh",
+      "question": "Endpoint export 200.000 lead dựng file trong bộ nhớ nên bị OOM kill trong container 512 MB. Thay đổi nào làm bộ nhớ gần như **không phụ thuộc** số bản ghi?",
+      "options": [
+        "Giữ `ToListAsync`, nhưng ghi từng dòng bằng `foreach` ra `Response.Body`.",
+        "Truy vấn `AsNoTracking` + `Select` + `AsAsyncEnumerable`, rồi `await foreach` ghi thẳng ra `Response.Body`.",
+        "Phân trang `Skip/Take` 1000 dòng, gom mọi lô vào một `List` rồi ghi một lần.",
+        "Đổi `ToArray()` thành `GetBuffer()` và tăng memory limit của container."
+      ],
+      "answer": 1,
+      "explanation": "Streaming chỉ có tác dụng khi dữ liệu được đọc và ghi ra từng hàng rồi bỏ đi: `AsAsyncEnumerable` đọc từng hàng, projection chỉ lấy cột cần, `AsNoTracking` không giữ snapshot, và ghi thẳng `Response.Body` thì không còn bản sao trung gian. Bộ nhớ khi đó là hằng số.\n- `ToListAsync` rồi ghi từng dòng: phần tốn bộ nhớ nằm ở `ToListAsync`, nạp hết 200.000 entity trước khi ghi.\n- Phân trang nhưng gom vào `List`: cuối cùng vẫn giữ toàn bộ dữ liệu trong bộ nhớ.\n- `GetBuffer()` và tăng limit: giảm một bản sao nhưng bộ nhớ vẫn tỷ lệ với dữ liệu, chỉ dời ngưỡng sập ra xa hơn."
+    },
+    {
+      "id": "dotnet-m19-20",
+      "topic": "Thứ tự ưu tiên tối ưu",
+      "source": "Module 19 - Mở rộng và đào sâu",
+      "question": "Dashboard CRM có p99 = 9 giây; CPU server 25%, CPU database 85%. Trace cho thấy một khối chiếm 85% thời gian với `Include` nhiều collection. Đồng nghiệp đề xuất bốn hướng, bạn nên làm gì **trước**?",
+      "options": [
+        "Chuyển sang Native AOT để giảm cold start.",
+        "Chuyển sang Workstation GC để giảm bộ nhớ.",
+        "Xem execution plan, thêm index còn thiếu, thay `Include` bằng projection rồi đo lại.",
+        "Viết lại phần mapping DTO bằng `Span` và `ArrayPool`."
+      ],
+      "answer": 2,
+      "explanation": "CPU server thấp mà CPU database cao nghĩa là nghẽn ở tầng dữ liệu, không phải ở code C#. Thứ tự đúng là sửa N+1, thêm index, bỏ sync-over-async, dùng projection, cache dữ liệu tổng hợp, chạy song song; sau mỗi thay đổi phải đo lại. Các chủ đề sâu chỉ đáng làm khi có điều kiện kích hoạt.\n- Native AOT: lợi ở cold start và kích thước, không liên quan truy vấn chậm trên database.\n- Workstation GC: hữu ích với container nhỏ về bộ nhớ, nhưng CPU server chỉ 25% và GC không phải nút thắt.\n- `Span`/`ArrayPool`: chỉ đáng khi profiler cho thấy allocation rate cao ở hot path; ở đây là tối ưu 1% trong khi 90% vấn đề còn nguyên."
+    }
+  ]
+}

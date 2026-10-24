@@ -1,0 +1,94 @@
+[
+  {
+    "id": "dotnet-m11-01",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\n#:property JsonSerializerIsReflectionEnabledByDefault=true\n#:package Microsoft.AspNetCore.SignalR.Client@10.0.0\nusing Microsoft.AspNetCore.SignalR;\nusing Microsoft.AspNetCore.SignalR.Client;\n\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.Logging.ClearProviders();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Services.AddSignalR();\nvar app = builder.Build();\napp.MapHub<CounterHub>(\"/hub\");\nawait app.StartAsync();\nvar url = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>().Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!.Addresses.First();\n\nvar conn = new HubConnectionBuilder().WithUrl(url + \"/hub\").Build();\nawait conn.StartAsync();\nvar a = await conn.InvokeAsync<int>(\"Hit\");\nvar b = await conn.InvokeAsync<int>(\"Hit\");\nvar c = await conn.InvokeAsync<int>(\"Hit\");\nConsole.WriteLine($\"{a} {b} {c}\");\nawait conn.DisposeAsync();\nawait app.StopAsync();\n\nclass CounterHub : Hub\n{\n    private int _count;\n    public int Hit() => ++_count;\n}"
+  },
+  {
+    "id": "dotnet-m11-02",
+    "kind": "cs-find-error",
+    "errorKind": "compile",
+    "code": "CS1061",
+    "template": "#:sdk Microsoft.NET.Sdk.Web\nusing Microsoft.AspNetCore.SignalR;\n\nConsole.WriteLine(\"ok\");\n\npublic interface INotificationClient\n{\n    Task ReceiveNotification(string message);\n}\n\npublic class BaseHub : Hub<INotificationClient> { }\n\n{{X}}",
+    "options": [
+      "public class A : Hub\n{\n    public Task M() => Clients.All.SendAsync(\"ReceiveNotifcation\", \"x\");\n}",
+      "public class B : Hub<INotificationClient>\n{\n    public Task M() => Clients.All.ReceiveNotifcation(\"x\");\n}",
+      "public class C : Hub<INotificationClient>\n{\n    public Task M() => Clients.Caller.ReceiveNotification(\"x\");\n}",
+      "public class D(IHubContext<BaseHub, INotificationClient> hub)\n{\n    public Task M() => hub.Clients.All.ReceiveNotification(\"x\");\n}"
+    ]
+  },
+  {
+    "id": "dotnet-m11-03",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\n#:property JsonSerializerIsReflectionEnabledByDefault=true\n#:package Microsoft.AspNetCore.SignalR.Client@10.0.0\n#:package Microsoft.AspNetCore.Authentication.JwtBearer@10.0.0\nusing System.Security.Claims;\nusing Microsoft.AspNetCore.Authorization;\nusing Microsoft.AspNetCore.SignalR;\nusing Microsoft.AspNetCore.SignalR.Client;\nusing Microsoft.IdentityModel.JsonWebTokens;\nusing Microsoft.IdentityModel.Tokens;\n\nvar key = new SymmetricSecurityKey(new byte[32].Select((_, i) => (byte)(i + 1)).ToArray());\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.Logging.ClearProviders();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Services.AddAuthentication(\"Bearer\").AddJwtBearer(o =>\n{\n    o.MapInboundClaims = false;\n    o.TokenValidationParameters = new TokenValidationParameters\n    {\n        ValidateIssuer = false, ValidateAudience = false, IssuerSigningKey = key\n    };\n});\nbuilder.Services.AddAuthorization();\nbuilder.Services.AddSignalR();\nvar app = builder.Build();\napp.UseAuthentication();\napp.UseAuthorization();\napp.MapHub<MeHub>(\"/hub\").RequireAuthorization();\nawait app.StartAsync();\nvar url = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>().Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!.Addresses.First();\n\nvar token = new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor\n{\n    Claims = new Dictionary<string, object> { [\"sub\"] = \"u-42\", [\"name\"] = \"An\" },\n    SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256)\n});\nvar conn = new HubConnectionBuilder()\n    .WithUrl(url + \"/hub\", o => o.AccessTokenProvider = () => Task.FromResult<string?>(token))\n    .Build();\nvar received = 0;\nconn.On<string>(\"Msg\", _ => Interlocked.Increment(ref received));\nawait conn.StartAsync();\nConsole.WriteLine(\"UserIdentifier: \" + await conn.InvokeAsync<string>(\"Who\"));\nvar ctx = app.Services.GetRequiredService<IHubContext<MeHub>>();\nawait ctx.Clients.User(\"u-42\").SendAsync(\"Msg\", \"hello\");\nawait Task.Delay(300);\nConsole.WriteLine(\"tin toi u-42: \" + received);\nawait conn.DisposeAsync();\nawait app.StopAsync();\n\n[Authorize]\nclass MeHub : Hub\n{\n    public string Who() => Context.UserIdentifier ?? \"(null)\";\n}\n\nclass SubUserIdProvider : IUserIdProvider\n{\n    public string? GetUserId(HubConnectionContext connection)\n        => null;\n}"
+  },
+  {
+    "id": "dotnet-m11-04",
+    "kind": "cs-choose",
+    "template": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\n#:property JsonSerializerIsReflectionEnabledByDefault=true\n#:package Microsoft.AspNetCore.SignalR.Client@10.0.0\n#:package Microsoft.AspNetCore.Authentication.JwtBearer@10.0.0\nusing System.Security.Claims;\nusing Microsoft.AspNetCore.Authorization;\nusing Microsoft.AspNetCore.SignalR;\nusing Microsoft.AspNetCore.SignalR.Client;\nusing Microsoft.IdentityModel.JsonWebTokens;\nusing Microsoft.IdentityModel.Tokens;\n\nvar key = new SymmetricSecurityKey(new byte[32].Select((_, i) => (byte)(i + 1)).ToArray());\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.Logging.ClearProviders();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Services.AddAuthentication(\"Bearer\").AddJwtBearer(o =>\n{\n    o.MapInboundClaims = false;\n    o.TokenValidationParameters = new TokenValidationParameters\n    {\n        ValidateIssuer = false, ValidateAudience = false, IssuerSigningKey = key\n    };\n});\nbuilder.Services.AddAuthorization();\nbuilder.Services.AddSignalR();\nbuilder.Services.AddSingleton<IUserIdProvider, SubUserIdProvider>();\nvar app = builder.Build();\napp.UseAuthentication();\napp.UseAuthorization();\napp.MapHub<MeHub>(\"/hub\").RequireAuthorization();\nawait app.StartAsync();\nvar url = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>().Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!.Addresses.First();\n\nvar token = new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor\n{\n    Claims = new Dictionary<string, object> { [\"sub\"] = \"u-42\", [\"name\"] = \"An\" },\n    SigningCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256)\n});\nvar conn = new HubConnectionBuilder()\n    .WithUrl(url + \"/hub\", o => o.AccessTokenProvider = () => Task.FromResult<string?>(token))\n    .Build();\nvar received = 0;\nconn.On<string>(\"Msg\", _ => Interlocked.Increment(ref received));\nawait conn.StartAsync();\nConsole.WriteLine(\"UserIdentifier: \" + await conn.InvokeAsync<string>(\"Who\"));\nvar ctx = app.Services.GetRequiredService<IHubContext<MeHub>>();\nawait ctx.Clients.User(\"u-42\").SendAsync(\"Msg\", \"hello\");\nawait Task.Delay(300);\nConsole.WriteLine(\"tin toi u-42: \" + received);\nawait conn.DisposeAsync();\nawait app.StopAsync();\n\n[Authorize]\nclass MeHub : Hub\n{\n    public string Who() => Context.UserIdentifier ?? \"(null)\";\n}\n\nclass SubUserIdProvider : IUserIdProvider\n{\n    public string? GetUserId(HubConnectionContext connection)\n        => {{X}};\n}",
+    "options": [
+      "connection.User.FindFirst(ClaimTypes.NameIdentifier)?.Value",
+      "connection.ConnectionId",
+      "connection.User.FindFirst(\"sub\")?.Value",
+      "connection.User.Identity?.Name"
+    ],
+    "expectOutput": "UserIdentifier: u-42\ntin toi u-42: 1"
+  },
+  {
+    "id": "dotnet-m11-05",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\n#:property JsonSerializerIsReflectionEnabledByDefault=true\n#:package Microsoft.AspNetCore.SignalR.Client@10.0.0\nusing Microsoft.AspNetCore.SignalR;\nusing Microsoft.AspNetCore.SignalR.Client;\n\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.Logging.ClearProviders();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Services.AddSignalR();\nvar app = builder.Build();\napp.MapHub<RoomHub>(\"/hub\");\nawait app.StartAsync();\nvar url = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>().Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!.Addresses.First();\nvar hubContext = app.Services.GetRequiredService<IHubContext<RoomHub>>();\n\nvar conn = new HubConnectionBuilder().WithUrl(url + \"/hub\").Build();\nvar received = 0;\nconn.On<string>(\"Msg\", _ => Interlocked.Increment(ref received));\n\nawait conn.StartAsync();\nvar idBefore = conn.ConnectionId;\nawait conn.InvokeAsync(\"Join\", \"deals\");\nawait hubContext.Clients.Group(\"deals\").SendAsync(\"Msg\", \"1\");\nawait Task.Delay(300);\nConsole.WriteLine(\"truoc: \" + received);\n\nawait conn.StopAsync();\nawait conn.StartAsync();\nConsole.WriteLine(\"id doi: \" + (conn.ConnectionId != idBefore));\nawait hubContext.Clients.Group(\"deals\").SendAsync(\"Msg\", \"2\");\nawait Task.Delay(300);\nConsole.WriteLine(\"sau: \" + received);\nawait conn.DisposeAsync();\nawait app.StopAsync();\n\nclass RoomHub : Hub\n{\n    public Task Join(string group) => Groups.AddToGroupAsync(Context.ConnectionId, group);\n}"
+  },
+  {
+    "id": "dotnet-m11-06",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\n#:property JsonSerializerIsReflectionEnabledByDefault=true\n#:package Microsoft.AspNetCore.SignalR.Client@10.0.0\nusing Microsoft.AspNetCore.SignalR;\nusing Microsoft.AspNetCore.SignalR.Client;\n\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.Logging.ClearProviders();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Services.AddSignalR();\nvar app = builder.Build();\napp.MapHub<DemoHub>(\"/hub\");\nawait app.StartAsync();\nvar url = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>().Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!.Addresses.First();\n\nvar conn = new HubConnectionBuilder().WithUrl(url + \"/hub\").Build();\nawait conn.StartAsync();\nforeach (var method in new[] { \"Plain\", \"Business\" })\n{\n    try { await conn.InvokeAsync(method); }\n    catch (HubException ex) { Console.WriteLine($\"{method}: \" + ex.Message.Contains(method == \"Plain\" ? \"hunter2\" : \"Phong khong ton tai\")); }\n}\nawait conn.DisposeAsync();\nawait app.StopAsync();\n\nclass DemoHub : Hub\n{\n    public Task Plain() => throw new InvalidOperationException(\"db password is hunter2\");\n    public Task Business() => throw new HubException(\"Phong khong ton tai\");\n}"
+  },
+  {
+    "id": "dotnet-m11-07",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\n#:property JsonSerializerIsReflectionEnabledByDefault=true\n#:package Microsoft.AspNetCore.SignalR.Client@10.0.0\nusing Microsoft.AspNetCore.SignalR;\nusing Microsoft.AspNetCore.SignalR.Client;\n\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.Logging.ClearProviders();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Services.AddSignalR();\nbuilder.Services.AddSingleton<Probe>();\nvar app = builder.Build();\napp.MapHub<JobHub>(\"/hub\");\nawait app.StartAsync();\nvar url = app.Services.GetRequiredService<Microsoft.AspNetCore.Hosting.Server.IServer>().Features.Get<Microsoft.AspNetCore.Hosting.Server.Features.IServerAddressesFeature>()!.Addresses.First();\n\nvar conn = new HubConnectionBuilder().WithUrl(url + \"/hub\").Build();\nvar got = new TaskCompletionSource<string>();\nconn.On<string>(\"Done\", m => got.TrySetResult(\"client nhan: \" + m));\nawait conn.StartAsync();\nawait conn.InvokeAsync(\"StartJob\");\nvar probe = app.Services.GetRequiredService<Probe>();\nvar first = await Task.WhenAny(got.Task, probe.Error.Task, Task.Delay(3000));\nConsole.WriteLine(first == got.Task ? got.Task.Result : first == probe.Error.Task ? \"server loi: \" + probe.Error.Task.Result : \"khong ai biet gi\");\nawait conn.DisposeAsync();\nawait app.StopAsync();\n\nclass Probe { public TaskCompletionSource<string> Error = new(); }\n\nclass JobHub(Probe probe) : Hub\n{\n    public Task StartJob()\n    {\n        _ = Task.Run(async () =>\n        {\n            await Task.Delay(300);\n            try { await Clients.Caller.SendAsync(\"Done\", \"xong\"); }\n            catch (Exception ex) { probe.Error.TrySetResult(ex.GetType().Name); }\n        });\n        return Task.CompletedTask;\n    }\n}"
+  },
+  {
+    "id": "dotnet-m11-11",
+    "kind": "cs-predict",
+    "program": "var items = new Dictionary<int, DateTime?>();\nvar unread = 0;\nvoid Upsert(int id, DateTime? readAt)\n{\n    if (!items.ContainsKey(id) && readAt is null)\n        unread++;\n    items[id] = readAt;\n}\nUpsert(1, null); Upsert(1, null); Upsert(2, null);\nConsole.WriteLine($\"{items.Count}/{unread}\");\nUpsert(3, DateTime.UtcNow); Upsert(2, null);\nConsole.WriteLine($\"{items.Count}/{unread}\");\n"
+  },
+  {
+    "id": "dotnet-m11-12",
+    "kind": "cs-choose",
+    "template": "var map = new Dictionary<string, Item>\n    { [\"a\"] = new Item() };\nvar unread = 1;\nvoid MarkRead(string id)\n{\n{{X}}\n}\nMarkRead(\"a\"); MarkRead(\"a\"); MarkRead(\"zzz\");\nConsole.WriteLine(unread);\nclass Item { public DateTime? ReadAt; }\n",
+    "expectOutput": "0",
+    "options": [
+      "var x = map[id];\nif (x.ReadAt is null)\n{ x.ReadAt = DateTime.UtcNow; unread--; }",
+      "if (map.TryGetValue(id, out var x))\n{ x.ReadAt ??= DateTime.UtcNow; unread--; }",
+      "unread--;\nif (map.TryGetValue(id, out var x))\n    x.ReadAt = DateTime.UtcNow;",
+      "if (map.TryGetValue(id, out var x)\n    && x.ReadAt is null)\n{ x.ReadAt = DateTime.UtcNow; unread--; }"
+    ]
+  },
+  {
+    "id": "dotnet-m11-13",
+    "kind": "cs-predict",
+    "program": "var ids = new List<Guid>();\nfor (var i = 0; i < 5; i++)\n{\n    ids.Add(Guid.CreateVersion7());\n    Thread.Sleep(2);\n}\nConsole.WriteLine(ids.SequenceEqual(ids.OrderBy(g => g)));\nConsole.WriteLine(Guid.NewGuid().Version);\nConsole.WriteLine(ids[0].Version);\n"
+  },
+  {
+    "id": "dotnet-m11-14",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:property NoWarn=NU1903;NU1902\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.Data.Sqlite;\nusing Microsoft.EntityFrameworkCore;\n\nusing var conn = new SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nvar opt = new DbContextOptionsBuilder<Db>().UseSqlite(conn).Options;\nusing (var db0 = new Db(opt)) db0.Database.EnsureCreated();\n\n\nasync Task<string> Send(string group)\n{\n    using var db = new Db(opt);\n    db.Notes.Add(new Note { UserId = 1, GroupKey = group });\n    try { await db.SaveChangesAsync(); return \"ok\"; }\n    catch (DbUpdateException) { return \"conflict\"; }\n}\nasync Task MarkAllRead(string group)\n{\n    using var db = new Db(opt);\n    await db.Notes.Where(n => n.GroupKey == group)\n        .ExecuteUpdateAsync(s => s.SetProperty(n => n.ReadAt, DateTime.UtcNow));\n}\nConsole.WriteLine(await Send(\"deal:7\"));\nConsole.WriteLine(await Send(\"deal:7\"));\nConsole.WriteLine(await Send(\"deal:8\"));\nawait MarkAllRead(\"deal:7\");\nConsole.WriteLine(await Send(\"deal:7\"));\nclass Note\n{\n    public int Id { get; set; }\n    public int UserId { get; set; }\n    public string GroupKey { get; set; } = \"\";\n    public DateTime? ReadAt { get; set; }\n}\nclass Db(DbContextOptions<Db> o) : DbContext(o)\n{\n    public DbSet<Note> Notes => Set<Note>();\n    protected override void OnModelCreating(ModelBuilder b) =>\n        b.Entity<Note>().HasIndex(n => new { n.UserId, n.GroupKey })\n         .IsUnique().HasFilter(\"\\\"ReadAt\\\" IS NULL\");\n}\n"
+  },
+  {
+    "id": "dotnet-m11-15",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:property NoWarn=NU1903;NU1902\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.Data.Sqlite;\nusing Microsoft.EntityFrameworkCore;\n\nusing var conn = new SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nvar opt = new DbContextOptionsBuilder<Db>().UseSqlite(conn).Options;\nusing (var db0 = new Db(opt)) db0.Database.EnsureCreated();\n\n\nusing var db = new Db(opt);\ndb.Notes.AddRange(new Note { UserId = 1, GroupKey = \"a\" }, new Note { UserId = 1, GroupKey = \"b\" });\ndb.SaveChanges();\nTask<int> MarkRead(int id, int userId) =>\n    db.Notes\n      .Where(n => n.Id == id\n               && n.UserId == userId\n               && n.ReadAt == null)\n      .ExecuteUpdateAsync(s =>\n          s.SetProperty(n => n.ReadAt, DateTime.UtcNow));\nConsole.WriteLine(await MarkRead(1, 1));\nConsole.WriteLine(await MarkRead(1, 1));\nConsole.WriteLine(await MarkRead(2, 2));\nclass Note\n{\n    public int Id { get; set; }\n    public int UserId { get; set; }\n    public string GroupKey { get; set; } = \"\";\n    public DateTime? ReadAt { get; set; }\n}\nclass Db(DbContextOptions<Db> o) : DbContext(o)\n{\n    public DbSet<Note> Notes => Set<Note>();\n    protected override void OnModelCreating(ModelBuilder b) =>\n        b.Entity<Note>().HasIndex(n => new { n.UserId, n.GroupKey })\n         .IsUnique().HasFilter(\"\\\"ReadAt\\\" IS NULL\");\n}\n"
+  },
+  {
+    "id": "dotnet-m11-16",
+    "kind": "cs-predict",
+    "program": "var conns = new Dictionary<string, HashSet<string>>();\nbool Connect(string u, string c)\n{\n    if (!conns.TryGetValue(u, out var set))\n        conns[u] = set = new();\n    set.Add(c);\n    return set.Count == 1;\n}\nbool Disconnect(string u, string c)\n{\n    conns[u].Remove(c);\n    return conns[u].Count == 0;\n}\nvar on = new[] { \"t1\", \"t2\", \"t3\" }\n    .Select(t => Connect(\"an\", t));\nConsole.WriteLine(string.Join(\",\", on));\nvar off = new[] { \"t1\", \"t2\", \"t3\" }\n    .Select(t => Disconnect(\"an\", t));\nConsole.WriteLine(string.Join(\",\", off));\n"
+  },
+  {
+    "id": "dotnet-m11-17",
+    "kind": "cs-predict",
+    "program": "#:property NoWarn=CS8425\nasync IAsyncEnumerable<int> Gen(int n, CancellationToken ct = default)\n{\n    for (var i = 1; i <= n; i++)\n    {\n        await Task.Delay(1, ct);\n        yield return i;\n    }\n}\nvar cts = new CancellationTokenSource();\ntry\n{\n    await foreach (var x in Gen(5).WithCancellation(cts.Token))\n    {\n        Console.WriteLine(x);\n        if (x == 2) cts.Cancel();\n    }\n    Console.WriteLine(\"done\");\n}\ncatch (OperationCanceledException)\n{ Console.WriteLine(\"canceled\"); }\n"
+  }
+]

@@ -1,0 +1,311 @@
+{
+  "id": "dotnet-m15",
+  "title": "Module 15: Docker + Deployment",
+  "description": "Container, Dockerfile, Compose, secrets, cấu hình theo môi trường, CI/CD và triển khai lên VPS hoặc Azure.",
+  "questions": [
+    {
+      "id": "dotnet-m15-01",
+      "topic": "Biến môi trường và cấu hình",
+      "source": "Module 15 - Docker + Deployment - Environment và Secrets",
+      "question": "Trong `docker run` bạn truyền `Redis__Host=cache` và `Redis_Port=6379` (một dấu gạch dưới). Đoạn code sau in ra gì?",
+      "code": "Environment.SetEnvironmentVariable(\"Redis__Host\", \"cache\");\nEnvironment.SetEnvironmentVariable(\"Redis_Port\", \"6379\");\nvar cfg = new ConfigurationBuilder()\n    .AddEnvironmentVariables().Build();\nConsole.WriteLine(cfg[\"Redis:Host\"] ?? \"(null)\");\nConsole.WriteLine(cfg[\"Redis:Port\"] ?? \"(null)\");",
+      "codeLang": "csharp",
+      "options": [
+        "(null)\n(null)",
+        "cache\n6379",
+        "cache\n(null)",
+        "(null)\n6379"
+      ],
+      "answer": 2,
+      "explanation": "Provider biến môi trường chỉ đổi **hai dấu gạch dưới** `__` thành dấu `:` của khoá phân cấp. Vì vậy `Redis__Host` thành `Redis:Host` và đọc được `cache`.\n- `Redis_Port` chỉ có **một** dấu gạch dưới nên giữ nguyên tên `Redis_Port`, không thành `Redis:Port`; đọc `Redis:Port` ra `null`.\n- Hai phương án còn lại giả định một dấu gạch dưới cũng được đổi, hoặc `__` không được đổi, đều trái với cách provider hoạt động.\nKết quả chạy thật: `cache` rồi `(null)`. Gõ thiếu một dấu gạch dưới là lỗi cấu hình rất khó thấy trong container."
+    },
+    {
+      "id": "dotnet-m15-02",
+      "topic": "Thứ tự ưu tiên cấu hình",
+      "source": "Module 15 - Docker + Deployment - Environment và Secrets",
+      "question": "Cùng một image chạy ở nhiều môi trường nhờ các nguồn cấu hình xếp chồng. Giả sử env var `Logging__Level=Warning` và `App__Name=FromEnv`, tham số dòng lệnh `--Logging:Level=Debug`, còn nguồn \"file\" (in-memory) có thêm `App:Mode`. Đoạn code in ra gì?",
+      "code": "var cfg = new ConfigurationBuilder()\n    .AddInMemoryCollection(new Dictionary<string, string?>\n    {\n        [\"Logging:Level\"] = \"Information\",\n        [\"App:Name\"] = \"FromJson\",\n        [\"App:Mode\"] = \"Json\",\n    })\n    .AddEnvironmentVariables()\n    .AddCommandLine([\"--Logging:Level=Debug\"])\n    .Build();\nConsole.WriteLine(cfg[\"Logging:Level\"]);\nConsole.WriteLine(cfg[\"App:Name\"]);\nConsole.WriteLine(cfg[\"App:Mode\"]);",
+      "codeLang": "csharp",
+      "options": [
+        "Debug\nFromEnv\nJson",
+        "Warning\nFromEnv\nJson",
+        "Information\nFromJson\nJson",
+        "Debug\nFromJson\nJson"
+      ],
+      "answer": 0,
+      "explanation": "Provider **thêm sau thắng provider thêm trước**: file/in-memory, rồi biến môi trường đè lên, rồi tham số dòng lệnh đè lên cả hai.\n- `Logging:Level` có ở cả ba nguồn, nên dòng lệnh thắng: `Debug`.\n- `App:Name` có ở file và env, env thắng: `FromEnv`.\n- `App:Mode` chỉ có ở file nên giữ `Json` (các nguồn đè nhau theo từng khoá, không đè cả bộ).\n- `Warning` sai vì quên dòng lệnh; `Information`/`FromJson` sai vì tưởng file cấu hình có ưu tiên cao nhất.\nChạy thật cho ra `Debug`, `FromEnv`, `Json`."
+    },
+    {
+      "id": "dotnet-m15-03",
+      "topic": "ValidateOnStart",
+      "source": "Module 15 - Docker + Deployment - Environment và Secrets",
+      "question": "Bạn muốn container **chết ngay lúc khởi động** nếu `Jwt:SecretKey` ngắn hơn 32 ký tự (để orchestrator không chuyển traffic vào). Ở chỗ `// ???`, snippet nào làm `host.StartAsync()` ném `OptionsValidationException` (với `SecretKey = \"abc\"`)?",
+      "code": "var b = Host.CreateApplicationBuilder();\nb.Services.AddOptions<JwtOptions>()\n    .Configure(o => o.SecretKey = \"abc\")\n    // ???\n    ;\nusing var host = b.Build();\ntry { await host.StartAsync(); Console.WriteLine(\"started\"); }\ncatch (OptionsValidationException)\n{ Console.WriteLine(\"start failed\"); }",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\n.Validate(o => o.SecretKey.Length >= 32,\n    \"short\")\n```",
+        "```csharp\n.Validate(o => o.SecretKey.Length >= 32,\n    \"short\")\n.ValidateOnStart()\n```",
+        "```csharp\n.ValidateOnStart()\n```",
+        "```csharp\n.PostConfigure(o => o.SecretKey += \"!\")\n```"
+      ],
+      "answer": 1,
+      "explanation": "`Validate(...)` chỉ đăng ký **quy tắc**; quy tắc chạy khi ai đó lần đầu đọc `IOptions<T>.Value`. `ValidateOnStart()` mới ép host chạy kiểm tra lúc `StartAsync`, nên cần **cả hai**.\n- Chỉ có `Validate`: app vẫn \"started\", lỗi nổ muộn ở request đầu tiên đọc option.\n- Chỉ có `ValidateOnStart()`: không có quy tắc nào để vi phạm, nên khởi động bình thường.\n- `PostConfigure`: chỉ chỉnh giá trị, không kiểm tra gì.\nChạy thật: chỉ snippet kết hợp `Validate` + `ValidateOnStart()` in `start failed`."
+    },
+    {
+      "id": "dotnet-m15-04",
+      "topic": "Xoay khoá JWT",
+      "source": "Module 15 - Docker + Deployment - Environment và Secrets",
+      "question": "Token được ký bằng khoá **cũ** `oldKey`. Trong giai đoạn xoay khoá, hàm `Valid` được gọi với hai danh sách khoá khác nhau. Đoạn code in ra gì?",
+      "code": "// token đã ký bằng oldKey, chưa hết hạn\nbool Valid(params SecurityKey[] keys)\n{\n    var p = new TokenValidationParameters\n    {\n        ValidateIssuer = false, ValidateAudience = false,\n        IssuerSigningKeys = keys,\n    };\n    try { handler.ValidateToken(token, p, out _); return true; }\n    catch (SecurityTokenException) { return false; }\n}\nConsole.WriteLine(Valid(newKey, oldKey));\nConsole.WriteLine(Valid(newKey));",
+      "codeLang": "csharp",
+      "options": [
+        "False\nFalse",
+        "True\nTrue",
+        "False\nTrue",
+        "True\nFalse"
+      ],
+      "answer": 3,
+      "explanation": "`IssuerSigningKeys` là **danh sách** khoá được chấp nhận: thư viện thử từng khoá cho tới khi chữ ký khớp.\n- `Valid(newKey, oldKey)`: khoá cũ nằm trong danh sách nên token cũ vẫn hợp lệ, `True`. Đây chính là bước chuyển tiếp để xoay khoá không downtime.\n- `Valid(newKey)`: không còn khoá nào khớp chữ ký, ném `SecurityTokenSignatureKeyNotFoundException` (là một `SecurityTokenException`), nên `False`. Gỡ khoá cũ quá sớm sẽ đăng xuất toàn bộ người dùng.\nCác phương án có `True` ở dòng hai hoặc `False` ở dòng một đều sai vì đảo vai trò của hai danh sách khoá."
+    },
+    {
+      "id": "dotnet-m15-05",
+      "topic": "Docker secret dạng file",
+      "source": "Module 15 - Docker + Deployment - Docker Compose",
+      "question": "File secret `/run/secrets/db_password` tạo bằng `echo s3cret > file` nên **kết thúc bằng ký tự xuống dòng**. Mô phỏng việc đọc nó, code in ra gì?",
+      "code": "File.WriteAllText(path, \"s3cret\\n\");\nvar raw = File.ReadAllText(path);\nConsole.WriteLine(raw.Length);\nConsole.WriteLine(raw.Trim().Length);\nConsole.WriteLine(\n    $\"Password={raw};Timeout=30\".Contains('\\n'));",
+      "codeLang": "csharp",
+      "options": [
+        "7\n6\nTrue",
+        "6\n6\nFalse",
+        "7\n6\nFalse",
+        "7\n7\nTrue"
+      ],
+      "answer": 0,
+      "explanation": "Chuỗi `s3cret\\n` có **7** ký tự (6 chữ + 1 xuống dòng). `Trim()` bỏ ký tự trắng ở hai đầu nên còn **6**.\n- Nếu không `Trim()`, connection string `Password=s3cret\\n;Timeout=30` chứa ký tự xuống dòng, nên dòng ba là `True`: mật khẩu sai âm thầm và rất khó dò.\n- `6, 6, False` giả định `ReadAllText` tự cắt dòng cuối, nhưng nó giữ nguyên nội dung.\n- `7, 6, False` và `7, 7, True` mâu thuẫn với nhau hoặc với hành vi của `Trim()`.\nVì thế mẫu loader trong bài luôn gọi `.Trim()` khi đọc secret từ file."
+    },
+    {
+      "id": "dotnet-m15-06",
+      "topic": "Nạp secret từ thư mục",
+      "source": "Module 15 - Docker + Deployment - Environment và Secrets",
+      "question": "Thư mục secret có hai file: `ConnectionStrings__Default` (nội dung `Host=db` kèm xuống dòng) và `Jwt_Key` (nội dung `k1`). Loader đổi `__` thành `:` rồi nạp vào cấu hình. Đoạn code in ra gì?",
+      "code": "var secrets = Directory.GetFiles(dir)\n    .ToDictionary(\n        f => Path.GetFileName(f).Replace(\"__\", \":\"),\n        f => File.ReadAllText(f).Trim());\nvar cfg = new ConfigurationBuilder()\n    .AddInMemoryCollection(secrets!).Build();\nConsole.WriteLine(cfg[\"ConnectionStrings:Default\"]);\nConsole.WriteLine(cfg[\"Jwt:Key\"] ?? \"(null)\");\nConsole.WriteLine(cfg.GetSection(\"ConnectionStrings\")\n    .GetChildren().Count());",
+      "codeLang": "csharp",
+      "options": [
+        "(null)\n(null)\n0",
+        "Host=db\n(null)\n1",
+        "Host=db\nk1\n2",
+        "(null)\nk1\n2"
+      ],
+      "answer": 1,
+      "explanation": "Tên file `ConnectionStrings__Default` đổi thành khoá `ConnectionStrings:Default`, giá trị đã `Trim()` nên đọc đúng `Host=db`. Section `ConnectionStrings` có đúng một con (`Default`), nên đếm ra `1`.\n- `Jwt_Key` chỉ có **một** dấu gạch dưới nên khoá giữ nguyên là `Jwt_Key`, và `Jwt:Key` là `null`.\n- `(null), (null), 0` quên rằng tên file đúng quy ước vẫn được ánh xạ.\n- `k1` và đếm `2` sai vì tưởng một dấu gạch dưới cũng thành `:`, đồng thời section còn lại không chứa `Jwt_Key`.\nChạy thật: `Host=db`, `(null)`, `1`."
+    },
+    {
+      "id": "dotnet-m15-07",
+      "topic": "ENTRYPOINT và tín hiệu",
+      "source": "Module 15 - Docker + Deployment - Dockerfile cho ASP.NET Core",
+      "question": "Dockerfile viết `ENTRYPOINT dotnet CrmApi.dll` (dạng shell). Mỗi lần deploy, `docker stop` luôn mất đúng 10 giây và log đầy lỗi request bị cắt. Nguyên nhân?",
+      "options": [
+        "Docker bỏ SIGTERM và gửi thẳng SIGKILL cho mọi container",
+        "`dotnet` bỏ qua SIGTERM khi biên dịch ở chế độ Release",
+        "`ShutdownTimeout` mặc định luôn lớn hơn 10 giây",
+        "`sh` là PID 1 và không chuyển SIGTERM cho `dotnet`"
+      ],
+      "answer": 3,
+      "explanation": "Dạng shell chạy `/bin/sh -c \"dotnet CrmApi.dll\"`: `sh` là PID 1, `dotnet` là tiến trình con. `docker stop` gửi SIGTERM tới PID 1 nhưng `sh` không chuyển tiếp, nên app không chạy `ApplicationStopping`; sau 10 giây Docker gửi SIGKILL.\n- Docker **có** gửi SIGTERM trước, SIGKILL chỉ là bước sau khi hết thời gian chờ.\n- Chế độ Release không liên quan tới việc xử lý tín hiệu.\n- `ShutdownTimeout` không phải nguyên nhân: tín hiệu còn chưa tới được app.\nCách sửa: dùng dạng exec `ENTRYPOINT [\"dotnet\", \"CrmApi.dll\"]` để `dotnet` là PID 1."
+    },
+    {
+      "id": "dotnet-m15-08",
+      "topic": "Secret trong layer image",
+      "source": "Module 15 - Docker + Deployment - Environment và Secrets",
+      "question": "Dockerfile có `ARG NUGET_TOKEN`, một lệnh `RUN` dùng token để thêm NuGet source, và lệnh `RUN` sau đó xoá source đi. Token có an toàn không, và cách làm đúng là gì?",
+      "options": [
+        "An toàn, vì lệnh xoá ở layer sau ghi đè layer trước",
+        "Chỉ lộ nếu image bị đẩy lên một registry công khai",
+        "Vẫn lộ qua `docker history` và layer cũ, nên dùng `--mount=type=secret`",
+        "Chỉ `ENV` mới lưu lại, còn `ARG` thì không bao giờ lộ"
+      ],
+      "answer": 2,
+      "explanation": "Mỗi lệnh tạo một layer chỉ đọc; xoá ở layer sau chỉ **đánh dấu xoá**, nội dung vẫn nằm trong layer cũ. Giá trị `ARG` dùng trong `RUN` còn xuất hiện trong lịch sử build (`docker history --no-trunc`). Cách đúng là BuildKit `RUN --mount=type=secret,id=...`: secret chỉ được mount trong lúc lệnh chạy và không vào layer nào.\n- \"An toàn vì ghi đè\" nhầm union filesystem với việc sửa tại chỗ.\n- \"Chỉ lộ khi registry công khai\": registry riêng vẫn cho ai có quyền pull trích được token.\n- \"ARG không bao giờ lộ\" sai: ARG cũng nằm trong metadata build."
+    },
+    {
+      "id": "dotnet-m15-09",
+      "topic": "Compose: cổng và mạng",
+      "source": "Module 15 - Docker + Deployment - Docker Compose",
+      "question": "Trên VPS có IP công khai, compose của bạn khai báo cho service `sqlserver` mục `ports: - \"1433:1433\"`. Nhận định nào đúng?",
+      "options": [
+        "Cổng bind vào `0.0.0.0` nên DB có thể lộ ra Internet, chỉ cần `127.0.0.1:1433:1433` hoặc bỏ `ports`",
+        "Cổng chỉ bind vào localhost vì container nằm trong mạng riêng của Compose",
+        "API chỉ gọi được `sqlserver:1433` nếu service đó có khai báo `ports`",
+        "Compose tự chặn truy cập từ ngoài khi service có `healthcheck`"
+      ],
+      "answer": 0,
+      "explanation": "`\"1433:1433\"` bind vào mọi giao diện (`0.0.0.0`) của host; chỉ tường lửa còn đứng giữa DB và Internet. Muốn truy cập từ máy dev thì giới hạn `127.0.0.1:1433:1433`, còn API gọi DB trong cùng mạng thì không cần `ports` nào.\n- Mạng riêng của Compose không ngăn việc publish cổng ra host.\n- Container gọi nhau bằng **tên service** qua mạng Compose mà không cần `ports`; `ports` chỉ phục vụ truy cập từ host.\n- `healthcheck` chỉ kiểm tra sức khoẻ, không liên quan tới việc ai được kết nối."
+    },
+    {
+      "id": "dotnet-m15-10",
+      "topic": "Azure Container Apps",
+      "source": "Module 15 - Docker + Deployment - Azure Deployment",
+      "question": "API chạy trên Azure Container Apps có một `BackgroundService` gửi email theo lịch mỗi giờ. Để tiết kiệm, ai đó đặt `--min-replicas 0`. Cách xử lý đúng?",
+      "options": [
+        "Giữ nguyên, KEDA tự đánh thức container mỗi khi đến giờ lịch",
+        "Đặt `--min-replicas 1`, vì scale-to-zero dừng cả tiến trình nền",
+        "Chuyển sang AKS vì Container Apps không chạy được BackgroundService",
+        "Chỉ cần tăng `--cpu`, khi đó BackgroundService không còn bị dừng"
+      ],
+      "answer": 1,
+      "explanation": "Khi scale về 0, **không có tiến trình nào chạy**: timer trong `BackgroundService` không tồn tại để tự đánh thức, cache trong bộ nhớ cũng mất. Với app có việc nền, đặt `min-replicas >= 1` (hoặc tách việc nền sang cơ chế theo lịch riêng).\n- KEDA chỉ scale theo tín hiệu bên ngoài (request, hàng đợi), không biết lịch nội bộ của code.\n- Container Apps chạy được BackgroundService; chuyển sang AKS là tăng độ phức tạp vô ích.\n- Tăng CPU không đổi việc replica bị tắt khi idle."
+    },
+    {
+      "id": "dotnet-m15-11",
+      "topic": "Trung bình che giấu sự cố, cảnh báo theo p99",
+      "source": "Module 15 - Production Monitoring",
+      "question": "Một endpoint nhận 100 request: 95 request mất 50ms và 5 request mất 10000ms. Đội đặt hai cảnh báo: \"trung bình > 2000ms\" và \"p99 > 2000ms\". Chương trình in ra gì?",
+      "code": "var times = new List<double>();\nfor (int i = 0; i < 95; i++) times.Add(50);\nfor (int i = 0; i < 5; i++) times.Add(10000);\ntimes.Sort();\nvar avg = times.Average();\nvar p99 = times[(int)Math.Ceiling(0.99 * times.Count) - 1];\nConsole.WriteLine($\"avg={(int)avg} p99={p99}\");\nConsole.WriteLine(avg > 2000 ? \"alert-avg\" : \"quiet-avg\");\nConsole.WriteLine(p99 > 2000 ? \"alert-p99\" : \"quiet-p99\");",
+      "codeLang": "csharp",
+      "options": [
+        "```text\navg=547 p99=50\nquiet-avg\nquiet-p99\n```",
+        "```text\navg=547 p99=10000\nquiet-avg\nalert-p99\n```",
+        "```text\navg=547 p99=10000\nalert-avg\nalert-p99\n```",
+        "```text\navg=5025 p99=10000\nalert-avg\nalert-p99\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đúng: trung bình = (95 x 50 + 5 x 10000) / 100 = 547ms, thấp hơn nhiều ngưỡng 2000ms nên cảnh báo trung bình im lặng. Sắp xếp xong thì phần tử thứ 99 (chỉ số 98) nằm trong nhóm 5 request 10 giây, nên p99 = 10000 và cảnh báo p99 kêu.\n- `p99=50` sai vì p99 nhìn vào đuôi chậm nhất, không phải đa số request nhanh.\n- `alert-avg` sai vì 547 không vượt 2000.\n- `avg=5025` là lấy trung bình của hai giá trị 50 và 10000, bỏ qua trọng số 95/5.\nĐây chính là lý do bài học nói: dùng p99 chứ không dùng trung bình, vì 5% người dùng đang chờ 10 giây mà bảng điều khiển trung bình vẫn trông ổn."
+    },
+    {
+      "id": "dotnet-m15-12",
+      "topic": "Cache layer khi build image",
+      "source": "Module 15 - Docker + Deployment - Dockerfile cho ASP.NET Core",
+      "question": "Mỗi lần sửa một dòng code C#, bước `dotnet restore` trong build image lại chạy lại và tải NuGet từ đầu, dù không đổi package nào. Dockerfile ở stage build đang như dưới đây. Cách sửa đúng là gì?",
+      "code": "FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build\nWORKDIR /src\nCOPY . .\nRUN dotnet restore\nRUN dotnet publish -c Release -o /app/publish",
+      "codeLang": "dockerfile",
+      "options": [
+        "Chỉ `COPY` các file `.csproj` rồi `restore`, sau đó mới `COPY . .`",
+        "Thêm cờ `--no-cache` vào lệnh `docker build` mỗi lần build",
+        "Chuyển `RUN dotnet restore` xuống cuối, sau lệnh `publish`",
+        "Đổi sang image runtime để không cần chạy restore"
+      ],
+      "answer": 0,
+      "explanation": "Docker cache theo layer, và một layer bị vô hiệu khi đầu vào của nó đổi. `COPY . .` đưa toàn bộ source vào, nên sửa bất kỳ file nào cũng làm layer này và mọi layer sau nó (gồm `restore`) phải chạy lại. Tách ra: `COPY` riêng các `.csproj` rồi `restore`, layer restore chỉ đổi khi danh sách package đổi; sau đó mới `COPY . .` và publish.\n- `--no-cache` làm ngược lại: tắt cache, mọi bước chạy lại mỗi lần.\n- Đưa `restore` xuống sau `publish` vô nghĩa vì `publish` đã tự restore, và vẫn không cache được do đứng sau `COPY . .`.\n- Image runtime chỉ có runtime, không có SDK để biên dịch, nên không build được."
+    },
+    {
+      "id": "dotnet-m15-13",
+      "topic": "Cardinality của nhãn metric",
+      "source": "Module 15 - Production Monitoring",
+      "question": "Bạn đo số đơn bằng `Counter` và gắn nhãn. Đếm số **chuỗi metric** (tập nhãn khác nhau) mà listener thấy sau 5 đơn. Chương trình in ra gì?",
+      "code": "var meter = new Meter(\"Crm.Orders\");\nvar created = meter.CreateCounter<long>(\"orders.created\");\nstring[] channels = { \"web\", \"app\", \"web\", \"web\", \"app\" };\n\n// series = HashSet các tập nhãn mà listener nhận được\nfor (int i = 1; i <= 5; i++)\n    created.Add(1, new KeyValuePair<string, object?>(\n        \"channel\", channels[i - 1]));\nConsole.WriteLine(\"by channel: \" + series.Count);\n\nseries.Clear();\nfor (int i = 1; i <= 5; i++)\n    created.Add(1, new KeyValuePair<string, object?>(\n        \"orderId\", i));\nConsole.WriteLine(\"by orderId: \" + series.Count);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nby channel: 2\nby orderId: 5\n```",
+        "```text\nby channel: 5\nby orderId: 5\n```",
+        "```text\nby channel: 2\nby orderId: 1\n```",
+        "```text\nby channel: 1\nby orderId: 1\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đúng: nhãn `channel` chỉ có hai giá trị (`web`, `app`) nên chỉ có 2 chuỗi dù có 5 lần ghi. Nhãn `orderId` có giá trị khác nhau ở mỗi đơn nên mỗi đơn là một chuỗi riêng: 5 chuỗi.\n- `by channel: 5` sai vì nhiều lần ghi cùng tập nhãn gộp vào một chuỗi.\n- `by orderId: 1` sai vì mỗi giá trị nhãn khác nhau tạo một chuỗi mới.\n- `1` và `1` sai cả hai vì bỏ qua việc nhãn tạo chiều dữ liệu.\nĐây là bẫy cardinality của bài học: dùng id làm nhãn thì số chuỗi tăng theo số đơn, có thể làm sập hệ thống giám sát. Nhãn phải có tập giá trị hữu hạn và nhỏ."
+    },
+    {
+      "id": "dotnet-m15-14",
+      "topic": "Thứ tự sự kiện khi shutdown gọn",
+      "source": "Module 15 - Quick Real World Example",
+      "question": "Một host có hosted service `W` (in `worker stop` trong `StopAsync`). Sau khi host chạy, mã gọi `StopApplication()` rồi `StopAsync()` (giống khi pod nhận SIGTERM). Thứ tự in ra là gì?",
+      "code": "var host = builder.Build();\nvar life = host.Services\n    .GetRequiredService<IHostApplicationLifetime>();\nlife.ApplicationStarted.Register(\n    () => Console.WriteLine(\"started\"));\nlife.ApplicationStopping.Register(\n    () => Console.WriteLine(\"stopping\"));\nlife.ApplicationStopped.Register(\n    () => Console.WriteLine(\"stopped\"));\n\nawait host.StartAsync();\nlife.StopApplication();\nawait host.StopAsync();",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nstarted\nworker stop\nstopping\nstopped\n```",
+        "```text\nstarted\nstopping\nstopped\nworker stop\n```",
+        "```text\nstopping\nstarted\nworker stop\nstopped\n```",
+        "```text\nstarted\nstopping\nworker stop\nstopped\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đúng: `started`, rồi khi bắt đầu dừng thì `ApplicationStopping` chạy trước (đây là lúc đóng kết nối broker, huỷ đăng ký service discovery), sau đó host dừng các hosted service (`worker stop`), và cuối cùng mới tới `ApplicationStopped`.\n- `worker stop` trước `stopping` sai vì `ApplicationStopping` được kích hoạt đầu tiên, trước khi dừng service.\n- `stopped` trước `worker stop` sai vì `Stopped` nghĩa là mọi thứ đã dừng xong.\n- `stopping` trước `started` sai vì không thể dừng trước khi khởi động xong.\nNhớ thêm: toàn bộ quá trình này phải hoàn tất trong `ShutdownTimeout`, còn Kubernetes sẽ SIGKILL nếu vượt `terminationGracePeriodSeconds`."
+    },
+    {
+      "id": "dotnet-m15-15",
+      "topic": "Service discovery và địa chỉ https+http",
+      "source": "Module 15 - .NET Aspire",
+      "question": "Bạn copy cách gọi `https+http://payment-service` từ ví dụ Aspire vào ứng dụng console, nhưng **không** đăng ký service discovery cho `HttpClient`. Chuyện gì xảy ra?",
+      "code": "var http = new HttpClient\n{\n    BaseAddress = new Uri(\"https+http://payment-service\")\n};\nvar res = await http.GetAsync(\"/pay\");\nConsole.WriteLine(res.StatusCode);",
+      "codeLang": "csharp",
+      "options": [
+        "Gửi request tới `payment-service` qua HTTPS, nếu lỗi thì thử HTTP",
+        "Lỗi biên dịch vì scheme `https+http` không hợp lệ",
+        "Ném `UriFormatException` ngay ở dòng tạo `Uri`",
+        "Biên dịch được, nhưng ném `NotSupportedException` lúc gọi `GetAsync`"
+      ],
+      "answer": 3,
+      "explanation": "Đúng: `Uri` chấp nhận scheme `https+http` (ký tự `+` hợp lệ), nên không có lỗi biên dịch hay lỗi tạo `Uri`. Nhưng `HttpClient` thường chỉ hiểu `http` và `https`; việc phân giải `https+http://tên-logic` thành endpoint thật là nhiệm vụ của service discovery. Không đăng ký nó thì lúc gọi bị `NotSupportedException` (\"The 'https+http' scheme is not supported\").\n- Phương án tự thử HTTPS rồi HTTP sai vì chính `HttpClient` không có logic đó.\n- Lỗi biên dịch và `UriFormatException` sai vì `Uri` tạo thành công, đã kiểm tra chạy thật.\nBài học: `https+http://` chỉ có nghĩa khi `AddServiceDiscovery()` (thường nằm trong ServiceDefaults) đã được gắn vào `HttpClient`."
+    },
+    {
+      "id": "dotnet-m15-16",
+      "topic": "Cấu hình ShutdownTimeout của host",
+      "source": "Module 15 - Kubernetes Intro, Quick Real World Example",
+      "question": "Deployment đặt `terminationGracePeriodSeconds: 60` và `preStop` sleep 5 giây. Bạn muốn ứng dụng có tối đa **25 giây** để dừng gọn (5 + 25 < 60). Dòng nào đặt đúng giá trị đó cho `HostOptions`?",
+      "code": "using Microsoft.Extensions.Options;\nvar b = Host.CreateApplicationBuilder();\nb.Services.Configure<HostOptions>(o => { /* dòng cần chọn */ });\nvar host = b.Build();\nvar t = host.Services\n    .GetRequiredService<IOptions<HostOptions>>()\n    .Value.ShutdownTimeout;\nConsole.WriteLine((int)t.TotalSeconds);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\no.ShutdownTimeout = 25;\n```",
+        "```csharp\no.StopTimeout = TimeSpan.FromSeconds(25);\n```",
+        "```csharp\no.ShutdownTimeout = TimeSpan.FromSeconds(25);\n```",
+        "```csharp\no.ShutdownTimeout = TimeSpan.FromMilliseconds(25);\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đúng: `HostOptions.ShutdownTimeout` là kiểu `TimeSpan`, nên `TimeSpan.FromSeconds(25)` cho kết quả 25 giây.\n- `o.ShutdownTimeout = 25;` lỗi biên dịch CS0029: không có chuyển đổi ngầm từ `int` sang `TimeSpan`.\n- `o.StopTimeout` lỗi CS1061: `HostOptions` không có thuộc tính tên đó.\n- `TimeSpan.FromMilliseconds(25)` biên dịch được nhưng chỉ cho 0,025 giây, in ra 0: ứng dụng bị cắt ngang gần như ngay lập tức, nhầm đơn vị kinh điển.\nNhớ ràng buộc của bài: `preStop` + `ShutdownTimeout` phải nhỏ hơn `terminationGracePeriodSeconds`, nếu không Kubernetes SIGKILL trước khi ứng dụng dọn xong."
+    },
+    {
+      "id": "dotnet-m15-17",
+      "topic": "Liveness probe không kiểm tra database",
+      "source": "Module 15 - Kubernetes Intro",
+      "question": "Đội cấu hình `livenessProbe` gọi endpoint kiểm tra cả kết nối SQL Server. Một đêm database chậm khoảng 30 giây. Điều gì nhiều khả năng xảy ra nhất?",
+      "options": [
+        "Pod bị rút khỏi Service rồi chờ database hồi phục, không restart",
+        "Mọi pod fail liveness, bị restart đồng loạt, database càng quá tải",
+        "Chỉ pod đang xử lý request chậm bị restart, pod khác không sao",
+        "Probe bỏ qua lỗi database vì liveness chỉ kiểm tra cổng mạng"
+      ],
+      "answer": 1,
+      "explanation": "Đúng: sự cố nằm ở phụ thuộc dùng chung, nên liveness thất bại ở mọi pod cùng lúc. Kubernetes restart tất cả, các pod mới đồng loạt mở kết nối làm database quá tải hơn nữa và rơi vào restart loop.\n- Rút khỏi Service là hành vi của readinessProbe, không phải liveness (liveness thất bại thì restart container).\n- Chỉ restart một pod sai vì database chậm ảnh hưởng mọi pod như nhau.\n- Liveness không tự bỏ qua gì cả; nó chạy đúng endpoint bạn cấu hình.\nQuy tắc: liveness chỉ kiểm tra bản thân tiến trình; phụ thuộc bắt buộc như database để cho readiness."
+    },
+    {
+      "id": "dotnet-m15-18",
+      "topic": "Vượt limit bộ nhớ và CPU trong Kubernetes",
+      "source": "Module 15 - Kubernetes Intro, Mini case study",
+      "question": "Một pod .NET trong Kubernetes vượt đúng mức `limits` của mình. So sánh hành vi khi vượt `limits.memory` và khi vượt `limits.cpu`, cách nào mô tả đúng?",
+      "options": [
+        "Cả hai đều làm pod bị giết ngay và restart",
+        "Vượt bộ nhớ chỉ làm chậm tiến trình, còn vượt CPU thì pod bị OOM kill",
+        "Cả hai chỉ làm tiến trình chạy chậm lại, không bao giờ giết pod",
+        "Vượt bộ nhớ bị OOM kill (exit code 137), còn vượt CPU bị điều tiết (throttling) nên chạy chậm"
+      ],
+      "answer": 3,
+      "explanation": "Đúng: bộ nhớ không nén được, vượt trần là kernel OOM kill container (exit code 137). CPU thì co giãn được, vượt trần chỉ bị throttle: tiến trình chậm đi, kéo theo timeout và GC kéo dài, dù biểu đồ CPU trông chưa đầy 100% nên khó chẩn đoán.\n- Cả hai bị giết sai vì CPU chỉ bị bóp chứ không bị giết.\n- Phương án đảo vai sai: bộ nhớ mới là loại bị OOM kill.\n- Cả hai chỉ chạy chậm sai vì bộ nhớ vượt limit là bị giết.\nChính vì vậy nhiều đội giữ `memory limit` nhưng bỏ `cpu limit`, còn `requests` vẫn đảm bảo phần tối thiểu."
+    },
+    {
+      "id": "dotnet-m15-19",
+      "topic": "Rolling update và thay đổi schema",
+      "source": "Module 15 - Advanced Notes",
+      "question": "Đội dùng rolling update với `maxUnavailable: 0`. Một PR vừa đổi tên cột `Phone` thành `PhoneNumber` trong migration, vừa đổi code dùng cột mới, và deploy cùng lúc. Vì sao đây là rủi ro?",
+      "options": [
+        "`maxUnavailable: 0` làm Kubernetes bỏ qua migration nên cột mới không được tạo",
+        "Rolling update luôn khoá database nên migration không chạy được",
+        "Bản cũ và bản mới chạy song song trên cùng database, bản cũ vẫn tìm cột cũ nên lỗi",
+        "Rolling update chạy lại mọi migration cũ ở mỗi pod, làm trùng dữ liệu"
+      ],
+      "answer": 2,
+      "explanation": "Đúng: rolling update thay dần từng pod nên có khoảng thời gian bản cũ và bản mới cùng đọc ghi một database. Đổi tên cột thẳng làm bản cũ (còn tìm `Phone`) hoặc bản mới (tìm `PhoneNumber`) bị lỗi. Giải pháp là thay đổi tương thích ngược theo kiểu expand-contract: thêm cột mới, chạy song song, rồi mới xoá cột cũ ở lần sau.\n- `maxUnavailable: 0` chỉ nói về số pod phục vụ, không liên quan migration.\n- Rolling update không khoá database.\n- Nó cũng không tự chạy lại migration cũ; EF theo dõi migration đã áp dụng.\nChiến lược blue-green hay canary cũng chia sẻ cùng database nên có cùng yêu cầu tương thích ngược."
+    },
+    {
+      "id": "dotnet-m15-20",
+      "topic": "Aspire dùng ở dev, không phải công cụ triển khai",
+      "source": "Module 15 - .NET Aspire",
+      "question": "Đồng nghiệp đề xuất: \"Dùng Aspire AppHost thay luôn `compose.yaml` để triển khai lên VPS production.\" Nhận định nào đúng nhất theo bài học?",
+      "options": [
+        "Đồng ý, AppHost tự đóng gói và đẩy cả stack lên VPS",
+        "Không nên: Aspire thay compose lúc dev, còn triển khai cần azd, Aspirate hoặc compose riêng",
+        "Chỉ đồng ý nếu bỏ ServiceDefaults vì project đó chặn triển khai",
+        "Không đồng ý vì Aspire cấm chạy ngoài Docker Desktop"
+      ],
+      "answer": 1,
+      "explanation": "Đúng: Aspire mô tả stack bằng C# để chạy lúc phát triển (tự tiêm connection string, `WaitFor`, dashboard trace). Nó chỉ sinh manifest, còn việc triển khai cần công cụ khác như `azd` (Azure Container Apps) hay Aspirate (Kubernetes manifest). Nếu lên VPS bằng Docker Compose thì vẫn cần `compose.yaml` riêng cho production.\n- AppHost tự đẩy lên VPS sai: nó không phải công cụ triển khai.\n- Bỏ ServiceDefaults sai: project này dùng được cả ở production, thậm chí nhiều đội lấy riêng nó.\n- Cấm chạy ngoài Docker Desktop là bịa đặt.\nCái giá cần nhớ: mô tả stack nằm ở hai nơi nên giữ cùng danh sách dịch vụ và tên biến cấu hình để không lệch nhau."
+    }
+  ]
+}

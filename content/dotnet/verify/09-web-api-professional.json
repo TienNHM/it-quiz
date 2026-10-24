@@ -1,0 +1,107 @@
+[
+  {
+    "id": "dotnet-m09-01",
+    "kind": "cs-predict",
+    "program": "var r = new PagedResponse<int>([], 2, 20, 41);\nConsole.WriteLine($\"{r.TotalPages} {r.HasNext} {r.TotalCount / r.PageSize}\");\n\nrecord PagedResponse<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount)\n{\n    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);\n    public bool HasNext => Page < TotalPages;\n}"
+  },
+  {
+    "id": "dotnet-m09-02",
+    "kind": "cs-predict",
+    "program": "#:package System.Threading.RateLimiting@10.0.0\nusing System.Threading.RateLimiting;\nvar limiter = new ConcurrencyLimiter(new ConcurrencyLimiterOptions\n{\n    PermitLimit = 2,\n    QueueLimit = 0\n});\n\nvar l1 = limiter.AttemptAcquire();\nvar l2 = limiter.AttemptAcquire();\nvar l3 = limiter.AttemptAcquire();\nl1.Dispose();\nvar l4 = limiter.AttemptAcquire();\n\nConsole.WriteLine($\"{l1.IsAcquired} {l2.IsAcquired} {l3.IsAcquired} {l4.IsAcquired}\");"
+  },
+  {
+    "id": "dotnet-m09-03",
+    "kind": "cs-choose",
+    "template": "var root = Path.Combine(Path.GetTempPath(), \"up\");\nvar clientName = \"../../evil.txt\";   // do client gửi lên\n\n{{X}}\n\nvar full = Path.GetFullPath(path);\nif (!full.StartsWith(Path.GetFullPath(root)))\n    throw new Exception(\"escaped\");\nConsole.WriteLine(\"safe\");",
+    "options": [
+      "var path = Path.Combine(root, clientName);",
+      "var path = Path.Combine(root,\n    clientName.Replace(\"..\", \"\"));",
+      "var name = Guid.NewGuid().ToString(\"N\")\n    + Path.GetExtension(clientName);\nvar path = Path.Combine(root, name);",
+      "var path = root + \"/\" + clientName;"
+    ],
+    "expectOutput": "safe"
+  },
+  {
+    "id": "dotnet-m09-04",
+    "kind": "cs-predict",
+    "program": "byte[] png = [0x89, 0x50, 0x4E, 0x47];\nbyte[] content = [0x4D, 0x5A, 0x90, 0x00, 0x03];\nvar name = \"avatar.png\";\nvar contentType = \"image/png\";\n\nvar extOk = Path.GetExtension(name) == \".png\";\nvar typeOk = contentType == \"image/png\";\nvar magicOk = content.AsSpan(0, png.Length).SequenceEqual(png);\nConsole.WriteLine($\"{extOk} {typeOk} {magicOk}\");"
+  },
+  {
+    "id": "dotnet-m09-05",
+    "kind": "cs-predict",
+    "program": "var db = new List<int> { 10, 9, 8, 7, 6, 5, 4, 3 };   // mới nhất trước\nvar page1 = db.Skip(0).Take(3).ToList();\n\ndb.Insert(0, 12);   // 2 bản ghi mới chen lên đầu\ndb.Insert(0, 11);\nvar page2 = db.Skip(3).Take(3).ToList();\n\nConsole.WriteLine(string.Join(\",\", page1) + \" | \" + string.Join(\",\", page2));"
+  },
+  {
+    "id": "dotnet-m09-06",
+    "kind": "cs-choose",
+    "template": "var rows = new List<(int At, int Id)>\n{\n    (5, 4), (5, 3), (5, 2), (5, 1), (4, 9), (3, 7)\n};   // đã sắp xếp At DESC, Id DESC\nvar last = (At: 5, Id: 3);   // dòng cuối của trang trước\n\nvar page = rows\n    .Where(c => {{X}})\n    .Select(c => $\"{c.At}-{c.Id}\");\nConsole.WriteLine(string.Join(\",\", page));",
+    "options": [
+      "c.At < last.At ||\n(c.At == last.At && c.Id < last.Id)",
+      "c.At < last.At",
+      "c.At <= last.At",
+      "c.Id < last.Id"
+    ],
+    "expectOutput": "5-2,5-1,4-9,3-7"
+  },
+  {
+    "id": "dotnet-m09-07",
+    "kind": "cs-outcome",
+    "program": "IQueryable<Customer> query = new[]\n{\n    new Customer(2, \"An\"), new Customer(1, \"An\")\n}.AsQueryable();\n\nvar sorted = query.ThenBy(c => c.Id);\nConsole.WriteLine(string.Join(\",\", sorted.Select(c => c.Id)));\n\nrecord Customer(int Id, string Name);",
+    "expect": "compile-error",
+    "code": "CS1061"
+  },
+  {
+    "id": "dotnet-m09-08",
+    "kind": "cs-predict",
+    "program": "var credit = 0;\nvoid ApplyDelta(int d) => credit += d;   // {\"credit\": \"+100\"}\nvoid ApplySet(int v) => credit = v;      // {\"credit\": 500}\n\nApplyDelta(100);\nApplyDelta(100);   // client retry vì timeout\nvar a = credit;\n\ncredit = 0;\nApplySet(500);\nApplySet(500);     // client retry vì timeout\nConsole.WriteLine($\"{a} {credit}\");"
+  },
+  {
+    "id": "dotnet-m09-11",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\n#:package Microsoft.AspNetCore.TestHost@10.0.0\nusing Microsoft.AspNetCore.Builder;\nusing Microsoft.AspNetCore.TestHost;\nusing Microsoft.AspNetCore.OutputCaching;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar builder = WebApplication.CreateBuilder();\nbuilder.WebHost.UseTestServer();\nbuilder.Logging.ClearProviders();\nbuilder.Services.AddOutputCache(o =>\n    o.AddPolicy(\"list\", b => b.Expire(TimeSpan.FromMinutes(1)).SetVaryByQuery(\"page\")));\nvar app = builder.Build();\napp.UseOutputCache();\n\nvar calls = 0;\napp.MapGet(\"/\", (string? status) => $\"{status} #{++calls}\").CacheOutput(\"list\");\nawait app.StartAsync();\nvar client = app.GetTestClient();\nforeach (var url in new[] { \"/?status=Active\", \"/?status=Inactive\", \"/?status=Active&page=2\", \"/?status=Inactive&page=2\" })\n    Console.WriteLine(await client.GetStringAsync(url));\nawait app.StopAsync();\n"
+  },
+  {
+    "id": "dotnet-m09-12",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\n#:package Microsoft.AspNetCore.TestHost@10.0.0\nusing Microsoft.AspNetCore.Builder;\nusing Microsoft.AspNetCore.TestHost;\nusing Microsoft.AspNetCore.OutputCaching;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar builder = WebApplication.CreateBuilder();\nbuilder.WebHost.UseTestServer();\nbuilder.Logging.ClearProviders();\nbuilder.Services.AddOutputCache();\nvar app = builder.Build();\napp.UseOutputCache();\n\nvar calls = 0;\napp.MapGet(\"/items\", (int page) => $\"page {page} -> call {++calls}\")\n   .CacheOutput(p => p.Expire(TimeSpan.FromMinutes(1)));\nawait app.StartAsync();\nvar client = app.GetTestClient();\nforeach (var url in new[] { \"/items?page=1\", \"/items?page=2\", \"/items?page=1\", \"/items?page=2\" })\n    Console.WriteLine(await client.GetStringAsync(url));\nawait app.StopAsync();\n"
+  },
+  {
+    "id": "dotnet-m09-13",
+    "kind": "cs-outcome",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\nusing Microsoft.AspNetCore.Builder;\nusing Microsoft.AspNetCore.OutputCaching;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar builder = WebApplication.CreateBuilder();\nbuilder.Services.AddOutputCache(o =>\n    o.AddPolicy(\"lang\", b => b.SetVaryByValue(\"lang\", \"vi\")));\nConsole.WriteLine(\"built\");\n",
+    "expect": "compile-error",
+    "code": "CS1061"
+  },
+  {
+    "id": "dotnet-m09-14",
+    "kind": "cs-predict",
+    "program": "byte[] version = [1, 2, 3];\nConsole.WriteLine($\"\\\"{version}\\\"\");\nConsole.WriteLine($\"\\\"{Convert.ToBase64String(version)}\\\"\");\n"
+  },
+  {
+    "id": "dotnet-m09-15",
+    "kind": "cs-find-error",
+    "errorKind": "runtime",
+    "template": "#:package Microsoft.Extensions.Hosting@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\nusing Microsoft.Extensions.Hosting;\n\nvar b = Host.CreateApplicationBuilder(\n    new HostApplicationBuilderSettings { EnvironmentName = \"Development\" });\nb.Services.AddScoped<Db>();\nb.Services.AddSingleton<Clock>();\nb.Services.AddHostedService<Worker>();\nusing var host = b.Build();\nawait host.StartAsync();\nawait host.StopAsync();\nConsole.WriteLine(\"ok\");\n\nclass Db { }\nclass Clock { }\n\nclass Worker({{X}}) : BackgroundService\n{\n    protected override Task ExecuteAsync(CancellationToken ct) => Task.CompletedTask;\n}\n",
+    "options": [
+      "Clock clock",
+      "Db db",
+      "IServiceScopeFactory f",
+      "IServiceProvider sp"
+    ]
+  },
+  {
+    "id": "dotnet-m09-16",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Hosting@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\nusing Microsoft.Extensions.Hosting;\nusing Microsoft.Extensions.Logging;\n\nforeach (var behavior in new[] { BackgroundServiceExceptionBehavior.StopHost, BackgroundServiceExceptionBehavior.Ignore })\n{\n    var b = Host.CreateApplicationBuilder();\n    b.Logging.ClearProviders();\n    b.Services.Configure<HostOptions>(o => o.BackgroundServiceExceptionBehavior = behavior);\n    b.Services.AddHostedService<Boom>();\n    using var host = b.Build();\n    await host.StartAsync();\n    await Task.Delay(500);\n    var life = host.Services.GetRequiredService<IHostApplicationLifetime>();\n    Console.WriteLine($\"{behavior}: stopping={life.ApplicationStopping.IsCancellationRequested}\");\n    await host.StopAsync();\n}\n\nclass Boom : BackgroundService\n{\n    protected override async Task ExecuteAsync(CancellationToken ct)\n    {\n        await Task.Yield();\n        throw new InvalidOperationException(\"SMTP down\");\n    }\n}\n"
+  },
+  {
+    "id": "dotnet-m09-17",
+    "kind": "cs-predict",
+    "program": "using System.Collections.Concurrent;\n\nvar done = new ConcurrentDictionary<string, bool>();\nvar claimed = new ConcurrentDictionary<string, bool>();\nint a = 0, b = 0;\n\nasync Task Check(string k)\n{\n    if (done.ContainsKey(k)) return;\n    await Task.Delay(100);\n    done[k] = true;\n    Interlocked.Increment(ref a);\n}\n\nasync Task Claim(string k)\n{\n    if (!claimed.TryAdd(k, true)) return;\n    await Task.Delay(100);\n    Interlocked.Increment(ref b);\n}\n\nawait Task.WhenAll(Check(\"K\"), Check(\"K\"));\nawait Task.WhenAll(Claim(\"K\"), Claim(\"K\"));\nConsole.WriteLine($\"{a}\\n{b}\");\n"
+  },
+  {
+    "id": "dotnet-m09-18",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:package Microsoft.EntityFrameworkCore.InMemory@10.0.0\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.Data.Sqlite;\nusing Microsoft.EntityFrameworkCore;\n\nasync Task<string> Save(Crm db)\n{\n    db.Customers.Add(new Customer { Email = \"a@x.com\" });\n    db.Customers.Add(new Customer { Email = \"a@x.com\" });\n    try { await db.SaveChangesAsync(); return \"saved\"; }\n    catch (DbUpdateException) { return \"DbUpdateException\"; }\n}\n\nusing var mem = new Crm(new DbContextOptionsBuilder<Crm>().UseInMemoryDatabase(\"t\").Options);\nusing var conn = new SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nusing var sql = new Crm(new DbContextOptionsBuilder<Crm>().UseSqlite(conn).Options);\nsql.Database.EnsureCreated();\n\nConsole.WriteLine(\"InMemory: \" + await Save(mem));\nConsole.WriteLine(\"Sqlite: \" + await Save(sql));\n\nclass Customer { public int Id { get; set; } public string Email { get; set; } = \"\"; }\nclass Crm(DbContextOptions<Crm> o) : DbContext(o)\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n    protected override void OnModelCreating(ModelBuilder m) =>\n        m.Entity<Customer>().HasIndex(c => c.Email).IsUnique();\n}\n"
+  }
+]

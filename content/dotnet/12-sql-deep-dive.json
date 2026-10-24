@@ -1,0 +1,313 @@
+{
+  "id": "dotnet-m12",
+  "title": "Module 12: SQL Deep Dive",
+  "description": "Thiết kế schema CRM, khác biệt SQL Server/PostgreSQL, query nâng cao, index, tối ưu truy vấn và giao dịch.",
+  "questions": [
+    {
+      "id": "dotnet-m12-01",
+      "topic": "LEFT JOIN và WHERE",
+      "source": "Module 12 - Queries nâng cao",
+      "question": "Chạy trên SQLite (hành vi `LEFT JOIN` giống SQL Server và PostgreSQL). Hai truy vấn lần lượt in ra giá trị `COUNT(*)` nào (mỗi giá trị một dòng)?",
+      "code": "CREATE TABLE Customers (Id INT, Name TEXT);\nCREATE TABLE Orders (Id INT, CustomerId INT, Status TEXT);\nINSERT INTO Customers VALUES (1,'A'),(2,'B'),(3,'C');\nINSERT INTO Orders VALUES (1,1,'Paid'),(2,1,'Cancelled'),(3,2,'Cancelled');\n\n-- Truy vấn 1\nSELECT COUNT(*) FROM Customers c\nLEFT JOIN Orders o ON o.CustomerId = c.Id\nWHERE o.Status = 'Paid';\n\n-- Truy vấn 2\nSELECT COUNT(*) FROM Customers c\nLEFT JOIN Orders o ON o.CustomerId = c.Id AND o.Status = 'Paid';",
+      "codeLang": "sql",
+      "options": [
+        "3\n3",
+        "1\n3",
+        "3\n1",
+        "1\n1"
+      ],
+      "answer": 1,
+      "explanation": "Kết quả thật là `1` rồi `3`.\n- Truy vấn 1: điều kiện `o.Status = 'Paid'` nằm ở `WHERE`, chạy SAU phép JOIN. Khách B và C có `o.Status` là NULL, `NULL = 'Paid'` cho UNKNOWN nên bị loại; chỉ còn khách A với đơn Paid. `LEFT JOIN` đã âm thầm thành `INNER JOIN`.\n- Truy vấn 2: điều kiện nằm trong `ON`, chỉ quyết định dòng nào của Orders được khớp. Mọi khách bên trái vẫn có mặt (B và C với NULL), nên đủ 3 dòng.\n- `3 3` sai vì bỏ qua tác dụng lọc của `WHERE`; `3 1` đảo ngược hai truy vấn; `1 1` quên rằng `ON` không loại dòng bên trái.\nQuy tắc: điều kiện về bảng bên phải của `LEFT JOIN` thuộc về `ON`."
+    },
+    {
+      "id": "dotnet-m12-02",
+      "topic": "NOT IN và NULL",
+      "source": "Module 12 - Queries nâng cao",
+      "question": "Bảng `Leads` có một dòng `OwnerId` là NULL. Hai truy vấn tìm user chưa sở hữu lead nào lần lượt in ra `COUNT(*)` bao nhiêu (mỗi giá trị một dòng)?",
+      "code": "CREATE TABLE Users (Id INT);\nCREATE TABLE Leads (Id INT, OwnerId INT);\nINSERT INTO Users VALUES (1),(2),(3);\nINSERT INTO Leads VALUES (10,1),(11,NULL);\n\n-- Truy vấn 1\nSELECT COUNT(*) FROM Users\nWHERE Id NOT IN (SELECT OwnerId FROM Leads);\n\n-- Truy vấn 2\nSELECT COUNT(*) FROM Users u\nWHERE NOT EXISTS (\n  SELECT 1 FROM Leads l WHERE l.OwnerId = u.Id);",
+      "codeLang": "sql",
+      "options": [
+        "2\n2",
+        "0\n0",
+        "0\n2",
+        "2\n0"
+      ],
+      "answer": 2,
+      "explanation": "Kết quả thật là `0` rồi `2`.\n- `NOT IN` với một NULL trong tập con: `Id <> NULL` cho UNKNOWN, nên không dòng nào chắc chắn \"không nằm trong tập\" và kết quả là rỗng, tức `0`.\n- `NOT EXISTS` chỉ hỏi \"có dòng khớp hay không\", NULL không khớp ai, nên User 2 và 3 được trả về, tức `2`.\n- `2 2` tưởng NOT IN bỏ qua NULL; `0 0` tưởng NOT EXISTS cũng bị NULL phá; `2 0` đảo thứ tự hai truy vấn.\nMặc định hãy dùng `NOT EXISTS` khi tập con có thể chứa NULL."
+    },
+    {
+      "id": "dotnet-m12-03",
+      "topic": "Window function và WHERE",
+      "source": "Module 12 - Queries nâng cao",
+      "question": "Đoạn C# dưới đây lấy lead giá trị cao nhất của mỗi `Status`. Chạy chương trình thì chuyện gì xảy ra?",
+      "code": "using var db = new SqliteConnection(\"Data Source=:memory:\");\ndb.Open();\nnew SqliteCommand(\"CREATE TABLE Leads (Id INT, Status TEXT, Value INT);\" +\n  \"INSERT INTO Leads VALUES (1,'New',5),(2,'New',9),(3,'Won',7)\", db)\n  .ExecuteNonQuery();\n\nvar sql = @\"SELECT Id,\n  ROW_NUMBER() OVER (PARTITION BY Status ORDER BY Value DESC) AS rn\n  FROM Leads WHERE rn = 1\";\nusing var r = new SqliteCommand(sql, db).ExecuteReader();\nwhile (r.Read()) Console.WriteLine(r.GetInt32(0));",
+      "codeLang": "csharp",
+      "options": [
+        "In ra 2 rồi 3, mỗi nhóm một dòng có `rn = 1`",
+        "Lỗi biên dịch C#: không tồn tại tên `rn`",
+        "Chạy xong, không in gì vì `rn` chưa có giá trị",
+        "Ném `SqliteException` vì `rn` chưa tồn tại ở `WHERE`"
+      ],
+      "answer": 3,
+      "explanation": "Chương trình biên dịch bình thường (SQL chỉ là chuỗi với C#), nhưng khi SQLite chuẩn bị câu lệnh thì ném `SqliteException` (\"misuse of aliased window function rn\").\n- Thứ tự xử lý logic: `FROM`, `WHERE`, `GROUP BY`, `HAVING`, window, `SELECT`. Lúc `WHERE` chạy thì `rn` chưa được tính.\n- Lỗi biên dịch C# là sai vì lỗi nằm ở SQL, trình biên dịch C# không kiểm tra chuỗi.\n- \"Chạy xong, không in gì\" là sai vì câu lệnh không được chạy, chứ không phải chạy rồi trả về rỗng.\n- \"In 2 rồi 3\" là sai vì SQL không cho lọc theo kết quả window function trực tiếp ở WHERE.\nCách đúng: bọc truy vấn trong CTE hoặc subquery rồi lọc `WHERE rn = 1` ở truy vấn ngoài."
+    },
+    {
+      "id": "dotnet-m12-04",
+      "topic": "GUID làm khoá chính",
+      "source": "Module 12 - Database Design cho CRM",
+      "question": "Bảng `Customers` dùng `UNIQUEIDENTIFIER DEFAULT NEWID()` làm khoá chính (index gom cụm) trên SQL Server, đã chèn hàng trăm nghìn dòng. Điều gì xảy ra, và hướng xử lý hợp lý khi vẫn cần GUID cho API công khai?",
+      "options": [
+        "Tách trang liên tục gây phân mảnh, nên dùng GUID tuần tự (UUIDv7) hoặc khoá `INT IDENTITY` kèm cột `PublicId` riêng",
+        "Mỗi dòng mới luôn ghi vào cuối bảng nên không phân mảnh, chỉ cần thêm index trên cột GUID để đọc nhanh hơn",
+        "Bảng chỉ lớn hơn do GUID dài 16 byte, ghi vẫn nhanh như `INT`, và đổi cột sang `VARCHAR(36)` là giải quyết được",
+        "Phân mảnh chỉ làm chậm đọc và các index phụ không bị ảnh hưởng, nên không cần đổi gì cho bảng"
+      ],
+      "answer": 0,
+      "explanation": "Index gom cụm sắp xếp dữ liệu vật lý theo khoá. `NEWID()` cho giá trị ngẫu nhiên nên mỗi dòng rơi vào vị trí bất kỳ; trang đích đầy thì SQL Server phải tách trang, để lại các trang chỉ đầy khoảng một nửa và phân mảnh cao.\n- Ý \"luôn ghi vào cuối bảng, không phân mảnh\" sai: giá trị ngẫu nhiên không bao giờ \"ghi vào cuối\"; đó là hành vi của `INT IDENTITY`.\n- Ý \"chỉ do GUID dài, ghi vẫn nhanh\" sai: vấn đề chính là thứ tự ngẫu nhiên, không chỉ kích thước; `VARCHAR(36)` còn to hơn và vẫn ngẫu nhiên.\n- Ý \"phân mảnh chỉ làm chậm đọc, index phụ không ảnh hưởng\" sai: mọi index phụ đều chứa khoá gom cụm để trỏ về dòng, nên GUID 16 byte làm tất cả index phình ra.\nHai cách sửa gọn: GUID tuần tự (UUIDv7, `NEWSEQUENTIALID()`) hoặc khoá `INT` nội bộ cộng `PublicId` GUID có unique index."
+    },
+    {
+      "id": "dotnet-m12-05",
+      "topic": "Soft delete và UNIQUE",
+      "source": "Module 12 - Database Design cho CRM",
+      "question": "Cần cho phép đăng ký lại email sau khi xoá mềm (bước 3 thành công), nhưng vẫn chặn trùng email khi cả hai bản ghi đang hoạt động (chỉ bước 4 bị từ chối, các bước khác đều thành công). Index nào ở chỗ trống làm đúng điều đó trên SQLite?",
+      "code": "CREATE TABLE Users (Id INTEGER PRIMARY KEY,\n  Email TEXT NOT NULL, DeletedAt TEXT NULL);\n-- (tạo index ở đây)\nINSERT INTO Users (Email) VALUES ('an@x.com');  -- 1\nUPDATE Users SET DeletedAt = '2026-01-01'\n  WHERE Id = 1;                                 -- 2\nINSERT INTO Users (Email) VALUES ('an@x.com');  -- 3\nINSERT INTO Users (Email) VALUES ('an@x.com');  -- 4\nUPDATE Users SET DeletedAt = '2026-02-01'\n  WHERE DeletedAt IS NULL;                      -- 5",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nCREATE UNIQUE INDEX ux ON Users(Email);\n```",
+        "```sql\nCREATE UNIQUE INDEX ux ON Users(Email)\n  WHERE DeletedAt IS NULL;\n```",
+        "```sql\nCREATE UNIQUE INDEX ux\n  ON Users(Email, DeletedAt);\n```",
+        "```sql\nCREATE INDEX ux ON Users(Email)\n  WHERE DeletedAt IS NULL;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng là unique index có điều kiện (filtered/partial index): chỉ những dòng chưa xoá (`DeletedAt IS NULL`) mới phải duy nhất.\n- `UNIQUE (Email)` thường: dòng xoá mềm vẫn nằm trong bảng, nên bước 3 bị từ chối. Database không biết \"đã xoá\" là gì.\n- `UNIQUE (Email, DeletedAt)`: hai dòng đang hoạt động đều có `DeletedAt` NULL, mà NULL không bằng NULL nên bước 4 lọt qua; đến bước 5 hai dòng cùng nhận một ngày xoá thì mới vỡ unique.\n- Index có điều kiện nhưng thiếu `UNIQUE`: chỉ là index thường nên chẳng chặn trùng nào, bước 4 vẫn thành công.\nTrên SQL Server là filtered index, trên PostgreSQL là partial index, cú pháp gần như y hệt."
+    },
+    {
+      "id": "dotnet-m12-06",
+      "topic": "SARGable",
+      "source": "Module 12 - Indexing",
+      "question": "Với bảng dưới đây, mỗi điều kiện chạy dạng `SELECT * FROM Leads WHERE ...`. Dùng `EXPLAIN QUERY PLAN` của SQLite và in từ đầu của dòng plan (`SEARCH` = dùng index để seek, `SCAN` = quét hết). Kết quả in ra là gì?",
+      "code": "CREATE TABLE Leads (Id INTEGER PRIMARY KEY,\n  Email TEXT, CreatedAt TEXT);\nCREATE INDEX ix_email ON Leads(Email);\nCREATE INDEX ix_created ON Leads(CreatedAt);\n\n-- A: Email = 'a@b.com'\n-- B: lower(Email) = 'a@b.com'\n-- C: CreatedAt >= '2026-01-01'\n--    AND CreatedAt < '2027-01-01'\n-- D: strftime('%Y', CreatedAt) = '2026'",
+      "codeLang": "sql",
+      "options": [
+        "A: SEARCH\nB: SEARCH\nC: SEARCH\nD: SEARCH",
+        "A: SEARCH\nB: SEARCH\nC: SCAN\nD: SCAN",
+        "A: SEARCH\nB: SCAN\nC: SEARCH\nD: SCAN",
+        "A: SCAN\nB: SCAN\nC: SEARCH\nD: SEARCH"
+      ],
+      "answer": 2,
+      "explanation": "Kết quả thật: A và C là `SEARCH`, B và D là `SCAN`.\n- A: cột `Email` đứng một mình ở một vế nên seek được trên `ix_email`.\n- C: khoảng `>=` và `<` trên chính cột `CreatedAt` nên seek được trên `ix_created`.\n- B và D bọc cột trong hàm (`lower`, `strftime`). Index sắp xếp theo giá trị cột, không theo kết quả hàm, nên engine phải tính hàm cho mọi dòng, tức là quét.\n- Các phương án còn lại đều xếp sai ít nhất một điều kiện: cho rằng hàm bọc cột vẫn seek được, hoặc cho rằng khoảng ngày không dùng được index.\nCần lọc theo `YEAR(...)` thì viết lại thành khoảng, hoặc tạo index trên biểu thức."
+    },
+    {
+      "id": "dotnet-m12-07",
+      "topic": "Thứ tự cột composite index",
+      "source": "Module 12 - Indexing",
+      "question": "Truy vấn dưới đây cần chạy nhanh. Chương trình kiểm tra in `seek=` (số cột của index dùng để seek) và `sort=` (có bước sắp xếp tạm hay không). Index nào cho kết quả tốt nhất: seek bằng cả 3 điều kiện và không phải sort?",
+      "code": "SELECT * FROM Leads\nWHERE TenantId = 1\n  AND Status = 'New'\n  AND CreatedAt > '2026-01-01'\nORDER BY CreatedAt DESC;",
+      "codeLang": "sql",
+      "options": [
+        "```sql\nCREATE INDEX ix ON Leads(CreatedAt, Status, TenantId);\n```",
+        "```sql\nCREATE INDEX ix ON Leads(Status, TenantId);\n```",
+        "```sql\nCREATE INDEX ix ON Leads(TenantId, CreatedAt, Status);\n```",
+        "```sql\nCREATE INDEX ix ON Leads(TenantId, Status, CreatedAt);\n```"
+      ],
+      "answer": 3,
+      "explanation": "Nguyên tắc: các cột so sánh bằng (`=`) đứng trước, cột dùng khoảng (`>`) đứng cuối. Index `(TenantId, Status, CreatedAt)` seek được cả ba điều kiện và các dòng đã nằm sẵn theo `CreatedAt`, nên `ORDER BY` không cần sort.\n- `(CreatedAt, Status, TenantId)`: cột khoảng đứng đầu nên chỉ seek được cột `CreatedAt`; `Status` và `TenantId` chỉ lọc trong tập tìm được.\n- `(Status, TenantId)`: seek được 2 cột nhưng thiếu `CreatedAt` nên phải sort tạm cho `ORDER BY`.\n- `(TenantId, CreatedAt, Status)`: `CreatedAt` là khoảng nằm giữa nên `Status` đứng sau nó không còn dùng để seek (chỉ seek 2 cột).\nKết quả chạy thật: đáp án đúng cho `seek=3 sort=no`, các phương án sai đều kém hơn."
+    },
+    {
+      "id": "dotnet-m12-08",
+      "topic": "Collation khi đổi hệ quản trị",
+      "source": "Module 12 - SQL Server so với PostgreSQL",
+      "question": "Ứng dụng đang chạy trên SQL Server (collation mặc định không phân biệt hoa thường). Khi chuyển sang PostgreSQL, code kiểm tra trùng email `WHERE Email = @email` giữ nguyên. Điều gì xảy ra, và cách xử lý bền vững nhất?",
+      "options": [
+        "`An@x.com` và `an@x.com` thành hai tài khoản khác nhau, không có lỗi, cách xử lý là chuẩn hoá email về chữ thường khi ghi",
+        "PostgreSQL báo lỗi collation conflict nên bị phát hiện ngay, chỉ cần đổi tên cột sang chữ thường",
+        "Hành vi giữ nguyên vì phép `=` theo chuẩn SQL luôn bỏ qua hoa thường, không cần thay đổi gì cả",
+        "Truy vấn chạy đúng nhưng chậm vì mất index, cần cài thêm một extension để lấy lại hiệu năng"
+      ],
+      "answer": 0,
+      "explanation": "SQL Server mặc định dùng collation `CI` (case-insensitive), còn PostgreSQL với `text`/`varchar` luôn phân biệt hoa thường. Code không đổi, không lỗi, chỉ là kết quả khác đi một cách im lặng: người dùng đăng ký lại được với email đã tồn tại.\n- Ý \"báo lỗi collation conflict\" sai: không có lỗi nào được ném; chính vì im lặng nên bug mới nguy hiểm. Tên cột hoa thường cũng không liên quan.\n- Ý \"= luôn bỏ qua hoa thường\" sai: chuẩn SQL không quy định `=` bỏ qua hoa thường, đó là lựa chọn của collation.\n- Ý \"mất index nên chậm\" sai: index vẫn dùng bình thường; vấn đề là kết quả sai chứ không phải tốc độ.\nCách tốt nhất là chuẩn hoá về chữ thường khi ghi (kèm `CHECK (email = lower(email))`); thay thế là `citext` hoặc unique index trên `lower(email)`."
+    },
+    {
+      "id": "dotnet-m12-09",
+      "topic": "Cập nhật nguyên tử, tồn kho",
+      "source": "Module 12 - Transactions và Locking",
+      "question": "Chương trình trừ kho bằng một câu `UPDATE` có điều kiện và chạy câu đó hai lần liên tiếp. Chương trình in ra những gì (số dòng bị ảnh hưởng lần 1, lần 2, rồi số lượng còn lại)?",
+      "code": "using var db = new SqliteConnection(\"Data Source=:memory:\");\ndb.Open();\nint Run(string s) {\n  using var c = new SqliteCommand(s, db);\n  return c.ExecuteNonQuery();\n}\nRun(\"CREATE TABLE Inventory (ProductId INT PRIMARY KEY, Quantity INT)\");\nRun(\"INSERT INTO Inventory VALUES (1, 5)\");\nvar sql = \"UPDATE Inventory SET Quantity = Quantity - 3 \" +\n          \"WHERE ProductId = 1 AND Quantity >= 3\";\nConsole.WriteLine(Run(sql));\nConsole.WriteLine(Run(sql));\nvar q = new SqliteCommand(\"SELECT Quantity FROM Inventory\", db);\nConsole.WriteLine(q.ExecuteScalar());",
+      "codeLang": "csharp",
+      "options": [
+        "1\n1\n-1",
+        "1\n0\n2",
+        "1\n0\n5",
+        "0\n0\n5"
+      ],
+      "answer": 1,
+      "explanation": "Kết quả thật: `1`, `0`, `2`.\n- Lần 1: kho còn 5, điều kiện `Quantity >= 3` đúng, trừ 3 còn 2, một dòng bị ảnh hưởng.\n- Lần 2: kho chỉ còn 2, điều kiện sai nên không dòng nào khớp, số dòng bị ảnh hưởng là 0 và kho giữ nguyên 2.\n- `1 1 -1` tưởng câu lệnh vẫn trừ và cho kho âm; chính điều kiện trong `WHERE` ngăn điều đó.\n- `1 0 5` và `0 0 5` quên rằng lần 1 đã thực sự trừ kho.\nĐây là mẫu cập nhật nguyên tử: gộp kiểm tra và ghi vào một câu lệnh, không có khoảng trống giữa đọc và ghi. Số dòng bằng 0 chính là tín hiệu \"không đủ hàng\" để báo lỗi."
+    },
+    {
+      "id": "dotnet-m12-10",
+      "topic": "Parameter sniffing",
+      "source": "Module 12 - Query Optimization",
+      "question": "Stored procedure `GetLeadsByStatus @Status` trên SQL Server chạy nhanh khi gọi với `'Won'` (10 dòng) nhưng rất chậm khi gọi với `'New'` (500.000 dòng). Khởi động lại SQL Server thì hết chậm một thời gian rồi tái diễn. Chẩn đoán và hướng xử lý đầu tiên hợp lý là gì?",
+      "options": [
+        "Thiếu RAM làm buffer pool bị đẩy ra, nên tăng bộ nhớ và gắn `WITH (NOLOCK)` cho mọi truy vấn",
+        "Statistics hỏng vĩnh viễn, chỉ có cách xoá hết index rồi tạo lại bảng mới sửa được",
+        "Parameter sniffing: plan được cache theo tham số lần đầu, nên thử `OPTION (RECOMPILE)` hoặc `OPTIMIZE FOR UNKNOWN`",
+        "Deadlock giữa hai lần gọi, nên tăng thời gian chờ deadlock và thêm retry không giới hạn"
+      ],
+      "answer": 2,
+      "explanation": "Triệu chứng kinh điển của parameter sniffing: cùng một procedure lúc nhanh lúc chậm, và restart (xoá plan cache) làm hết một thời gian. Plan tạo từ `'Won'` là Index Seek + Key Lookup, hợp cho 10 dòng nhưng thành 500.000 lần lookup khi gọi với `'New'`.\n- Cách xử lý theo thứ tự: `OPTION (RECOMPILE)` (plan mới mỗi lần), `OPTIMIZE FOR UNKNOWN`, `OPTIMIZE FOR` giá trị phổ biến, hoặc tách procedure.\n- Phương án thiếu RAM sai: không giải thích vì sao phụ thuộc tham số; `NOLOCK` còn có thể đọc sai dữ liệu.\n- Phương án statistics hỏng sai: chỉ cần `UPDATE STATISTICS`, không cần xoá index hay tạo lại bảng.\n- Phương án deadlock sai: deadlock cho lỗi 1205 và có victim, không phải truy vấn chậm kéo dài; retry vô hạn càng tệ."
+    },
+    {
+      "topic": "Window function - khung RANGE mặc định",
+      "source": "Module 12 - Mở rộng và đào sâu (window function)",
+      "question": "Bảng `M` có 4 dòng như đoạn code (tháng 2 xuất hiện hai lần). Truy vấn tính luỹ kế **không** ghi rõ khung `ROWS`. Mỗi dòng in dạng `Thang:LuyKe`, chương trình in ra gì?",
+      "code": "Exec(\"CREATE TABLE M(Thang INT, DoanhThu INT)\");\nExec(\"INSERT INTO M VALUES (1,10),(2,20),(2,30),(3,40)\");\n\nq.CommandText =\n  \"SELECT Thang, SUM(DoanhThu) OVER (ORDER BY Thang) \" +\n  \"FROM M ORDER BY rowid\";\nwhile (r.Read())\n    Console.WriteLine($\"{r.GetInt32(0)}:{r.GetInt32(1)}\");",
+      "codeLang": "csharp",
+      "options": [
+        "1:10\n2:20\n2:30\n3:40",
+        "1:10\n2:60\n2:60\n3:100",
+        "1:10\n2:30\n2:60\n3:100",
+        "1:10\n2:50\n2:50\n3:90"
+      ],
+      "answer": 1,
+      "explanation": "Khi có `ORDER BY` mà không chỉ định khung, mặc định là `RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`. `RANGE` coi các dòng **cùng giá trị** sắp xếp (hai dòng tháng 2) là đồng hạng và gộp chúng vào khung cùng lúc, nên cả hai đều thấy 10+20+30 = 60, rồi tháng 3 là 100.\n- `1:10, 2:20, 2:30, 3:40` sai: đó là giá trị từng dòng, không phải luỹ kế.\n- `1:10, 2:30, 2:60, 3:100` là kết quả của `ROWS UNBOUNDED PRECEDING` (cộng từng dòng một); muốn vậy phải ghi rõ `ROWS`, và thứ tự hai dòng trùng còn không xác định.\n- `1:10, 2:50, 2:50, 3:90` sai: không có phép cộng nào cho ra 50 hay 90 ở đây (bỏ sót dòng).\nBài học: luôn viết `ROWS UNBOUNDED PRECEDING` khi tính luỹ kế.",
+      "id": "dotnet-m12-11"
+    },
+    {
+      "topic": "RANK và DENSE_RANK",
+      "source": "Module 12 - Mở rộng và đào sâu (window function)",
+      "question": "Bốn thí sinh có điểm 100, 90, 90, 80. Chương trình xếp hạng theo điểm giảm dần bằng `RANK()` rồi `DENSE_RANK()`, in mỗi hàm một dòng. Kết quả là gì?",
+      "code": "foreach (var fn in new[] { \"RANK\", \"DENSE_RANK\" })\n{\n    q.CommandText = $\"SELECT {fn}() OVER \" +\n      \"(ORDER BY Diem DESC) FROM S \" +\n      \"ORDER BY Diem DESC, Ten\";\n    // đọc cột 0 của 4 dòng: A(100) B(90) C(90) D(80)\n    Console.WriteLine(string.Join(\",\", ranks));\n}",
+      "codeLang": "csharp",
+      "options": [
+        "1,2,2,3\n1,2,2,3",
+        "1,2,3,4\n1,2,2,3",
+        "1,2,2,4\n1,2,2,3",
+        "1,2,2,3\n1,2,2,4"
+      ],
+      "answer": 2,
+      "explanation": "`RANK` cho đồng hạng cùng số rồi **nhảy cách** theo số người đồng hạng: 1, 2, 2, **4**. `DENSE_RANK` cho đồng hạng cùng số nhưng **không nhảy cách**: 1, 2, 2, **3**.\n- Kết quả \"1,2,2,3\" ở dòng đầu là sai: nếu RANK không nhảy cách thì nó chính là DENSE_RANK.\n- \"1,2,3,4\" ở dòng đầu là ROW_NUMBER() (không có đồng hạng), không phải RANK.\n- Phương án đảo ngược hai hàm là sai: DENSE_RANK không bao giờ nhảy số.",
+      "id": "dotnet-m12-12"
+    },
+    {
+      "topic": "View và bản chụp kết quả",
+      "source": "Module 12 - Stored Procedures và Views",
+      "question": "Bảng `Leads` có 3 dòng. Code tạo một **view** đếm dòng và một **bảng sao** (`CREATE TABLE ... AS SELECT`) chứa kết quả đếm tại thời điểm đó, rồi chèn thêm 2 dòng. Hai truy vấn cuối in ra gì?",
+      "code": "Exec(\"CREATE VIEW vw_Count AS \" +\n     \"SELECT COUNT(*) AS N FROM Leads\");\nExec(\"CREATE TABLE snap_Count AS \" +\n     \"SELECT COUNT(*) AS N FROM Leads\");\n\nExec(\"INSERT INTO Leads(Status) \" +\n     \"VALUES ('New'),('Lost')\");\n\nConsole.WriteLine(One(\"SELECT N FROM vw_Count\"));\nConsole.WriteLine(One(\"SELECT N FROM snap_Count\"));",
+      "codeLang": "csharp",
+      "options": [
+        "5\n3",
+        "3\n3",
+        "5\n5",
+        "3\n5"
+      ],
+      "answer": 0,
+      "explanation": "View **không lưu dữ liệu**, chỉ là định nghĩa truy vấn được đặt tên, nên mỗi lần đọc nó chạy lại trên bảng gốc và thấy cả 5 dòng. Bảng sao (giống materialized view ở chỗ lưu kết quả thật) giữ nguyên con số 3 tại lúc tạo cho tới khi bạn làm mới nó.\n- `3, 3` sai: nghĩ rằng view cũng bị đóng băng.\n- `5, 5` sai: nghĩ rằng bản sao tự cập nhật; muốn thế phải là indexed view (SQL Server) hoặc tự refresh.\n- `3, 5` đảo ngược vai trò của view và bản chụp.",
+      "id": "dotnet-m12-13"
+    },
+    {
+      "topic": "Tham số hoá chống SQL injection",
+      "source": "Module 12 - Stored Procedures và Views",
+      "question": "Người dùng nhập `input = \"' OR 1=1 --\"` vào ô tìm theo tên. Bảng `P` có 3 dòng, không ai tên như vậy. Đoạn nào truy vấn **an toàn**, tức là coi chuỗi đó chỉ là một giá trị tên và in ra 0?",
+      "options": [
+        "```csharp\nvar sql = \"SELECT COUNT(*) FROM P \"\n        + \"WHERE Name = '\" + input + \"'\";\nvar n = Count(sql);\n```",
+        "```csharp\nvar sql = $\"SELECT COUNT(*) FROM P \"\n        + $\"WHERE Name = '{input}'\";\nvar n = Count(sql);\n```",
+        "```csharp\nvar n = Count(\"SELECT COUNT(*) FROM P WHERE Name = @n\",\n    new SqliteParameter(\"@n\", input));\n```",
+        "```csharp\nvar safe = input.Replace(\"--\", \"\");\nvar sql = \"SELECT COUNT(*) FROM P WHERE Name='\"\n        + safe + \"'\";\nvar n = Count(sql);\n```"
+      ],
+      "answer": 2,
+      "explanation": "Chỉ khi giá trị đi vào câu lệnh dưới dạng **tham số** (`@n`) thì database luôn coi nó là dữ liệu, không bao giờ là mã lệnh. Dòng `OR 1=1` mất hiệu lực vì cả chuỗi được so sánh nguyên văn với cột `Name` và không khớp ai, nên kết quả là 0. Điều này đúng ở bất cứ đâu, trong C# hay trong stored procedure.\n- Nối chuỗi bằng `+` biến câu lệnh thành `... Name = '' OR 1=1 --'`, trả cả 3 dòng.\n- Nội suy `$\"...{input}...\"` thực chất cũng là nối chuỗi, lỗi y hệt (khác với `FromSql` của EF Core là có tham số hoá).\n- `Replace(\"--\", \"\")` là lọc chắp vá: câu lệnh vẫn bị phá, ở đây còn gây lỗi cú pháp lúc chạy và kẻ tấn công dễ vượt qua bằng cách khác.",
+      "id": "dotnet-m12-14"
+    },
+    {
+      "topic": "Deadlock - thứ tự khoá nhất quán",
+      "source": "Module 12 - Mini case study",
+      "question": "Trong ca deadlock do chuyển điểm, bản sửa nạp các tài khoản theo **ID tăng dần** trước khi sửa. Đoạn code mô phỏng thứ tự khoá lấy được như sau. Nó in ra gì?",
+      "code": "static string Plan(params int[] ids) =>\n    string.Join(\">\", ids.OrderBy(id => id));\n\n// hai giao dịch chuyển điểm ngược chiều nhau\nConsole.WriteLine(Plan(7, 3));   // 7 -> 3\nConsole.WriteLine(Plan(3, 7));   // 3 -> 7\n// một giao dịch chạm ba tài khoản\nConsole.WriteLine(Plan(9, 2, 5));",
+      "codeLang": "csharp",
+      "options": [
+        "7>3\n3>7\n9>2>5",
+        "3>7\n3>7\n2>5>9",
+        "3>7\n7>3\n2>5>9",
+        "3>7\n3>7\n9>5>2"
+      ],
+      "answer": 1,
+      "explanation": "Sắp xếp tăng dần nên mọi giao dịch đều khoá theo cùng một thứ tự: `3>7` bất kể chiều chuyển, và `2>5>9` cho ba tài khoản. Hai giao dịch ngược chiều giờ cùng muốn khoá 3 trước, nên giao dịch sau chỉ **chờ** chứ không còn giữ 7 trong khi đợi 3: deadlock biến thành chờ đợi.\n- `7>3, 3>7, 9>2>5` là thứ tự theo chiều chuyển, đúng là nguyên nhân gây deadlock.\n- `3>7, 7>3, ...` vẫn còn một giao dịch khoá theo thứ tự ngược, nên chưa thoát deadlock.\n- Phương án cuối sắp giảm dần ở ba tài khoản, nhưng `OrderBy` mặc định là tăng dần.",
+      "id": "dotnet-m12-15"
+    },
+    {
+      "topic": "SARGable và leftmost prefix",
+      "source": "Module 12 - Ví dụ thực tế nhanh",
+      "question": "Bảng `L` có index `(CreatedAt)` và index ghép `(TenantId, Status)`. Chương trình chạy `EXPLAIN QUERY PLAN` cho 4 truy vấn rồi in từ đầu tiên của kế hoạch: `SEARCH` (dùng index để tìm) hoặc `SCAN` (quét). Kết quả theo đúng thứ tự 4 truy vấn?",
+      "code": "// 1) WHERE strftime('%Y', CreatedAt) = '2026'\n// 2) WHERE CreatedAt >= '2026-01-01'\n//        AND CreatedAt <  '2027-01-01'\n// 3) WHERE TenantId = 'acme' AND Status = 'New'\n// 4) WHERE Status = 'New'\n//\n// index: (CreatedAt), (TenantId, Status)",
+      "codeLang": "csharp",
+      "options": [
+        "SCAN\nSEARCH\nSEARCH\nSCAN",
+        "SEARCH\nSEARCH\nSEARCH\nSEARCH",
+        "SCAN\nSEARCH\nSEARCH\nSEARCH",
+        "SEARCH\nSCAN\nSEARCH\nSCAN"
+      ],
+      "answer": 0,
+      "explanation": "Truy vấn 1 bọc cột `CreatedAt` trong hàm nên không SARGable, database phải tính hàm cho mọi hàng: `SCAN`. Viết lại thành khoảng giá trị trên chính cột (truy vấn 2) thì dùng được index: `SEARCH`. Truy vấn 3 có cột đầu `TenantId` của index ghép nên `SEARCH`. Truy vấn 4 chỉ lọc `Status`, cột thứ hai, vi phạm nguyên tắc leftmost prefix: `SCAN`.\n- `SEARCH` cả bốn sai vì tin rằng cột có trong index nào đó là đủ, bất kể cách viết hay vị trí cột.\n- `SCAN, SEARCH, SEARCH, SEARCH` sai ở truy vấn 4: thiếu cột đầu của index ghép.\n- `SEARCH, SCAN, SEARCH, SCAN` đảo ngược truy vấn 1 và 2: hàm trên cột mới là thủ phạm, khoảng giá trị thì không.\nTrên SQL Server cũng vậy, đo bằng logical reads thay vì đoán.",
+      "id": "dotnet-m12-16"
+    },
+    {
+      "topic": "Backfill theo lô",
+      "source": "Module 12 - Database Migration Strategy",
+      "question": "Bảng có 10 dòng, 3 dòng đã có `Tier` (từ lần chạy trước bị gián đoạn), 7 dòng còn `NULL`. Vòng lặp backfill theo lô 4 dòng, điều kiện `WHERE Tier IS NULL`, in số dòng mỗi lô và dừng khi lô trả 0. Chương trình in ra gì?",
+      "code": "do\n{\n    k.CommandText =\n      \"UPDATE C SET Tier = 'Std' \" +\n      \"WHERE Id IN (SELECT Id FROM C \" +\n      \"WHERE Tier IS NULL LIMIT 4)\";\n    rows = k.ExecuteNonQuery();\n    Console.WriteLine(rows);\n} while (rows > 0);",
+      "codeLang": "csharp",
+      "options": [
+        "10\n0",
+        "4\n4\n2\n0",
+        "4\n4\n4\n0",
+        "4\n3\n0"
+      ],
+      "answer": 3,
+      "explanation": "Điều kiện `Tier IS NULL` loại các dòng đã xử lý, nên script chạy lại được từ chỗ dừng: chỉ còn 7 dòng, chia thành lô 4, rồi lô 3, rồi lô 0 báo hiệu hết việc: `4, 3, 0`.\n- `10, 0` sai: đó là hành vi của một `UPDATE` toàn bảng, không chia lô và cũng không tính các dòng đã xong.\n- `4, 4, 2, 0` tính như thể cả 10 dòng đều chưa xử lý; điều kiện `WHERE` đã bỏ qua 3 dòng đầu.\n- `4, 4, 4, 0` là không thể: chỉ có 7 dòng để cập nhật.\nĐây chính là lý do điểm quan trọng nhất của backfill: backfill 50 triệu dòng sẽ bị gián đoạn ít nhất một lần, và script phải tiếp tục được.",
+      "id": "dotnet-m12-17"
+    },
+    {
+      "topic": "Migration tương thích ngược",
+      "source": "Module 12 - Database Migration Strategy",
+      "question": "Hệ thống triển khai rolling: trong vài phút, pod code cũ và pod code mới **cùng chạy** trên một database. Thay đổi schema nào sau đây có thể áp dụng trước khi deploy code mới mà **không** làm pod code cũ lỗi?",
+      "options": [
+        "```sql\nALTER TABLE Leads\n  DROP COLUMN Email;\n```",
+        "```sql\nALTER TABLE Leads ADD\n  Tier NVARCHAR(50) NOT NULL;\n```",
+        "```sql\nALTER TABLE Leads ADD\n  ContactEmail NVARCHAR(256) NULL;\n```",
+        "```sql\nEXEC sp_rename\n  'Leads.Email', 'ContactEmail';\n```"
+      ],
+      "answer": 2,
+      "explanation": "Thêm cột **nullable** là thay đổi mở rộng thuần tuý: code cũ không biết cột đó và vẫn `INSERT`/`SELECT` bình thường; code mới dùng được ngay. Đây là bước expand của mẫu expand-contract.\n- `DROP COLUMN Email` làm code cũ đang đọc cột này lỗi ngay; xoá cột chỉ là bước contract cuối cùng, sau khi chắc chắn không ai dùng.\n- Thêm cột `NOT NULL` không có default: trên bảng đã có dữ liệu thì chính lệnh ALTER thất bại, còn nếu qua được thì mọi `INSERT` của code cũ (không biết cột mới) bị từ chối.\n- Đổi tên cột phá cả hai chiều: code cũ tìm `Email`, code mới tìm `ContactEmail`, tức là cũng không rollback được. Phải đi qua bốn lần deploy: thêm cột, ghi cả hai, chuyển đọc, rồi mới xoá cột cũ.",
+      "id": "dotnet-m12-18"
+    },
+    {
+      "topic": "Indexed view và materialized view",
+      "source": "Module 12 - Stored Procedures và Views",
+      "question": "Trang quản trị hiển thị tổng số lead theo khách hàng, tải rất cao và bảng `Leads` ghi liên tục. Business chấp nhận số liệu **trễ vài phút**. Lựa chọn nào phù hợp nhất?",
+      "options": [
+        "Bảng/materialized view làm mới theo lịch bằng job, không đụng đường ghi",
+        "Indexed view trên SQL Server, vì nó luôn mới nên không bao giờ chậm",
+        "View thường lồng ba tầng, vì view tự lưu kết quả nên đọc nhanh",
+        "Stored procedure, vì SP luôn nhanh hơn truy vấn từ ứng dụng"
+      ],
+      "answer": 0,
+      "explanation": "Khi số liệu chấp nhận trễ, bảng tổng hợp hoặc materialized view làm mới theo lịch (với `REFRESH ... CONCURRENTLY` cần unique index) đọc nhanh mà không làm chậm ghi. Đó cũng là đáp án đúng cho phần lớn bảng điều khiển.\n- Indexed view được cập nhật **đồng bộ trong cùng transaction** với mỗi lần ghi, nên làm ghi chậm đi (đo thực tế cho thấy ghi chậm đi rõ rệt) và tăng tranh chấp khoá; chỉ đáng dùng khi con số phải luôn đúng ngay.\n- View thường **không lưu dữ liệu**, và view lồng nhau còn khiến plan khó đoán, không phải công cụ tăng tốc.\n- SP không nhanh hơn truy vấn tham số hoá từ ứng dụng (plan đều được cache); lợi thế thật của SP là xử lý lô lớn gần dữ liệu.",
+      "id": "dotnet-m12-19"
+    },
+    {
+      "topic": "Retry deadlock với EF Core",
+      "source": "Module 12 - Mini case study",
+      "question": "Ứng dụng đã bật `EnableRetryOnFailure` (kèm mã lỗi 1205 là deadlock victim) nhưng code chuyển điểm dùng `BeginTransactionAsync` tường minh và EF Core ném exception báo strategy không hỗ trợ transaction do người dùng khởi tạo. Cách sửa đúng là gì?",
+      "options": [
+        "Tắt `EnableRetryOnFailure` hẳn, vì EF Core không retry được",
+        "Tăng `maxRetryCount` lên 100 để chắc chắn thành công",
+        "Bọc `BeginTransactionAsync` trong try/catch rồi bỏ qua lỗi",
+        "Bọc cả khối transaction trong `CreateExecutionStrategy().ExecuteAsync`"
+      ],
+      "answer": 3,
+      "explanation": "EF Core không biết cách chạy lại một khối `BeginTransaction` do bạn tự quản lý, nên phải đưa **toàn bộ** khối (mở transaction, thao tác, commit) vào `strategy.ExecuteAsync(...)`. Khi deadlock xảy ra, nguyên cả khối được chạy lại từ đầu trong một transaction mới.\n- Tắt retry mất lớp bảo vệ cuối cùng, trong khi deadlock mức thấp vẫn có thể xảy ra.\n- Tăng số lần retry không giải quyết lỗi cấu hình: exception là lời nhắc dùng sai cách, không phải do thiếu lần thử. Retry cũng chỉ là lớp cuối; 40 deadlock mỗi giờ cần sửa gốc bằng thứ tự khoá nhất quán và transaction ngắn.\n- Nuốt exception khiến chuyển điểm bị mất mà không ai biết, nguy hiểm hơn cả deadlock.",
+      "id": "dotnet-m12-20"
+    }
+  ]
+}

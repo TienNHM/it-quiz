@@ -1,0 +1,315 @@
+{
+  "id": "dotnet-m10",
+  "title": "Module 10: Authentication và Authorization",
+  "description": "Claims, JWT, refresh token, phân quyền theo vai trò, policy, tài nguyên và hệ thống permission.",
+  "questions": [
+    {
+      "id": "dotnet-m10-01",
+      "topic": "ClaimsIdentity",
+      "source": "Module 10 - Authentication vs Authorization",
+      "question": "Đoạn code sau tự dựng hai `ClaimsPrincipal` từ cùng một danh sách claim (đã có `using System.Security.Claims;`). Chương trình in ra gì?",
+      "code": "var claims = new[] {\n    new Claim(ClaimTypes.NameIdentifier, \"42\"),\n    new Claim(ClaimTypes.Role, \"Admin\") };\n\nvar a = new ClaimsPrincipal(new ClaimsIdentity(claims));\nvar b = new ClaimsPrincipal(new ClaimsIdentity(claims, \"Test\"));\n\nConsole.WriteLine(a.Identity!.IsAuthenticated);\nConsole.WriteLine(b.Identity!.IsAuthenticated);\nConsole.WriteLine(a.IsInRole(\"Admin\"));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nTrue\nTrue\nTrue\n```",
+        "```text\nFalse\nTrue\nTrue\n```",
+        "```text\nFalse\nTrue\nFalse\n```",
+        "```text\nTrue\nTrue\nFalse\n```"
+      ],
+      "answer": 1,
+      "explanation": "**False, True, True** là kết quả thật khi chạy.\n- `IsAuthenticated` chỉ phụ thuộc `authenticationType` có giá trị hay không, không đếm claim. Identity của `a` không truyền tham số này nên là `False`, identity của `b` có \"Test\" nên là `True`.\n- Phương án \"True, True, True\" sai vì cho rằng có đầy claim là đã xác thực.\n- `IsInRole` chỉ nhìn claim vai trò, không kiểm tra `IsAuthenticated`, nên `a.IsInRole(\"Admin\")` vẫn `True`. Các phương án in `False` ở dòng cuối đều sai vì tin rằng identity chưa xác thực thì không có vai trò.\nĐây là lý do test dùng handler xác thực giả hay bị 401 khi quên `authenticationType`."
+    },
+    {
+      "id": "dotnet-m10-02",
+      "topic": "JWT - khoá HMAC",
+      "source": "Module 10 - JWT Authentication",
+      "question": "Service phát token ký bằng HS256 (`SecurityAlgorithms.HmacSha256`) và dựng `SymmetricSecurityKey` từ `Encoding.UTF8.GetBytes(secret)`. Với giá trị `secret` nào thì `CreateToken` **ném exception lúc chạy**?",
+      "options": [
+        "```csharp\nvar secret = \"0123456789abcdef\";\n```",
+        "```csharp\nvar secret = new string('k', 32);\n```",
+        "```csharp\nvar secret = Convert.ToBase64String(new byte[48]);\n```",
+        "```csharp\nvar secret = \"crm-api-secret\".PadRight(40, 'x');\n```"
+      ],
+      "answer": 0,
+      "explanation": "HS256 đòi khoá dài tối thiểu 256 bit (32 byte).\n- `\"0123456789abcdef\"` chỉ 16 ký tự ASCII, tức 16 byte = 128 bit, nên thư viện từ chối ngay lúc ký với lỗi IDX10720 (key size must be greater than 256 bits). Đây là đáp án đúng.\n- 32 ký tự 'k' là 32 byte = 256 bit, đủ.\n- 48 byte rỗng đổi sang Base64 cho chuỗi 64 ký tự, 64 byte, dư.\n- Chuỗi đệm tới 40 ký tự là 40 byte, đủ.\nBài học: sinh khoá bằng `openssl rand -base64 48` thay vì gõ tay, và đo độ dài theo **byte** sau khi mã hoá UTF-8."
+    },
+    {
+      "id": "dotnet-m10-03",
+      "topic": "JWT - cấu trúc token",
+      "source": "Module 10 - JWT Authentication",
+      "question": "Token được phát bằng `JsonWebTokenHandler` (đã có các `using` cần thiết). Đoạn code giải mã phần payload **không dùng khoá bí mật**. Chương trình in ra gì?",
+      "code": "var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(\n    \"0123456789-0123456789-0123456789-ab\"));\nvar token = new JsonWebTokenHandler().CreateToken(\n    new SecurityTokenDescriptor\n{\n    Subject = new ClaimsIdentity([new Claim(\"sub\", \"7\"),\n                                  new Claim(\"role\", \"Admin\")]),\n    SigningCredentials = new SigningCredentials(\n        key, SecurityAlgorithms.HmacSha256)\n});\n\nvar parts = token.Split('.');\nvar json = Encoding.UTF8.GetString(\n    Base64UrlEncoder.DecodeBytes(parts[1]));   // KHÔNG dùng key\nusing var doc = JsonDocument.Parse(json);\nConsole.WriteLine(doc.RootElement.GetProperty(\"role\").GetString());\nConsole.WriteLine(parts.Length);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nAdmin\n5\n```",
+        "```text\n(ném exception: cần khoá để giải mã)\n```",
+        "```text\nAdmin\n2\n```",
+        "```text\nAdmin\n3\n```"
+      ],
+      "answer": 3,
+      "explanation": "**Admin rồi 3**.\n- JWT chỉ được **ký**, không được mã hoá: header và payload là Base64Url của JSON nên ai cầm token cũng đọc được, không cần khoá. Vì vậy phương án nói phải có khoá mới giải mã được là sai.\n- Token đã ký (JWS) gồm đúng ba phần header.payload.signature, nên `parts.Length` là 3. Con số 5 là của JWE (token mã hoá), không phải token này; con số 2 bỏ sót phần chữ ký.\nHệ quả thiết kế: đừng bao giờ đặt dữ liệu nhạy cảm vào payload. Chữ ký chỉ đảm bảo token không bị sửa."
+    },
+    {
+      "id": "dotnet-m10-04",
+      "topic": "JWT - ClockSkew",
+      "source": "Module 10 - JWT Authentication",
+      "question": "Token dưới đây **đã hết hạn 2 phút trước**. `handler`, `key`, `creds` đã khai báo đúng (HS256). `p1` giữ nguyên `ClockSkew` mặc định, `p2` đặt `ClockSkew = TimeSpan.Zero`. Chương trình in ra gì?",
+      "code": "var now = DateTime.UtcNow;\nvar token = handler.CreateToken(new SecurityTokenDescriptor\n{\n    Subject = new ClaimsIdentity([new Claim(\"sub\", \"1\")]),\n    IssuedAt = now.AddMinutes(-17),\n    NotBefore = now.AddMinutes(-17),\n    Expires = now.AddMinutes(-2),          // đã hết hạn 2 phút\n    SigningCredentials = creds\n});\n\nvar p1 = new TokenValidationParameters {\n    IssuerSigningKey = key,\n    ValidateIssuer = false, ValidateAudience = false };\nvar p2 = p1.Clone();\np2.ClockSkew = TimeSpan.Zero;\n\nConsole.WriteLine((await handler.ValidateTokenAsync(token, p1)).IsValid);\nConsole.WriteLine((await handler.ValidateTokenAsync(token, p2)).IsValid);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nTrue\nTrue\n```",
+        "```text\nFalse\nFalse\n```",
+        "```text\nTrue\nFalse\n```",
+        "```text\nFalse\nTrue\n```"
+      ],
+      "answer": 2,
+      "explanation": "**True rồi False**.\n- `ClockSkew` mặc định của `TokenValidationParameters` là 5 phút: token được chấp nhận đến `exp + 5 phút`. Token hết hạn 2 phút vẫn nằm trong dung sai nên `p1` cho `True`.\n- `p2` đặt `Zero` nên không còn dung sai, token hết hạn bị từ chối: `False`.\n- \"True, True\" quên rằng `Zero` bỏ dung sai; \"False, False\" quên mặc định 5 phút; \"False, True\" đảo ngược hai cấu hình.\nHệ quả thực tế: access token 15 phút sống thật tới 20 phút nếu bạn không chỉnh. Bài học khuyên đặt khoảng 30 giây thay vì `Zero`, vì container hay lệch đồng hồ vài giây."
+    },
+    {
+      "id": "dotnet-m10-05",
+      "topic": "[Authorize] OR và AND",
+      "source": "Module 10 - Role-based Authorization",
+      "question": "Controller có `[Authorize(Roles = \"SalesRep,Manager\")]` và action có thêm `[Authorize(Roles = \"Manager\")]`. Đoạn code mô phỏng việc ASP.NET Core gộp hai attribute thành một policy rồi thử với ba người dùng. Kết quả in ra là gì?",
+      "code": "// Controller:  [Authorize(Roles = \"SalesRep,Manager\")]\n// Action:      [Authorize(Roles = \"Manager\")]\nvar policy = await AuthorizationPolicy.CombineAsync(provider,\n[\n    new AuthorizeAttribute { Roles = \"SalesRep,Manager\" },\n    new AuthorizeAttribute { Roles = \"Manager\" },\n]);\n\nforeach (var role in new[] { \"Admin\", \"SalesRep\", \"Manager\" })\n{\n    var user = new ClaimsPrincipal(new ClaimsIdentity(\n        [new Claim(ClaimTypes.Role, role)], \"t\"));\n    var r = await authz.AuthorizeAsync(user, policy!);\n    Console.WriteLine($\"{role}: {r.Succeeded}\");\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nAdmin: False\nSalesRep: True\nManager: True\n```",
+        "```text\nAdmin: True\nSalesRep: False\nManager: True\n```",
+        "```text\nAdmin: False\nSalesRep: False\nManager: True\n```",
+        "```text\nAdmin: False\nSalesRep: False\nManager: False\n```"
+      ],
+      "answer": 2,
+      "explanation": "Hai quy tắc kết hợp: trong **một** attribute, danh sách vai trò là OR; **xếp chồng** nhiều attribute (kể cả controller và action) là AND.\n- Phải thoả \"SalesRep hoặc Manager\" **và** \"Manager\" nên chỉ `Manager` qua: `Admin: False, SalesRep: False, Manager: True`.\n- \"SalesRep: True\" sai vì coi hai attribute là OR, bỏ qua attribute thứ hai.\n- \"Admin: True\" sai vì giả định Admin tự động qua mọi kiểm tra; ASP.NET Core không có khái niệm đó, Admin không có trong danh sách của controller nên bị loại.\n- Phương án toàn `False` sai vì Manager thoả cả hai.\nMuốn Admin luôn qua thì phải khai rõ ở mọi chỗ hoặc dùng policy."
+    },
+    {
+      "id": "dotnet-m10-06",
+      "topic": "Policy - handler OR và Fail()",
+      "source": "Module 10 - Policy-based Authorization",
+      "question": "Ba handler được đăng ký vào DI: `ByRole(\"Owner\")`, `ByRole(\"Manager\")` và `Block`. Policy chỉ có một requirement `Req`. Gọi `AuthorizeAsync` lần lượt cho bốn người dùng: (1) vai trò Owner, (2) vai trò Manager, (3) không có vai trò nào, (4) vai trò Owner kèm claim `status=banned`. Kết quả `Succeeded` theo thứ tự (1) đến (4)?",
+      "code": "class Req : IAuthorizationRequirement;\n\nclass ByRole(string role) : AuthorizationHandler<Req> {\n    protected override Task HandleRequirementAsync(\n        AuthorizationHandlerContext c, Req r) {\n        if (c.User.IsInRole(role)) c.Succeed(r);\n        return Task.CompletedTask;\n    }\n}\n\nclass Block : IAuthorizationHandler {\n    public Task HandleAsync(AuthorizationHandlerContext c) {\n        if (c.User.HasClaim(\"status\", \"banned\")) c.Fail();\n        return Task.CompletedTask;\n    }\n}\n// DI: ByRole(\"Owner\"), ByRole(\"Manager\"), Block\n// Policy: AddRequirements(new Req())",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nTrue\nFalse\nFalse\nFalse\n```",
+        "```text\nTrue\nTrue\nFalse\nFalse\n```",
+        "```text\nTrue\nTrue\nFalse\nTrue\n```",
+        "```text\nTrue\nTrue\nTrue\nFalse\n```"
+      ],
+      "answer": 1,
+      "explanation": "**True, True, False, False**.\n- Nhiều handler cho cùng một requirement là OR: Owner hoặc Manager chỉ cần một handler `Succeed` là qua, nên (1) và (2) đều `True`. Phương án chỉ (1) đúng quên rằng handler thứ hai cũng là một con đường hợp lệ.\n- (3) không handler nào gọi `Succeed`; không làm gì nghĩa là từ chối, nên `False`. Phương án cho (3) là `True` nhầm \"không Fail\" với \"được phép\".\n- (4) `ByRole(\"Owner\")` đã `Succeed`, nhưng `Block` gọi `Fail()`. `Fail()` là quyết định cuối cùng, không `Succeed` nào ghi đè được, nên `False`. Phương án cho (4) là `True` bỏ qua tính chất tuyệt đối của `Fail()`.\nVì thế chỉ dùng `Fail()` cho chính sách chặn như tài khoản bị khoá."
+    },
+    {
+      "id": "dotnet-m10-07",
+      "topic": "Policy - handler an toàn khi thiếu claim",
+      "source": "Module 10 - Policy-based Authorization",
+      "question": "Handler kiểm tra requirement \"kinh nghiệm tối thiểu 3 năm\" đọc claim `years`. Người dùng thử nghiệm **không có** claim này. Thân `HandleRequirementAsync` nào biên dịch được, **không ném exception** và từ chối đúng (in `False`)?",
+      "options": [
+        "```csharp\nvar y = int.Parse(\n    context.User.FindFirstValue(\"years\")!);\nif (y >= 3) context.Succeed(requirement);\n```",
+        "```csharp\nvar raw = context.User.FindFirstValue(\"years\");\nif (!int.TryParse(raw, out var y) || y >= 3)\n    context.Succeed(requirement);\n```",
+        "```csharp\nvar raw = context.User.FindFirstValue(\"years\");\nif (raw >= 3) context.Succeed(requirement);\n```",
+        "```csharp\nvar raw = context.User.FindFirstValue(\"years\");\nif (int.TryParse(raw, out var y) && y >= 3)\n    context.Succeed(requirement);\n```"
+      ],
+      "answer": 3,
+      "explanation": "Handler tốt khi thiếu thông tin thì chỉ **không `Succeed`**, không ném exception, và tuyệt đối không mở cửa.\n- `int.TryParse(raw, ...) && y >= 3` với `raw = null` trả `false`, handler không làm gì, kết quả `False`. Đây là đáp án đúng.\n- `int.Parse(FindFirstValue(...)!)`: dấu `!` chỉ tắt cảnh báo, giá trị vẫn là `null` nên `int.Parse` ném `ArgumentNullException` lúc chạy, biến lỗi dữ liệu thành lỗi 500.\n- `!int.TryParse(...) || y >= 3` đảo logic: thiếu claim lại thành `True`, tức fail-open, một lỗ hổng bảo mật.\n- `raw >= 3` so sánh `string` với `int` nên lỗi biên dịch CS0019. Giá trị claim luôn là `string`, phải tự ép kiểu."
+    },
+    {
+      "id": "dotnet-m10-08",
+      "topic": "FallbackPolicy và DefaultPolicy",
+      "source": "Module 10 - Role-based Authorization",
+      "question": "Một người dùng **đã đăng nhập hợp lệ nhưng không có claim `vip`** gọi lần lượt `/a`, `/b`, `/c` của ứng dụng dưới đây (xác thực luôn thành công cho người này). Mã trạng thái HTTP nhận được theo thứ tự `/a`, `/b`, `/c`?",
+      "code": "builder.Services.AddAuthorization(o =>\n{\n    // Endpoint KHÔNG có attribute phân quyền nào\n    o.FallbackPolicy = new AuthorizationPolicyBuilder()\n        .RequireAuthenticatedUser().Build();\n    // Endpoint có [Authorize] / RequireAuthorization() trần\n    o.DefaultPolicy = new AuthorizationPolicyBuilder()\n        .RequireAuthenticatedUser()\n        .RequireClaim(\"vip\").Build();\n});\napp.MapGet(\"/a\", () => \"a\");\napp.MapGet(\"/b\", () => \"b\").AllowAnonymous();\napp.MapGet(\"/c\", () => \"c\").RequireAuthorization();",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n200\n200\n403\n```",
+        "```text\n403\n200\n403\n```",
+        "```text\n401\n200\n403\n```",
+        "```text\n200\n200\n200\n```"
+      ],
+      "answer": 0,
+      "explanation": "**200, 200, 403**.\n- `/a` không có attribute nào nên áp `FallbackPolicy`, chỉ yêu cầu đăng nhập; người dùng đã đăng nhập nên qua: 200. Phương án 403 cho `/a` nhầm rằng `DefaultPolicy` (cần `vip`) áp cho mọi endpoint; phương án 401 sai vì người dùng đã được xác thực, 401 chỉ dành cho người chưa xác thực.\n- `/b` có `AllowAnonymous`, bỏ qua toàn bộ phân quyền kể cả `FallbackPolicy`: 200.\n- `/c` dùng `RequireAuthorization()` trần nên áp `DefaultPolicy`; người dùng thiếu claim `vip` bị từ chối: 403 (đã biết họ là ai nên không phải 401). Phương án toàn 200 quên mất `DefaultPolicy`.\nNhớ: `FallbackPolicy` cho endpoint không khai gì, `DefaultPolicy` cho `[Authorize]` trần."
+    },
+    {
+      "id": "dotnet-m10-09",
+      "topic": "401 và 403",
+      "source": "Module 10 - Authentication vs Authorization",
+      "question": "SPA có interceptor: gặp `401` thì gọi refresh token rồi thử lại request. Một endpoint dành cho Admin lại trả `401` khi người dùng thường (đã đăng nhập, token còn hạn) gọi vào. Điều gì dễ xảy ra nhất?",
+      "options": [
+        "Client lấy được access token mới, lần thử lại thành công vì token mới có thêm quyền",
+        "Client đăng xuất người dùng ngay lập tức vì 401 luôn nghĩa là refresh token hỏng",
+        "Client rơi vào vòng lặp làm mới token rồi thử lại, lại 401, trong khi log chỉ thấy toàn request refresh",
+        "Không có gì đặc biệt, 401 và 403 được client xử lý giống hệt nhau"
+      ],
+      "answer": 2,
+      "explanation": "401 nghĩa là \"tôi không biết bạn là ai\", nên client hợp lý khi thử làm mới token. 403 nghĩa là \"tôi biết bạn, nhưng bạn không được phép\", và làm mới token **không giúp gì**.\n- Trả 401 cho lỗi thiếu quyền khiến client làm mới token, thử lại, lại nhận 401: vòng lặp vô tận, khó chẩn đoán vì mọi thứ trong log trông bình thường. Đây là đáp án đúng.\n- Token mới do refresh không tự có thêm quyền (quyền do vai trò quyết định), nên lần thử lại vẫn thất bại.\n- Không có quy tắc nào bắt 401 phải đăng xuất ngay; interceptor ở đây chủ động refresh.\n- Hai mã không được xử lý giống nhau: client nên refresh khi 401 và báo \"không có quyền\" khi 403.\n`[Authorize]` của ASP.NET Core tự chọn đúng: chưa xác thực thì 401, thiếu quyền thì 403."
+    },
+    {
+      "id": "dotnet-m10-10",
+      "topic": "Refresh token - phát hiện tái sử dụng",
+      "source": "Module 10 - Refresh Token",
+      "question": "Hệ thống dùng rotation: mỗi lần refresh thì huỷ token cũ và cấp token mới. Một refresh token R1 **đã bị huỷ do rotate từ lâu** (quá cửa sổ ân hạn) lại được gửi tới `/refresh`. Phản ứng nào là đúng nhất?",
+      "options": [
+        "Chỉ từ chối request này bằng 401 và giữ nguyên token mới của người dùng vì họ không có lỗi",
+        "Cấp cặp token mới cho request này, vì token vừa dùng chắc là của người dùng thật bị mạng chậm",
+        "Chỉ từ chối và huỷ riêng token R2 vừa được cấp từ R1",
+        "Từ chối, huỷ **toàn bộ** chuỗi refresh token của người dùng và log mức Critical để cảnh báo"
+      ],
+      "answer": 3,
+      "explanation": "Dùng lại token đã rotate nghĩa là có **hai bên** cùng cầm R1: người dùng thật và kẻ đánh cắp. Dù ai dùng trước, lần dùng thứ hai luôn lộ ra.\n- Bạn không biết bên nào là kẻ tấn công, nên huỷ cả chuỗi và buộc đăng nhập lại là phản ứng đúng; log Critical để có cảnh báo. Đây là đáp án đúng.\n- Chỉ trả 401 mà giữ nguyên chuỗi thì kẻ tấn công có thể đang giữ R2 hợp lệ và tiếp tục rotate lặng lẽ.\n- Cấp token mới cho request tái sử dụng là trao quyền cho đúng bên có thể là kẻ trộm; cửa sổ ân hạn chỉ dành cho token mới huỷ chưa tới khoảng 10 giây và chỉ cấp access token.\n- Huỷ riêng R2 chưa đủ vì các token sinh ra từ R2 về sau vẫn sống và bên giữ chúng vẫn dùng được."
+    },
+    {
+      "id": "dotnet-m10-11",
+      "topic": "Identity: chính sách mật khẩu",
+      "source": "Module 10 - ASP.NET Core Identity cho API JWT",
+      "question": "Identity được cấu hình như đoạn code dưới (`um` là `UserManager<IdentityUser>`, mọi thứ khác mặc định). Chương trình in ra gì?",
+      "code": "services.AddIdentityCore<IdentityUser>(o =>\n{\n    o.Password.RequiredLength = 8;\n    o.Password.RequireDigit = true;\n    o.Password.RequireUppercase = true;\n    o.Password.RequireLowercase = false;\n    o.Password.RequireNonAlphanumeric = false;\n}).AddEntityFrameworkStores<AppDb>();\n\nvar r = await um.CreateAsync(new IdentityUser(\"an\"), \"abc\");\nConsole.WriteLine(r.Succeeded);\nforeach (var e in r.Errors) Console.WriteLine(e.Code);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nFalse\nPasswordTooShort\nPasswordRequiresDigit\n```",
+        "```text\nFalse\nPasswordTooShort\nPasswordRequiresDigit\nPasswordRequiresUpper\n```",
+        "```text\nTrue\n```",
+        "```text\nFalse\nPasswordTooShort\nPasswordRequiresDigit\nPasswordRequiresUpper\nPasswordRequiresNonAlphanumeric\n```"
+      ],
+      "answer": 1,
+      "explanation": "Identity chạy **tất cả** các luật mật khẩu và gom mọi lỗi vào `Errors`, không dừng ở lỗi đầu tiên. Mật khẩu `abc` có 3 chữ cái thường, nên vi phạm đúng ba luật còn bật: quá ngắn (3 < 8), thiếu chữ số, thiếu chữ hoa. Chạy thật in: False, PasswordTooShort, PasswordRequiresDigit, PasswordRequiresUpper.\n- Thiếu `PasswordRequiresUpper`: sai, vì `RequireUppercase = true` vẫn bị vi phạm.\n- `True`: sai, `abc` không qua nổi luật nào trong ba luật trên.\n- Có thêm `PasswordRequiresNonAlphanumeric`: sai, vì đoạn code đã tắt luật này (và `RequireLowercase`).\nĐây là lý do bài 10.8 tắt `RequireNonAlphanumeric` có chủ đích: ưu tiên độ dài, không ép ký tự đặc biệt."
+    },
+    {
+      "id": "dotnet-m10-12",
+      "topic": "Identity: lockout",
+      "source": "Module 10 - ASP.NET Core Identity cho API JWT",
+      "question": "`MaxFailedAccessAttempts = 3`. Người dùng `a` bị thử sai mật khẩu 5 lần bằng cách chỉ gọi `CheckPasswordAsync`; người dùng `b` bị thử sai 5 lần, mỗi lần sai thì gọi thêm `AccessFailedAsync`. In ra hai dòng `IsLockedOutAsync` của `a` rồi `b`:",
+      "code": "// a\nfor (var i = 0; i < 5; i++)\n    await um.CheckPasswordAsync(a, \"sai\");\n\n// b\nfor (var i = 0; i < 5; i++)\n    if (!await um.CheckPasswordAsync(b, \"sai\"))\n        await um.AccessFailedAsync(b);\n\nConsole.WriteLine(await um.IsLockedOutAsync(a));\nConsole.WriteLine(await um.IsLockedOutAsync(b));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nTrue\nTrue\n```",
+        "```text\nTrue\nFalse\n```",
+        "```text\nFalse\nFalse\n```",
+        "```text\nFalse\nTrue\n```"
+      ],
+      "answer": 3,
+      "explanation": "`UserManager.CheckPasswordAsync` **chỉ kiểm tra** mật khẩu, không đếm lần sai nên `a` không bao giờ bị khoá dù thử 1000 lần. Với `b`, mỗi lần sai ta tự gọi `AccessFailedAsync`, bộ đếm chạm ngưỡng 3 thì tài khoản bị khoá: chạy thật in False rồi True.\n- `True, True`: sai vì tưởng `CheckPasswordAsync` tự đếm.\n- `True, False`: đảo ngược hai người dùng.\n- `False, False`: sai vì `AccessFailedAsync` đúng là thứ kích hoạt lockout.\nTrong API thật, hãy dùng `SignInManager.CheckPasswordSignInAsync(user, pw, lockoutOnFailure: true)` để khỏi quên bước đếm này."
+    },
+    {
+      "id": "dotnet-m10-13",
+      "topic": "Identity: AddDefaultTokenProviders",
+      "source": "Module 10 - ASP.NET Core Identity cho API JWT",
+      "question": "Chỉ **một** trong bốn cách đăng ký Identity dưới đây làm dòng `GeneratePasswordResetTokenAsync` ném exception lúc chạy. Đó là cách nào?",
+      "code": "builder.Services.AddDataProtection();\nbuilder.Services.AddDbContext<AppDb>(...);\n\n// >>> cách đăng ký Identity nằm ở đây <<<\n\nvar app = builder.Build();\nusing var scope = app.Services.CreateScope();\nvar um = scope.ServiceProvider\n    .GetRequiredService<UserManager<IdentityUser>>();\n// ... CreateAsync(user, password) ...\nvar token = await um.GeneratePasswordResetTokenAsync(user);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nbuilder.Services.AddIdentityCore<IdentityUser>()\n    .AddEntityFrameworkStores<AppDb>()\n    .AddDefaultTokenProviders();\n```",
+        "```csharp\nbuilder.Services.AddIdentityCore<IdentityUser>()\n    .AddRoles<IdentityRole>()\n    .AddEntityFrameworkStores<AppDb>()\n    .AddDefaultTokenProviders();\n```",
+        "```csharp\nbuilder.Services.AddIdentityCore<IdentityUser>()\n    .AddRoles<IdentityRole>()\n    .AddEntityFrameworkStores<AppDb>()\n    .AddSignInManager();\n```",
+        "```csharp\nbuilder.Services.AddIdentityCore<IdentityUser>()\n    .AddEntityFrameworkStores<AppDb>()\n    .AddSignInManager()\n    .AddDefaultTokenProviders();\n```"
+      ],
+      "answer": 2,
+      "explanation": "`AddIdentityCore` đăng ký rất ít thứ. Token đặt lại mật khẩu cần một token provider tên `Default`, và provider đó chỉ được thêm bởi `AddDefaultTokenProviders()`. Cách gây lỗi chỉ có `AddRoles` + `AddSignInManager` (không có `AddDefaultTokenProviders()`), nên chạy thật ném `NotSupportedException: No IUserTwoFactorTokenProvider<TUser> named 'Default' is registered`.\n- Hai cách có `AddDefaultTokenProviders()` (có hoặc không có `AddRoles`) chạy tốt.\n- Cách có `AddSignInManager()` **và** `AddDefaultTokenProviders()` cũng ổn: hai lời gọi này độc lập, `AddSignInManager` không thay thế được token provider.\nNhớ bộ đôi hay bị quên của API JWT: `AddSignInManager()` cho `CheckPasswordSignInAsync`, `AddDefaultTokenProviders()` cho email xác nhận và đặt lại mật khẩu."
+    },
+    {
+      "id": "dotnet-m10-14",
+      "topic": "Identity: SecurityStamp",
+      "source": "Module 10 - ASP.NET Core Identity cho API JWT",
+      "question": "Người dùng `u` vừa được tạo, `s0` là `SecurityStamp` ban đầu. Mỗi dòng in cho biết stamp **còn bằng** `s0` hay không. Kết quả?",
+      "code": "await um.AddToRoleAsync(u, \"Admin\");\nConsole.WriteLine(\"role: \" + (s0 == await um.GetSecurityStampAsync(u)));\n\nawait um.RemoveFromRoleAsync(u, \"Admin\");\nConsole.WriteLine(\"remove: \" + (s0 == await um.GetSecurityStampAsync(u)));\n\nawait um.ChangePasswordAsync(u, \"Passw0rd!x\", \"Passw0rd!y\");\nConsole.WriteLine(\"password: \" + (s0 == await um.GetSecurityStampAsync(u)));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nrole: True\nremove: True\npassword: False\n```",
+        "```text\nrole: False\nremove: False\npassword: False\n```",
+        "```text\nrole: True\nremove: False\npassword: False\n```",
+        "```text\nrole: True\nremove: True\npassword: True\n```"
+      ],
+      "answer": 0,
+      "explanation": "Identity chỉ tự đổi `SecurityStamp` khi **thông tin đăng nhập** thay đổi (đổi mật khẩu, đặt lại mật khẩu, đổi email, bật/tắt 2FA...). Thêm hoặc gỡ vai trò **không** đổi stamp, chạy thật cho: role True, remove True, password False.\n- `False` cho `role`/`remove`: sai, tưởng đổi vai trò là sự kiện bảo mật được Identity theo dõi.\n- `remove: False`: sai tương tự, gỡ vai trò cũng giữ nguyên stamp.\n- `password: True`: sai, `ChangePasswordAsync` chắc chắn đổi stamp.\nHệ quả thực tế: gỡ quyền Admin của ai đó mà quên gọi `UpdateSecurityStampAsync` thì cơ chế đối chiếu stamp không phát hiện gì."
+    },
+    {
+      "id": "dotnet-m10-15",
+      "topic": "Token trong URL: Base64Url",
+      "source": "Module 10 - ASP.NET Core Identity cho API JWT",
+      "question": "Token xác nhận email (Base64 chuẩn) được nhét thẳng vào query string, rồi server đọc lại. Đoạn code dưới in ra gì?",
+      "code": "using System.Web;\n\nvar raw = new byte[] { 0x6b, 0xef, 0xdb };\nvar std = Convert.ToBase64String(raw);\nConsole.WriteLine(std);\n\nvar query = HttpUtility.ParseQueryString(\"token=\" + std);\nConsole.WriteLine(query[\"token\"]);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\na+/b\na+/b\n```",
+        "```text\na-_b\na-_b\n```",
+        "```text\na+/b\na /b\n```",
+        "```text\na+/b\na%2B/b\n```"
+      ],
+      "answer": 2,
+      "explanation": "Base64 chuẩn dùng `+`, `/`, `=`. Trong query string, `+` được hiểu là **dấu cách**, nên server đọc về `a /b` và token hỏng. Chạy thật in `a+/b` rồi `a /b`.\n- `a+/b` hai lần: sai, bộ phân tích query không giữ nguyên dấu `+`.\n- `a-_b`: đó là dạng Base64Url, nhưng không có bước nào ở đây chuyển sang dạng đó.\n- `a%2B/b`: sai, `ParseQueryString` giải mã chứ không mã hoá.\nCách sửa như bài 10.8: bọc token bằng `WebEncoders.Base64UrlEncode` trước khi đặt vào link và `Base64UrlDecode` khi nhận lại."
+    },
+    {
+      "id": "dotnet-m10-16",
+      "topic": "CORS",
+      "source": "Module 10 - Security Best Practices",
+      "question": "Chỉ một cấu hình CORS dưới đây làm ứng dụng ném exception khi khởi động/xử lý request đầu tiên. Cấu hình nào?",
+      "code": "builder.Services.AddCors(options =>\n{\n    options.AddPolicy(\"app\", policy =>\n    {\n        // >>> cấu hình nằm ở đây <<<\n    });\n});\nvar app = builder.Build();\napp.UseCors(\"app\");",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\npolicy.WithOrigins(\"https://app.crm.vn\")\n    .AllowCredentials();\n```",
+        "```csharp\npolicy.AllowAnyOrigin()\n    .AllowCredentials();\n```",
+        "```csharp\npolicy.AllowAnyOrigin()\n    .AllowAnyMethod()\n    .AllowAnyHeader();\n```",
+        "```csharp\npolicy.SetIsOriginAllowed(_ => true)\n    .AllowCredentials();\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đặc tả CORS **cấm** kết hợp wildcard origin (`*`) với credentials. `AllowAnyOrigin().AllowCredentials()` bị ASP.NET Core chặn ngay: chạy thật ném `InvalidOperationException: The CORS protocol does not allow specifying a wildcard (any) origin and credentials at the same time`.\n- `WithOrigins(...)` + `AllowCredentials()`: đây là cấu hình **đúng** (danh sách trắng).\n- `AllowAnyOrigin()` mà không có credentials: hợp lệ, chỉ là mở rộng.\n- `SetIsOriginAllowed(_ => true).AllowCredentials()`: **không** ném lỗi, nhưng đó chính là cách \"lách\" nguy hiểm vì phản chiếu mọi origin, kèm cookie của người dùng. Chạy được không có nghĩa là an toàn."
+    },
+    {
+      "id": "dotnet-m10-17",
+      "topic": "Resource-based authorization",
+      "source": "Module 10 - Resource-based Authorization",
+      "question": "Handler kiểm tra quyền sửa tài liệu theo chủ sở hữu (đã đăng ký vào DI, `Doc(\"u1\")` thuộc về user `u1`). Chương trình in ra gì?",
+      "code": "class OwnerHandler : AuthorizationHandler<\n    OperationAuthorizationRequirement, Doc>\n{\n    protected override Task HandleRequirementAsync(\n        AuthorizationHandlerContext c,\n        OperationAuthorizationRequirement r, Doc d)\n    {\n        if (c.User.FindFirstValue(\n                ClaimTypes.NameIdentifier) == d.OwnerId)\n            c.Succeed(r);\n        return Task.CompletedTask;\n    }\n}\n// edit = new OperationAuthorizationRequirement\n//        { Name = \"Edit\" }\nvar doc = new Doc(\"u1\");\nWriteLine((await authz.AuthorizeAsync(U(\"u1\"), doc, edit)).Succeeded);\nWriteLine((await authz.AuthorizeAsync(U(\"u2\"), doc, edit)).Succeeded);\nWriteLine((await authz.AuthorizeAsync(U(\"u1\"), null, edit)).Succeeded);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nTrue\nFalse\nTrue\n```",
+        "```text\nTrue\nTrue\nFalse\n```",
+        "```text\nFalse\nFalse\nFalse\n```",
+        "```text\nTrue\nFalse\nFalse\n```"
+      ],
+      "answer": 3,
+      "explanation": "**True, False, False** là kết quả chạy thật.\n- Dòng 1: chủ tài liệu (`u1`) trùng `OwnerId` nên handler gọi `Succeed`: `True`.\n- Dòng 2: `u2` không phải chủ, handler không làm gì, nghĩa là từ chối: `False`. Phương án cho `u2` là `True` nhầm rằng đã đăng nhập là đủ quyền sửa.\n- Dòng 3: truyền resource là `null` thì handler khai báo `<..., Doc>` **không được gọi** (không có resource kiểu `Doc`), requirement không ai `Succeed` nên `False`. Phương án `True` ở dòng cuối cho rằng handler vẫn chạy và tự bỏ qua kiểm tra chủ sở hữu.\n- Phương án toàn `False` sai vì chủ tài liệu hợp lệ phải qua.\nBài học: phân quyền theo tài nguyên phải gọi `IAuthorizationService` trong code với đúng đối tượng cần bảo vệ, `[Authorize]` trên action không biết tài liệu nào."
+    },
+    {
+      "id": "dotnet-m10-18",
+      "topic": "Global query filter theo tenant",
+      "source": "Module 10 - Quick real-world example",
+      "question": "Hệ multi-tenant dùng global query filter. `CrmDb` được tạo mới cho **mỗi request** (tenant `A` trước, rồi tenant `B`). Dữ liệu: `a1`, `a2` thuộc A; `b1` thuộc B; `c1` thuộc C. Cách viết filter nào cho kết quả đúng: A thấy `a1,a2` và B thấy `b1`?",
+      "code": "class CrmDb(string tenantId) : DbContext\n{\n    public string TenantId { get; } = tenantId;\n    public DbSet<Lead> Leads => Set<Lead>();\n\n    protected override void OnModelCreating(ModelBuilder mb)\n    {\n        mb.Entity<Lead>().HasKey(l => l.Id);\n        // >>> filter nằm ở đây <<<\n    }\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nmodelBuilder.Entity<Lead>()\n    .HasQueryFilter(l => l.TenantId == TenantId);\n```",
+        "```csharp\nvar t = TenantId;\nmodelBuilder.Entity<Lead>()\n    .HasQueryFilter(l => l.TenantId == t);\n```",
+        "```csharp\n// Chỉ lọc tenant ở controller, model không có filter\n```",
+        "```csharp\nconst string t = \"A\";\nmodelBuilder.Entity<Lead>()\n    .HasQueryFilter(l => l.TenantId == t);\n```"
+      ],
+      "answer": 0,
+      "explanation": "EF Core dựng model **một lần** rồi dùng lại cho mọi instance của `CrmDb`. Nếu biểu thức filter tham chiếu **thành viên của chính DbContext** (`TenantId`), EF biến nó thành tham số và đọc giá trị theo từng instance: A thấy `a1,a2`, B thấy `b1`.\n- Chụp `TenantId` vào biến cục bộ `t`: giá trị của request đầu tiên (tenant A) bị đóng cứng vào model; chạy thật B cũng thấy `a1,a2`, rò rỉ dữ liệu giữa hai công ty.\n- Không có filter ở model: chạy thật cả A lẫn B đều thấy `a1,a2,b1,c1`, mọi thứ phụ thuộc việc không controller nào quên lọc.\n- Hằng cố định `\"A\"`: tenant nào cũng chỉ thấy dữ liệu của A.\nĐây là cái bẫy \"tinh vi và nguy hiểm\" của bài: SQL sinh ra có `'A'` nằm cứng và không có lỗi nào báo."
+    },
+    {
+      "id": "dotnet-m10-19",
+      "topic": "Thu hồi phiên khi vô hiệu hoá tài khoản",
+      "source": "Module 10 - Mini case study: vòng đời token",
+      "question": "Nhân viên nghỉ việc, admin đặt `IsActive = false`. Hệ thống vẫn dùng access token 15 phút và refresh token. Năm ngày sau tài khoản đó vẫn gọi API thành công. Login đã kiểm `IsActive`, và `/refresh` chỉ kiểm token tồn tại, chưa bị huỷ, còn hạn. Nguyên nhân và cách sửa đúng nhất?",
+      "options": [
+        "Luồng `/refresh` không kiểm `IsActive` nên cứ 15 phút lại cấp token mới. Sửa: kiểm khi refresh và thu hồi mọi refresh token lúc vô hiệu hoá.",
+        "Access token sống quá lâu. Chỉ cần giảm xuống 1 phút là hết rủi ro, không cần đụng tới luồng refresh của hệ thống.",
+        "Endpoint login chưa kiểm `IsActive`. Chỉ cần thêm kiểm tra đó vào login là tài khoản bị chặn hoàn toàn khỏi hệ thống.",
+        "Client giữ cookie refresh token quá lâu. Chỉ cần yêu cầu client xoá cookie ngay khi người dùng đó nghỉ việc ở công ty."
+      ],
+      "answer": 0,
+      "explanation": "Sự cố trong bài là vòng lặp: access token hết hạn rồi client tự gọi `/refresh`, mà `/refresh` không hỏi lại \"tài khoản này còn hoạt động không\", nên cửa sổ rủi ro 15 phút trở thành **vô hạn**. Sửa đúng: kiểm `IsActive` và đối chiếu `SecurityStamp` lưu cùng refresh token, thu hồi cả chuỗi khi từ chối, và hàm vô hiệu hoá phải tự gọi `UpdateSecurityStampAsync` + `RevokeAllForUserAsync`.\n- Giảm hạn access token: chỉ làm vòng lặp quay nhanh hơn, token mới vẫn được cấp.\n- Thêm kiểm tra vào login: login đã kiểm rồi; lỗ hổng nằm ở luồng khác.\n- Chờ client xoá cookie: kẻ đã nghỉ việc không tự xoá, và server không được tin client để thu hồi quyền."
+    },
+    {
+      "id": "dotnet-m10-20",
+      "topic": "Liên kết tài khoản đăng nhập ngoài",
+      "source": "Module 10 - Đăng nhập bằng Google: OAuth 2.0 và OpenID Connect",
+      "question": "API cho phép \"Đăng nhập bằng nhà cung cấp X\". Kẻ tấn công đăng ký ở X (X không xác minh email) bằng `victim@company.com`, trong khi nạn nhân đã có tài khoản mật khẩu với email đó. Cách xử lý khi callback về nào an toàn nhất?",
+      "options": [
+        "Thấy email trùng thì liên kết ngay với tài khoản có sẵn, vì email là định danh duy nhất của một người dùng.",
+        "Chỉ tin email mà nhà cung cấp báo đã xác minh, và nếu trùng tài khoản cũ thì gửi email xác nhận cho chủ tài khoản trước khi liên kết.",
+        "Nếu email thuộc tên miền công ty thì tự liên kết và cấp vai trò quản lý, vì tên miền chứng minh là nhân viên.",
+        "Xoá tài khoản cũ của nạn nhân rồi tạo tài khoản mới gắn với nhà cung cấp X để đồng bộ dữ liệu cho tiện."
+      ],
+      "answer": 1,
+      "explanation": "Rủi ro là **chiếm tài khoản**: email chưa được xác minh không chứng minh được ai là chủ. Cách an toàn gồm hai tầng: chỉ tin email có `email_verified = true`, và email trùng với tài khoản sẵn có chỉ nên liên kết sau khi gửi email xác nhận (chỉ riêng nhà cung cấp rất đáng tin mới có thể cân nhắc tự liên kết): gửi email \"bấm để liên kết\" tới địa chỉ đã có trong hệ thống.\n- Liên kết ngay khi trùng email: đúng là kịch bản tấn công, kẻ tấn công vào thẳng tài khoản nạn nhân.\n- Cấp quyền theo tên miền email: email giả vẫn mang tên miền đó; người dùng mới chỉ nên nhận quyền thấp nhất.\n- Xoá tài khoản cũ: phá dữ liệu của nạn nhân và vẫn trao tài khoản mới cho kẻ tấn công."
+    }
+  ]
+}

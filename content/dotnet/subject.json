@@ -1,0 +1,148 @@
+{
+  "id": "dotnet",
+  "title": ".NET Backend",
+  "icon": "code",
+  "description": "Lộ trình .NET backend từ nền tảng đến senior: C#, async, DI, ASP.NET Core, xác thực, EF Core, Docker, kiến trúc và hệ phân tán.",
+  "chapters": [
+    {
+      "id": "dotnet-m00",
+      "slug": "00-setup",
+      "title": "Module 0: Chuẩn bị môi trường",
+      "description": "Cài .NET SDK, chạy chương trình C# đầu tiên và tập debug, đọc thông báo lỗi.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m01",
+      "slug": "01-programming-logic",
+      "title": "Module 1: Programming Logic",
+      "description": "Biến, kiểu dữ liệu, điều kiện, vòng lặp, hàm, collection và tư duy giải bài toán trong C#.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m02",
+      "slug": "02-computer-science-basics",
+      "title": "Module 2: Computer Science Basics",
+      "description": "Internet, HTTP, API/JSON, database và xác thực - nền tảng mà mọi backend developer phải nắm.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m03",
+      "slug": "03-git-developer-workflow",
+      "title": "Module 3: Git + Developer Workflow",
+      "description": "Git là gì, cấu hình, an toàn, workflow cơ bản, nhánh, pull request và giải xung đột.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m04",
+      "slug": "04-csharp-core",
+      "title": "Module 4: C# Core",
+      "description": "OOP thực dụng trong C#: class/struct, đóng gói, kế thừa, interface, mức truy cập và record.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m05",
+      "slug": "05-advanced-csharp",
+      "title": "Module 5: Advanced C#",
+      "description": "SOLID, generics, LINQ, delegates/events, extension methods và nullable reference types.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m06",
+      "slug": "06-async-programming",
+      "title": "Module 6: Async Programming",
+      "description": "Task, async/await, ConfigureAwait, CancellationToken, TPL và các bẫy phổ biến khi lập trình bất đồng bộ trong .NET 10.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m07",
+      "slug": "07-dependency-injection",
+      "title": "Module 7: Dependency Injection",
+      "description": "Vấn đề DI giải quyết, container, cách tiêm, lifetime, đăng ký service, Program.cs và Options pattern.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m08",
+      "slug": "08-aspnet-core-fundamentals",
+      "title": "Module 8: ASP.NET Core Fundamentals",
+      "description": "Pipeline và middleware, routing, validation, hệ thống cấu hình, logging có cấu trúc và vận hành sau reverse proxy.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m09",
+      "slug": "09-web-api-professional",
+      "title": "Module 9: Web API Professional",
+      "description": "REST, versioning, phân trang, upload an toàn và rate limiting cho Web API.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m10",
+      "slug": "10-authentication-authorization",
+      "title": "Module 10: Authentication và Authorization",
+      "description": "Claims, JWT, refresh token, phân quyền theo vai trò, policy, tài nguyên và hệ thống permission.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m11",
+      "slug": "11-signalr",
+      "title": "Module 11: SignalR",
+      "description": "SignalR phía server và client: vòng đời Hub, định danh người dùng, nhóm, xác thực và đẩy tin từ ngoài Hub (nửa đầu).",
+      "count": 21
+    },
+    {
+      "id": "dotnet-m12",
+      "slug": "12-sql-deep-dive",
+      "title": "Module 12: SQL Deep Dive",
+      "description": "Thiết kế schema CRM, khác biệt SQL Server/PostgreSQL, query nâng cao, index, tối ưu truy vấn và giao dịch.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m13",
+      "slug": "13-entity-framework-core",
+      "title": "Module 13: Entity Framework Core",
+      "description": "EF Core: change tracker, DbContext và cấu hình mô hình, quan hệ, migration, mẫu truy vấn, N+1 và hiệu năng.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m14",
+      "slug": "14-caching-background-jobs",
+      "title": "Module 14: Caching + Background Jobs",
+      "description": "IMemoryCache, IDistributedCache/Redis, xoá cache, HybridCache, Hangfire và Quartz cho xử lý nền đáng tin cậy.",
+      "count": 21
+    },
+    {
+      "id": "dotnet-m15",
+      "slug": "15-docker-deployment",
+      "title": "Module 15: Docker + Deployment",
+      "description": "Container, Dockerfile, Compose, secrets, cấu hình theo môi trường, CI/CD và triển khai lên VPS hoặc Azure.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m16",
+      "slug": "16-clean-architecture",
+      "title": "Module 16: Clean Architecture",
+      "description": "Layered, Clean Architecture, Vertical Slice, DDD chiến thuật, MediatR pipeline, FluentValidation và domain event.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m17",
+      "slug": "17-distributed-systems",
+      "title": "Module 17: Hệ thống phân tán",
+      "description": "Event-driven, outbox, inbox, retry/backoff, Kafka vs RabbitMQ và CDC: lỗi mất tin, trùng tin và cách thiết kế consumer an toàn.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m18",
+      "slug": "18-microservices",
+      "title": "Module 18: Microservices",
+      "description": "Khi nào nên và không nên microservices, tách service, API Gateway, giao tiếp, observability và identity trong hệ phân tán.",
+      "count": 20
+    },
+    {
+      "id": "dotnet-m19",
+      "slug": "19-performance-engineering",
+      "title": "Module 19: Performance Engineering",
+      "description": "Đo trước sau, BenchmarkDotNet, profiling server, database và caching.",
+      "count": 20
+    }
+  ]
+}

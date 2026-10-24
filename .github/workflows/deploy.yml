@@ -35,7 +35,7 @@ jobs:
 
       # Chạy thật mọi truy vấn trong câu hỏi SQL trên PostgreSQL (PGlite) để chắc đáp án đúng
       - name: Lint and verify SQL questions
-        run: npm run sql:lint && npm run sql:verify
+        run: npm run sql:lint && npm run sql:verify && npm run dotnet:lint
 
       - name: Test
         run: npm test

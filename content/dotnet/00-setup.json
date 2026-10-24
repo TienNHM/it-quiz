@@ -1,0 +1,311 @@
+{
+  "id": "dotnet-m00",
+  "title": "Module 0: Chuẩn bị môi trường",
+  "description": "Cài .NET SDK, chạy chương trình C# đầu tiên và tập debug, đọc thông báo lỗi.",
+  "questions": [
+    {
+      "id": "dotnet-m00-01",
+      "topic": "SDK và Runtime",
+      "source": "Module 0 - Cài .NET SDK và trình soạn code",
+      "question": "Bạn chuẩn bị máy để học viết và chạy thử code C# hằng ngày. Nên cài gì là hợp lý nhất?",
+      "options": [
+        "Chỉ cài .NET Runtime vì nó nhẹ hơn",
+        "Cài .NET SDK, vì nó đã gồm sẵn cả runtime",
+        "Cài cả SDK lẫn Runtime, thiếu một trong hai sẽ không chạy được",
+        "Chỉ cần trình soạn code, vì nó tự biên dịch"
+      ],
+      "answer": 1,
+      "explanation": "**.NET SDK** gồm công cụ tạo project, biên dịch, chạy, test và đã kèm runtime, nên máy của người viết code chỉ cần SDK.\n- Chỉ cài Runtime: runtime chỉ chạy được ứng dụng đã biên dịch, không có lệnh `dotnet build`/`dotnet new`.\n- Cài cả hai: không sai nhưng thừa, vì SDK đã chứa runtime.\n- Chỉ có trình soạn code: VS Code, Rider... chỉ là nơi gõ code, việc biên dịch vẫn do SDK làm."
+    },
+    {
+      "id": "dotnet-m00-02",
+      "topic": "global.json",
+      "source": "Module 0 - Cài .NET SDK và trình soạn code",
+      "question": "Máy đã cài SDK 10 (và cả SDK 9). Ở một thư mục project cũ, `dotnet --version` in ra `9.0.x`, còn ở thư mục khác lại in `10.0.x`. Nguyên nhân khả dĩ nhất là gì?",
+      "options": [
+        "Cài SDK 10 đã ghi đè và xoá SDK 9 nên lệnh in sai",
+        "Terminal đang mở từ trước nên chưa nhận SDK 10",
+        "Biến môi trường PATH bị mất trong thư mục đó",
+        "Thư mục đó (hoặc thư mục cha) có `global.json` ghim SDK 9"
+      ],
+      "answer": 3,
+      "explanation": "`global.json` ghim phiên bản SDK cho thư mục chứa nó và mọi thư mục con, nên cùng một máy nhưng mỗi nơi cho kết quả khác nhau. Cách kiểm tra: chạy lệnh ở thư mục khác, rồi sửa hoặc xoá file nếu không cần.\n- Ghi đè SDK cũ: các SDK nằm cạnh nhau, không đè nhau (`dotnet --list-sdks` liệt kê cả hai).\n- Terminal mở trước khi cài: lỗi đó khiến `dotnet` không được nhận ra, chứ không in ra 9.x ở riêng một thư mục.\n- PATH bị mất: khi đó lệnh `dotnet` sẽ không chạy được ở bất kỳ thư mục nào."
+    },
+    {
+      "id": "dotnet-m00-03",
+      "topic": "Đọc stack trace",
+      "source": "Module 0 - Debug và đọc thông báo lỗi",
+      "question": "Chương trình sập với stack trace dưới đây. Bạn nên làm gì đầu tiên để định vị chỗ cần sửa?",
+      "code": "Unhandled exception. System.FormatException: The input\nstring 'abc' was not in a correct format.\n   at System.Number.ThrowFormatException[TChar](...)\n   at System.Int32.Parse(String s)\n   at Program.<Main>$(String[] args) in Program.cs:line 7",
+      "codeLang": "text",
+      "options": [
+        "Đọc loại lỗi và thông điệp, rồi tìm dòng `at` đầu tiên có file của mình (`Program.cs:line 7`)",
+        "Mở mã nguồn `System.Number` để sửa `ThrowFormatException`",
+        "Bỏ qua thông điệp, chỉ đọc dòng cuối cùng của stack trace",
+        "Cài lại .NET SDK vì lỗi nằm ở thư viện `System`"
+      ],
+      "answer": 0,
+      "explanation": "Cách đọc đúng: loại lỗi (`FormatException`), thông điệp (chuỗi `'abc'` sai định dạng số), rồi bỏ qua các dòng của thư viện .NET và dừng ở dòng đầu tiên thuộc code của mình, ở đây là `Program.cs:line 7`.\n- Sửa `System.Number`: đó là code của .NET, không sửa được và cũng không có lỗi ở đó; nó chỉ là nơi lỗi bị ném ra.\n- Chỉ đọc dòng cuối: bỏ phí thông điệp, thứ đã nói gần hết nguyên nhân.\n- Cài lại SDK: lỗi do dữ liệu `'abc'` không phải số, không liên quan tới cài đặt."
+    },
+    {
+      "id": "dotnet-m00-04",
+      "topic": "Breakpoint và debugger",
+      "source": "Module 0 - Debug và đọc thông báo lỗi",
+      "question": "Bạn đặt breakpoint ở dòng `total += 2026 - birthYear;` rồi bấm `F5`. Chương trình dừng và dòng này được tô vàng. Điều nào sau đây đúng?",
+      "options": [
+        "Dòng đó vừa chạy xong, giá trị mới đã được tính",
+        "Dòng đó bị bỏ qua và sẽ không bao giờ chạy",
+        "Dòng đó sắp chạy, bấm `F10` thì nó mới được thực thi",
+        "Dòng đó đang chạy dở nên không xem được biến"
+      ],
+      "answer": 2,
+      "explanation": "Dòng tô vàng là dòng **sắp chạy**, chưa được thực thi. `F10` (Step Over) chạy dòng này rồi dừng ở dòng kế tiếp; lúc đó `total` mới thay đổi.\n- Vừa chạy xong: sai, giá trị bạn thấy trong Variables là trước khi dòng này chạy.\n- Bị bỏ qua: breakpoint chỉ tạm dừng chương trình, không làm bỏ dòng nào.\n- Biến không xem được: ngược lại, đây chính là lúc xem Variables, Watch hoặc rê chuột lên biến."
+    },
+    {
+      "id": "dotnet-m00-05",
+      "topic": "Chia số nguyên",
+      "source": "Module 0 - Debug và đọc thông báo lỗi",
+      "question": "Đoạn code sau in ra gì?",
+      "code": "var total = 86;\nvar n = 4;\nConsole.WriteLine(total / n * n);\nConsole.WriteLine((double)total / n * n);",
+      "codeLang": "csharp",
+      "options": [
+        "84\n84",
+        "84\n86",
+        "86\n86",
+        "21\n21,5"
+      ],
+      "answer": 1,
+      "explanation": "Dòng 1: `total / n` là `int` chia `int` nên bị cắt phần thập phân, 86 / 4 = 21, rồi 21 * 4 = **84**. Dòng 2: ép `total` sang `double` trước nên 86 / 4 = 21.5, nhân 4 ra **86**.\n- `84` và `84`: quên rằng ép kiểu một vế đã làm cả phép chia thành số thực.\n- `86` và `86`: tưởng phép chia số nguyên không mất phần thập phân.\n- `21` và `21,5`: đây là kết quả của `total / n` chứ không phải kết quả sau khi nhân với `n`.\nĐây là loại lỗi sai im lặng: chương trình không sập nhưng ra số lệch."
+    },
+    {
+      "id": "dotnet-m00-06",
+      "topic": "Chuỗi nội suy",
+      "source": "Module 0 - Chương trình C# đầu tiên",
+      "question": "Dấu `|` giúp nhìn rõ độ rộng. Đoạn code sau in ra dòng nào?",
+      "code": "Console.WriteLine($\"|{\"ab\",-5}|{12,4}|{\"xyz\",5}|\");",
+      "codeLang": "csharp",
+      "options": [
+        "|ab   |  12|  xyz|",
+        "|   ab|12  |xyz  |",
+        "|ab   |12  |  xyz|",
+        "|ab-5|12,4|xyz,5|"
+      ],
+      "answer": 0,
+      "explanation": "Trong chuỗi nội suy, `{giá trị,độ rộng}` đặt giá trị vào ô có độ rộng cố định: số **âm** căn trái (`,-5`), số **dương** căn phải (`,4`, `,5`). Nên ra `|ab   |  12|  xyz|`.\n- `|   ab|12  |xyz  |`: đảo ngược quy tắc trái/phải.\n- `|ab   |12  |  xyz|`: đúng cho `ab` nhưng sai ở `12`, vì `,4` là dương nên căn phải.\n- `|ab-5|12,4|xyz,5|`: coi phần sau dấu phẩy là văn bản, thực ra nó là đặc tả độ rộng."
+    },
+    {
+      "id": "dotnet-m00-07",
+      "topic": "int.Parse với dữ liệu xấu",
+      "source": "Module 0 - Debug và đọc thông báo lỗi",
+      "question": "Chương trình dưới đây khi chạy cho kết quả nào?",
+      "code": "string[] ys = [\"2005\", \"2004\", \"hai nghìn lẻ năm\"];\nvar sum = 0;\nforeach (var y in ys)\n    sum += 2026 - int.Parse(y);\nConsole.WriteLine(sum);",
+      "codeLang": "csharp",
+      "options": [
+        "In ra 43 vì phần tử sai bị bỏ qua",
+        "Lỗi biên dịch: `int.Parse` không nhận `string`",
+        "In ra 21 vì chỉ tính phần tử hợp lệ đầu tiên",
+        "Ném `FormatException` lúc chạy, không in gì"
+      ],
+      "answer": 3,
+      "explanation": "Code biên dịch bình thường. Tới phần tử thứ ba, `int.Parse(\"hai nghìn lẻ năm\")` ném **FormatException**, chương trình sập trước khi tới `Console.WriteLine`, nên không in gì ra.\n- In 43: `int.Parse` không có cơ chế tự bỏ qua dữ liệu sai; muốn vậy phải dùng `int.TryParse` và kiểm tra kết quả `bool`.\n- Lỗi biên dịch: `int.Parse(string)` là chữ ký hợp lệ, và `y` là `string`.\n- In 21: không có chuyện dừng êm ở phần tử hợp lệ đầu tiên; ngoại lệ không bắt sẽ kết thúc chương trình."
+    },
+    {
+      "id": "dotnet-m00-08",
+      "topic": "Parse và TryParse",
+      "source": "Module 0 - Debug và đọc thông báo lỗi",
+      "question": "Đặt từng đoạn vào chỗ `{{X}}` của chương trình dưới. Đoạn nào làm chương trình ném exception lúc chạy?",
+      "code": "var y = {{X}};\nConsole.WriteLine(y);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nint.Parse(\" 2005 \")\n```",
+        "```csharp\nint.Parse(\"+2005\")\n```",
+        "```csharp\nint.Parse(\"2,005\")\n```",
+        "```csharp\nint.TryParse(\"2005 năm\", out var z) ? z : -1\n```"
+      ],
+      "answer": 2,
+      "explanation": "`int.Parse` mặc định chấp nhận khoảng trắng đầu/cuối và dấu `+`/`-`, nhưng **không** chấp nhận dấu phân cách hàng nghìn. Vì vậy `int.Parse(\"2,005\")` ném `FormatException`.\n- `int.Parse(\" 2005 \")`: chạy được, ra 2005 vì khoảng trắng hai đầu được bỏ.\n- `int.Parse(\"+2005\")`: chạy được, dấu `+` đầu chuỗi hợp lệ.\n- `int.TryParse(\"2005 năm\", ...)`: chuỗi sai nhưng `TryParse` không ném lỗi, trả `false` nên biểu thức cho ra -1.\nBài học: dữ liệu người dùng gõ vào có thể sai, nên dùng `TryParse`."
+    },
+    {
+      "id": "dotnet-m00-09",
+      "topic": "Vòng lặp lệch một",
+      "source": "Module 0 - Debug và đọc thông báo lỗi",
+      "question": "Chọn vòng lặp cộng đúng cả 3 phần tử của mảng (kết quả mong muốn là 60).",
+      "code": "int[] arr = [10, 20, 30];\nvar sum = 0;\n{{X}}\nConsole.WriteLine(sum);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nfor (var i = 0; i < arr.Length; i++)\n    sum += arr[i];\n```",
+        "```csharp\nfor (var i = 0; i <= arr.Length; i++)\n    sum += arr[i];\n```",
+        "```csharp\nfor (var i = 1; i < arr.Length; i++)\n    sum += arr[i];\n```",
+        "```csharp\nfor (var i = 0; i < arr.Length - 1; i++)\n    sum += arr[i];\n```"
+      ],
+      "answer": 0,
+      "explanation": "Mảng 3 phần tử có chỉ số 0, 1, 2, nên vòng lặp phải chạy `i` từ 0 tới `Length - 1`, tức điều kiện `i < arr.Length`; kết quả 60.\n- `i <= arr.Length`: `i` chạy tới 3, `arr[3]` không tồn tại nên ném `IndexOutOfRangeException` (lỗi lệch một).\n- `i = 1`: bỏ sót phần tử đầu, in 50: lỗi im lặng, không sập.\n- `i < arr.Length - 1`: bỏ sót phần tử cuối, in 30: cũng sai im lặng.\nGhi nhớ: stack trace chỉ nơi lỗi lộ ra (`arr[i]`), còn nguyên nhân có thể nằm ở điều kiện vòng lặp."
+    },
+    {
+      "id": "dotnet-m00-10",
+      "topic": "out var và phạm vi biến",
+      "source": "Module 0 - Debug và đọc thông báo lỗi",
+      "question": "Đoạn code sau cho kết quả nào?",
+      "code": "var s = \"2005\";\nif (!int.TryParse(s, out var year))\n{\n    Console.WriteLine(\"sai\");\n}\nConsole.WriteLine(2026 - year);",
+      "codeLang": "csharp",
+      "options": [
+        "Lỗi CS0103: `year` chỉ tồn tại bên trong khối `if`",
+        "Lỗi CS0165: `year` có thể chưa được gán giá trị",
+        "Biên dịch được nhưng ném exception lúc chạy",
+        "Biên dịch được và in ra `21`"
+      ],
+      "answer": 3,
+      "explanation": "Biến khai báo bằng `out var` trong điều kiện `if` có phạm vi là **khối bao quanh** `if`, không chỉ bên trong `if`. Ngoài ra tham số `out` luôn được gán sau lời gọi, nên trình biên dịch coi `year` đã được gán. Vì `\"2005\"` hợp lệ nên in `2026 - 2005 = 21`.\n- CS0103: sai vì `year` vẫn nhìn thấy sau `if`.\n- CS0165: sai vì `out` bảo đảm gán giá trị, kể cả khi parse thất bại (khi đó là 0).\n- Exception lúc chạy: `TryParse` không ném lỗi với chuỗi sai.\nLưu ý thực tế: nếu parse thất bại, `year` là 0, nên vẫn cần `return`/`continue` ở nhánh lỗi."
+    },
+    {
+      "id": "dotnet-m00-11",
+      "topic": "Unit test - lỗi đường biên",
+      "source": "Module 0 - Solution, thư viện và unit test",
+      "question": "Hàm tính giá cuối dưới đây có chú thích \"đơn từ 1 triệu giảm 5%\" nhưng code lại viết `>`. Giả sử máy dùng dấu chấm làm dấu thập phân, chương trình in ra gì?",
+      "code": "Console.WriteLine(D.F(1_000_000m, false));\nConsole.WriteLine(D.F(2_000_000m, true));\nConsole.WriteLine(D.F(500_000m, true));\n\nstatic class D\n{\n    // VIP -10%; đơn từ 1 triệu -5%\n    public static decimal F(decimal total, bool vip)\n    {\n        var rate = 0m;\n        if (vip) rate += 0.10m;\n        if (total > 1_000_000m) rate += 0.05m;\n        return total * (1 - rate);\n    }\n}",
+      "codeLang": "csharp",
+      "options": [
+        "950000\n1700000.00\n450000.00",
+        "1000000\n1700000.00\n450000.00",
+        "1000000\n1700000\n450000",
+        "950000\n1700000\n450000"
+      ],
+      "answer": 1,
+      "explanation": "Đơn đúng 1.000.000 không thỏa `total > 1_000_000m` nên không được giảm 5%, kết quả là `1000000`. Đây chính là lỗi đường biên mà test `OrderOfExactly1Million_Gets5PercentOff` trong bài bắt được.\nVới `decimal`, số chữ số thập phân được giữ lại: `1 - 0.15m` là `0.85m`, nhân 2.000.000 ra `1700000.00`; `1 - 0.10m` là `0.90m`, nhân 500.000 ra `450000.00`.\nPhương án bắt đầu bằng 950000 sai vì tưởng ngưỡng đã tính cả mốc 1 triệu (đó là hành vi của `>=`, không phải của code này). Hai phương án bỏ phần `.00` sai vì `decimal` không tự cắt các số 0 ở cuối khi in."
+    },
+    {
+      "id": "dotnet-m00-12",
+      "topic": "Kiểm tra đầu vào",
+      "source": "Module 0 - Solution, thư viện và unit test",
+      "question": "Hàm xếp hạng thành viên của CLB ném lỗi khi điểm âm. Chạy đoạn code sau thì điều gì xảy ra?",
+      "code": "Console.WriteLine(Rank(120));\nConsole.WriteLine(Rank(-5));\n\nstatic string Rank(int points)\n{\n    if (points < 0)\n        throw new ArgumentOutOfRangeException(nameof(points));\n    if (points >= 100) return \"Nòng cốt\";\n    if (points >= 50) return \"Tích cực\";\n    return \"Thành viên\";\n}",
+      "codeLang": "csharp",
+      "options": [
+        "Lỗi biên dịch vì `nameof(points)` không hợp lệ",
+        "In `Nòng cốt` rồi in `Thành viên`",
+        "In `Nòng cốt`, sau đó ném `ArgumentOutOfRangeException`",
+        "In `Nòng cốt`, sau đó ném `InvalidOperationException`"
+      ],
+      "answer": 2,
+      "explanation": "Lệnh đầu in `Nòng cốt`. Lệnh thứ hai gọi `Rank(-5)` nên `points < 0` đúng và hàm ném `ArgumentOutOfRangeException`, chương trình dừng với lỗi chưa được xử lý.\nPhương án nói lỗi biên dịch sai vì `nameof(points)` hợp lệ: nó trả về chuỗi \"points\" và tự đổi theo nếu bạn đổi tên tham số.\nPhương án in `Thành viên` sai vì điểm âm bị chặn ngay từ đầu, không rơi xuống nhánh cuối.\nPhương án `InvalidOperationException` sai vì code ném đúng loại `ArgumentOutOfRangeException`, và đây cũng là loại mà test dùng `Assert.Throws<ArgumentOutOfRangeException>` kiểm tra."
+    },
+    {
+      "id": "dotnet-m00-13",
+      "topic": "Max trên danh sách rỗng",
+      "source": "Module 0 - Web API đầu tiên",
+      "question": "Trong API khách hàng, id mới được tính từ danh sách `xs` (các id hiện có). Sau khi xóa hết khách hàng thì `POST` trả 500. Đoạn tính id nào gây ra lỗi đó khi `xs` rỗng?",
+      "options": [
+        "```csharp\nxs.Max() + 1\n```",
+        "```csharp\nxs.Count == 0 ? 1 : xs.Max() + 1\n```",
+        "```csharp\n(xs.Count == 0 ? 0 : xs.Max()) + 1\n```",
+        "```csharp\nxs.DefaultIfEmpty(0).Max() + 1\n```"
+      ],
+      "answer": 0,
+      "explanation": "**Max()** trên chuỗi rỗng ném `InvalidOperationException: Sequence contains no elements`, và ASP.NET Core biến nó thành lỗi 500. Đây đúng là lỗi bài học tìm ra khi xóa hết khách hàng rồi tạo mới.\n- `xs.Count == 0 ? 1 : xs.Max() + 1`: kiểm tra `Count == 0` trước nên không gọi `Max()` trên danh sách rỗng, trả 1.\n- `(xs.Count == 0 ? 0 : xs.Max()) + 1`: chọn 0 làm giá trị khởi đầu rồi cộng 1, cũng trả 1.\n- `xs.DefaultIfEmpty(0).Max() + 1`: `DefaultIfEmpty(0)` biến chuỗi rỗng thành một phần tử 0 trước khi `Max()`, trả 1.",
+      "code": "var xs = new List<int>();   // đã xóa hết khách hàng\nvar nextId = /* biểu thức */;\nConsole.WriteLine(nextId);",
+      "codeLang": "csharp"
+    },
+    {
+      "id": "dotnet-m00-14",
+      "topic": "Tìm khách hàng và trả 404",
+      "source": "Module 0 - Web API đầu tiên",
+      "question": "Danh sách `customers` không có id 9. Biểu thức nào cho ra chuỗi `404` mà không ném lỗi, giống cách endpoint `GET /customers/{id}` trong bài xử lý khách hàng không tồn tại?",
+      "code": "var customers = new List<Customer>\n{\n    new(1, \"An\"), new(2, \"Bình\")\n};\nvar id = 9;\nConsole.WriteLine(/* biểu thức */);\n\nrecord Customer(int Id, string Name);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\ncustomers.First(c => c.Id == id).Name\n```",
+        "```csharp\ncustomers.FirstOrDefault(c => c.Id == id).Name\n```",
+        "```csharp\ncustomers[id].Name\n```",
+        "```csharp\ncustomers.FirstOrDefault(c => c.Id == id)\n  is { } customer ? customer.Name : \"404\"\n```"
+      ],
+      "answer": 3,
+      "explanation": "`FirstOrDefault` trả `null` khi không tìm thấy, và `is { } customer` chỉ gán vào biến khi kết quả khác null, nên nhánh còn lại cho ra `404`.\n`First(...)` ném `InvalidOperationException` khi không có phần tử khớp. `FirstOrDefault(...).Name` lấy `.Name` của `null` nên ném `NullReferenceException`. `customers[id]` là truy cập theo chỉ số: chỉ số 9 vượt quá danh sách 2 phần tử, ném `ArgumentOutOfRangeException`; ngay cả khi tồn tại, nó cũng không phải tìm theo `Id`."
+    },
+    {
+      "id": "dotnet-m00-15",
+      "topic": "Endpoint và mã trạng thái",
+      "source": "Module 0 - Web API đầu tiên",
+      "question": "API khởi động với 2 khách hàng (id 1 và 2). Client gửi lần lượt: `GET /customers/9`, `GET /customers/abc`, `GET /customers/2`, rồi `POST /customers` với JSON hợp lệ. Mỗi dòng in mã trạng thái (dòng cuối kèm header `Location`). Kết quả là gì?",
+      "code": "app.MapGet(\"/customers/{id:int}\", (int id) =>\n    customers.FirstOrDefault(c => c.Id == id) is { } c\n        ? Results.Ok(c)\n        : Results.NotFound());\n\napp.MapPost(\"/customers\", (CreateReq r) =>\n{\n    var c = new Customer(customers.Max(x => x.Id) + 1, r.Name);\n    customers.Add(c);\n    return Results.Created($\"/customers/{c.Id}\", c);\n});",
+      "codeLang": "csharp",
+      "options": [
+        "404\n404\n200\n201 /customers/3",
+        "404\n400\n200\n201 /customers/3",
+        "404\n404\n200\n200 /customers/3",
+        "404\n404\n200\n201 /customers/2"
+      ],
+      "answer": 0,
+      "explanation": "`/customers/9` không có khách hàng nên endpoint trả `404`. `/customers/abc` không khớp ràng buộc `{id:int}`, nên route không khớp endpoint nào và cũng là `404` (không phải 400). `/customers/2` tìm thấy nên `200`.\n`POST` dùng `Results.Created` nên mã là `201` và header `Location` là `/customers/3`, vì id mới là id lớn nhất hiện có (2) cộng 1.\nPhương án có `400` sai vì ràng buộc kiểu trong route làm route không khớp chứ không báo lỗi định dạng. Phương án `200` ở dòng cuối sai vì `Created` luôn là 201. Phương án `/customers/2` sai vì id 2 đã tồn tại, id mới phải là 3."
+    },
+    {
+      "id": "dotnet-m00-16",
+      "topic": "xUnit: Fact và Theory",
+      "source": "Module 0 - Solution, thư viện và unit test",
+      "question": "Bạn cần kiểm tra bảng giá giảm với 4 bộ dữ liệu khác nhau (tổng tiền, có phải VIP không, kết quả mong đợi). Cách nào hợp lý nhất khi dùng xUnit?",
+      "options": [
+        "Viết một `[Fact]` có vòng `for` duyệt cả 4 bộ dữ liệu",
+        "Viết 4 `[Fact]` giống hệt nhau, chỉ đổi tên",
+        "Một `[Theory]` với 4 dòng `[InlineData]`",
+        "Một `[Theory]` với 1 `[InlineData]` chứa cả mảng 4 bộ"
+      ],
+      "answer": 2,
+      "explanation": "`[Theory]` cùng `[InlineData]` chạy cùng một phương thức nhiều lần, mỗi dòng dữ liệu là một test riêng, fail riêng và báo cáo riêng. Thêm trường hợp mới chỉ cần thêm một dòng.\nVòng `for` trong một `[Fact]` làm cả nhóm chỉ là một test: bộ đầu fail thì các bộ sau không chạy, và thông báo không cho biết bộ nào sai. 4 `[Fact]` giống nhau chạy được nhưng lặp code, khó bảo trì. Nhét cả mảng vào một `[InlineData]` đi ngược mục đích: attribute chỉ nhận hằng số, và cách đó cũng không tách các bộ dữ liệu thành test riêng."
+    },
+    {
+      "id": "dotnet-m00-17",
+      "topic": "Chọn dữ liệu test",
+      "source": "Module 0 - Solution, thư viện và unit test",
+      "question": "Quy tắc nghiệp vụ: đơn có `total >= 1_000_000` được giảm 5%. Bộ giá trị `total` nào bắt được lỗi gõ nhầm `>=` thành `>` hiệu quả nhất?",
+      "options": [
+        "`500_000` và `2_000_000`",
+        "`999_999` và `1_000_000`",
+        "`0` và `10_000_000`",
+        "`1_000_001` và `1_500_000`"
+      ],
+      "answer": 1,
+      "explanation": "Lỗi `>=` thành `>` chỉ làm khác kết quả đúng tại giá trị bằng ngưỡng. Test `1_000_000` (đúng biên) lộ lỗi, còn `999_999` (ngay dưới biên) xác nhận phía dưới không được giảm, cho cả hai phía của quy tắc.\nCác bộ còn lại đều nằm xa biên: 500.000 và 2.000.000, 0 và 10.000.000, hay 1.000.001 và 1.500.000 đều cho kết quả giống nhau với `>` lẫn `>=`, nên test pass dù code sai. Đây là lý do bài học nhắc luôn hỏi: đường biên của quy tắc này ở đâu?"
+    },
+    {
+      "id": "dotnet-m00-18",
+      "topic": "Tách logic nghiệp vụ",
+      "source": "Module 0 - Solution, thư viện và unit test",
+      "question": "Một bạn viết toàn bộ phép tính giảm giá trong `Program.cs`, chen giữa `Console.ReadLine()` và `Console.WriteLine()`. Lý do chính để chuyển phép tính sang một class library riêng là gì?",
+      "options": [
+        "Class library chạy nhanh hơn project console",
+        "Compiler chỉ cho phép project test tham chiếu tới library",
+        "Library bắt buộc phải dùng `decimal` thay vì `double`",
+        "Test gọi thẳng hàm với dữ liệu tự chọn, không cần giả lập bàn phím"
+      ],
+      "answer": 3,
+      "explanation": "Khi logic chỉ nhận số vào, trả số ra, không đọc bàn phím, không in màn hình, thì project test gọi thẳng được với bất kỳ dữ liệu nào và so sánh kết quả. Nếu logic dính với `Console`, muốn test phải giả lập người gõ phím. Cách tách này còn là nền cho Clean Architecture ở các module sau.\nTốc độ không phải lý do: code chạy như nhau dù nằm ở project nào. Project test không phải nơi duy nhất được tham chiếu library, project console hay Web API cũng tham chiếu. Chọn `decimal` hay `double` là chuyện kiểu dữ liệu cho tiền, không liên quan tới việc tách project."
+    },
+    {
+      "id": "dotnet-m00-19",
+      "topic": "OpenAPI trong template webapi",
+      "source": "Module 0 - Web API đầu tiên",
+      "question": "Bạn tạo Web API mới bằng `dotnet new webapi` trên .NET 10, chạy ở chế độ Development, rồi mở `/swagger` theo một hướng dẫn cũ trên mạng nhưng nhận 404. Điều gì đúng?",
+      "options": [
+        "Template hiện chỉ sinh tài liệu JSON ở `/openapi/v1.json`",
+        "Cổng bị trùng nên mọi đường dẫn đều trả 404",
+        "Chưa chạy `dotnet dev-certs https --trust` nên không vào được",
+        "`/swagger` chỉ mở khi chạy ở môi trường Production"
+      ],
+      "answer": 0,
+      "explanation": "Từ .NET 9, template không còn kèm Swagger UI. `AddOpenApi()` và `MapOpenApi()` chỉ sinh tài liệu OpenAPI dạng JSON ở `/openapi/v1.json`; muốn có giao diện xem thì phải thêm gói riêng như Scalar hoặc Swagger UI.\nTrùng cổng làm app không khởi động được (lỗi address already in use) chứ không khiến mọi đường dẫn trả 404. Chứng chỉ HTTPS chỉ ảnh hưởng khi truy cập qua `https://`, còn lỗi ở đây là đường dẫn không tồn tại. `/swagger` không phụ thuộc môi trường Production: trong template, `MapOpenApi()` chỉ được bật khi `IsDevelopment()`, còn Swagger UI thì không có sẵn ở bất kỳ môi trường nào."
+    },
+    {
+      "id": "dotnet-m00-20",
+      "topic": "Solution và tham chiếu project",
+      "source": "Module 0 - Solution, thư viện và unit test",
+      "question": "Bạn tạo project test bằng `dotnet new xunit` và đưa vào solution, nhưng khi build gặp `error CS0103: The name 'DiscountCalculator' does not exist in the current context`. Nguyên nhân và cách sửa đúng là gì?",
+      "options": [
+        "Solution chưa lưu: sửa bằng cách đổi đuôi `.slnx` thành `.sln`",
+        "Class test thiếu `public`: sửa bằng cách thêm `public`",
+        "Project test chưa tham chiếu thư viện: chạy `dotnet reference add`",
+        "Thiếu `[Fact]` trên phương thức: sửa bằng cách thêm attribute"
+      ],
+      "answer": 2,
+      "explanation": "`dotnet sln add` chỉ đưa project vào danh sách của solution để build và test cùng lúc, nó không làm project này nhìn thấy code của project kia. Muốn code test gọi được class `public` trong `Crm.Core`, project test phải **tham chiếu** thư viện bằng `dotnet reference add`. Thiếu tham chiếu, compiler không biết `DiscountCalculator` là gì và báo CS0103.\nĐổi `.slnx` sang `.sln` chỉ là đổi định dạng file solution, cả hai đều chạy được. Thiếu `public` ở class test cho lỗi khác (analyzer xUnit1000), và thiếu `[Fact]` chỉ khiến test không được chạy, không phải lỗi biên dịch CS0103."
+    }
+  ]
+}

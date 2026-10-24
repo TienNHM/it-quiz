@@ -1,0 +1,108 @@
+[
+  {
+    "kind": "cs-predict",
+    "program": "Console.WriteLine(\"A\");\nvar t = Foo();\nConsole.WriteLine(\"C\");\nawait t;\n\nasync Task Foo()\n{\n    Console.WriteLine(\"B\");\n    await Task.Delay(50);\n    Console.WriteLine(\"D\");\n}\n",
+    "id": "dotnet-m06-01"
+  },
+  {
+    "kind": "cs-outcome",
+    "program": "var gate = new object();\n\nasync Task SaveAsync()\n{\n    lock (gate)\n    {\n        await Task.Delay(10);\n    }\n}\n\nawait SaveAsync();\n",
+    "expect": "compile-error",
+    "code": "CS1996",
+    "id": "dotnet-m06-02"
+  },
+  {
+    "kind": "cs-find-error",
+    "template": "var nums = new[] { 1, 2, 3, 4 };\n{{X}}\nConsole.WriteLine(\"done\");\n\nasync Task<bool> Even(int n)\n{\n    await Task.Delay(1);\n    return n % 2 == 0;\n}",
+    "options": [
+      "var r = nums.Select(async n => await Even(n)).ToList();",
+      "var r = await Task.WhenAll(nums.Select(Even));",
+      "var r = nums.Where(async n => await Even(n)).ToList();",
+      "var r = nums.Select(n => Even(n)).ToList();"
+    ],
+    "errorKind": "compile",
+    "id": "dotnet-m06-03"
+  },
+  {
+    "kind": "cs-predict",
+    "program": "var calls = 0;\nvar tasks = new[] { 1, 2, 3 }.Select(async n =>\n{\n    calls++;\n    await Task.Delay(10);\n    return n;\n});\n\nawait Task.WhenAll(tasks);\nConsole.WriteLine(calls);\nvar total = tasks.Count();\nawait Task.WhenAll(tasks);\nConsole.WriteLine(calls);\n",
+    "id": "dotnet-m06-04"
+  },
+  {
+    "kind": "cs-choose",
+    "template": "int[] ids = { 1, 2, 3 };\n{{X}}\nConsole.WriteLine(total);\n\nasync Task<int> Work(int id)\n{\n    await Task.Delay(50);\n    return id * 10;\n}",
+    "options": [
+      "var total = 0;\nArray.ForEach(ids, async i => total += await Work(i));",
+      "var all = await Task.WhenAll(ids.Select(Work));\nvar total = all.Sum();",
+      "var total = ids.Sum(async i => await Work(i));",
+      "var total = 0;\nids.Select(async i => total += await Work(i));"
+    ],
+    "expectOutput": "60",
+    "id": "dotnet-m06-05"
+  },
+  {
+    "kind": "cs-predict",
+    "program": "Task Fail(string m) => Task.FromException(new InvalidOperationException(m));\n\nvar all = Task.WhenAll(Fail(\"A\"), Fail(\"B\"));\ntry { await all; }\ncatch (Exception ex) { Console.WriteLine(ex.Message); }\nConsole.WriteLine(all.Exception!.InnerExceptions.Count);\n",
+    "id": "dotnet-m06-07"
+  },
+  {
+    "kind": "cs-predict",
+    "program": "using var cts = new CancellationTokenSource();\ncts.Cancel();\ntry\n{\n    await Task.Delay(1000, cts.Token);\n}\ncatch (OperationCanceledException ex)\n{\n    Console.WriteLine(ex.GetType().Name);\n}\n",
+    "id": "dotnet-m06-08"
+  },
+  {
+    "kind": "cs-predict",
+    "program": "int a = 0, b = 0;\nusing var cts1 = new CancellationTokenSource();\nfor (int i = 0; i < 5; i++)\n{\n    if (i == 2) cts1.Cancel();\n    a++;\n}\nusing var cts2 = new CancellationTokenSource();\ntry\n{\n    for (int i = 0; i < 5; i++)\n    {\n        if (i == 2) cts2.Cancel();\n        cts2.Token.ThrowIfCancellationRequested();\n        b++;\n    }\n}\ncatch (OperationCanceledException) { }\nConsole.WriteLine($\"{a} {b}\");\n",
+    "id": "dotnet-m06-09"
+  },
+  {
+    "id": "dotnet-m06-11",
+    "kind": "cs-predict",
+    "program": "using System.Threading.Channels;\nvar ch = Channel.CreateBounded<int>(new BoundedChannelOptions(2) { FullMode = BoundedChannelFullMode.Wait });\nConsole.WriteLine(ch.Writer.TryWrite(1));\nConsole.WriteLine(ch.Writer.TryWrite(2));\nConsole.WriteLine(ch.Writer.TryWrite(3));\nConsole.WriteLine(ch.Reader.Count);\n"
+  },
+  {
+    "id": "dotnet-m06-12",
+    "kind": "cs-predict",
+    "program": "using System.Threading.Channels;\nvar ch = Channel.CreateBounded<int>(new BoundedChannelOptions(3) { FullMode = BoundedChannelFullMode.DropNewest });\nfor (var i = 1; i <= 5; i++) ch.Writer.TryWrite(i);\nch.Writer.Complete();\nvar items = new List<int>();\nawait foreach (var x in ch.Reader.ReadAllAsync()) items.Add(x);\nConsole.WriteLine(string.Join(\",\", items));\n"
+  },
+  {
+    "id": "dotnet-m06-13",
+    "kind": "cs-predict",
+    "program": "using System.Threading.Channels;\nvar ch = Channel.CreateUnbounded<int>();\nch.Writer.TryWrite(1);\nch.Writer.TryWrite(2);\nch.Writer.Complete();\nConsole.WriteLine(ch.Writer.TryWrite(3));\nConsole.WriteLine(ch.Reader.Completion.IsCompleted);\nawait foreach (var x in ch.Reader.ReadAllAsync()) Console.WriteLine(x);\nConsole.WriteLine(ch.Reader.Completion.IsCompleted);\n"
+  },
+  {
+    "id": "dotnet-m06-14",
+    "kind": "cs-outcome",
+    "expect": "runtime-error",
+    "program": "using System.Threading.Channels;\nvar ch = Channel.CreateUnbounded<string>();\nawait ch.Writer.WriteAsync(\"a\");\nch.Writer.Complete();\nawait ch.Writer.WriteAsync(\"b\");\nConsole.WriteLine(\"done\");\n"
+  },
+  {
+    "id": "dotnet-m06-15",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.TimeProvider.Testing@*\nusing Microsoft.Extensions.Time.Testing;\nvar time = new FakeTimeProvider(new DateTimeOffset(2026, 3, 15, 10, 0, 0, TimeSpan.Zero));\nvar expires = time.GetUtcNow().AddMinutes(15);\ntime.Advance(TimeSpan.FromMinutes(14));\nConsole.WriteLine(expires > time.GetUtcNow());\ntime.Advance(TimeSpan.FromMinutes(1));\nConsole.WriteLine(expires > time.GetUtcNow());\nConsole.WriteLine(time.GetUtcNow().Minute);\n"
+  },
+  {
+    "id": "dotnet-m06-16",
+    "kind": "cs-find-error",
+    "errorKind": "runtime",
+    "template": "using var cts = new CancellationTokenSource();\nvar timer = new PeriodicTimer(TimeSpan.FromMilliseconds(30));\n{{X}}\nConsole.WriteLine(\"xong\");\n",
+    "options": [
+      "cts.Cancel();\ntry\n{\n    await timer.WaitForNextTickAsync(cts.Token);\n}\ncatch (OperationCanceledException) { }",
+      "cts.Cancel();\nawait timer.WaitForNextTickAsync(cts.Token);",
+      "timer.Dispose();\nConsole.WriteLine(await timer.WaitForNextTickAsync());",
+      "cts.CancelAfter(1000);\nawait timer.WaitForNextTickAsync(cts.Token);"
+    ]
+  },
+  {
+    "id": "dotnet-m06-17",
+    "kind": "cs-choose",
+    "expectOutput": "3",
+    "template": "using System.Threading.Channels;\nvar ch = Channel.CreateBounded<int>(10);\nfor (var i = 1; i <= 3; i++) await ch.Writer.WriteAsync(i);\nusing var stopping = new CancellationTokenSource();\nch.Writer.Complete();\nstopping.Cancel();\nvar n = 0;\n{{X}}\nConsole.WriteLine(n);\n",
+    "options": [
+      "try\n{\n    await foreach (var _ in ch.Reader.ReadAllAsync(stopping.Token))\n        n++;\n}\ncatch (OperationCanceledException) { }",
+      "await foreach (var _ in ch.Reader.ReadAllAsync())\n    n++;",
+      "while (await ch.Reader.WaitToReadAsync(stopping.Token))\n{\n    ch.Reader.TryRead(out _);\n    n++;\n}",
+      "await ch.Reader.ReadAsync();\nn++;"
+    ]
+  }
+]

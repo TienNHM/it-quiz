@@ -1,0 +1,321 @@
+{
+  "id": "dotnet-m01",
+  "title": "Module 1: Programming Logic",
+  "description": "Biến, kiểu dữ liệu, điều kiện, vòng lặp, hàm, collection và tư duy giải bài toán trong C#.",
+  "questions": [
+    {
+      "id": "dotnet-m01-01",
+      "topic": "double và decimal",
+      "source": "Module 1 - Biến và kiểu dữ liệu",
+      "question": "Đoạn code dưới in ra gì (giả sử culture không ảnh hưởng đến kết quả True/False)?",
+      "code": "double a = 0.1, b = 0.2;\nConsole.WriteLine(a + b == 0.3);\n\ndecimal c = 0.1m, d = 0.2m;\nConsole.WriteLine(c + d == 0.3m);",
+      "codeLang": "csharp",
+      "options": [
+        "True\nTrue",
+        "False\nTrue",
+        "False\nFalse",
+        "True\nFalse"
+      ],
+      "answer": 1,
+      "explanation": "`double` lưu theo cơ số 2, `0.1` và `0.2` chỉ là giá trị gần đúng nên tổng là `0.30000000000000004`, không bằng `0.3` -> `False`.\n`decimal` lưu theo cơ số 10 nên `0.1m + 0.2m` đúng bằng `0.3m` -> `True`.\nBa phương án còn lại sai ở chỗ: cho rằng `double` cộng chính xác (dòng 1 là True), hoặc cho rằng `decimal` cũng lệch (dòng 2 là False). Đó là lý do tiền tệ phải dùng `decimal`."
+    },
+    {
+      "id": "dotnet-m01-02",
+      "topic": "Truyền tham số",
+      "source": "Module 1 - Hàm",
+      "question": "Chương trình dưới in ra gì?",
+      "code": "Customer c = new() { Name = \"An\" };\nReplace(c);\nConsole.WriteLine(c.Name);\nRename(c);\nConsole.WriteLine(c.Name);\n\nvoid Rename(Customer x) { x.Name = \"Binh\"; }\nvoid Replace(Customer x) { x = new Customer { Name = \"Chi\" }; }\n\nclass Customer { public string Name { get; set; } = \"\"; }",
+      "codeLang": "csharp",
+      "options": [
+        "Chi\nBinh",
+        "Chi\nChi",
+        "An\nBinh",
+        "An\nAn"
+      ],
+      "answer": 2,
+      "explanation": "Tham số được truyền theo giá trị, với object thì giá trị được sao chép là **địa chỉ**.\n`Replace` chỉ gán lại biến cục bộ `x` sang object mới, biến `c` bên ngoài vẫn trỏ object cũ nên in `An`.\n`Rename` sửa thuộc tính của cùng object mà `c` đang trỏ tới nên in `Binh`.\nCác phương án có `Chi` sai vì nghĩ gán `x = new ...` làm đổi biến của bên gọi (cần `ref` mới được). Phương án `An` / `An` sai vì nghĩ hàm không sửa được object."
+    },
+    {
+      "id": "dotnet-m01-03",
+      "topic": "var và kiểu tĩnh",
+      "source": "Module 1 - Biến và kiểu dữ liệu",
+      "question": "Đoạn code sau cho kết quả gì?",
+      "code": "var email = \"a@company.com\";\nemail = 42;\nConsole.WriteLine(email);",
+      "codeLang": "csharp",
+      "options": [
+        "Lỗi biên dịch: không gán `int` cho `string`",
+        "Biên dịch được, in ra `42`",
+        "Biên dịch được, ném exception lúc chạy",
+        "Biên dịch được, `email` đổi sang kiểu `int`"
+      ],
+      "answer": 0,
+      "explanation": "`var` chỉ bảo trình biên dịch tự suy kiểu từ vế phải. Ở đây `email` là `string` và kiểu đó được chốt lúc biên dịch, gán `42` cho nó gây lỗi `CS0029`.\nC# không phải JavaScript: biến không đổi kiểu khi chạy. Vì vậy cả ba phương án còn lại (in 42, ném exception lúc chạy, biến đổi sang int) đều sai. Muốn kiểu động phải dùng `dynamic`, và backend gần như không cần."
+    },
+    {
+      "id": "dotnet-m01-04",
+      "topic": "Tràn số nguyên",
+      "source": "Module 1 - Biến và kiểu dữ liệu",
+      "question": "Dự án dùng cấu hình mặc định (không bật checked). Chương trình in ra gì?",
+      "code": "int max = int.MaxValue;\nint next = max + 1;\nConsole.WriteLine(next);\n\nlong big = max;\nConsole.WriteLine(big + 1);",
+      "codeLang": "csharp",
+      "options": [
+        "2147483648\n2147483648",
+        "OverflowException ngay ở dòng cộng đầu tiên",
+        "-2147483648\n-2147483647",
+        "-2147483648\n2147483648"
+      ],
+      "answer": 3,
+      "explanation": "Mặc định C# **không** kiểm tra tràn số nguyên: `int.MaxValue + 1` quay vòng về `-2147483648`, không báo lỗi gì.\nVới `long`, phạm vi đủ rộng nên `big + 1` ra `2147483648`.\nPhương án nói `OverflowException` sai vì chỉ xảy ra khi bọc trong `checked` hoặc bật `CheckForOverflowUnderflow`. Phương án đầu sai vì `int` không thể giữ `2147483648`. Phương án có `-2147483647` sai vì `long` không bị quay vòng."
+    },
+    {
+      "id": "dotnet-m01-05",
+      "topic": "Đoản mạch && và &",
+      "source": "Module 1 - Điều kiện",
+      "question": "Biến `c` đang là `null` (khách vãng lai). Đoạn nào làm chương trình ném `NullReferenceException` lúc chạy?",
+      "code": "Customer? c = null;\n\n// ... đoạn được chọn nằm ở đây ...\n\nConsole.WriteLine(\"ok\");\n\nclass Customer { public bool IsActive { get; set; } }",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nif (c != null && c.IsActive)\n    Console.WriteLine(\"a\");\n```",
+        "```csharp\nif (c is not null && c.IsActive)\n    Console.WriteLine(\"a\");\n```",
+        "```csharp\nif (c != null & c.IsActive)\n    Console.WriteLine(\"a\");\n```",
+        "```csharp\nif (c?.IsActive == true)\n    Console.WriteLine(\"a\");\n```"
+      ],
+      "answer": 2,
+      "explanation": "`&` là toán tử logic **không** đoản mạch: nó luôn tính cả hai vế, nên `c.IsActive` vẫn chạy khi `c` là `null` -> `NullReferenceException`.\n`&&` đoản mạch: vế trái sai thì vế phải không chạy, nên cả `!= null && ...` và `is not null && ...` an toàn.\n`c?.IsActive == true` cũng an toàn: `?.` trả về `null` khi `c` null, và `null == true` là `false`.\nTrong điều kiện, hầu như luôn dùng `&&` / `||`."
+    },
+    {
+      "id": "dotnet-m01-06",
+      "topic": "ToDictionary trùng khoá",
+      "source": "Module 1 - Mảng và danh sách",
+      "question": "Danh sách `orders` có hai đơn cùng `CustomerId = 7`. Đoạn nào ném exception lúc chạy?",
+      "code": "var orders = new List<Order>\n{\n    new(1, 7), new(2, 7), new(3, 8)\n};\n\n// ... đoạn được chọn nằm ở đây ...\n\nrecord Order(int Id, int CustomerId);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nvar d = orders.GroupBy(o => o.CustomerId)\n    .ToDictionary(g => g.Key,\n                  g => g.ToList());\n```",
+        "```csharp\nvar d = orders.ToDictionary(\n    o => o.CustomerId);\n```",
+        "```csharp\nvar d = orders.ToDictionary(o => o.Id);\n```",
+        "```csharp\nvar d = orders.ToLookup(o => o.CustomerId);\n```"
+      ],
+      "answer": 1,
+      "explanation": "`ToDictionary` yêu cầu khoá **duy nhất**. Hai đơn cùng `CustomerId = 7` làm nó ném `ArgumentException` (\"An item with the same key has already been added\").\n`GroupBy(...).ToDictionary(...)` gom nhóm trước nên mỗi khoá chỉ xuất hiện một lần. `ToDictionary(o => o.Id)` dùng khoá `Id` vốn duy nhất. `ToLookup` cho phép một khoá ứng với nhiều phần tử nên không bao giờ ném vì trùng khoá."
+    },
+    {
+      "id": "dotnet-m01-07",
+      "topic": "Xoá phần tử khi duyệt",
+      "source": "Module 1 - Vòng lặp",
+      "question": "Cần xoá mọi số chẵn khỏi `nums` để còn đúng `1,3`. Đoạn nào cho kết quả đúng?",
+      "code": "var nums = new List<int> { 1, 2, 2, 3, 4 };\n\n// ... đoạn được chọn nằm ở đây ...\n\nConsole.WriteLine(string.Join(\",\", nums));",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nforeach (var n in nums)\n    if (n % 2 == 0) nums.Remove(n);\n```",
+        "```csharp\nfor (int i = 0; i < nums.Count; i++)\n    if (nums[i] % 2 == 0) nums.RemoveAt(i);\n```",
+        "```csharp\nfor (int i = nums.Count; i >= 0; i--)\n    if (nums[i] % 2 == 0) nums.RemoveAt(i);\n```",
+        "```csharp\nnums.RemoveAll(n => n % 2 == 0);\n```"
+      ],
+      "answer": 3,
+      "explanation": "`RemoveAll` với điều kiện là cách gọn và an toàn nhất: kết quả `1,3`.\n`foreach` + `Remove` sửa collection khi đang duyệt nên ném `InvalidOperationException` (enumerator phát hiện số phiên bản đổi).\nDuyệt xuôi với `RemoveAt(i)` xoá xong các phần tử sau dịch lên nên **bỏ sót** số `2` thứ hai, kết quả sai là `1,2,3`.\nDuyệt ngược nhưng bắt đầu từ `nums.Count` (thay vì `Count - 1`) là lỗi lệch một đơn vị: `nums[5]` ném `ArgumentOutOfRangeException`."
+    },
+    {
+      "id": "dotnet-m01-08",
+      "topic": "yield return và chạy trễ",
+      "source": "Module 1 - Vòng lặp",
+      "question": "Chương trình dưới in ra những dòng nào, theo thứ tự?",
+      "code": "IEnumerable<int> Gen()\n{\n    Console.WriteLine(\"start\");\n    for (int i = 1; i <= 3; i++)\n    {\n        Console.WriteLine($\"yield {i}\");\n        yield return i;\n    }\n}\n\nvar seq = Gen();\nConsole.WriteLine(\"created\");\nforeach (var x in seq.Take(2))\n    Console.WriteLine($\"got {x}\");",
+      "codeLang": "csharp",
+      "options": [
+        "created\nstart\nyield 1\ngot 1\nyield 2\ngot 2",
+        "start\ncreated\nyield 1\ngot 1\nyield 2\ngot 2",
+        "created\nstart\nyield 1\ngot 1\nyield 2\ngot 2\nyield 3",
+        "start\nyield 1\nyield 2\nyield 3\ncreated\ngot 1\ngot 2"
+      ],
+      "answer": 0,
+      "explanation": "Hàm có `yield return` **không chạy gì** cho tới khi có người bắt đầu duyệt. `var seq = Gen();` chỉ tạo bộ sinh nên `created` in trước, `start` chỉ in khi `foreach` gọi `MoveNext()` lần đầu.\nMỗi lần lặp chạy tới `yield return` kế tiếp rồi dừng. `Take(2)` lấy đủ hai phần tử thì dừng nên `yield 3` không bao giờ in.\n- Kết quả in `start` trước `created` sai vì nghĩ code trong hàm chạy ngay lúc gọi hàm.\n- Kết quả có thêm `yield 3` sai vì `Take(2)` không yêu cầu phần tử thứ ba nên vòng lặp trong hàm dừng ở đó.\n- Kết quả in hết `yield` trước rồi mới `got` sai vì nghĩ hàm chạy trọn vẹn trước, như khi dựng cả danh sách; thực tế `yield` và `got` xen kẽ từng phần tử."
+    },
+    {
+      "id": "dotnet-m01-09",
+      "topic": "is null so với == null",
+      "source": "Module 1 - Điều kiện",
+      "question": "Vì sao bài học khuyên dùng `customer is null` thay vì `customer == null`?",
+      "options": [
+        "`is null` chạy nhanh hơn `==` hàng chục lần",
+        "`is null` không bị `==` nạp chồng can thiệp",
+        "`==` không dùng được với kiểu tham chiếu nullable",
+        "`is null` tự ném exception khi biến null"
+      ],
+      "answer": 1,
+      "explanation": "Toán tử `==` **có thể bị nạp chồng**: một lớp có thể định nghĩa lại nó và chạy code tuỳ ý, kể cả khi vế trái là `null`. `is null` được dịch thẳng thành so sánh tham chiếu nên không ai can thiệp được, ngắn gọn và luôn đúng nghĩa. Dạng phủ định là `is not null`.\nSai ở các phương án khác: khác biệt tốc độ gần như không đáng kể; `==` vẫn dùng được và biên dịch bình thường; còn `is null` chỉ trả `true/false`, không ném exception."
+    },
+    {
+      "id": "dotnet-m01-10",
+      "topic": "List.Contains trong vòng lặp",
+      "source": "Module 1 - Mảng và danh sách",
+      "question": "Vòng `foreach` duyệt 10.000 đơn và gọi `activeIds.Contains(order.CustomerId)` với `activeIds` là `List<int>` 10.000 phần tử, chạy rất chậm. Cách sửa đúng bản chất là gì?",
+      "options": [
+        "Đổi `foreach` thành `for` để truy cập bằng chỉ số",
+        "Gọi `activeIds.Sort()` trong mỗi vòng lặp",
+        "Dựng `HashSet<int>` một lần trước vòng lặp rồi `Contains` trên nó",
+        "Đặt `Capacity` của danh sách bằng 10.000"
+      ],
+      "answer": 2,
+      "explanation": "`List<T>.Contains` quét tuyến tính O(n) ở **mỗi** lần gọi, nên cả vòng lặp là O(n x m), cỡ 100 triệu phép so sánh. `HashSet<T>.Contains` trung bình O(1), dựng một lần `ToHashSet()` rồi tra cứu chỉ còn cỡ 20 nghìn thao tác.\nĐổi `for`/`foreach` không đổi chi phí của `Contains`. Sắp xếp lại trong mỗi vòng lặp còn tốn kém hơn (và `Contains` của List vẫn quét tuyến tính). `Capacity` chỉ giúp tránh cấp phát khi thêm phần tử, không làm tìm kiếm nhanh hơn."
+    },
+    {
+      "id": "dotnet-m01-11",
+      "topic": "LINQ deferred execution",
+      "source": "Module 1 - LINQ, record và đệ quy an toàn",
+      "question": "Đoạn code dưới in ra hai dòng. Kết quả là gì?",
+      "code": "var list = new List<int> { 1, 2, 3, 4 };\nvar evens = list.Where(x => x % 2 == 0);\nvar snap = evens.ToList();\nlist.Add(6);\nConsole.WriteLine(snap.Count);\nConsole.WriteLine(evens.Count());",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n2\n2\n```",
+        "```text\n2\n3\n```",
+        "```text\n3\n3\n```",
+        "```text\n2\n4\n```"
+      ],
+      "answer": 1,
+      "explanation": "`ToList()` chạy truy vấn **ngay** và chốt kết quả `{2, 4}` nên `snap.Count` luôn là 2. Còn `evens` chỉ là \"công thức\" (deferred execution): `Count()` chạy lại trên danh sách hiện tại `{1, 2, 3, 4, 6}` nên được 3 số chẵn.\n- Phương án `2` rồi `2` quên rằng `evens` được tính lại sau khi `Add(6)`.\n- Phương án `3` rồi `3` tưởng `ToList()` vẫn cập nhật theo danh sách gốc, trong khi nó là bản sao.\n- Phương án `2` rồi `4` đếm sai: chỉ có 3 số chẵn là 2, 4, 6."
+    },
+    {
+      "id": "dotnet-m01-12",
+      "topic": "Closure trong vòng for",
+      "source": "Module 1 - LINQ, record và đệ quy an toàn",
+      "question": "Ba truy vấn được tạo trong vòng `for`, rồi mới đếm kết quả sau vòng lặp. Chương trình in gì?",
+      "code": "var data = new List<int> { 1, 2, 3, 4, 5 };\nvar queries = new List<IEnumerable<int>>();\nfor (int i = 0; i < 3; i++)\n    queries.Add(data.Where(x => x > i));\nConsole.WriteLine(string.Join(\",\",\n    queries.Select(q => q.Count())));",
+      "codeLang": "csharp",
+      "options": [
+        "5,4,3",
+        "3,3,3",
+        "4,3,2",
+        "2,2,2"
+      ],
+      "answer": 3,
+      "explanation": "Biến `i` của vòng `for` là **một biến duy nhất** dùng chung; lambda giữ chính biến đó chứ không chép giá trị. Truy vấn chỉ chạy lúc `Count()`, khi vòng `for` đã xong và `i = 3`, nên cả ba đều lọc `x > 3` và cho 2 phần tử (4 và 5). Chạy thật in `2,2,2`.\n- `5,4,3` là kết quả nếu mỗi lambda chép giá trị `i` riêng (ngưỡng 0, 1, 2).\n- `4,3,2` ứng với ngưỡng 1, 2, 3, cũng giả định mỗi vòng có biến riêng.\n- `3,3,3` ứng với ngưỡng `x > 2`, không khớp giá trị `i` cuối cùng là 3.\nMuốn mỗi lambda giữ giá trị riêng, hãy chép `i` sang biến cục bộ trong thân vòng lặp."
+    },
+    {
+      "id": "dotnet-m01-13",
+      "topic": "record và with",
+      "source": "Module 1 - LINQ, record và đệ quy an toàn",
+      "question": "Đoạn code dưới (dùng `record` vị trí) cho kết quả nào?",
+      "code": "var p1 = new Person(\"An\", 20);\nvar p2 = p1 with { Age = 21 };\np1.Age = 22;\nConsole.WriteLine(p2);\nrecord Person(string Name, int Age);",
+      "codeLang": "csharp",
+      "options": [
+        "Lỗi biên dịch vì `Age` là init-only",
+        "Biên dịch được, `p2` in ra tuổi 21",
+        "Biên dịch được, ném exception lúc chạy",
+        "Lỗi biên dịch vì record không có `with`"
+      ],
+      "answer": 0,
+      "explanation": "Thuộc tính sinh từ tham số của `record` vị trí là `init`-only: chỉ gán được trong object initializer, constructor hoặc biểu thức `with`. Dòng `p1.Age = 22;` bị chặn từ lúc biên dịch với CS8852. Đó chính là ý nghĩa của bất biến: muốn đổi thì tạo bản mới bằng `with`.\n- Phương án biên dịch được và in tuổi 21 bỏ qua dòng gán `p1.Age`.\n- Phương án exception lúc chạy sai vì lỗi này bị bắt sớm hơn, ở bước biên dịch.\n- Phương án nói record không có `with` sai: `with` chính là cách tạo bản sao đã chỉnh sửa."
+    },
+    {
+      "id": "dotnet-m01-14",
+      "topic": "record và so sánh theo giá trị",
+      "source": "Module 1 - LINQ, record và đệ quy an toàn",
+      "question": "Chương trình dưới in ra ba dòng. Kết quả đúng là gì?",
+      "code": "var p1 = new Person(\"An\", 20);\nvar p2 = p1 with { Age = 21 };\nConsole.WriteLine(p1);\nConsole.WriteLine(p1 == p2);\nConsole.WriteLine(p2.Age);\nrecord Person(string Name, int Age);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nPerson { Name = An, Age = 20 }\nTrue\n21\n```",
+        "```text\nPerson { Name = An, Age = 21 }\nFalse\n21\n```",
+        "```text\nPerson { Name = An, Age = 20 }\nFalse\n21\n```",
+        "```text\nPerson { Name = An, Age = 20 }\nFalse\n20\n```"
+      ],
+      "answer": 2,
+      "explanation": "`with` tạo **bản sao mới** và đổi `Age`, bản gốc `p1` không bị đụng tới nên in `Age = 20`. `==` trên record so sánh theo giá trị từng thuộc tính: `20` khác `21` nên `False`. `p2.Age` là 21.\n- Phương án `True` sai vì hai record khác `Age` thì không bằng nhau.\n- Phương án in `Age = 21` cho `p1` tưởng `with` sửa tại chỗ bản gốc.\n- Phương án cuối in `20` cho `p2.Age` tưởng `with` bị bỏ qua."
+    },
+    {
+      "id": "dotnet-m01-15",
+      "topic": "Closure trong vòng for",
+      "source": "Module 1 - LINQ, record và đệ quy an toàn",
+      "question": "Cần danh sách `fs` chứa ba hàm trả về lần lượt 0, 1, 2 khi gọi sau vòng lặp. Đoạn nào đặt vào thân vòng `for` cho đúng?",
+      "code": "var fs = new List<Func<int>>();\nfor (int i = 0; i < 3; i++)\n{\n    // ĐOẠN CẦN CHỌN\n}\nConsole.WriteLine(string.Join(\",\",\n    fs.Select(f => f())));   // 0,1,2",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nfs.Add(() => i);\n```",
+        "```csharp\nint copy = i;\nfs.Add(() => copy);\n```",
+        "```csharp\nint copy = i;\nfs.Add(() => i);\n```",
+        "```csharp\nint copy = i + 1;\nfs.Add(() => copy);\n```"
+      ],
+      "answer": 1,
+      "explanation": "Biến khai báo **bên trong** thân vòng lặp được tạo mới ở mỗi vòng, nên mỗi lambda bắt một `copy` riêng (0, 1, 2).\n- `fs.Add(() => i)` bắt chính biến `i` dùng chung; khi gọi, `i = 3` nên in `3,3,3`.\n- Phương án chép `copy` nhưng lambda vẫn dùng `i` là lỗi hay gặp: có biến mới mà quên dùng, kết quả vẫn `3,3,3`.\n- Phương án `copy = i + 1` đã tách biến nhưng lệch một đơn vị, in `1,2,3`.\nVì vậy phải vừa chép sang biến cục bộ vừa dùng biến đó trong lambda."
+    },
+    {
+      "id": "dotnet-m01-16",
+      "topic": "Dictionary tra cứu an toàn",
+      "source": "Module 1 - Sự cố thực tế: vòng lặp lồng",
+      "question": "Dictionary `d` chỉ có khoá `\"a\"`. Đoạn nào dưới đây **gây lỗi** khi chạy?",
+      "code": "var d = new Dictionary<string, int> { [\"a\"] = 1 };\n// ĐOẠN CẦN CHỌN\nConsole.WriteLine(\"xong\");",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nd.TryGetValue(\"z\", out var v);\n```",
+        "```csharp\nvar v = d.GetValueOrDefault(\"z\", 0);\n```",
+        "```csharp\nd[\"z\"] = 5;\n```",
+        "```csharp\nvar v = d[\"z\"];\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đọc bằng indexer `d[\"z\"]` khi khoá không tồn tại sẽ ném `KeyNotFoundException`.\n- `TryGetValue` trả về `false` và gán giá trị mặc định, không ném lỗi: đây là cách tra một lần an toàn.\n- `GetValueOrDefault(\"z\", 0)` trả `0` nếu thiếu khoá; bài học dùng nó cho khách chưa có đơn nào để tổng bằng 0.\n- Gán `d[\"z\"] = 5` là **thêm hoặc ghi đè**, hợp lệ ngay cả khi khoá chưa có.\nBài học: indexer để đọc thì chỉ dùng khi chắc chắn khoá có mặt."
+    },
+    {
+      "id": "dotnet-m01-17",
+      "topic": "HashSet và phát hiện trùng",
+      "source": "Module 1 - Cấu trúc dữ liệu cơ bản và Big-O",
+      "question": "`HashSet<T>.Add` trả về `false` nếu phần tử đã có. Chương trình dưới in gì?",
+      "code": "var seen = new HashSet<int>();\nvar dup = new List<int>();\nforeach (var id in new[] { 3, 1, 3, 2, 1 })\n{\n    if (!seen.Add(id)) dup.Add(id);\n}\nConsole.WriteLine(string.Join(\",\", dup));\nConsole.WriteLine(seen.Count);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n3,1\n3\n```",
+        "```text\n3,1\n5\n```",
+        "```text\n1,3\n3\n```",
+        "```text\n3,3\n3\n```"
+      ],
+      "answer": 0,
+      "explanation": "Duyệt `3, 1, 3, 2, 1`: lần đầu của 3, 1, 2 được thêm thành công; lần thứ hai của 3 và của 1 làm `Add` trả `false` nên chúng vào `dup` theo thứ tự gặp: `3` rồi `1`. Tập `seen` chỉ giữ giá trị khác nhau: `{3, 1, 2}` nên `Count = 3`.\n- Phương án đếm 5 quên rằng `HashSet` không chứa phần tử trùng.\n- Phương án `1,3` đảo thứ tự: số 3 lặp lại ở vị trí thứ ba, trước khi số 1 lặp ở vị trí cuối.\n- Phương án `3,3` đếm 3 hai lần, nhưng 3 chỉ trùng một lần.\nNhờ `Add` vừa thêm vừa báo trùng, một lần gọi O(1) thay cho cặp `Contains` rồi `Add`."
+    },
+    {
+      "id": "dotnet-m01-18",
+      "topic": "Hoa hồng luỹ tiến và vách đá",
+      "source": "Module 1 - Case study: tính hoa hồng theo bậc",
+      "question": "Hai hàm tính hoa hồng: `Tiered` (luỹ tiến theo phần vượt) và `Flat` (toàn bộ doanh số nhân tỷ lệ bậc). Doanh số tăng từ 500 triệu lên 501 triệu, mức tăng hoa hồng của mỗi hàm là bao nhiêu? In ra hai dòng.",
+      "code": "const decimal T2 = 100_000_000m;\nconst decimal T3 = 500_000_000m;\n\ndecimal Tiered(decimal s)\n{\n    decimal c = Math.Min(s, T2) * 0.02m;\n    if (s > T2) c += (Math.Min(s, T3) - T2) * 0.05m;\n    if (s > T3) c += (s - T3) * 0.08m;\n    return c;\n}\n\ndecimal Flat(decimal s) => s switch\n{\n    < T2 => s * 0.02m,\n    <= T3 => s * 0.05m,\n    _ => s * 0.08m,\n};\n\nConsole.WriteLine((long)(Tiered(501_000_000m) - Tiered(500_000_000m)));\nConsole.WriteLine((long)(Flat(501_000_000m) - Flat(500_000_000m)));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n80000\n80000\n```",
+        "```text\n1000000\n15080000\n```",
+        "```text\n80000\n15080000\n```",
+        "```text\n0\n15000000\n```"
+      ],
+      "answer": 2,
+      "explanation": "Với `Tiered`, 1 triệu doanh số thêm nằm hoàn toàn ở bậc 3 nên chỉ tăng `1.000.000 x 8% = 80.000`. Với `Flat`, vượt mốc 500 triệu thì **toàn bộ** 501 triệu bị tính 8% = 40.080.000, so với 25.000.000 ở mốc 500 triệu: tăng 15.080.000 chỉ vì thêm một triệu. Đó là \"vách đá\" ở ngưỡng.\n- `80000` rồi `80000` tưởng cả hai cách đều liên tục.\n- `1000000` rồi `15080000` nhầm mức tăng của cách luỹ tiến thành cả phần doanh số thêm.\n- `0` rồi `15000000` bỏ sót phần phát sinh 8% trên mỗi đồng vượt và phần 80.000 đồng ở cách luỹ tiến."
+    },
+    {
+      "id": "dotnet-m01-19",
+      "topic": "Switch expression không đầy đủ",
+      "source": "Module 1 - LINQ, record và đệ quy an toàn",
+      "question": "Hàm xếp hạng dưới đây thiếu nhánh mặc định `_`. Gọi với 5 triệu thì chuyện gì xảy ra?",
+      "code": "string Rank(decimal spent) => spent switch\n{\n    >= 100_000_000m => \"Vàng\",\n    >= 10_000_000m => \"Bạc\",\n};\nConsole.WriteLine(Rank(5_000_000m));",
+      "codeLang": "csharp",
+      "options": [
+        "Lỗi biên dịch vì switch expression thiếu `_`",
+        "Biên dịch được (có cảnh báo), ném lỗi lúc chạy",
+        "Biên dịch được, in ra chuỗi rỗng",
+        "Biên dịch được, in ra `Bạc` vì gần nhất"
+      ],
+      "answer": 1,
+      "explanation": "Thiếu nhánh bao hết các giá trị chỉ bị **cảnh báo** CS8509 (không đầy đủ), không phải lỗi biên dịch. Khi giá trị không khớp nhánh nào, runtime ném `SwitchExpressionException`. Với 5 triệu, cả hai điều kiện `>=` đều sai nên chương trình dừng bằng exception.\n- Phương án lỗi biên dịch quá nặng tay: chỉ là cảnh báo, nên đừng bỏ qua warning.\n- Phương án chuỗi rỗng sai vì switch expression không có giá trị mặc định ngầm.\n- Phương án `Bạc` sai vì không có \"khớp gần nhất\"; mỗi nhánh phải khớp đúng điều kiện của nó.\nLuôn thêm `_` hoặc xử lý rõ trường hợp còn lại."
+    },
+    {
+      "id": "dotnet-m01-20",
+      "topic": "Big-O ẩn trong LINQ",
+      "source": "Module 1 - Sự cố thực tế: vòng lặp lồng",
+      "question": "Báo cáo duyệt 5.000 khách bằng `foreach`; trong thân vòng gọi `orders.Where(o => o.CustomerId == c.Id).Sum(o => o.Total)` trên 200.000 đơn và chạy rất chậm. Cách sửa nào đánh trúng nguyên nhân?",
+      "options": [
+        "Thêm `.ToList()` sau `Where` để chốt kết quả",
+        "Đổi `Where` thành vòng `for` viết tay cho nhanh",
+        "Dùng `AsParallel()` để chia việc cho nhiều lõi",
+        "Dựng sẵn Dictionary tổng theo khách rồi tra trong vòng lặp"
+      ],
+      "answer": 3,
+      "explanation": "Nguyên nhân là mỗi lần lặp `Where` duyệt lại **toàn bộ** đơn hàng: O(khách x đơn) = 1 tỷ phép so sánh, chỉ là bị giấu sau LINQ. Gom đơn theo mã khách một lần (O(đơn)) rồi tra Dictionary (O(1) mỗi khách) đưa tổng về khoảng 205.000 thao tác.\n- Thêm `ToList()` chỉ tạo thêm danh sách trung gian, vẫn duyệt hết mỗi lần.\n- Viết lại bằng `for` đổi cú pháp nhưng giữ nguyên độ phức tạp O(n x m).\n- `AsParallel()` chỉ chia 1 tỷ phép so sánh cho vài lõi (nhanh hơn vài lần), còn giải pháp Dictionary giảm hàng nghìn lần.\nQuy tắc: bên trong vòng lặp chỉ nên có thao tác chi phí không đổi."
+    }
+  ]
+}

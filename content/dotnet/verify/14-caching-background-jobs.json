@@ -1,0 +1,116 @@
+[
+  {
+    "id": "dotnet-m14-01",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Caching.Memory@10.0.0\nusing Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions());\nvar calls = 0;\n\nasync Task<string> Get() =>\n    (await cache.GetOrCreateAsync(\"cfg\", async e =>\n    {\n        Interlocked.Increment(ref calls);\n        await Task.Delay(200);\n        return \"v1\";\n    }))!;\n\nvar results = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Get()));\nConsole.WriteLine(results.Length);\nConsole.WriteLine(calls);\nConsole.WriteLine(await Get());\nConsole.WriteLine(calls);\n"
+  },
+  {
+    "id": "dotnet-m14-02",
+    "kind": "cs-outcome",
+    "program": "#:package Microsoft.Extensions.Caching.Memory@10.0.0\nusing Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 });\ncache.Set(\"a\", \"x\");\nConsole.WriteLine(\"done\");\n",
+    "expect": "runtime-error"
+  },
+  {
+    "id": "dotnet-m14-03",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Caching.Memory@10.0.0\nusing Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions());\ncache.Set(\"s\", \"A\", new MemoryCacheEntryOptions { SlidingExpiration = TimeSpan.FromMilliseconds(600) });\ncache.Set(\"b\", \"B\", new MemoryCacheEntryOptions\n{\n    SlidingExpiration = TimeSpan.FromMilliseconds(600),\n    AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(900)\n});\nfor (var i = 0; i < 4; i++)\n{\n    await Task.Delay(250);\n    cache.TryGetValue(\"s\", out _);\n    cache.TryGetValue(\"b\", out _);\n}\nConsole.WriteLine(cache.TryGetValue(\"s\", out _));\nConsole.WriteLine(cache.TryGetValue(\"b\", out _));\n"
+  },
+  {
+    "id": "dotnet-m14-04",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Caching.Memory@10.0.0\nusing Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions());\ncache.Set(\"tags\", new List<string> { \"vip\", \"new\" });\n\nvar a = cache.Get<List<string>>(\"tags\")!;\na.Add(\"blocked\");\n\nvar b = cache.Get<List<string>>(\"tags\")!;\nConsole.WriteLine(b.Count);\nConsole.WriteLine(ReferenceEquals(a, b));\n"
+  },
+  {
+    "id": "dotnet-m14-05",
+    "kind": "cs-choose",
+    "template": "#:package Microsoft.Extensions.Caching.Memory@10.0.0\nusing Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions());\nvar gate = new SemaphoreSlim(1, 1);\nvar calls = 0;\n\nasync Task<string> Fetch()\n{\n    Interlocked.Increment(ref calls);\n    await Task.Delay(100);\n    return \"x\";\n}\n\nasync Task<string> Load()\n{\n{{X}}\n}\n\nawait Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Load()));\nConsole.WriteLine(calls);\n",
+    "options": [
+      "await gate.WaitAsync();\ntry { return (await cache.GetOrCreateAsync(\n        \"k\", _ => Fetch()))!; }\nfinally { gate.Release(); }",
+      "return (await cache.GetOrCreateAsync(\n    \"k\", _ => Fetch()))!;",
+      "lock (gate)\n{\n    return (await cache.GetOrCreateAsync(\n        \"k\", _ => Fetch()))!;\n}",
+      "await gate.WaitAsync();\ntry { return await Fetch(); }\nfinally { gate.Release(); }"
+    ],
+    "expectOutput": "1"
+  },
+  {
+    "id": "dotnet-m14-06",
+    "kind": "cs-find-error",
+    "template": "#:package Microsoft.Extensions.Caching.Memory@10.0.0\nusing Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions());\nvar o = new MemoryCacheEntryOptions();\n{{X}}\ncache.Set(\"k\", \"v\", o);\nConsole.WriteLine(\"ok\");\n",
+    "options": [
+      "o.AbsoluteExpirationRelativeToNow =\n    TimeSpan.FromMinutes(5);",
+      "o.AbsoluteExpirationRelativeToNow =\n    TimeSpan.Zero;",
+      "o.SlidingExpiration =\n    TimeSpan.FromMinutes(1);",
+      "o.AbsoluteExpiration =\n    DateTimeOffset.UtcNow.AddMinutes(-1);"
+    ],
+    "errorKind": "runtime"
+  },
+  {
+    "id": "dotnet-m14-07",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Caching.Hybrid@10.0.0\n#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.Caching.Hybrid;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar sc = new ServiceCollection();\nsc.AddHybridCache();\nusing var sp = sc.BuildServiceProvider();\nvar cache = sp.GetRequiredService<HybridCache>();\nvar calls = 0;\n\nValueTask<string> Load() => cache.GetOrCreateAsync(\"k\", async ct =>\n{\n    Interlocked.Increment(ref calls);\n    await Task.Delay(200, ct);\n    return \"v\";\n}, tags: [\"customers\"]);\n\nvar all = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Load().AsTask()));\nConsole.WriteLine(calls);\nawait Load();\nConsole.WriteLine(calls);\nawait cache.RemoveByTagAsync(\"customers\");\nawait Load();\nConsole.WriteLine(calls);\n"
+  },
+  {
+    "id": "dotnet-m14-08",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Caching.Memory@10.0.0\nusing Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions());\nvar reasons = new List<string>();\n\nvar opts = new MemoryCacheEntryOptions()\n    .RegisterPostEvictionCallback((k, v, reason, s) => { lock (reasons) reasons.Add(reason.ToString()); });\n\ncache.Set(\"k\", \"v1\", opts);\ncache.Set(\"k\", \"v2\");\ncache.Remove(\"k\");\nawait Task.Delay(300);\n\nConsole.WriteLine(string.Join(\",\", reasons));\nConsole.WriteLine(cache.TryGetValue(\"k\", out _));\n"
+  },
+  {
+    "id": "dotnet-m14-11",
+    "kind": "cs-predict",
+    "program": "using System.Threading.Channels;\n\nvar ch = Channel.CreateBounded<int>(new BoundedChannelOptions(2)\n{\n    FullMode = BoundedChannelFullMode.Wait\n});\nConsole.WriteLine(ch.Writer.TryWrite(1));\nConsole.WriteLine(ch.Writer.TryWrite(2));\nConsole.WriteLine(ch.Writer.TryWrite(3));\nch.Reader.TryRead(out var x);\nConsole.WriteLine(ch.Writer.TryWrite(3));\n"
+  },
+  {
+    "id": "dotnet-m14-12",
+    "kind": "cs-predict",
+    "program": "using System.Threading.Channels;\n\nvar ch = Channel.CreateUnbounded<int>();\nfor (var i = 1; i <= 4; i++) ch.Writer.TryWrite(i);\nch.Writer.Complete();\n\nawait foreach (var n in ch.Reader.ReadAllAsync())\n{\n    try\n    {\n        if (n == 2) throw new InvalidOperationException(\"boom\");\n        Console.WriteLine($\"ok {n}\");\n    }\n    catch (Exception)\n    {\n        Console.WriteLine($\"fail {n}\");\n    }\n}\nConsole.WriteLine(\"done\");\n"
+  },
+  {
+    "id": "dotnet-m14-13",
+    "kind": "cs-predict",
+    "program": "using System.Threading.Channels;\n\nvar ch = Channel.CreateBounded<int>(1);\nawait ch.Writer.WriteAsync(1);\nvar t = ch.Writer.WriteAsync(2).AsTask();\nawait Task.Delay(100);\nConsole.WriteLine(t.IsCompleted);\nawait ch.Reader.ReadAsync();\nawait Task.Delay(100);\nConsole.WriteLine(t.IsCompleted);\n"
+  },
+  {
+    "id": "dotnet-m14-14",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.Data.Sqlite;\nusing Microsoft.EntityFrameworkCore;\n\nusing var conn = new SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nusing var db = new Crm(new DbContextOptionsBuilder<Crm>().UseSqlite(conn).Options);\ndb.Database.EnsureCreated();\ndb.Orders.Add(new Order { Status = \"Pending\" });\ndb.SaveChanges();\n\nfor (var i = 0; i < 2; i++)\n{\n    var affected = db.Orders\n        .Where(o => o.Id == 1 && o.Status == \"Pending\")\n        .ExecuteUpdate(s => s.SetProperty(o => o.Status, \"Paid\"));\n    Console.WriteLine(affected);\n}\n\nclass Order { public int Id { get; set; } public string Status { get; set; } = \"\"; }\nclass Crm(DbContextOptions<Crm> o) : DbContext(o)\n{\n    public DbSet<Order> Orders => Set<Order>();\n}\n"
+  },
+  {
+    "id": "dotnet-m14-15",
+    "kind": "cs-choose",
+    "template": "var processed = new Dictionary<string, int>();\nvar orders = 0;\n\nint Server(string key)\n{\n    if (!processed.TryGetValue(key, out var id))\n    {\n        id = ++orders;\n        processed[key] = id;\n    }\n    return id;\n}\n\nint Client()\n{\n    string key = null!;\n    for (var attempt = 1; attempt <= 3; attempt++)\n    {\n        {{X}}\n        var id = Server(key);\n        if (attempt < 3) continue;\n        return id;\n    }\n    return 0;\n}\n\nClient();\nConsole.WriteLine($\"orders={orders}\");\n",
+    "options": [
+      "key ??= Guid.NewGuid().ToString();",
+      "key = Guid.NewGuid().ToString();",
+      "key = $\"order-{attempt}\";",
+      "key = attempt.ToString();"
+    ],
+    "expectOutput": "orders=1"
+  },
+  {
+    "id": "dotnet-m14-16",
+    "kind": "cs-predict",
+    "program": "var balance = 100;\nfor (var i = 0; i < 2; i++) balance += 50;\nConsole.WriteLine(balance);\n\nbalance = 100;\nfor (var i = 0; i < 2; i++) balance = 150;\nConsole.WriteLine(balance);\n\nvar tags = new List<string>();\nvar set = new HashSet<string>();\nfor (var i = 0; i < 2; i++) { tags.Add(\"vip\"); set.Add(\"vip\"); }\nConsole.WriteLine($\"{tags.Count} {set.Count}\");\n"
+  },
+  {
+    "id": "dotnet-m14-17",
+    "kind": "cs-predict",
+    "program": "var dbCalls = 0;\n\nvoid Db() { dbCalls++; throw new TimeoutException(); }\n\nvoid Retry(Action a)\n{\n    for (var i = 0; i < 4; i++)\n    {\n        try { a(); return; }\n        catch (TimeoutException) { }\n    }\n    throw new TimeoutException();\n}\n\nvoid ServiceB() => Retry(Db);\nvoid ServiceA() => Retry(ServiceB);\n\ntry { Retry(ServiceA); } catch (TimeoutException) { }\nConsole.WriteLine(dbCalls);\n"
+  },
+  {
+    "id": "dotnet-m14-18",
+    "kind": "cs-choose",
+    "template": "var cache = new FailingCache();\n\nstring Get(int id)\n{\n    var lead = $\"lead-{id}\";\n    {{X}}\n    return lead;\n}\n\nConsole.WriteLine(Get(7));\n\nclass FailingCache\n{\n    public void Set(string k, string v) => throw new InvalidOperationException(\"OOM\");\n}\n",
+    "options": [
+      "cache.Set($\"lead:{id}\", lead);",
+      "try { cache.Set($\"lead:{id}\", lead); }\ncatch (Exception) { }",
+      "try { cache.Set($\"lead:{id}\", lead); }\ncatch (Exception) { throw; }",
+      "try { cache.Set($\"lead:{id}\", lead); }\ncatch (ArgumentException) { }"
+    ],
+    "expectOutput": "lead-7"
+  },
+  {
+    "id": "dotnet-m14-21",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:package Microsoft.Extensions.Caching.Memory@10.0.0\n#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing System.Text.Json;\nusing Microsoft.Extensions.Caching.Distributed;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar sp = new ServiceCollection()\n    .AddDistributedMemoryCache()\n    .BuildServiceProvider();\nvar cache = sp.GetRequiredService<IDistributedCache>();\ncache.SetString(\"tags\", JsonSerializer.Serialize(new List<string> { \"vip\", \"new\" }));\n\nvar a = JsonSerializer.Deserialize<List<string>>(cache.GetString(\"tags\")!)!;\na.Add(\"blocked\");\nvar b = JsonSerializer.Deserialize<List<string>>(cache.GetString(\"tags\")!)!;\nConsole.WriteLine(b.Count);\nConsole.WriteLine(ReferenceEquals(a, b));\n"
+  }
+]

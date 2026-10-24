@@ -1,0 +1,110 @@
+[
+  {
+    "id": "dotnet-m08-01",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property NoWarn=ASP0000;IL2026;IL3050;SP0001;ASP0022\nusing Microsoft.AspNetCore.Builder;\nusing Microsoft.AspNetCore.Http;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar app = new ApplicationBuilder(new ServiceCollection().BuildServiceProvider());\napp.Use(async (ctx, next) =>\n{\n    Console.Write(\"A1 \");\n    await next(ctx);\n    Console.Write(\"A2 \");\n});\napp.Use(async (ctx, next) =>\n{\n    Console.Write(\"B1 \");\n    if (ctx.Request.Path == \"/stop\") return;\n    await next(ctx);\n    Console.Write(\"B2 \");\n});\napp.Run(_ =>\n{\n    Console.Write(\"END \");\n    return Task.CompletedTask;\n});\nvar pipeline = app.Build();\nforeach (var path in new[] { \"/ok\", \"/stop\" })\n{\n    var ctx = new DefaultHttpContext();\n    ctx.Request.Path = path;\n    await pipeline(ctx);\n    Console.WriteLine();\n}\n"
+  },
+  {
+    "id": "dotnet-m08-02",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property NoWarn=ASP0000;IL2026;IL3050;SP0001;ASP0022\nvar builder = WebApplication.CreateBuilder();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Logging.ClearProviders();\nvar app = builder.Build();\napp.Use(async (ctx, next) =>\n{\n    await next();\n    if (!ctx.Response.HasStarted)\n        ctx.Response.Headers[\"X-Late\"] = \"1\";\n});\napp.Use(async (ctx, next) =>\n{\n    ctx.Response.OnStarting(() =>\n    {\n        ctx.Response.Headers[\"X-Start\"] = \"1\";\n        return Task.CompletedTask;\n    });\n    await next();\n});\napp.MapGet(\"/\", () => \"hi\");\nawait app.StartAsync();\nusing var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };\nvar r = await http.GetAsync(\"/\");\nConsole.WriteLine($\"{(int)r.StatusCode} late={r.Headers.Contains(\"X-Late\")} start={r.Headers.Contains(\"X-Start\")} body={await r.Content.ReadAsStringAsync()}\");\nawait app.StopAsync();\n"
+  },
+  {
+    "id": "dotnet-m08-03",
+    "kind": "cs-choose",
+    "template": "#:sdk Microsoft.NET.Sdk.Web\n#:property NoWarn=ASP0000;IL2026;IL3050;SP0001;ASP0022\nvar builder = WebApplication.CreateBuilder();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Logging.ClearProviders();\nvar app = builder.Build();\nFunc<HttpContext, Func<Task>, Task> mark = (c, n) =>\n{\n    c.Response.Headers[\"X-Checked\"] = \"1\";\n    return n();\n};\n{{X}}\napp.MapGet(\"/api/items\", () => \"items\");\nawait app.StartAsync();\nusing var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };\nvar r = await http.GetAsync(\"/api/items\");\nConsole.WriteLine($\"{(int)r.StatusCode} {await r.Content.ReadAsStringAsync()}\");\nawait app.StopAsync();\n",
+    "options": [
+      "app.MapWhen(\n    c => c.Request.Path.StartsWithSegments(\"/api\"),\n    b => b.Use(mark));",
+      "app.MapWhen(\n    c => c.Request.Path.StartsWithSegments(\"/api\"),\n    b => b.Run(c => c.Response.WriteAsync(\"ok\")));",
+      "app.Map(\"/api\", b => b.Use(mark));",
+      "app.UseWhen(\n    c => c.Request.Path.StartsWithSegments(\"/api\"),\n    b => b.Use(mark));"
+    ],
+    "expectOutput": "200 items"
+  },
+  {
+    "id": "dotnet-m08-04",
+    "kind": "cs-find-error",
+    "template": "#:sdk Microsoft.NET.Sdk.Web\n#:property NoWarn=ASP0000;IL2026;IL3050;SP0001;ASP0022\nvar builder = WebApplication.CreateBuilder();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Logging.ClearProviders();\nvar app = builder.Build();\n{{X}}\nawait app.StartAsync();\nusing var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };\nvar r = await http.GetAsync(\"/items/5\");\nawait app.StopAsync();\nif (!r.IsSuccessStatusCode) throw new Exception(\"HTTP \" + (int)r.StatusCode);\nConsole.WriteLine(\"ok\");\n",
+    "options": [
+      "app.MapGet(\"/items/{id:int}\", (int id) => \"id\");\napp.MapGet(\"/items/active\", () => \"active\");",
+      "app.MapGet(\"/items/{id:int}\", (int id) => \"id\");\napp.MapGet(\"/items/{code:int}\", (int code) => \"code\");",
+      "app.MapGet(\"/items/{id:int}\", (int id) => \"id\");\napp.MapGet(\"/items/{name}\", (string name) => \"name\");",
+      "app.MapGet(\"/items/{id:int}\", (int id) => \"id\");\napp.MapGet(\"/items/{**rest}\", (string rest) => \"rest\");"
+    ],
+    "errorKind": "runtime"
+  },
+  {
+    "id": "dotnet-m08-05",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property NoWarn=ASP0000;IL2026;IL3050;SP0001;ASP0022\nvar builder = WebApplication.CreateBuilder();\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Logging.ClearProviders();\nvar app = builder.Build();\napp.MapGet(\"/customers/{id:int}\", (int id) => $\"id {id}\");\napp.MapGet(\"/customers/active\", () => \"active\");\nawait app.StartAsync();\nusing var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };\nforeach (var p in new[] { \"/customers/7\", \"/customers/active\", \"/customers/abc\" })\n{\n    var r = await http.GetAsync(p);\n    Console.WriteLine($\"{p} -> {(int)r.StatusCode} {await r.Content.ReadAsStringAsync()}\".TrimEnd());\n}\nawait app.StopAsync();\n"
+  },
+  {
+    "id": "dotnet-m08-06",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Configuration.Json@10.0.0\nusing System.Text;\nusing Microsoft.Extensions.Configuration;\n\nstatic MemoryStream J(string s) => new(Encoding.UTF8.GetBytes(s));\nvar config = new ConfigurationBuilder()\n    .AddJsonStream(J(\"\"\"{ \"Origins\": [\"a.com\", \"b.com\", \"c.com\"] }\"\"\"))\n    .AddJsonStream(J(\"\"\"{ \"Origins\": [\"x.com\"] }\"\"\"))\n    .Build();\nvar origins = config.GetSection(\"Origins\").GetChildren().Select(c => c.Value);\nConsole.WriteLine(string.Join(\",\", origins));\n"
+  },
+  {
+    "id": "dotnet-m08-07",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Configuration.EnvironmentVariables@10.0.0\nusing Microsoft.Extensions.Configuration;\n\nEnvironment.SetEnvironmentVariable(\"Email__Smtp__Port\", \"587\");\nEnvironment.SetEnvironmentVariable(\"Email_Smtp_Host\", \"mail.local\");\nvar config = new ConfigurationBuilder().AddEnvironmentVariables().Build();\nConsole.WriteLine($\"{config[\"Email:Smtp:Port\"] ?? \"null\"} {config[\"Email:Smtp:Host\"] ?? \"null\"}\");\n"
+  },
+  {
+    "id": "dotnet-m08-08",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Logging@10.0.0\nusing Microsoft.Extensions.Logging;\n\nvar captured = new List<string>();\nusing var factory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Information).AddProvider(new Cap(captured)));\nvar logger = factory.CreateLogger(\"demo\");\nint id = 42;\nlogger.LogInformation(\"Customer {CustomerId} created\", id);\nlogger.LogInformation($\"Customer {id} created\");\nforeach (var line in captured) Console.WriteLine(line);\n\nclass Cap(List<string> sink) : ILoggerProvider\n{\n    public ILogger CreateLogger(string name) => new L(sink);\n    public void Dispose() { }\n    class L(List<string> sink) : ILogger\n    {\n        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;\n        public bool IsEnabled(LogLevel l) => true;\n        public void Log<TState>(LogLevel l, EventId e, TState state, Exception? ex, Func<TState, Exception?, string> f)\n        {\n            var props = ((IEnumerable<KeyValuePair<string, object?>>)state!)\n                .Where(p => p.Key != \"{OriginalFormat}\").Select(p => p.Key + \"=\" + p.Value);\n            sink.Add($\"fields=[{string.Join(\",\", props)}]\");\n        }\n    }\n}\n"
+  },
+  {
+    "id": "dotnet-m08-09",
+    "kind": "cs-predict",
+    "program": "#:property NoWarn=IL2026;IL3050\nusing System.ComponentModel.DataAnnotations;\n\nvar cases = new[]\n{\n    new Campaign { Start = new DateOnly(2026, 5, 1), End = null },\n    new Campaign { Start = new DateOnly(2026, 5, 10), End = new DateOnly(2026, 5, 1) },\n    new Campaign { Start = null, End = new DateOnly(2026, 5, 1) },\n};\nforeach (var c in cases)\n{\n    var results = new List<ValidationResult>();\n    Validator.TryValidateObject(c, new ValidationContext(c), results, validateAllProperties: true);\n    Console.WriteLine(string.Join(\"|\", results.Select(r => r.ErrorMessage)));\n}\n\nclass Campaign : IValidatableObject\n{\n    [Required(ErrorMessage = \"Start?\")] public DateOnly? Start { get; init; }\n    [Required(ErrorMessage = \"End?\")] public DateOnly? End { get; init; }\n    public IEnumerable<ValidationResult> Validate(ValidationContext ctx)\n    {\n        if (End <= Start) yield return new ValidationResult(\"End<=Start\");\n    }\n}\n"
+  },
+  {
+    "id": "dotnet-m08-11",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\nusing Microsoft.AspNetCore.Diagnostics;\n\nvar builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = \"Production\" });\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Logging.ClearProviders();\nbuilder.Services.AddProblemDetails();\nbuilder.Services.AddExceptionHandler<CatchAllHandler>();\nbuilder.Services.AddExceptionHandler<ArgumentHandler>();\n\nvar app = builder.Build();\napp.UseExceptionHandler();\napp.MapGet(\"/\", () => { throw new ArgumentException(\"x\"); });\nawait app.StartAsync();\n\nusing var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };\nvar res = await http.GetAsync(\"/\");\nConsole.WriteLine((int)res.StatusCode);\nawait app.StopAsync();\n\nclass CatchAllHandler : IExceptionHandler\n{\n    public ValueTask<bool> TryHandleAsync(HttpContext ctx, Exception ex, CancellationToken ct)\n    {\n        ctx.Response.StatusCode = 500;\n        return ValueTask.FromResult(true);\n    }\n}\n\nclass ArgumentHandler : IExceptionHandler\n{\n    public ValueTask<bool> TryHandleAsync(HttpContext ctx, Exception ex, CancellationToken ct)\n    {\n        if (ex is not ArgumentException) return ValueTask.FromResult(false);\n        ctx.Response.StatusCode = 422;\n        return ValueTask.FromResult(true);\n    }\n}\n"
+  },
+  {
+    "id": "dotnet-m08-12",
+    "kind": "cs-outcome",
+    "program": "var e = new NotFoundException(\"Customer\", 2);\nvar status = e switch\n{\n    DomainException => 400,\n    NotFoundException => 404,\n    _ => 500\n};\nConsole.WriteLine(status);\n\npublic abstract class DomainException(string message) : Exception(message);\npublic sealed class NotFoundException(string entity, object id)\n    : DomainException($\"Không tìm thấy {entity} với id '{id}'\");\n",
+    "expect": "compile-error",
+    "code": "CS8510"
+  },
+  {
+    "id": "dotnet-m08-13",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\nusing Microsoft.Extensions.Diagnostics.HealthChecks;\n\nvar builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = \"Production\" });\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Logging.ClearProviders();\nbuilder.Services.AddHealthChecks()\n    .AddCheck<BrokenCheck>(\"cache\", failureStatus: HealthStatus.Degraded, tags: [\"a\"])\n    .AddCheck<BrokenCheck>(\"db\", tags: [\"b\"]);\n\nvar app = builder.Build();\napp.MapHealthChecks(\"/a\", new() { Predicate = c => c.Tags.Contains(\"a\") });\napp.MapHealthChecks(\"/b\", new() { Predicate = c => c.Tags.Contains(\"b\") });\nawait app.StartAsync();\n\nusing var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };\nforeach (var p in new[] { \"/a\", \"/b\" })\n{\n    var r = await http.GetAsync(p);\n    Console.WriteLine($\"{p} {(int)r.StatusCode} {await r.Content.ReadAsStringAsync()}\");\n}\nawait app.StopAsync();\n\nclass BrokenCheck : IHealthCheck\n{\n    public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken ct = default)\n        => throw new InvalidOperationException(\"kết nối thất bại\");\n}\n"
+  },
+  {
+    "id": "dotnet-m08-14",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\nusing Microsoft.AspNetCore.Diagnostics;\n\nvar results = new List<string>();\nresults.Add(\"dau: \" + await Run(exceptionHandlerFirst: true));\nresults.Add(\"sau: \" + await Run(exceptionHandlerFirst: false));\nforeach (var r in results) Console.WriteLine(r);\n\nstatic async Task<string> Run(bool exceptionHandlerFirst)\n{\n    var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = \"Production\" });\n    builder.WebHost.UseUrls(\"http://127.0.0.1:0\");\n    builder.Logging.ClearProviders();\n    builder.Services.AddProblemDetails();\n    builder.Services.AddExceptionHandler<Handler>();\n    var app = builder.Build();\n    if (exceptionHandlerFirst) app.UseExceptionHandler();\n    app.Use(async (ctx, next) =>\n    {\n        if (ctx.Request.Path == \"/boom\") throw new InvalidOperationException(\"nổ\");\n        await next();\n    });\n    if (!exceptionHandlerFirst) app.UseExceptionHandler();\n    app.MapGet(\"/boom\", () => \"ok\");\n    await app.StartAsync();\n    using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };\n    var r = await http.GetAsync(\"/boom\");\n    var body = await r.Content.ReadAsStringAsync();\n    await app.StopAsync();\n    return $\"{(int)r.StatusCode} {(body.Length > 0 ? \"co-body\" : \"rong\")}\";\n}\n\nclass Handler : IExceptionHandler\n{\n    public async ValueTask<bool> TryHandleAsync(HttpContext ctx, Exception ex, CancellationToken ct)\n    {\n        ctx.Response.StatusCode = 503;\n        await ctx.Response.WriteAsync(\"Loi he thong\", ct);\n        return true;\n    }\n}\n"
+  },
+  {
+    "id": "dotnet-m08-15",
+    "kind": "cs-choose",
+    "template": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\nusing Microsoft.Data.Sqlite;\nusing Microsoft.EntityFrameworkCore;\n\nvar conn = new SqliteConnection(\"Data Source=:memory:\");\nconn.Open();\nvar options = new DbContextOptionsBuilder<CrmDbContext>().UseSqlite(conn).Options;\n\nawait using (var setup = new CrmDbContext(options))\n    await setup.Database.EnsureCreatedAsync();\n\nawait using (var db = new CrmDbContext(options))\n{\n    var c = new Customer { Name = \"An\", Email = \"an@example.com\" };\n    {{X}}\n}\n\nawait using (var db = new CrmDbContext(options))\n    Console.WriteLine(await db.Customers.CountAsync());\n\nclass Customer\n{\n    public int Id { get; set; }\n    public required string Name { get; set; }\n    public required string Email { get; set; }\n    public DateTime CreatedAt { get; set; }\n}\n\nclass CrmDbContext(DbContextOptions<CrmDbContext> options) : DbContext(options)\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n}\n",
+    "options": [
+      "db.Customers.Add(c);",
+      "var list = await db.Customers.ToListAsync();\n    list.Add(c);\n    await db.SaveChangesAsync();",
+      "db.Customers.AsNoTracking().ToList().Add(c);\n    await db.SaveChangesAsync();",
+      "db.Customers.Add(c);\n    await db.SaveChangesAsync();"
+    ],
+    "expectOutput": "1"
+  },
+  {
+    "id": "dotnet-m08-17",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\nusing Microsoft.Data.Sqlite;\nusing Microsoft.EntityFrameworkCore;\n\nvar conn = new SqliteConnection(\"Data Source=:memory:\");\nconn.Open();\nvar options = new DbContextOptionsBuilder<CrmDbContext>().UseSqlite(conn).Options;\n\nawait using (var db = new CrmDbContext(options))\n{\n    await db.Database.EnsureCreatedAsync();\n    var c = new Customer { Name = \"An\", CreatedAt = DateTime.UtcNow };\n    Console.WriteLine(c.CreatedAt.Kind);\n    db.Customers.Add(c);\n    await db.SaveChangesAsync();\n}\n\nawait using (var db = new CrmDbContext(options))\n{\n    var c = await db.Customers.AsNoTracking().FirstAsync();\n    Console.WriteLine(c.CreatedAt.Kind);\n}\n\nclass Customer\n{\n    public int Id { get; set; }\n    public required string Name { get; set; }\n    public DateTime CreatedAt { get; set; }\n}\n\nclass CrmDbContext(DbContextOptions<CrmDbContext> options) : DbContext(options)\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n}\n"
+  },
+  {
+    "id": "dotnet-m08-19",
+    "kind": "cs-predict",
+    "program": "#:package System.Threading.RateLimiting@10.0.0\nusing System.Threading.RateLimiting;\n\nvar limiter = PartitionedRateLimiter.Create<string, string>(user =>\n    RateLimitPartition.GetFixedWindowLimiter(user, _ => new FixedWindowRateLimiterOptions\n    {\n        PermitLimit = 2,\n        Window = TimeSpan.FromMinutes(1),\n        QueueLimit = 0\n    }));\n\nstring[] requests = [\"an\", \"an\", \"an\", \"binh\", \"an\", \"binh\"];\nConsole.WriteLine(string.Join(\" \", requests.Select(u =>\n    limiter.AttemptAcquire(u).IsAcquired ? \"200\" : \"429\")));\n"
+  },
+  {
+    "id": "dotnet-m08-20",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\n#:property PublishAot=false\nusing System.Text.Encodings.Web;\nusing Microsoft.AspNetCore.Authentication;\nusing Microsoft.AspNetCore.Authorization;\nusing Microsoft.Extensions.Options;\n\nConsole.WriteLine(\"dung: \" + await Run(routingFirst: true));\nConsole.WriteLine(\"sai: \" + await Run(routingFirst: false));\n\nstatic async Task<string> Run(bool routingFirst)\n{\n    var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = \"Production\" });\n    builder.WebHost.UseUrls(\"http://127.0.0.1:0\");\n    builder.Logging.ClearProviders();\n    builder.Services.AddAuthentication(\"Demo\").AddScheme<AuthenticationSchemeOptions, DemoHandler>(\"Demo\", null);\n    builder.Services.AddAuthorization(o => o.FallbackPolicy =\n        new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build());\n    var app = builder.Build();\n    app.UseAuthentication();\n    if (routingFirst) { app.UseRouting(); app.UseAuthorization(); }\n    else { app.UseAuthorization(); app.UseRouting(); }\n    app.MapGet(\"/status\", () => \"ok\").AllowAnonymous();\n    app.MapGet(\"/leads\", () => \"secret\");\n    await app.StartAsync();\n    using var http = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };\n    var a = (int)(await http.GetAsync(\"/status\")).StatusCode;\n    var b = (int)(await http.GetAsync(\"/leads\")).StatusCode;\n    await app.StopAsync();\n    return $\"{a} {b}\";\n}\n\nclass DemoHandler(IOptionsMonitor<AuthenticationSchemeOptions> o, ILoggerFactory l, UrlEncoder e)\n    : AuthenticationHandler<AuthenticationSchemeOptions>(o, l, e)\n{\n    protected override Task<AuthenticateResult> HandleAuthenticateAsync() =>\n        Task.FromResult(AuthenticateResult.NoResult());\n}\n"
+  }
+]

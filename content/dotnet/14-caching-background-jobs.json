@@ -1,0 +1,335 @@
+{
+  "id": "dotnet-m14",
+  "title": "Module 14: Caching + Background Jobs",
+  "description": "IMemoryCache, IDistributedCache/Redis, xoá cache, HybridCache, Hangfire và Quartz cho xử lý nền đáng tin cậy.",
+  "questions": [
+    {
+      "id": "dotnet-m14-01",
+      "topic": "Cache stampede",
+      "source": "Module 14 - IMemoryCache",
+      "question": "Năm request đồng thời cùng gọi `GetOrCreateAsync` với cùng một khoá khi cache còn trống. Chương trình in ra gì?",
+      "code": "using Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions());\nvar calls = 0;\n\nasync Task<string> Get() =>\n    (await cache.GetOrCreateAsync(\"cfg\", async e =>\n    {\n        Interlocked.Increment(ref calls);\n        await Task.Delay(200);\n        return \"v1\";\n    }))!;\n\nvar results = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Get()));\nConsole.WriteLine(results.Length);\nConsole.WriteLine(calls);\nConsole.WriteLine(await Get());\nConsole.WriteLine(calls);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n5\n1\nv1\n1\n```",
+        "```text\n5\n5\nv1\n5\n```",
+        "```text\n5\n5\nv1\n6\n```",
+        "```text\n5\n2\nv1\n2\n```"
+      ],
+      "answer": 1,
+      "explanation": "`GetOrCreateAsync` của `IMemoryCache` **không khoá**: cả 5 request cùng thấy miss nên factory chạy 5 lần (`calls` = 5). Đây chính là cache stampede.\nSau khi xong, giá trị `v1` đã nằm trong cache nên lần gọi thứ 6 trúng cache, `calls` vẫn là 5.\nPhương án `5, 1, v1, 1` nhầm rằng `GetOrCreateAsync` tự gộp các request. Phương án `5, 5, v1, 6` nhầm rằng lần gọi sau vẫn miss. Phương án `5, 2, v1, 2` không có cơ chế nào giải thích con số 2.\nMuốn chỉ chạy factory một lần phải tự khoá theo khoá (kèm kiểm tra lại bên trong) hoặc dùng `HybridCache`."
+    },
+    {
+      "id": "dotnet-m14-02",
+      "topic": "SizeLimit",
+      "source": "Module 14 - IMemoryCache",
+      "question": "Đoạn code sau cho kết quả nào?",
+      "code": "using Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 });\ncache.Set(\"a\", \"x\");\nConsole.WriteLine(\"done\");",
+      "codeLang": "csharp",
+      "options": [
+        "Chạy bình thường và in `done`",
+        "Lỗi biên dịch vì thiếu tham số `Size`",
+        "Ném `ArgumentNullException` vì `Size` là null",
+        "Ném `InvalidOperationException` ngay ở `Set`"
+      ],
+      "answer": 3,
+      "explanation": "Khi đã đặt `SizeLimit`, **mọi entry bắt buộc khai `Size`**. Thiếu nó thì `Set` ném `InvalidOperationException` lúc chạy: \"Cache entry must specify a value for Size when SizeLimit is set\" (đã chạy thật).\nKhông có lỗi biên dịch vì `Size` là thuộc tính tuỳ chọn của `MemoryCacheEntryOptions`; trình biên dịch không biết cache đang có giới hạn.\nKhông phải `ArgumentNullException`: không có tham số null nào được truyền.\nVà chương trình cũng không chạy tiếp tới `done`.\nBài học: bật `SizeLimit` thì phải đặt `Size` cho từng entry."
+    },
+    {
+      "id": "dotnet-m14-03",
+      "topic": "Sliding expiration",
+      "source": "Module 14 - IMemoryCache",
+      "question": "Hai entry cùng có sliding 600ms, entry `b` có thêm trần tuyệt đối 900ms. Vòng lặp đọc cả hai mỗi 250ms (tổng 1 giây). Hai dòng cuối in ra gì?",
+      "code": "using Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions());\ncache.Set(\"s\", \"A\", new MemoryCacheEntryOptions { SlidingExpiration = TimeSpan.FromMilliseconds(600) });\ncache.Set(\"b\", \"B\", new MemoryCacheEntryOptions\n{\n    SlidingExpiration = TimeSpan.FromMilliseconds(600),\n    AbsoluteExpirationRelativeToNow = TimeSpan.FromMilliseconds(900)\n});\nfor (var i = 0; i < 4; i++)\n{\n    await Task.Delay(250);\n    cache.TryGetValue(\"s\", out _);\n    cache.TryGetValue(\"b\", out _);\n}\nConsole.WriteLine(cache.TryGetValue(\"s\", out _));\nConsole.WriteLine(cache.TryGetValue(\"b\", out _));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nTrue\nFalse\n```",
+        "```text\nTrue\nTrue\n```",
+        "```text\nFalse\nFalse\n```",
+        "```text\nFalse\nTrue\n```"
+      ],
+      "answer": 0,
+      "explanation": "Mỗi lần đọc cách nhau 250ms < 600ms nên sliding liên tục được gia hạn: entry `s` (chỉ có sliding) **sống mãi**, in `True`.\nEntry `b` cũng được gia hạn, nhưng `AbsoluteExpirationRelativeToNow` = 900ms là trần cứng; sau 900ms nó hết hạn dù vẫn được đọc, nên in `False`.\nPhương án `True, True` quên trần tuyệt đối. Phương án `False, False` và `False, True` nhầm rằng việc đọc không gia hạn sliding.\nVì vậy luôn kèm absolute expiration khi dùng sliding, nếu không dữ liệu hay được truy cập sẽ cũ mãi."
+    },
+    {
+      "id": "dotnet-m14-04",
+      "topic": "Tham chiếu dùng chung",
+      "source": "Module 14 - IMemoryCache",
+      "question": "Code cache một `List<string>` rồi hai chỗ cùng lấy ra. In ra gì?",
+      "code": "using Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions());\ncache.Set(\"tags\", new List<string> { \"vip\", \"new\" });\n\nvar a = cache.Get<List<string>>(\"tags\")!;\na.Add(\"blocked\");\n\nvar b = cache.Get<List<string>>(\"tags\")!;\nConsole.WriteLine(b.Count);\nConsole.WriteLine(ReferenceEquals(a, b));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n2\nFalse\n```",
+        "```text\n2\nTrue\n```",
+        "```text\n3\nTrue\n```",
+        "```text\n3\nFalse\n```"
+      ],
+      "answer": 2,
+      "explanation": "`IMemoryCache` lưu **chính đối tượng**, không sao chép hay serialize. `Get` trả về cùng một tham chiếu nên `ReferenceEquals` là `True`, và việc `Add(\"blocked\")` ở `a` làm cache thay đổi: `b.Count` = 3.\nCác phương án có `2` nhầm rằng mỗi lần `Get` trả về bản sao. Phương án `3, False` mâu thuẫn: đếm được 3 chính vì hai biến cùng trỏ một đối tượng.\nHệ quả thực tế: request nào sửa đối tượng cache cũng ảnh hưởng mọi request khác. Hãy cache DTO bất biến (record, `IReadOnlyList`) thay vì kiểu có thể sửa; cache phân tán thì ngược lại luôn trả bản đã deserialize mới."
+    },
+    {
+      "id": "dotnet-m14-05",
+      "topic": "Chống stampede",
+      "source": "Module 14 - Caching Fundamentals",
+      "question": "Hàm `Load()` được gọi đồng thời 5 lần, và `Fetch()` chỉ được chạy đúng **1 lần** (in `1`). Thân hàm `Load()` nào làm được điều đó?",
+      "code": "async Task<string> Fetch()  // tăng biến calls\n{\n    Interlocked.Increment(ref calls);\n    await Task.Delay(100);\n    return \"x\";\n}\n\nasync Task<string> Load()\n{\n    // >>> thân hàm cần chọn <<<\n}\n\nawait Task.WhenAll(Enumerable.Range(0, 5)\n    .Select(_ => Load()));\nConsole.WriteLine(calls);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nawait gate.WaitAsync();\ntry { return (await cache.GetOrCreateAsync(\n        \"k\", _ => Fetch()))!; }\nfinally { gate.Release(); }\n```",
+        "```csharp\nreturn (await cache.GetOrCreateAsync(\n    \"k\", _ => Fetch()))!;\n```",
+        "```csharp\nlock (gate)\n{\n    return (await cache.GetOrCreateAsync(\n        \"k\", _ => Fetch()))!;\n}\n```",
+        "```csharp\nawait gate.WaitAsync();\ntry { return await Fetch(); }\nfinally { gate.Release(); }\n```"
+      ],
+      "answer": 0,
+      "explanation": "Phương án đúng khoá bằng `SemaphoreSlim` rồi mới gọi `GetOrCreateAsync`: request đầu nạp xong và ghi vào cache, các request sau vào khoá thấy cache đã có (kiểm tra lại bên trong khoá) nên `calls` = 1.\nKhông khoá: cả 5 cùng miss, `Fetch` chạy 5 lần.\nDùng `lock` với `await` bên trong: **lỗi biên dịch CS1996**, không được `await` trong câu lệnh `lock`; phải dùng `SemaphoreSlim.WaitAsync`.\nCó khoá nhưng gọi thẳng `Fetch()` mà không kiểm tra cache: các request chỉ chạy tuần tự, vẫn 5 lần fetch, tức là thiếu bước kiểm tra lại sau khi giành khoá."
+    },
+    {
+      "id": "dotnet-m14-06",
+      "topic": "MemoryCacheEntryOptions",
+      "source": "Module 14 - IMemoryCache",
+      "question": "Đoạn nào, khi chèn vào chỗ đánh dấu trong code dưới đây, làm chương trình **ném exception lúc chạy**?",
+      "code": "var cache = new MemoryCache(new MemoryCacheOptions());\nvar o = new MemoryCacheEntryOptions();\n// >>> đoạn được chọn nằm ở đây <<<\ncache.Set(\"k\", \"v\", o);\nConsole.WriteLine(\"ok\");",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\no.AbsoluteExpirationRelativeToNow =\n    TimeSpan.FromMinutes(5);\n```",
+        "```csharp\no.AbsoluteExpirationRelativeToNow =\n    TimeSpan.Zero;\n```",
+        "```csharp\no.SlidingExpiration =\n    TimeSpan.FromMinutes(1);\n```",
+        "```csharp\no.AbsoluteExpiration =\n    DateTimeOffset.UtcNow.AddMinutes(-1);\n```"
+      ],
+      "answer": 1,
+      "explanation": "`AbsoluteExpirationRelativeToNow = TimeSpan.Zero` ném `ArgumentOutOfRangeException` ngay khi gán: thời gian sống tương đối phải **dương**.\nĐặt 5 phút hoặc sliding 1 phút là cấu hình bình thường.\nĐặt `AbsoluteExpiration` ở quá khứ thì **không** ném lỗi: entry chỉ bị coi là hết hạn ngay, nên `Set` vẫn chạy bình thường và in `ok` (đã chạy thật). Đây là điểm dễ nhầm: lỗi cấu hình kiểu này không báo, cache chỉ đơn giản không giữ được gì."
+    },
+    {
+      "id": "dotnet-m14-07",
+      "topic": "HybridCache",
+      "source": "Module 14 - HybridCache (.NET 9)",
+      "question": "Năm request đồng thời gọi `HybridCache.GetOrCreateAsync` cùng khoá `k` (có tag `customers`), sau đó gọi thêm một lần, rồi xoá theo tag và gọi lại. Ba dòng in ra gì?",
+      "code": "using Microsoft.Extensions.Caching.Hybrid;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar sc = new ServiceCollection();\nsc.AddHybridCache();\nusing var sp = sc.BuildServiceProvider();\nvar cache = sp.GetRequiredService<HybridCache>();\nvar calls = 0;\n\nValueTask<string> Load() => cache.GetOrCreateAsync(\"k\", async ct =>\n{\n    Interlocked.Increment(ref calls);\n    await Task.Delay(200, ct);\n    return \"v\";\n}, tags: [\"customers\"]);\n\nvar all = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Load().AsTask()));\nConsole.WriteLine(calls);\nawait Load();\nConsole.WriteLine(calls);\nawait cache.RemoveByTagAsync(\"customers\");\nawait Load();\nConsole.WriteLine(calls);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n5\n5\n6\n```",
+        "```text\n1\n1\n1\n```",
+        "```text\n1\n2\n3\n```",
+        "```text\n1\n1\n2\n```"
+      ],
+      "answer": 3,
+      "explanation": "`HybridCache` có sẵn chống stampede: 5 request đồng thời chỉ chạy factory **1 lần**, các request còn lại chờ chung kết quả (`calls` = 1). Lần gọi tiếp theo trúng cache nên vẫn 1.\n`RemoveByTagAsync(\"customers\")` xoá mọi entry mang tag đó, nên lần gọi sau miss và factory chạy lần hai: `calls` = 2.\nPhương án `5, 5, 6` là hành vi của `IMemoryCache` tự cuộn. Phương án `1, 1, 1` quên rằng xoá theo tag có hiệu lực. Phương án `1, 2, 3` cho rằng cache không giữ lại giá trị sau lần đầu."
+    },
+    {
+      "id": "dotnet-m14-08",
+      "topic": "Eviction callback",
+      "source": "Module 14 - IMemoryCache",
+      "question": "Callback chỉ được đăng ký ở lần `Set` đầu tiên. Sau 300ms, hai dòng in ra gì?",
+      "code": "using Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions());\nvar reasons = new List<string>();\n\nvar opts = new MemoryCacheEntryOptions()\n    .RegisterPostEvictionCallback((k, v, reason, s) => { lock (reasons) reasons.Add(reason.ToString()); });\n\ncache.Set(\"k\", \"v1\", opts);\ncache.Set(\"k\", \"v2\");\ncache.Remove(\"k\");\nawait Task.Delay(300);\n\nConsole.WriteLine(string.Join(\",\", reasons));\nConsole.WriteLine(cache.TryGetValue(\"k\", out _));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nReplaced\nFalse\n```",
+        "```text\nRemoved\nFalse\n```",
+        "```text\nReplaced,Removed\nFalse\n```",
+        "```text\nExpired\nFalse\n```"
+      ],
+      "answer": 0,
+      "explanation": "Callback gắn với **entry** chứ không gắn với khoá. Lần `Set(\"k\", \"v2\")` thay entry cũ nên entry cũ bị loại với lý do `Replaced` và callback chạy một lần.\nEntry `v2` không có callback, nên khi `Remove` nó không để lại dấu vết nào: danh sách chỉ có `Replaced`. Cuối cùng khoá không còn: `False`.\nPhương án `Removed` nhầm rằng callback chạy lúc xoá. Phương án `Replaced,Removed` cho rằng callback đi theo khoá sang entry mới. Phương án `Expired` sai vì không có TTL nào được đặt."
+    },
+    {
+      "id": "dotnet-m14-09",
+      "topic": "Hangfire tham số job",
+      "source": "Module 14 - Background Jobs với Hangfire",
+      "question": "Team enqueue job bằng `BackgroundJob.Enqueue<IMailer>(m => m.SendInvoice(invoice))`, truyền cả đối tượng `Invoice`. Sau lần deploy đổi tên một thuộc tính của `Invoice`, các job đang chờ trong hàng đợi thất bại vĩnh viễn. Cách sửa đúng nhất là gì?",
+      "options": [
+        "Tăng số lần retry của job lên nhiều hơn",
+        "Chỉ truyền `invoiceId`, job tự nạp dữ liệu mới khi chạy",
+        "Chuyển `Invoice` thành struct để serialize nhẹ hơn",
+        "Đưa `Invoice` vào `IMemoryCache` rồi truyền khoá cache"
+      ],
+      "answer": 1,
+      "explanation": "Hangfire **serialize tham số** của job vào database. Truyền đối tượng lớn làm bảng job phình, dữ liệu chỉ là bản chụp lúc tạo job (có thể đã cũ khi chạy), và đổi hình dạng kiểu khiến job đã xếp hàng không deserialize được. Truyền `invoiceId` rồi để job tự nạp bản mới nhất là cách an toàn.\nTăng retry vô ích: lỗi deserialize lặp lại y hệt ở mọi lần thử.\nĐổi sang struct không giải quyết gì về tương thích hình dạng.\n`IMemoryCache` nằm trong tiến trình: mất khi restart và không dùng chung giữa các server Hangfire, trong khi job vốn được thiết kế để sống sót qua restart."
+    },
+    {
+      "id": "dotnet-m14-10",
+      "topic": "Quartz misfire",
+      "source": "Module 14 - Quartz.NET (Alternative Overview)",
+      "question": "Một job Quartz chạy mỗi 5 phút dùng chính sách misfire `IgnoreMisfires`. Server tắt 3 giờ rồi khởi động lại. Điều gì xảy ra và nên làm gì?",
+      "options": [
+        "Không chạy gì, vì Quartz không biết các lần đã lỡ",
+        "Chạy bù đúng 1 lần, và đó chính là IgnoreMisfires",
+        "Chạy bù khoảng 36 lần liên tiếp, job dày nên chọn DoNothing",
+        "Hangfire tự kích hoạt lại, Quartz không có misfire"
+      ],
+      "answer": 2,
+      "explanation": "Misfire là trigger đáng lẽ đã chạy nhưng không chạy được (ở đây vì server tắt). Với `IgnoreMisfires`, Quartz **chạy bù mọi lần đã lỡ**: 3 giờ chia 5 phút là khoảng 36 lần, dồn ngay lúc hệ thống vừa lên, dễ gây quá tải.\nVới job chạy dày, `DoNothing` (bỏ các lần lỡ, đợi mốc kế tiếp) hợp lý hơn.\nQuartz có lưu trigger nên biết các lần lỡ, vì thế phương án \"không chạy gì\" sai. Chạy bù đúng 1 lần là hành vi của chính sách khác (`FireOnceNow`), không phải `IgnoreMisfires`.\nMisfire là khái niệm của Quartz; Hangfire không có và luôn chạy ngay khi server lên."
+    },
+    {
+      "id": "dotnet-m14-11",
+      "topic": "Channel bounded",
+      "source": "Module 14 - Mở rộng và đào sâu (Channel)",
+      "question": "Channel giới hạn 2 phần tử với `FullMode.Wait`, chưa có consumer nào chạy. Bốn dòng in ra là gì?",
+      "code": "using System.Threading.Channels;\n\nvar ch = Channel.CreateBounded<int>(new BoundedChannelOptions(2)\n{\n    FullMode = BoundedChannelFullMode.Wait\n});\nConsole.WriteLine(ch.Writer.TryWrite(1));\nConsole.WriteLine(ch.Writer.TryWrite(2));\nConsole.WriteLine(ch.Writer.TryWrite(3));\nch.Reader.TryRead(out var x);\nConsole.WriteLine(ch.Writer.TryWrite(3));",
+      "codeLang": "csharp",
+      "options": [
+        "True\nTrue\nTrue\nTrue",
+        "True\nTrue\nFalse\nTrue",
+        "True\nTrue\nFalse\nFalse",
+        "True\nFalse\nFalse\nTrue"
+      ],
+      "answer": 1,
+      "explanation": "Hai lần `TryWrite` đầu lấp đầy dung lượng 2 nên trả `True`. Lần thứ ba hàng đợi đã đầy: `TryWrite` **không chờ**, nó trả `False` ngay (chỉ `WriteAsync` mới chờ khi chế độ là `Wait`). Sau khi `TryRead` lấy ra một phần tử thì có chỗ trống, `TryWrite` lại trả `True`.\n- `True` ở cả bốn dòng sai: tưởng hàng đợi giới hạn vẫn nhận vô hạn như `CreateUnbounded`.\n- `False` ở dòng cuối sai: quên rằng đọc một phần tử đã giải phóng chỗ.\n- `False` ở dòng hai sai: dung lượng là 2 nên lần ghi thứ hai vẫn thành công.\nĐây là cơ chế backpressure: producer bị chặn hoặc bị từ chối thay vì đẩy bộ nhớ lên vô hạn."
+    },
+    {
+      "id": "dotnet-m14-12",
+      "topic": "Channel consumer",
+      "source": "Module 14 - Mở rộng và đào sâu (Channel)",
+      "question": "Consumer đọc từ Channel có `try/catch` đặt BÊN TRONG vòng lặp. Message số 2 ném exception. Chương trình in gì?",
+      "code": "using System.Threading.Channels;\n\nvar ch = Channel.CreateUnbounded<int>();\nfor (var i = 1; i <= 4; i++) ch.Writer.TryWrite(i);\nch.Writer.Complete();\n\nawait foreach (var n in ch.Reader.ReadAllAsync())\n{\n    try\n    {\n        if (n == 2) throw new InvalidOperationException(\"boom\");\n        Console.WriteLine($\"ok {n}\");\n    }\n    catch (Exception)\n    {\n        Console.WriteLine($\"fail {n}\");\n    }\n}\nConsole.WriteLine(\"done\");",
+      "codeLang": "csharp",
+      "options": [
+        "ok 1\nfail 2\ndone",
+        "ok 1\nok 3\nok 4\ndone",
+        "ok 1\nfail 2\nfail 3\nfail 4\ndone",
+        "ok 1\nfail 2\nok 3\nok 4\ndone"
+      ],
+      "answer": 3,
+      "explanation": "Exception được bắt ngay trong từng vòng, nên message 2 chỉ làm dòng đó in `fail 2`, vòng lặp tiếp tục với 3 và 4, cuối cùng in `done`. Chạy thật cho đúng kết quả này.\n- `ok 1, fail 2, done` sai: vòng lặp không dừng sau lỗi vì `catch` nằm trong thân vòng.\n- `ok 1, ok 3, ok 4, done` sai: message 2 vẫn in `fail 2`, không bị bỏ qua im lặng.\n- `fail 3`, `fail 4` sai: lỗi của message 2 không lan sang message khác.\nNếu để `try/catch` bên ngoài `await foreach` (hoặc không có), exception thoát khỏi vòng, consumer dừng và các message còn lại không được xử lý. Vì vậy bài học nhấn mạnh phải bắt lỗi bên trong vòng lặp consumer."
+    },
+    {
+      "id": "dotnet-m14-13",
+      "topic": "Channel backpressure",
+      "source": "Module 14 - Mở rộng và đào sâu (Channel)",
+      "question": "Channel bounded dung lượng 1 (mặc định `FullMode.Wait`). Producer ghi hai phần tử, consumer chỉ đọc sau 100ms. Hai dòng in ra là gì?",
+      "code": "using System.Threading.Channels;\n\nvar ch = Channel.CreateBounded<int>(1);\nawait ch.Writer.WriteAsync(1);\nvar t = ch.Writer.WriteAsync(2).AsTask();\nawait Task.Delay(100);\nConsole.WriteLine(t.IsCompleted);\nawait ch.Reader.ReadAsync();\nawait Task.Delay(100);\nConsole.WriteLine(t.IsCompleted);",
+      "codeLang": "csharp",
+      "options": [
+        "False\nTrue",
+        "True\nTrue",
+        "False\nFalse",
+        "True\nFalse"
+      ],
+      "answer": 0,
+      "explanation": "Phần tử thứ nhất lấp đầy kênh. `WriteAsync(2)` trả về một `Task` **chưa hoàn tất** vì phải chờ chỗ trống, nên dòng đầu là `False`. Khi consumer `ReadAsync` lấy phần tử 1, lệnh ghi đang chờ được giải phóng và hoàn tất, nên dòng hai là `True`.\n- `True` ở dòng đầu sai: sẽ đúng với kênh unbounded, không phải với bounded + Wait.\n- `False` ở dòng hai sai: lệnh ghi không bị bỏ rơi, nó hoàn tất ngay khi có chỗ.\nĐây chính là backpressure: producer chậm lại theo tốc độ consumer thay vì làm đầy bộ nhớ."
+    },
+    {
+      "id": "dotnet-m14-14",
+      "topic": "Idempotent chuyển trạng thái",
+      "source": "Module 14 - Idempotency và Retry",
+      "question": "Một thao tác \"đánh dấu đã thanh toán\" bị gọi hai lần (do retry). Điều kiện trạng thái nằm trong `WHERE`. Hai dòng in ra số dòng bị ảnh hưởng là gì?",
+      "code": "for (var i = 0; i < 2; i++)\n{\n    var affected = db.Orders\n        .Where(o => o.Id == 1 && o.Status == \"Pending\")\n        .ExecuteUpdate(s => s.SetProperty(o => o.Status, \"Paid\"));\n    Console.WriteLine(affected);\n}",
+      "codeLang": "csharp",
+      "options": [
+        "1\n1",
+        "0\n1",
+        "1\n0",
+        "0\n0"
+      ],
+      "answer": 2,
+      "explanation": "Lần gọi đầu, đơn đang `Pending` nên `UPDATE` khớp 1 dòng và chuyển sang `Paid`. Lần gọi thứ hai, điều kiện `Status == \"Pending\"` không còn đúng, nên 0 dòng bị ảnh hưởng và trạng thái cuối vẫn là `Paid`. Chạy thật in `1` rồi `0`.\n- `1, 1` sai: nếu lần hai cũng cập nhật được thì thao tác không idempotent (đó là kiểu đọc rồi ghi không có điều kiện).\n- `0, 1` và `0, 0` sai: lần đầu đơn đang `Pending` nên chắc chắn khớp.\nSố dòng bị ảnh hưởng cho bạn biết lần chạy này có thật sự làm gì không, và lần chạy lặp được bỏ qua an toàn."
+    },
+    {
+      "id": "dotnet-m14-15",
+      "topic": "Idempotency key",
+      "source": "Module 14 - Idempotency và Retry",
+      "question": "Client thử gọi server 3 lần cho CÙNG một thao tác tạo đơn (hai lần đầu mất response). Dòng nào thay cho `// ...?` để server chỉ tạo đúng 1 đơn?",
+      "code": "var processed = new Dictionary<string, int>();\nvar orders = 0;\n\nint Server(string key)\n{\n    if (!processed.TryGetValue(key, out var id))\n    {\n        id = ++orders;\n        processed[key] = id;\n    }\n    return id;\n}\n\nint Client()\n{\n    string key = null!;\n    for (var attempt = 1; attempt <= 3; attempt++)\n    {\n        // ...?\n        var id = Server(key);\n        if (attempt < 3) continue;\n        return id;\n    }\n    return 0;\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nkey ??= Guid.NewGuid().ToString();\n```",
+        "```csharp\nkey = Guid.NewGuid().ToString();\n```",
+        "```csharp\nkey = $\"order-{attempt}\";\n```",
+        "```csharp\nkey = attempt.ToString();\n```"
+      ],
+      "answer": 0,
+      "explanation": "Idempotency key phải được sinh **một lần** cho một thao tác và giữ nguyên qua mọi lần thử lại. `key ??= ...` chỉ gán ở lần đầu, các lần sau dùng lại nên server thấy trùng khoá và trả kết quả cũ: `orders=1`.\n- `key = Guid.NewGuid()` trong vòng lặp sai: mỗi lần thử một khoá mới nên server coi là 3 yêu cầu khác nhau, `orders=3`.\n- `key = $\"order-{attempt}\"` sai: khoá đổi theo số lần thử, cũng cho `orders=3`.\n- `key = attempt.ToString()` sai: cùng lỗi, khoá khác nhau ở mỗi lần.\nĐây là lỗi tích hợp phổ biến nhất: code trông như có idempotency nhưng thực tế vô hiệu hoá nó."
+    },
+    {
+      "id": "dotnet-m14-16",
+      "topic": "Idempotent vs không",
+      "source": "Module 14 - Idempotency và Retry",
+      "question": "Mỗi thao tác bên dưới bị thực hiện hai lần (do retry). Ba dòng in ra là gì?",
+      "code": "var balance = 100;\nfor (var i = 0; i < 2; i++) balance += 50;\nConsole.WriteLine(balance);\n\nbalance = 100;\nfor (var i = 0; i < 2; i++) balance = 150;\nConsole.WriteLine(balance);\n\nvar tags = new List<string>();\nvar set = new HashSet<string>();\nfor (var i = 0; i < 2; i++) { tags.Add(\"vip\"); set.Add(\"vip\"); }\nConsole.WriteLine($\"{tags.Count} {set.Count}\");",
+      "codeLang": "csharp",
+      "options": [
+        "200\n200\n2 2",
+        "200\n150\n2 1",
+        "150\n150\n1 1",
+        "200\n150\n2 2"
+      ],
+      "answer": 1,
+      "explanation": "`balance += 50` hai lần cho 200: phép cộng không idempotent. `balance = 150` hai lần vẫn là 150: phép đặt giá trị idempotent. `List.Add` hai lần có 2 phần tử, còn `HashSet.Add` lần hai không thêm gì nên vẫn 1: tập hợp idempotent, danh sách thì không.\n- `200, 200, 2 2` sai: phép đặt giá trị luôn cho cùng trạng thái cuối.\n- `150, 150, 1 1` sai: tưởng cộng dồn cũng \"tự an toàn\"; `+=` và `List.Add` đều tích luỹ.\n- `2 2` ở dòng cuối sai: `HashSet` loại phần tử trùng.\nThiết kế thao tác tự nhiên idempotent (đặt giá trị, thêm vào tập, upsert) tốt hơn thêm lớp kiểm tra."
+    },
+    {
+      "id": "dotnet-m14-17",
+      "topic": "Retry chồng tầng",
+      "source": "Module 14 - Idempotency và Retry",
+      "question": "Ba tầng gọi nhau, mỗi tầng có vòng retry (1 lần đầu + 3 lần thử lại) và tầng trong cùng luôn lỗi. Database bị gọi bao nhiêu lần cho một request gốc?",
+      "code": "var dbCalls = 0;\n\nvoid Db() { dbCalls++; throw new TimeoutException(); }\n\nvoid Retry(Action a)\n{\n    for (var i = 0; i < 4; i++)\n    {\n        try { a(); return; }\n        catch (TimeoutException) { }\n    }\n    throw new TimeoutException();\n}\n\nvoid ServiceB() => Retry(Db);\nvoid ServiceA() => Retry(ServiceB);\n\ntry { Retry(ServiceA); } catch (TimeoutException) { }\nConsole.WriteLine(dbCalls);",
+      "codeLang": "csharp",
+      "options": [
+        "12",
+        "16",
+        "27",
+        "64"
+      ],
+      "answer": 3,
+      "explanation": "Mỗi tầng có 4 lần thử, và các tầng **nhân** với nhau chứ không cộng: 4 x 4 x 4 = 64 lần chạm database. Chạy thật in `64`.\n- `12` sai: đó là phép cộng 4 + 4 + 4.\n- `16` sai: chỉ tính hai tầng (4 x 4).\n- `27` sai: là con số 3 x 3 x 3 khi chỉ đếm lần thử lại mà quên lần gọi đầu; thực tế mỗi tầng gọi 1 + 3 = 4 lần.\nVì thế quy tắc là chỉ retry ở một tầng (thường tầng gần nguyên nhân lỗi), cộng thêm circuit breaker và hạn chót để cắt sớm."
+    },
+    {
+      "id": "dotnet-m14-18",
+      "topic": "Cache lỗi không làm hỏng request",
+      "source": "Module 14 - Ví dụ thực tế nhanh (Redis đầy)",
+      "question": "Redis đầy bộ nhớ nên `cache.Set` ném `InvalidOperationException`. Dữ liệu đã lấy được từ database. Đoạn nào thay cho `// ...?` để request vẫn trả `lead-7`?",
+      "code": "// cache.Set luôn ném InvalidOperationException\n\nstring Get(int id)\n{\n    var lead = $\"lead-{id}\";\n    // ...?\n    return lead;\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\ncache.Set($\"lead:{id}\", lead);\n```",
+        "```csharp\ntry { cache.Set($\"lead:{id}\", lead); }\ncatch (Exception) { }\n```",
+        "```csharp\ntry { cache.Set($\"lead:{id}\", lead); }\ncatch (Exception) { throw; }\n```",
+        "```csharp\ntry { cache.Set($\"lead:{id}\", lead); }\ncatch (ArgumentException) { }\n```"
+      ],
+      "answer": 1,
+      "explanation": "Ghi cache là bước tuỳ chọn, nên lỗi ở đó phải được nuốt (và nên ghi log cảnh báo) để request vẫn trả dữ liệu đã có. Bắt `Exception` rồi không ném lại sẽ cho in `lead-7`.\n- Gọi `Set` trần sai: exception thoát ra làm hỏng cả request, đúng sự cố trong bài (API trả 500 hàng loạt).\n- `catch` rồi `throw;` sai: bắt xong lại ném lên, kết quả vẫn lỗi.\n- `catch (ArgumentException)` sai: bắt sai kiểu, `InvalidOperationException` vẫn thoát ra.\nNguyên tắc: Redis chết thì hệ thống chậm, không phải hệ thống sập."
+    },
+    {
+      "id": "dotnet-m14-19",
+      "topic": "Outbox at-least-once",
+      "source": "Module 14 - Message Bus Intro",
+      "question": "Hệ thống dùng outbox: message được ghi vào bảng outbox cùng transaction với dữ liệu nghiệp vụ. Dispatcher publish thành công lên broker rồi bị kill trước khi đánh dấu \"đã gửi\". Điều gì xảy ra sau khi khởi động lại?",
+      "options": [
+        "Dispatcher thấy message chưa đánh dấu và publish lại, nên consumer có thể nhận trùng và phải idempotent.",
+        "Message bị mất vĩnh viễn vì bảng outbox đã commit nhưng chưa đánh dấu là đã gửi thành công.",
+        "Outbox bảo đảm exactly-once nên không có gì xảy ra và không bao giờ có message trùng.",
+        "Transaction của outbox tự rollback nên khách hàng vừa tạo bị xoá khỏi database."
+      ],
+      "answer": 0,
+      "explanation": "Outbox đổi **message mất** thành **message trùng**: bản ghi vẫn nằm trong bảng, dispatcher thấy chưa có dấu \"đã gửi\" nên gửi lại. Đó là bảo đảm at-least-once, kéo theo nghĩa vụ consumer phải idempotent.\n- Phương án \"mất vĩnh viễn\" sai: đó mới là lỗi của lưu database rồi publish không qua outbox.\n- Phương án \"exactly-once\" sai: exactly-once không tồn tại trong hệ phân tán; outbox chỉ cho at-least-once.\n- Phương án \"rollback, khách hàng bị xoá\" sai: transaction đã commit từ trước, không liên quan đến bước đánh dấu sau đó."
+    },
+    {
+      "id": "dotnet-m14-20",
+      "topic": "Job theo lịch nhiều instance",
+      "source": "Module 14 - Mini case study",
+      "question": "API chạy 3 instance, job gửi email nhắc lịch lúc 8h viết bằng `BackgroundService` nên mỗi khách nhận 3 email. Đâu là lớp chống trùng thật sự đáng tin cậy nhất?",
+      "options": [
+        "Dùng một khoá phân tán Redis có TTL 30 phút, vì khoá bảo đảm tuyệt đối chỉ một instance chạy.",
+        "Cho mỗi instance chờ lệch nhau vài giây trước khi chạy để chúng không đụng nhau.",
+        "Ghi bản ghi \"đã gửi\" có UNIQUE constraint trước khi gửi, để database quyết định ai được gửi.",
+        "Chuyển sang `Channel<T>` để các instance cùng chia sẻ một hàng đợi."
+      ],
+      "answer": 2,
+      "explanation": "Unique constraint do database quyết định, không phụ thuộc vào thời gian hay giả định về khoá. Ghi dấu trước rồi mới gửi, nên chạy ba lần cũng chỉ gửi mỗi email một lần.\n- Khoá phân tán chỉ là lớp thứ nhất: GC pause dài hơn TTL làm khoá hết hạn, instance khác lấy được rồi instance cũ tỉnh dậy chạy tiếp.\n- Lệch vài giây chỉ đổi thứ tự, các instance vẫn đều chạy và vẫn gửi trùng.\n- `Channel<T>` chỉ tồn tại trong một tiến trình, ba instance không chia sẻ được hàng đợi.\nCách khác là dùng Hangfire (lưu job trong database, chỉ một server nhận job), nhưng vẫn nên giữ job idempotent vì Hangfire chỉ bảo đảm at-least-once."
+    },
+    {
+      "id": "dotnet-m14-21",
+      "topic": "IDistributedCache",
+      "source": "Module 14 - IDistributedCache và Redis",
+      "question": "Khác với `IMemoryCache`, cache phân tán lưu dữ liệu dạng `byte[]`. Code lưu JSON của một danh sách, lấy ra sửa rồi lấy lại lần nữa. In ra gì?",
+      "code": "using System.Text.Json;\nusing Microsoft.Extensions.Caching.Distributed;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar sp = new ServiceCollection()\n    .AddDistributedMemoryCache()\n    .BuildServiceProvider();\nvar cache = sp.GetRequiredService<IDistributedCache>();\ncache.SetString(\"tags\", JsonSerializer.Serialize(new List<string> { \"vip\", \"new\" }));\n\nvar a = JsonSerializer.Deserialize<List<string>>(cache.GetString(\"tags\")!)!;\na.Add(\"blocked\");\nvar b = JsonSerializer.Deserialize<List<string>>(cache.GetString(\"tags\")!)!;\nConsole.WriteLine(b.Count);\nConsole.WriteLine(ReferenceEquals(a, b));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n3\nTrue\n```",
+        "```text\n2\nTrue\n```",
+        "```text\n2\nFalse\n```",
+        "```text\n3\nFalse\n```"
+      ],
+      "answer": 2,
+      "explanation": "Cache phân tán chỉ giữ chuỗi/`byte[]` đã serialize. Mỗi lần `GetString` rồi `Deserialize` tạo ra **một đối tượng mới**, nên `a` và `b` là hai đối tượng khác nhau: `ReferenceEquals` là `False`.\nViệc `Add(\"blocked\")` chỉ sửa bản sao `a`; dữ liệu trong cache không đổi nên `b.Count` vẫn là 2.\nPhương án có `3` nhầm cache phân tán hoạt động như `IMemoryCache` (chia sẻ tham chiếu). Phương án có `True` cũng sai vì deserialize luôn cấp phát đối tượng mới.\nĐổi lại, cache phân tán phải trả chi phí serialize/deserialize ở mỗi lần đọc và ghi."
+    }
+  ]
+}

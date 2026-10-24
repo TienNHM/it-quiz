@@ -1,0 +1,97 @@
+[
+  {
+    "id": "dotnet-m17-01",
+    "kind": "cs-predict",
+    "program": "#:property JsonSerializerIsReflectionEnabledByDefault=true\n#:property NoWarn=IL2026;IL3050\nusing System.Text.Json;\nvar json = \"\"\"{\"CustomerId\":\"c1\",\"ConvertedAt\":\"2025-01-01T00:00:00Z\"}\"\"\";\nvar evt = JsonSerializer.Deserialize<LeadConverted>(json)!;\nConsole.WriteLine($\"{evt.CustomerId}|{evt.Source ?? \"none\"}\");\npublic record LeadConverted(string CustomerId, DateTime ConvertedAt, string? Source = null);"
+  },
+  {
+    "id": "dotnet-m17-02",
+    "kind": "cs-predict",
+    "program": "var delivered = new[] { \"m1\", \"m2\", \"m1\", \"m3\", \"m2\" };\nint naive = 0, safe = 0;\nvar seen = new HashSet<string>();\nforeach (var id in delivered)\n{\n    naive++;\n    if (seen.Add(id)) safe++;\n}\nConsole.WriteLine($\"{naive}/{safe}\");"
+  },
+  {
+    "id": "dotnet-m17-03",
+    "kind": "cs-find-error",
+    "errorKind": "runtime",
+    "template": "var inbox = new Dictionary<string, bool>();\nvar ids = new[] { \"m1\", \"m2\", \"m1\" };\n\nforeach (var id in ids)\n{\n    {{X}}\n}\nConsole.WriteLine(\"done\");",
+    "options": [
+      "inbox[id] = true;",
+      "inbox.TryAdd(id, true);",
+      "inbox.Add(id, true);",
+      "if (!inbox.ContainsKey(id))\n    inbox.Add(id, true);"
+    ]
+  },
+  {
+    "id": "dotnet-m17-04",
+    "kind": "cs-choose",
+    "template": "double Delay(int attempt)\n{\n    {{X}}\n}\n\nvar s = Enumerable.Range(0, 20)\n    .Select(_ => Delay(10)).ToList();\nConsole.WriteLine($\"max<=60:{s.Max() <= 60} \" +\n    $\"min>=0:{s.Min() >= 0} \" +\n    $\"random:{s.Distinct().Count() > 2}\");",
+    "expectOutput": "max<=60:True min>=0:True random:True",
+    "options": [
+      "return Random.Shared.NextDouble()\n       * Math.Pow(2, attempt);",
+      "var max = Math.Min(Math.Pow(2, attempt), 60);\nreturn Random.Shared.NextDouble() * max;",
+      "return Math.Min(Math.Pow(2, attempt), 60);",
+      "var max = Math.Min(Math.Pow(2, attempt), 60);\nreturn Random.Shared.NextDouble() * max\n       - max / 2;"
+    ]
+  },
+  {
+    "id": "dotnet-m17-05",
+    "kind": "cs-predict",
+    "program": "var cb = new Breaker();\nvar calls = new (bool ok, int t)[] { (false, 0), (false, 1), (false, 2), (true, 3), (true, 10) };\nforeach (var (ok, t) in calls)\n{\n    if (!cb.TryEnter(t)) { Console.WriteLine($\"t={t} skip\"); continue; }\n    cb.Report(ok, t);\n    Console.WriteLine($\"t={t} call -> {cb.State}\");\n}\nclass Breaker\n{\n    int fails, openedAt;\n    public string State { get; private set; } = \"Closed\";\n    public bool TryEnter(int now)\n    {\n        if (State == \"Open\" && now - openedAt >= 5) State = \"HalfOpen\";\n        return State != \"Open\";\n    }\n    public void Report(bool ok, int now)\n    {\n        if (ok) { fails = 0; State = \"Closed\"; return; }\n        fails++;\n        if (State == \"HalfOpen\" || fails >= 3) { State = \"Open\"; openedAt = now; }\n    }\n}"
+  },
+  {
+    "id": "dotnet-m17-06",
+    "kind": "cs-outcome",
+    "expect": "runtime-error",
+    "program": "#:property JsonSerializerIsReflectionEnabledByDefault=true\nusing System.Text.Json;\nvar oldJson = \"\"\"{\"CustomerId\":\"c1\"}\"\"\";\nvar evt = JsonSerializer.Deserialize<LeadConvertedV2>(oldJson)!;\nConsole.WriteLine(evt.CustomerId);\npublic class LeadConvertedV2\n{\n    public required string CustomerId { get; init; }\n    public required string Source { get; init; }\n}"
+  },
+  {
+    "id": "dotnet-m17-11",
+    "kind": "cs-predict",
+    "program": "var applied = new List<string>();\nint current = 0;\nint[] incoming = { 1, 3, 2, 3, 4 };\nforeach (var v in incoming)\n{\n    if (current >= v) continue;\n    current = v;\n    applied.Add($\"v{v}\");\n}\nConsole.WriteLine(string.Join(\",\", applied));\nConsole.WriteLine(current);\n"
+  },
+  {
+    "id": "dotnet-m17-12",
+    "kind": "cs-predict",
+    "program": "#:property JsonSerializerIsReflectionEnabledByDefault=true\n#:property PublishAot=false\n#:property NoWarn=IL2026;IL3050\nusing System.Text.Json;\nvar json = \"{\\\"EventId\\\":\\\"11111111-1111-1111-1111-111111111111\\\",\\\"LeadId\\\":7,\\\"Currency\\\":\\\"VND\\\",\\\"Legacy\\\":true}\";\nvar e = JsonSerializer.Deserialize<LeadConverted>(json)!;\nConsole.WriteLine($\"{e.LeadId} {e.Currency} {e.CampaignSource ?? \"null\"}\");\nrecord LeadConverted(Guid EventId, int LeadId, string Currency, string? CampaignSource = null);\n"
+  },
+  {
+    "id": "dotnet-m17-13",
+    "kind": "cs-predict",
+    "program": "#:property JsonSerializerIsReflectionEnabledByDefault=true\n#:property PublishAot=false\n#:property NoWarn=IL2026;IL3050\nusing System.Text.Json;\nvar src = new Deal(Stage.Won, \"vip\");\nvar json = JsonSerializer.Serialize(src);\nConsole.WriteLine(json);\nvar back = JsonSerializer.Deserialize<Deal>(json)!;\nConsole.WriteLine(back.Stage + \" \" + (back.Note ?? \"null\"));\nenum Stage { New, Qualified, Won }\nclass Deal\n{\n    public Deal() { }\n    public Deal(Stage stage, string note) { Stage = stage; Note = note; }\n    public Stage Stage { get; set; }\n    public string? Note { get; private set; }\n}\n"
+  },
+  {
+    "id": "dotnet-m17-14",
+    "kind": "cs-choose",
+    "template": "var msgs = new[]\n{\n    new Msg(Guid.NewGuid(), \"pi_1\", \"c1\", 100),\n    new Msg(Guid.NewGuid(), \"pi_1\", \"c1\", 100),\n    new Msg(Guid.NewGuid(), \"pi_2\", \"c1\", 100),\n};\nvar seen = new HashSet<string>();\ndecimal points = 0;\nforeach (var m in msgs)\n{\n    var key = {{X}};\n    if (!seen.Add(key)) continue;\n    points += m.Amount;\n}\nConsole.WriteLine(points);\nrecord Msg(Guid EventId, string PaymentIntentId, string CustomerId, decimal Amount);\n",
+    "options": [
+      "m.EventId.ToString()",
+      "m.PaymentIntentId",
+      "m.CustomerId",
+      "m.Amount.ToString()"
+    ],
+    "expectOutput": "200"
+  },
+  {
+    "id": "dotnet-m17-15",
+    "kind": "cs-find-error",
+    "template": "IEventPublisher p = new Fake();\n{{X}}\nConsole.WriteLine(\"done\");\ninterface IEventPublisher { Task PublishAsync<T>(T e, CancellationToken ct = default) where T : class; }\nclass Fake : IEventPublisher { public Task PublishAsync<T>(T e, CancellationToken ct = default) where T : class => Task.CompletedTask; }\nrecord LeadConverted(int Id);\n",
+    "options": [
+      "await p.PublishAsync(new LeadConverted(1));",
+      "await p.PublishAsync(\"lead-1\");",
+      "await p.PublishAsync(42);",
+      "await p.PublishAsync<object>(42);"
+    ],
+    "errorKind": "compile",
+    "code": "CS0452"
+  },
+  {
+    "id": "dotnet-m17-16",
+    "kind": "cs-predict",
+    "program": "var published = new List<object>();\nvar db = new HashSet<int> { 1, 2 };\nbool Close(int leadId)\n{\n    published.Add(new LeadClosed(leadId));\n    if (!db.Contains(leadId)) return false;\n    return true;\n}\nConsole.WriteLine(Close(2));\nConsole.WriteLine(Close(99));\nConsole.WriteLine(published.Count);\nrecord LeadClosed(int Id);\n"
+  },
+  {
+    "id": "dotnet-m17-17",
+    "kind": "cs-predict",
+    "program": "var done = new Stack<string>();\nvar log = new List<string>();\nvar steps = new (string Name, bool Ok)[]\n{\n    (\"Order\", true), (\"Payment\", true),\n    (\"Inventory\", false), (\"Shipping\", true)\n};\nforeach (var s in steps)\n{\n    if (!s.Ok)\n    {\n        log.Add(\"fail \" + s.Name);\n        while (done.Count > 0)\n            log.Add(\"undo \" + done.Pop());\n        break;\n    }\n    done.Push(s.Name);\n    log.Add(\"do \" + s.Name);\n}\nConsole.WriteLine(string.Join(\"\\n\", log));\n"
+  }
+]

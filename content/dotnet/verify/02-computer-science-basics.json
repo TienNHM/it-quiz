@@ -1,0 +1,110 @@
+[
+  {
+    "id": "dotnet-m02-01",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\nusing System.Text.Json;\nusing System.Text.Json.Serialization;\n\nvar dto = new Dto { Id = 9007199254740993, Total = 12 };\nConsole.WriteLine(JsonSerializer.Serialize(dto));\n\npublic class Dto\n{\n    [JsonNumberHandling(JsonNumberHandling.WriteAsString)]\n    public long Id { get; set; }\n    public int Total { get; set; }\n}\n"
+  },
+  {
+    "id": "dotnet-m02-02",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\nusing System.Text.Json;\nusing System.Text.Json.Serialization;\n\nvar o = new JsonSerializerOptions\n{\n    NumberHandling = JsonNumberHandling.WriteAsString\n};\nvar obj = new { Id = 42L, Ok = true, Price = 1.5m };\nConsole.WriteLine(JsonSerializer.Serialize(obj, o));\n"
+  },
+  {
+    "id": "dotnet-m02-03",
+    "kind": "cs-predict",
+    "program": "using System.Net;\n\nvar l = new HttpListener();\nl.Prefixes.Add(\"http://localhost:5077/\");\nl.Start();\n_ = Task.Run(async () =>\n{\n    while (true) (await l.GetContextAsync()).Response.Close();\n});\n\nusing var c = new HttpClient();\nvar req = new HttpRequestMessage(HttpMethod.Get, \"http://localhost:5077/\");\ntry\n{\n    req.Headers.Add(\"X-City\", \"Hà Nội\");\n    Console.WriteLine(\"added\");\n    await c.SendAsync(req);\n    Console.WriteLine(\"sent\");\n}\ncatch (Exception ex)\n{\n    Console.WriteLine(ex.GetType().Name);\n    Console.WriteLine(ex.Message.Contains(\"ASCII\"));\n}\nl.Stop();\n"
+  },
+  {
+    "id": "dotnet-m02-04",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\nusing System.Text.Json;\n\nvar json = \"{\\\"name\\\":\\\"An\\\"}\";\nvar a = JsonSerializer.Deserialize<Cust>(json);\nvar b = JsonSerializer.Deserialize<Cust>(\n    json, JsonSerializerOptions.Web);\nConsole.WriteLine(a?.Name ?? \"null\");\nConsole.WriteLine(b?.Name ?? \"null\");\n\npublic class Cust\n{\n    public string? Name { get; set; }\n}\n"
+  },
+  {
+    "id": "dotnet-m02-05",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\nusing System.Text.Json;\n\nvar bodies = new[]\n{\n    \"{}\", \"{\\\"phone\\\":\\\"09\\\"}\", \"{\\\"phone\\\":null}\"\n};\nforeach (var b in bodies)\n{\n    var dto = JsonSerializer.Deserialize<Upd>(b, JsonSerializerOptions.Web)!;\n    Console.WriteLine(dto.Phone is null);\n}\n\npublic class Upd\n{\n    public string? Phone { get; set; }\n}\n"
+  },
+  {
+    "id": "dotnet-m02-06",
+    "kind": "cs-find-error",
+    "errorKind": "runtime",
+    "template": "#:property PublishAot=false\nusing System.Text.Json;\nusing System.Text.Json.Serialization;\n\nvar o = {{X}};\nvar json = \"{\\\"Id\\\":\\\"42\\\"}\";\nvar d = JsonSerializer.Deserialize<Dto>(json, o);\nConsole.WriteLine(d!.Id);\n\npublic class Dto\n{\n    public long Id { get; set; }\n}\n",
+    "options": [
+      "new JsonSerializerOptions\n{\n    NumberHandling = JsonNumberHandling.WriteAsString\n}",
+      "new JsonSerializerOptions\n{\n    NumberHandling =\n        JsonNumberHandling.AllowReadingFromString\n}",
+      "new JsonSerializerOptions\n{\n    NumberHandling =\n        JsonNumberHandling.AllowReadingFromString\n        | JsonNumberHandling.WriteAsString\n}",
+      "JsonSerializerOptions.Web"
+    ]
+  },
+  {
+    "id": "dotnet-m02-07",
+    "kind": "cs-choose",
+    "expectOutput": "keep\nclear\nset",
+    "template": "#:property PublishAot=false\nusing System.Text.Json;\n\nvar bodies = new[]\n{\n    \"{}\", \"{\\\"phone\\\":null}\", \"{\\\"phone\\\":\\\"09\\\"}\"\n};\nforeach (var s in bodies)\n    Console.WriteLine(State(JsonDocument.Parse(s).RootElement));\n\nstatic string State(JsonElement b)\n{\n    {{X}}\n}\n",
+    "options": [
+      "var p = b.GetProperty(\"phone\");\nreturn p.ValueKind == JsonValueKind.Null\n    ? \"clear\" : \"set\";",
+      "var has = b.TryGetProperty(\"phone\", out var p);\nreturn has && p.GetString() is not null\n    ? \"set\" : \"clear\";",
+      "if (!b.TryGetProperty(\"phone\", out var p))\n    return \"keep\";\nreturn p.ValueKind == JsonValueKind.Null\n    ? \"clear\" : \"set\";",
+      "b.TryGetProperty(\"phone\", out var p);\nreturn p.ValueKind == JsonValueKind.Null\n    ? \"clear\" : \"set\";"
+    ]
+  },
+  {
+    "id": "dotnet-m02-08",
+    "kind": "cs-predict",
+    "program": "using System.Security.Cryptography;\n\nvar pw = \"Secret123\"u8.ToArray();\nvar s1 = SHA256.HashData(pw);\nvar s2 = SHA256.HashData(pw);\nConsole.WriteLine(s1.SequenceEqual(s2));\n\nvar h1 = Rfc2898DeriveBytes.Pbkdf2(pw,\n    RandomNumberGenerator.GetBytes(16),\n    100_000, HashAlgorithmName.SHA512, 32);\nvar h2 = Rfc2898DeriveBytes.Pbkdf2(pw,\n    RandomNumberGenerator.GetBytes(16),\n    100_000, HashAlgorithmName.SHA512, 32);\nConsole.WriteLine(h1.SequenceEqual(h2));\n"
+  },
+  {
+    "id": "dotnet-m02-11",
+    "kind": "cs-predict",
+    "program": "var o = new object();\nConsole.WriteLine(GC.GetGeneration(o));\nGC.Collect();\nConsole.WriteLine(GC.GetGeneration(o));\nGC.Collect();\nConsole.WriteLine(GC.GetGeneration(o));\nvar big = new byte[100_000];\nConsole.WriteLine(GC.GetGeneration(big));\nGC.KeepAlive(o);\nGC.KeepAlive(big);"
+  },
+  {
+    "id": "dotnet-m02-12",
+    "kind": "cs-outcome",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\nusing Microsoft.AspNetCore.Cors.Infrastructure;\n\nvar policy = new CorsPolicyBuilder()\n    .AllowAnyOrigin()\n    .AllowCredentials()\n    .Build();\nConsole.WriteLine(\"OK\");",
+    "expect": "runtime-error"
+  },
+  {
+    "id": "dotnet-m02-13",
+    "kind": "cs-choose",
+    "template": "#:sdk Microsoft.NET.Sdk.Web\n#:package Microsoft.AspNetCore.Authentication.JwtBearer@10.0.0\nusing Microsoft.AspNetCore.Authorization;\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Logging.ClearProviders();\nbuilder.Services.AddCors(o => o.AddPolicy(\"Crm\", p => p\n    .WithOrigins(\"https://crm.company.com\")\n    .AllowAnyHeader().AllowAnyMethod()));\nbuilder.Services.AddAuthentication(\"Bearer\").AddJwtBearer();\nbuilder.Services.AddAuthorizationBuilder()\n    .SetFallbackPolicy(new AuthorizationPolicyBuilder()\n        .RequireAuthenticatedUser().Build());\nvar app = builder.Build();\n{{X}}\napp.MapGet(\"/api/leads\", (RequestDelegate)(c => c.Response.WriteAsync(\"data\")));\nawait app.StartAsync();\nusing var http = new HttpClient();\nvar req = new HttpRequestMessage(HttpMethod.Options, app.Urls.First() + \"/api/leads\");\nreq.Headers.Add(\"Origin\", \"https://crm.company.com\");\nreq.Headers.Add(\"Access-Control-Request-Method\", \"GET\");\nvar res = await http.SendAsync(req);\nConsole.WriteLine((int)res.StatusCode);\nConsole.WriteLine(res.Headers.Contains(\"Access-Control-Allow-Origin\"));\nawait app.StopAsync();",
+    "options": [
+      "app.UseAuthentication();\napp.UseAuthorization();\napp.UseCors(\"Crm\");",
+      "app.UseCors(\"Crm\");\napp.UseAuthentication();\napp.UseAuthorization();",
+      "app.UseAuthorization();\napp.UseCors(\"Crm\");\napp.UseAuthentication();",
+      "app.UseAuthorization();\napp.UseAuthentication();\napp.UseCors(\"Crm\");"
+    ],
+    "expectOutput": "204\nTrue"
+  },
+  {
+    "id": "dotnet-m02-14",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Configuration@10.0.0\n#:package Microsoft.Extensions.Configuration.EnvironmentVariables@10.0.0\nusing Microsoft.Extensions.Configuration;\nEnvironment.SetEnvironmentVariable(\n    \"ConnectionStrings__Default\", \"from-env\");\n\nvar cfg = new ConfigurationBuilder()\n    .AddInMemoryCollection(new Dictionary<string, string?>\n    {\n        [\"ConnectionStrings:Default\"] = \"from-file\",\n        [\"Logging:Level\"] = \"Info\"\n    })\n    .AddEnvironmentVariables()\n    .Build();\n\nConsole.WriteLine(cfg.GetConnectionString(\"Default\"));\nConsole.WriteLine(cfg[\"Logging:Level\"]);"
+  },
+  {
+    "id": "dotnet-m02-15",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\nusing Microsoft.AspNetCore.HttpOverrides;\nusing System.Net;\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Logging.ClearProviders();\nvar app = builder.Build();\nvar opt = new ForwardedHeadersOptions\n{\n    ForwardedHeaders = ForwardedHeaders.XForwardedFor\n};\nopt.KnownProxies.Clear();\nopt.KnownIPNetworks.Clear();\nopt.KnownProxies.Add(IPAddress.Parse(\"10.0.0.5\"));\napp.UseForwardedHeaders(opt);\n\napp.MapGet(\"/ip\", (RequestDelegate)(c =>\n    c.Response.WriteAsync(c.Connection.RemoteIpAddress!.ToString())));\nawait app.StartAsync();\nusing var http = new HttpClient();\nvar req = new HttpRequestMessage(HttpMethod.Get, app.Urls.First() + \"/ip\");\nreq.Headers.Add(\"X-Forwarded-For\", \"203.0.113.7\");\nConsole.WriteLine(await (await http.SendAsync(req)).Content.ReadAsStringAsync());\nawait app.StopAsync();"
+  },
+  {
+    "id": "dotnet-m02-16",
+    "kind": "cs-outcome",
+    "program": "#:property InvariantGlobalization=true\nusing System.Globalization;\n\nvar culture = new CultureInfo(\"vi-VN\");\nConsole.WriteLine(culture.Name);",
+    "expect": "runtime-error"
+  },
+  {
+    "id": "dotnet-m02-17",
+    "kind": "cs-predict",
+    "program": "#:package System.IdentityModel.Tokens.Jwt@8.3.0\nusing System.IdentityModel.Tokens.Jwt;\nusing Microsoft.IdentityModel.Tokens;\nvar key = new SymmetricSecurityKey(new byte[32]);\nvar handler = new JwtSecurityTokenHandler();\nstring Check(int minutesAgo) {\n  var now = DateTime.UtcNow;\n  var t = new JwtSecurityToken(notBefore: now.AddMinutes(-minutesAgo - 15), expires: now.AddMinutes(-minutesAgo),\n     signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));\n  try { handler.ValidateToken(handler.WriteToken(t), new TokenValidationParameters {\n      ValidateIssuer = false, ValidateAudience = false, IssuerSigningKey = key }, out _); return \"valid\"; }\n  catch (SecurityTokenExpiredException) { return \"expired\"; }\n}\nforeach (var m in new[] { -5, 4, 6 })\n    Console.WriteLine(Check(m));"
+  },
+  {
+    "id": "dotnet-m02-18",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\nusing Microsoft.Extensions.Diagnostics.HealthChecks;\nusing Microsoft.AspNetCore.Diagnostics.HealthChecks;\nvar builder = WebApplication.CreateBuilder(args);\nbuilder.WebHost.UseUrls(\"http://127.0.0.1:0\");\nbuilder.Logging.ClearProviders();\nbuilder.Services.AddHealthChecks()\n    .AddCheck(\"self\", () => HealthCheckResult.Healthy(),\n        tags: [\"live\"])\n    .AddCheck(\"db\", () => HealthCheckResult.Unhealthy(\"down\"),\n        tags: [\"ready\"]);\n\nvar app = builder.Build();\napp.MapHealthChecks(\"/health/live\", new HealthCheckOptions\n{ Predicate = c => c.Tags.Contains(\"live\") });\napp.MapHealthChecks(\"/health/ready\", new HealthCheckOptions\n{ Predicate = c => c.Tags.Contains(\"ready\") });\napp.MapHealthChecks(\"/health/all\");\nawait app.StartAsync();\nusing var http = new HttpClient();\nforeach (var p in new[] { \"live\", \"ready\", \"all\" })\n    Console.WriteLine(p + \" \" + (int)(await http.GetAsync(app.Urls.First() + \"/health/\" + p)).StatusCode);\nawait app.StopAsync();"
+  },
+  {
+    "id": "dotnet-m02-19",
+    "kind": "cs-predict",
+    "program": "#:sdk Microsoft.NET.Sdk.Web\nusing Microsoft.AspNetCore.Cors.Infrastructure;\nvar policy = new CorsPolicyBuilder()\n    .WithOrigins(\"http://localhost:5173\")\n    .Build();\n\nConsole.WriteLine(policy.IsOriginAllowed(\"http://localhost:5173\"));\nConsole.WriteLine(policy.IsOriginAllowed(\"http://127.0.0.1:5173\"));\nConsole.WriteLine(policy.IsOriginAllowed(\"http://localhost:5173/\"));"
+  }
+]

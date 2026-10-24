@@ -1,0 +1,118 @@
+[
+  {
+    "id": "dotnet-m05-02",
+    "kind": "cs-predict",
+    "program": "var calls = 0;\nvar q = Enumerable.Range(1, 10)\n    .Where(x => { calls++; return x % 2 == 0; });\nvar firstTwo = q.Take(2).ToList();\nConsole.WriteLine(calls);\nvar n = q.Count();\nConsole.WriteLine(calls + \" \" + n);\n"
+  },
+  {
+    "id": "dotnet-m05-03",
+    "kind": "cs-find-error",
+    "errorKind": "compile",
+    "code": "CS0029",
+    "template": "{{X}}\nConsole.WriteLine(\"ok\");\n\nclass Animal { }\nclass Dog : Animal { }\n",
+    "options": [
+      "IEnumerable<Animal> a = new List<Dog>();",
+      "Action<Animal> p = _ => { };\nAction<Dog> a = p;",
+      "Func<Dog> d = () => new Dog();\nFunc<Animal> a = d;",
+      "List<Animal> a = new List<Dog>();"
+    ]
+  },
+  {
+    "id": "dotnet-m05-04",
+    "kind": "cs-predict",
+    "program": "Box<int>.Count++;\nBox<int>.Count++;\nBox<string>.Count++;\nConsole.WriteLine($\"{Box<int>.Count} {Box<string>.Count} {Box<long>.Count}\");\n\npublic class Box<T>\n{\n    public static int Count;\n}\n"
+  },
+  {
+    "id": "dotnet-m05-05",
+    "kind": "cs-outcome",
+    "expect": "compile-error",
+    "code": "CS0411",
+    "program": "static T Parse<T>(string s) => default!;\n\nvar x = Parse(\"42\");\nConsole.WriteLine(x);\n"
+  },
+  {
+    "id": "dotnet-m05-06",
+    "kind": "cs-predict",
+    "program": "Func<int> f = () => 1;\nf += () => 2;\nf += () => 3;\nvar log = \"\";\nAction a = () => log += \"A\";\na += () => log += \"B\";\na += () => log += \"C\";\na();\nConsole.WriteLine(f() + log);\n"
+  },
+  {
+    "id": "dotnet-m05-07",
+    "kind": "cs-choose",
+    "expectOutput": "0",
+    "template": "var pub = new Pub();\nvar hits = 0;\n{{X}}\npub.Raise();\nConsole.WriteLine(hits);\n\nclass Pub\n{\n    public event EventHandler? Evt;\n    public void Raise() => Evt?.Invoke(this, EventArgs.Empty);\n}\n",
+    "options": [
+      "pub.Evt += (s, e) => hits++;\npub.Evt -= (s, e) => hits++;",
+      "pub.Evt += (s, e) => hits++;\npub.Evt -= null;",
+      "EventHandler h = (s, e) => hits++;\npub.Evt += h;\npub.Evt -= h;",
+      "pub.Evt += (s, e) => hits++;\npub.Evt = null;"
+    ]
+  },
+  {
+    "id": "dotnet-m05-08",
+    "kind": "cs-outcome",
+    "expect": "runtime-error",
+    "program": "var dto = (Dto)Activator.CreateInstance(typeof(Dto))!;\nConsole.WriteLine(dto.Name.Length);\n\npublic class Dto\n{\n    public string Name { get; set; } = null!;\n}\n"
+  },
+  {
+    "id": "dotnet-m05-09",
+    "kind": "cs-predict",
+    "program": "var list = new List<int> { 1, 2, 3 };\nvar q = list.Where(x => x > 1);\nlist.Add(4);\nvar snapshot = list.Where(x => x > 1).ToList();\nlist.Add(5);\nConsole.WriteLine(q.Count() + \",\" + snapshot.Count);\n"
+  },
+  {
+    "id": "dotnet-m05-11",
+    "kind": "cs-predict",
+    "program": "var (a, b) = (1, 2);\n(a, b) = (b, a + b);\nConsole.WriteLine($\"{a},{b}\");\n"
+  },
+  {
+    "id": "dotnet-m05-12",
+    "kind": "cs-predict",
+    "program": "#:property JsonSerializerIsReflectionEnabledByDefault=true\n#:property PublishAot=false\nusing System.Text.Json;\n\nstatic (decimal Total, int Count) GetStats() => (100m, 3);\n\nvar opts = new JsonSerializerOptions { IncludeFields = true };\nConsole.WriteLine(JsonSerializer.Serialize(GetStats(), opts));\n"
+  },
+  {
+    "id": "dotnet-m05-13",
+    "kind": "cs-find-error",
+    "errorKind": "compile",
+    "code": "CS8129",
+    "template": "var c = new Customer(\"An\", \"an@x.com\", 17);\n{{X}}\nConsole.WriteLine(\"done\");\n\nclass Customer(string name, string email, int age)\n{\n    public int Age => age;\n    public void Deconstruct(out string n, out string e)\n        => (n, e) = (name, email);\n}\n",
+    "options": [
+      "var (n, e, a) = c;",
+      "var (n, e) = c;",
+      "var (n, _) = c;",
+      "(string n, string e) = c;"
+    ]
+  },
+  {
+    "id": "dotnet-m05-15",
+    "kind": "cs-predict",
+    "program": "string t1 = \"HN-01\", c1 = \"A\", t2 = \"HN\", c2 = \"01-A\";\n\nvar s = new Dictionary<string, int>();\ns[$\"{t1}-{c1}\"] = 1;\ns[$\"{t2}-{c2}\"] = 2;\n\nvar t = new Dictionary<(string, string), int>();\nt[(t1, c1)] = 1;\nt[(t2, c2)] = 2;\n\nConsole.WriteLine($\"{s.Count} {t.Count}\");\n"
+  },
+  {
+    "id": "dotnet-m05-16",
+    "kind": "cs-find-error",
+    "errorKind": "compile",
+    "code": "CS1961",
+    "template": "Console.WriteLine(\"ok\");\n\ninterface IRepo<out T>\n{\n    {{X}}\n}\n",
+    "options": [
+      "T GetById(int id);",
+      "IEnumerable<T> GetAll();",
+      "IReadOnlyList<T> Items { get; }",
+      "Task<T> GetByIdAsync(int id);"
+    ]
+  },
+  {
+    "id": "dotnet-m05-17",
+    "kind": "cs-predict",
+    "program": "Greeter? g = null;\nConsole.WriteLine(g.Describe());\nConsole.WriteLine(new Greeter().Hi());\n\nclass Greeter { public string Hi() => \"instance\"; }\n\nstatic class GreeterExt\n{\n    public static string Describe(this Greeter? g)\n        => g is null ? \"null\" : \"object\";\n    public static string Hi(this Greeter g) => \"extension\";\n}\n"
+  },
+  {
+    "id": "dotnet-m05-18",
+    "kind": "cs-predict",
+    "program": "using System.Linq.Expressions;\n\nExpression<Func<int, bool>> e = x => x > 10;\nFunc<int, bool> f = e.Compile();\n\nConsole.WriteLine(e.Body);\nConsole.WriteLine(f(5));\n"
+  },
+  {
+    "id": "dotnet-m05-19",
+    "kind": "cs-outcome",
+    "expect": "compile-error",
+    "code": "CS4007",
+    "program": "static async Task RunAsync()\n{\n    Span<int> s = new int[3];\n    await Task.Delay(1);\n    s[0] = 1;\n}\n\nawait RunAsync();\n"
+  }
+]

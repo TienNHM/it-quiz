@@ -1,0 +1,130 @@
+[
+  {
+    "id": "dotnet-m13-01",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\n#:property NuGetAudit=false\n#:property NoWarn=NU1903;IL2026;IL3050\nusing Microsoft.EntityFrameworkCore;\n\nusing var db = new Db();\ndb.Database.OpenConnection(); db.Database.EnsureCreated();\ndb.Customers.Add(new Customer { Name = \"An\" });\ndb.SaveChanges();\ndb.ChangeTracker.Clear();\n\nvar a = db.Customers.Find(1);\nvar b = db.Customers.Find(1);\nvar c = db.Customers.AsNoTracking().First(x => x.Id == 1);\nvar d = db.Customers.First(x => x.Id == 1);\n\nConsole.WriteLine(ReferenceEquals(a, b));\nConsole.WriteLine(ReferenceEquals(a, c));\nConsole.WriteLine(ReferenceEquals(a, d));\nConsole.WriteLine(db.ChangeTracker.Entries().Count());\n\nclass Customer { public int Id { get; set; } public string Name { get; set; } = \"\"; }\nclass Db : DbContext\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n    protected override void OnConfiguring(DbContextOptionsBuilder o) => o.UseSqlite(\"Data Source=:memory:\");\n}\n"
+  },
+  {
+    "id": "dotnet-m13-02",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\n#:property NuGetAudit=false\n#:property NoWarn=NU1903;IL2026;IL3050\nusing Microsoft.EntityFrameworkCore;\n\nusing var db = new Db();\ndb.Database.OpenConnection(); db.Database.EnsureCreated();\ndb.Leads.Add(new Lead { Status = \"New\" });\ndb.SaveChanges();\ndb.ChangeTracker.Clear();\n\nvar lead = db.Leads.First(l => l.Id == 1);   // Status = \"New\"\n\ndb.Leads.Where(l => l.Id == 1)\n    .ExecuteUpdate(s => s.SetProperty(l => l.Status, \"Lost\"));\n\nConsole.WriteLine(lead.Status);\nConsole.WriteLine(db.Leads.AsNoTracking().First(l => l.Id == 1).Status);\ndb.ChangeTracker.Clear();\nConsole.WriteLine(db.Leads.First(l => l.Id == 1).Status);\n\nclass Lead { public int Id { get; set; } public string Status { get; set; } = \"\"; }\nclass Db : DbContext\n{\n    public DbSet<Lead> Leads => Set<Lead>();\n    protected override void OnConfiguring(DbContextOptionsBuilder o) => o.UseSqlite(\"Data Source=:memory:\");\n}\n"
+  },
+  {
+    "id": "dotnet-m13-03",
+    "kind": "cs-outcome",
+    "expect": "runtime-error",
+    "program": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\n#:property NuGetAudit=false\n#:property NoWarn=NU1903;IL2026;IL3050\nusing Microsoft.EntityFrameworkCore;\n\nusing var db = new Db();\ndb.Database.OpenConnection(); db.Database.EnsureCreated();\ndb.Customers.Add(new Customer { Id = 1, Name = \"An\" });\ndb.SaveChanges();\ndb.ChangeTracker.Clear();\n\n// Customer { Id, Name }; đã có dòng Id = 1 trong database\nvar loaded = db.Customers.Find(1);\n\ndb.Customers.Attach(new Customer { Id = 1, Name = \"Binh\" });\nConsole.WriteLine(\"done\");\n\nclass Customer { public int Id { get; set; } public string Name { get; set; } = \"\"; }\nclass Db : DbContext\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n    protected override void OnConfiguring(DbContextOptionsBuilder o) => o.UseSqlite(\"Data Source=:memory:\");\n}\n"
+  },
+  {
+    "id": "dotnet-m13-04",
+    "kind": "cs-choose",
+    "expectOutput": "1",
+    "options": [
+      "p.Metadata.SetValueComparer(new ValueComparer<List<string>>(\n    (a, b) => a!.SequenceEqual(b!),\n    v => v.Count,\n    v => v));",
+      "p.Metadata.SetValueComparer(new ValueComparer<List<string>>(\n    (a, b) => ReferenceEquals(a, b),\n    v => v.Count,\n    v => v));",
+      "p.Metadata.SetValueComparer(new ValueComparer<List<string>>(\n    (a, b) => a!.SequenceEqual(b!),\n    v => v.Count,\n    v => v.ToList()));",
+      "p.HasMaxLength(500);"
+    ],
+    "template": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\n#:property NuGetAudit=false\n#:property NoWarn=NU1903;IL2026;IL3050\nusing Microsoft.EntityFrameworkCore;\nusing Microsoft.EntityFrameworkCore.ChangeTracking;\n\nusing var db = new Db();\ndb.Database.OpenConnection(); db.Database.EnsureCreated();\ndb.Leads.Add(new Lead { Tags = [\"b2b\"] });\ndb.SaveChanges();\ndb.ChangeTracker.Clear();\n\nvar lead = db.Leads.First();\nlead.Tags.Add(\"hot\");\nConsole.WriteLine(db.SaveChanges());\n\nclass Lead { public int Id { get; set; } public List<string> Tags { get; set; } = []; }\nclass Db : DbContext\n{\n    public DbSet<Lead> Leads => Set<Lead>();\n    protected override void OnConfiguring(DbContextOptionsBuilder o) => o.UseSqlite(\"Data Source=:memory:\");\n    protected override void OnModelCreating(ModelBuilder modelBuilder)\n    {\n        var p = modelBuilder.Entity<Lead>()\n            .Property(l => l.Tags)\n            .HasConversion(\n                v => string.Join(',', v),\n                v => v.Split(',').ToList());\n        {{X}}\n    }\n}\n"
+  },
+  {
+    "id": "dotnet-m13-05",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\n#:property NuGetAudit=false\n#:property NoWarn=NU1903;IL2026;IL3050\nusing Microsoft.EntityFrameworkCore;\n\nusing var db = new Db();\ndb.Database.OpenConnection(); db.Database.EnsureCreated();\ndb.AddRange(new Customer { Contacts = { new Contact(), new Contact() } }, new User { Leads = { new Lead() } });\ndb.SaveChanges();\ndb.ChangeTracker.Clear();\n\n// Contact.CustomerId là int (bắt buộc), Lead.AssignedUserId là int? (tuỳ chọn).\n// Không cấu hình DeleteBehavior. Có 1 Customer (2 Contact) và\n// 1 User có 1 Lead được gán.\nvar c = db.Customers.Include(x => x.Contacts).First();\nvar u = db.Users.Include(x => x.Leads).First();\ndb.Remove(c);\ndb.Remove(u);\ndb.SaveChanges();\n\nConsole.WriteLine($\"contacts={db.Contacts.Count()}\");\nConsole.WriteLine($\"leads={db.Leads.Count()}\");\nConsole.WriteLine($\"assigned={db.Leads.First().AssignedUserId?.ToString() ?? \"null\"}\");\n\nclass Customer { public int Id { get; set; } public List<Contact> Contacts { get; set; } = []; }\nclass Contact { public int Id { get; set; } public int CustomerId { get; set; } }\nclass User { public int Id { get; set; } public List<Lead> Leads { get; set; } = []; }\nclass Lead { public int Id { get; set; } public int? AssignedUserId { get; set; } }\nclass Db : DbContext\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n    public DbSet<Contact> Contacts => Set<Contact>();\n    public DbSet<User> Users => Set<User>();\n    public DbSet<Lead> Leads => Set<Lead>();\n    protected override void OnConfiguring(DbContextOptionsBuilder o) => o.UseSqlite(\"Data Source=:memory:\");\n}\n"
+  },
+  {
+    "id": "dotnet-m13-06",
+    "kind": "cs-find-error",
+    "errorKind": "runtime",
+    "options": [
+      "var list = db.Customers\n    .Where(c => Check.IsValid(c.Email))\n    .ToList();",
+      "var list = db.Customers\n    .Where(c => c.Email.EndsWith(\"@company.com\"))\n    .ToList();",
+      "var list = db.Customers.ToList()\n    .Where(c => Check.IsValid(c.Email))\n    .ToList();",
+      "var list = db.Customers.AsEnumerable()\n    .Where(c => Check.IsValid(c.Email))\n    .ToList();"
+    ],
+    "template": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\n#:property NuGetAudit=false\n#:property NoWarn=NU1903;IL2026;IL3050\nusing Microsoft.EntityFrameworkCore;\n\nusing var db = new Db();\ndb.Database.OpenConnection(); db.Database.EnsureCreated();\ndb.Customers.Add(new Customer { Email = \"a@company.com\" });\ndb.SaveChanges();\ndb.ChangeTracker.Clear();\n\n{{X}}\nConsole.WriteLine(list.Count);\n\nstatic class Check { public static bool IsValid(string e) => e.Contains('@'); }\nclass Customer { public int Id { get; set; } public string Email { get; set; } = \"\"; }\nclass Db : DbContext\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n    protected override void OnConfiguring(DbContextOptionsBuilder o) => o.UseSqlite(\"Data Source=:memory:\");\n}\n"
+  },
+  {
+    "id": "dotnet-m13-07",
+    "kind": "cs-choose",
+    "expectOutput": "10 1",
+    "options": [
+      "foreach (var c in db.Customers.ToList())\n    total += db.Contacts\n        .Count(x => x.CustomerId == c.Id);",
+      "foreach (var c in db.Customers.ToList())\n{\n    db.Entry(c).Collection(x => x.Contacts).Load();\n    total += c.Contacts.Count;\n}",
+      "total = db.Customers.Include(c => c.Contacts)\n    .ToList().Sum(c => c.Contacts.Count);",
+      "var ids = db.Customers.Select(c => c.Id).ToList();\nforeach (var id in ids)\n    total += db.Contacts\n        .Count(x => x.CustomerId == id);"
+    ],
+    "template": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\n#:property NuGetAudit=false\n#:property NoWarn=NU1903;IL2026;IL3050\nusing Microsoft.EntityFrameworkCore;\nusing Microsoft.Extensions.Logging;\n\nvar count = 0;\nusing var db = new Db(m => { if (m.Contains(\"Executed DbCommand\")) count++; });\ndb.Database.OpenConnection(); db.Database.EnsureCreated();\nfor (var i = 0; i < 5; i++) db.Customers.Add(new Customer { Contacts = { new(), new() } });\ndb.SaveChanges();\ndb.ChangeTracker.Clear();\n\ncount = 0;\nvar total = 0;\n{{X}}\nConsole.WriteLine($\"{total} {count}\");\n\nclass Customer { public int Id { get; set; } public List<Contact> Contacts { get; set; } = []; }\nclass Contact { public int Id { get; set; } public int CustomerId { get; set; } }\nclass Db(Action<string> log) : DbContext\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n    public DbSet<Contact> Contacts => Set<Contact>();\n    protected override void OnConfiguring(DbContextOptionsBuilder o) => o.UseSqlite(\"Data Source=:memory:\").LogTo(log, LogLevel.Information);\n}\n"
+  },
+  {
+    "id": "dotnet-m13-08",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\n#:property NuGetAudit=false\n#:property NoWarn=NU1903;IL2026;IL3050\nusing Microsoft.EntityFrameworkCore;\n\nusing var db = new Db();\ndb.Database.OpenConnection(); db.Database.EnsureCreated();\ndb.Customers.Add(new Customer { Contacts = { new() { IsPrimary = true }, new(), new() } });\ndb.SaveChanges();\ndb.ChangeTracker.Clear();\n\n// Customer có 3 Contact, chỉ 1 contact IsPrimary = true\nvar a = db.Customers\n    .Include(c => c.Contacts.Where(x => x.IsPrimary)).First();\nConsole.WriteLine(a.Contacts.Count);\n\ndb.ChangeTracker.Clear();\ndb.Contacts.ToList();            // nạp cả 3 contact vào tracker\nvar b = db.Customers\n    .Include(c => c.Contacts.Where(x => x.IsPrimary)).First();\nConsole.WriteLine(b.Contacts.Count);\n\ndb.ChangeTracker.Clear();\ndb.Contacts.ToList();\nvar d = db.Customers.AsNoTracking()\n    .Include(c => c.Contacts.Where(x => x.IsPrimary)).First();\nConsole.WriteLine(d.Contacts.Count);\n\nclass Customer { public int Id { get; set; } public List<Contact> Contacts { get; set; } = []; }\nclass Contact { public int Id { get; set; } public int CustomerId { get; set; } public bool IsPrimary { get; set; } }\nclass Db : DbContext\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n    public DbSet<Contact> Contacts => Set<Contact>();\n    protected override void OnConfiguring(DbContextOptionsBuilder o) => o.UseSqlite(\"Data Source=:memory:\");\n}\n"
+  },
+  {
+    "id": "dotnet-m13-09",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\n#:property NuGetAudit=false\n#:property NoWarn=NU1903;IL2026;IL3050\nusing Microsoft.EntityFrameworkCore;\nusing Microsoft.Extensions.Logging;\n\nvar count = 0;\nusing var db = new Db(m => { if (m.Contains(\"Executed DbCommand\")) count++; });\ndb.Database.OpenConnection(); db.Database.EnsureCreated();\ndb.Customers.Add(new Customer { Contacts = { new(), new() }, Leads = { new(), new(), new() } });\ndb.SaveChanges();\ndb.ChangeTracker.Clear();\ncount = 0;\n\n// count tăng 1 mỗi lần EF ghi log \"Executed DbCommand\"\n// Customer có 2 Contact và 3 Lead\ndb.Customers.Include(c => c.Contacts).Include(c => c.Leads).First();\nConsole.WriteLine($\"single: {count}\");\n\ndb.ChangeTracker.Clear(); count = 0;\ndb.Customers.Include(c => c.Contacts).Include(c => c.Leads)\n    .AsSplitQuery().First();\nConsole.WriteLine($\"split: {count}\");\n\ndb.ChangeTracker.Clear(); count = 0;\ndb.Customers\n    .Select(c => new { c.Id, N = c.Contacts.Count, M = c.Leads.Count })\n    .First();\nConsole.WriteLine($\"projection: {count}\");\n\nclass Customer { public int Id { get; set; } public List<Contact> Contacts { get; set; } = []; public List<Lead> Leads { get; set; } = []; }\nclass Contact { public int Id { get; set; } public int CustomerId { get; set; } }\nclass Lead { public int Id { get; set; } public int CustomerId { get; set; } }\nclass Db(Action<string> log) : DbContext\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n    protected override void OnConfiguring(DbContextOptionsBuilder o) => o.UseSqlite(\"Data Source=:memory:\").LogTo(log, LogLevel.Information);\n}\n"
+  },
+  {
+    "id": "dotnet-m13-11",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.EntityFrameworkCore;\nusing System.ComponentModel.DataAnnotations;\n\nusing var conn = new Microsoft.Data.Sqlite.SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nvar opt = new DbContextOptionsBuilder<Db>().UseSqlite(conn).Options;\nusing (var s = new Db(opt)) { s.Database.EnsureCreated();\n  s.Leads.Add(new Lead { Id = 1, Value = 100 });\n  s.Products.Add(new Product { Id = 1, Stock = 10 }); s.SaveChanges(); }\nusing var a = new Db(opt);\nusing var b = new Db(opt);\nvar la = a.Leads.First(); var lb = b.Leads.First();\nvar pa = a.Products.First(); var pb = b.Products.First();\nla.Value = 150; pa.Stock = 7; a.SaveChanges();\nlb.Value = 200; b.SaveChanges();\nConsole.WriteLine(\"lead: \" + new Db(opt).Leads.First().Value);\npb.Stock = 5;\ntry { b.SaveChanges(); Console.WriteLine(\"product: saved\"); }\ncatch (DbUpdateConcurrencyException) { Console.WriteLine(\"product: conflict\"); }\nConsole.WriteLine(\"stock: \" + new Db(opt).Products.First().Stock);\n\nclass Lead { public int Id { get; set; } public int Value { get; set; } }\nclass Product { public int Id { get; set; } [ConcurrencyCheck] public int Stock { get; set; } }\nclass Db(DbContextOptions<Db> o) : DbContext(o)\n{ public DbSet<Lead> Leads => Set<Lead>(); public DbSet<Product> Products => Set<Product>(); }\n"
+  },
+  {
+    "id": "dotnet-m13-12",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.EntityFrameworkCore;\nusing System.ComponentModel.DataAnnotations;\n\nusing var conn = new Microsoft.Data.Sqlite.SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nvar opt = new DbContextOptionsBuilder<Db>().UseSqlite(conn).Options;\nusing (var s = new Db(opt)) { s.Database.EnsureCreated();\n  s.Leads.Add(new Lead { Id = 1, Value = 100 }); s.SaveChanges(); }\n\nusing (var ctx = new Db(opt))\n{\n    var l1 = ctx.Leads.First();\n    var l2 = ctx.Leads.First();\n    Console.WriteLine(ReferenceEquals(l1, l2));\n    l1.Value = 150; ctx.SaveChanges();\n    l2.Value = 200;\n    try { ctx.SaveChanges(); Console.WriteLine(\"saved\"); }\n    catch (DbUpdateConcurrencyException) { Console.WriteLine(\"conflict\"); }\n}\n\nusing var ctxA = new Db(opt);\nusing var ctxB = new Db(opt);\nvar a = ctxA.Leads.First(); var b = ctxB.Leads.First();\na.Value = 1; ctxA.SaveChanges();\nb.Value = 2;\ntry { ctxB.SaveChanges(); Console.WriteLine(\"saved\"); }\ncatch (DbUpdateConcurrencyException) { Console.WriteLine(\"conflict\"); }\n\nclass Lead { public int Id { get; set; } [ConcurrencyCheck] public int Value { get; set; } }\nclass Db(DbContextOptions<Db> o) : DbContext(o) { public DbSet<Lead> Leads => Set<Lead>(); }\n"
+  },
+  {
+    "id": "dotnet-m13-13",
+    "kind": "cs-choose",
+    "template": "#:property PublishAot=false\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.EntityFrameworkCore;\nusing System.ComponentModel.DataAnnotations;\n\nusing var conn = new Microsoft.Data.Sqlite.SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nvar opt = new DbContextOptionsBuilder<Db>().UseSqlite(conn).Options;\nGuid v1 = Guid.NewGuid();\nusing (var s = new Db(opt)) { s.Database.EnsureCreated();\n  s.Leads.Add(new Lead { Id = 1, Title = \"A\", Version = v1 }); s.SaveChanges(); }\nvar clientVersion = v1;   // token client nhận ở lần GET\nusing (var s = new Db(opt))   // người khác sửa trước\n{ var x = s.Leads.First(); x.Title = \"Other\"; x.Version = Guid.NewGuid(); s.SaveChanges(); }\n\nusing var db = new Db(opt);\nvar lead = db.Leads.First(l => l.Id == 1);\n{{X}}\nlead.Title = \"B\";\nlead.Version = Guid.NewGuid();\ntry { db.SaveChanges(); Console.WriteLine(\"204\"); }\ncatch (DbUpdateConcurrencyException) { Console.WriteLine(\"409\"); }\n\nclass Lead { public int Id { get; set; } public string Title { get; set; } = \"\";\n  [ConcurrencyCheck] public Guid Version { get; set; } }\nclass Db(DbContextOptions<Db> o) : DbContext(o) { public DbSet<Lead> Leads => Set<Lead>(); }\n",
+    "options": [
+      "lead.Version = clientVersion;",
+      "db.Entry(lead).Property(l => l.Version)\n    .IsModified = true;",
+      "db.Entry(lead).Property(l => l.Version)\n    .OriginalValue = clientVersion;",
+      "// token đã khai báo IsConcurrencyToken\n// nên EF tự biết phiên bản client thấy"
+    ],
+    "expectOutput": "409"
+  },
+  {
+    "id": "dotnet-m13-14",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.EntityFrameworkCore;\nusing System.ComponentModel.DataAnnotations;\n\nusing var conn = new Microsoft.Data.Sqlite.SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nvar opt = new DbContextOptionsBuilder<Db>().UseSqlite(conn).Options;\nusing (var s = new Db(opt)) { s.Database.EnsureCreated();\n  s.Leads.Add(new Lead { Id = 1, Value = 100 }); s.SaveChanges(); }\nusing var a = new Db(opt);\nusing var b = new Db(opt);\nvar la = a.Leads.First(); var lb = b.Leads.First();\nla.Value = 150; a.SaveChanges();\n\nlb.Value = 200;\ntry { b.SaveChanges(); Console.WriteLine(\"SaveChanges: ok\"); }\ncatch (DbUpdateConcurrencyException) { Console.WriteLine(\"SaveChanges: conflict\"); }\n\nint n = b.Leads.Where(l => l.Id == 1)\n    .ExecuteUpdate(s => s.SetProperty(l => l.Value, 300));\nConsole.WriteLine(\"ExecuteUpdate: \" + n);\nConsole.WriteLine(new Db(opt).Leads.First().Value);\n\nclass Lead { public int Id { get; set; } [ConcurrencyCheck] public int Value { get; set; } }\nclass Db(DbContextOptions<Db> o) : DbContext(o) { public DbSet<Lead> Leads => Set<Lead>(); }\n"
+  },
+  {
+    "id": "dotnet-m13-15",
+    "kind": "cs-choose",
+    "template": "#:property PublishAot=false\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.EntityFrameworkCore;\nusing System.ComponentModel.DataAnnotations;\n\nusing var conn = new Microsoft.Data.Sqlite.SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nvar opt = new DbContextOptionsBuilder<Db>().UseSqlite(conn).Options;\nusing (var s = new Db(opt)) { s.Database.EnsureCreated();\n  s.Products.Add(new Product { Id = 1, Stock = 5 }); s.SaveChanges(); }\nint ok = 0;\nforeach (var qty in new[] { 3, 2, 2 })\n{\n    using var db = new Db(opt);\n    {{X}}\n    if (affected == 1) ok++;\n}\nConsole.WriteLine(ok + \" \" + new Db(opt).Products.First().Stock);\n\nclass Product { public int Id { get; set; } public int Stock { get; set; } }\nclass Db(DbContextOptions<Db> o) : DbContext(o) { public DbSet<Product> Products => Set<Product>(); }\n",
+    "options": [
+      "var affected = db.Products\n    .Where(p => p.Id == 1 && p.Stock > qty)\n    .ExecuteUpdate(s => s.SetProperty(\n        p => p.Stock, p => p.Stock - qty));",
+      "var affected = db.Products\n    .Where(p => p.Id == 1 && p.Stock >= qty)\n    .ExecuteUpdate(s => s.SetProperty(\n        p => p.Stock, p => p.Stock - qty));",
+      "var affected = db.Products\n    .Where(p => p.Id == 1)\n    .ExecuteUpdate(s => s.SetProperty(\n        p => p.Stock, p => p.Stock - qty));",
+      "var affected = db.Products\n    .Where(p => p.Id == 1 && p.Stock >= qty)\n    .ExecuteUpdate(s => s.SetProperty(\n        p => p.Stock, qty));"
+    ],
+    "expectOutput": "2 0"
+  },
+  {
+    "id": "dotnet-m13-16",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.EntityFrameworkCore;\nusing System.ComponentModel.DataAnnotations;\n\nusing var conn = new Microsoft.Data.Sqlite.SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nvar opt = new DbContextOptionsBuilder<Db>().UseSqlite(conn).Options;\nusing (var s = new Db(opt, new Tenant(1)))\n{\n    s.Database.EnsureCreated();\n    s.Customers.AddRange(\n        new Customer { Id = 1, TenantId = 1, Name = \"A1\" },\n        new Customer { Id = 2, TenantId = 1, Name = \"A2\", DeletedAt = DateTime.UtcNow },\n        new Customer { Id = 3, TenantId = 2, Name = \"B1\" },\n        new Customer { Id = 4, TenantId = 2, Name = \"B2\", DeletedAt = DateTime.UtcNow });\n    s.SaveChanges();\n}\nusing var db = new Db(opt, new Tenant(1));\nConsole.WriteLine(db.Customers.Count());\nConsole.WriteLine(db.Customers.IgnoreQueryFilters().Count());\nConsole.WriteLine(db.Customers.Count(c => c.DeletedAt != null));\nConsole.WriteLine(db.Customers.IgnoreQueryFilters().Count(c => c.DeletedAt != null));\nrecord Tenant(int Id);\nclass Customer { public int Id { get; set; } public int TenantId { get; set; } public string Name { get; set; } = \"\"; public DateTime? DeletedAt { get; set; } }\nclass Db(DbContextOptions<Db> o, Tenant tenant) : DbContext(o)\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n    protected override void OnModelCreating(ModelBuilder mb) =>\n        mb.Entity<Customer>().HasQueryFilter(c => c.DeletedAt == null && c.TenantId == tenant.Id);\n}\n"
+  },
+  {
+    "id": "dotnet-m13-17",
+    "kind": "cs-predict",
+    "program": "#:property PublishAot=false\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.EntityFrameworkCore;\nusing System.ComponentModel.DataAnnotations;\n\nusing var conn = new Microsoft.Data.Sqlite.SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nvar opt = new DbContextOptionsBuilder<Db>().UseSqlite(conn).Options;\nusing (var s = new Db(opt, new Tenant(1)))\n{\n    s.Database.EnsureCreated();\n    s.Customers.AddRange(\n        new Customer { Id = 1, TenantId = 1, Name = \"A1\" },\n        new Customer { Id = 2, TenantId = 1, Name = \"A2\", DeletedAt = DateTime.UtcNow },\n        new Customer { Id = 3, TenantId = 2, Name = \"B1\" },\n        new Customer { Id = 4, TenantId = 2, Name = \"B2\", DeletedAt = DateTime.UtcNow });\n    s.SaveChanges();\n}\nusing var t1 = new Db(opt, new Tenant(1));\nusing var t2 = new Db(opt, new Tenant(2));\nConsole.WriteLine(string.Join(\",\", t1.Customers.Select(c => c.Name)));\nConsole.WriteLine(string.Join(\",\", t2.Customers.Select(c => c.Name)));\nConsole.WriteLine(string.Join(\",\", t1.Customers\n    .Select(c => c.Name)));\nrecord Tenant(int Id);\nclass Customer { public int Id { get; set; } public int TenantId { get; set; } public string Name { get; set; } = \"\"; public DateTime? DeletedAt { get; set; } }\nclass Db(DbContextOptions<Db> o, Tenant tenant) : DbContext(o)\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n    protected override void OnModelCreating(ModelBuilder mb) =>\n        mb.Entity<Customer>().HasQueryFilter(c => c.DeletedAt == null && c.TenantId == tenant.Id);\n}\n"
+  },
+  {
+    "id": "dotnet-m13-18",
+    "kind": "cs-choose",
+    "template": "#:property PublishAot=false\n#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\nusing Microsoft.EntityFrameworkCore;\nusing System.ComponentModel.DataAnnotations;\n\nusing var conn = new Microsoft.Data.Sqlite.SqliteConnection(\"DataSource=:memory:\");\nconn.Open();\nvar opt = new DbContextOptionsBuilder<Db>().UseSqlite(conn).Options;\nusing (var s = new Db(opt, new Tenant(1)))\n{\n    s.Database.EnsureCreated();\n    s.Customers.AddRange(\n        new Customer { Id = 1, TenantId = 1, Name = \"A1\" },\n        new Customer { Id = 2, TenantId = 1, Name = \"A2\", DeletedAt = DateTime.UtcNow },\n        new Customer { Id = 3, TenantId = 2, Name = \"B1\" },\n        new Customer { Id = 4, TenantId = 2, Name = \"B2\", DeletedAt = DateTime.UtcNow });\n    s.SaveChanges();\n}\nusing var t1 = new Db(opt, new Tenant(1));\nvar n = {{X}};\nConsole.WriteLine(n);\n\nrecord Tenant(int Id);\nclass Customer { public int Id { get; set; } public int TenantId { get; set; } public string Name { get; set; } = \"\"; public DateTime? DeletedAt { get; set; } }\nclass Db(DbContextOptions<Db> o, Tenant tenant) : DbContext(o)\n{\n    public DbSet<Customer> Customers => Set<Customer>();\n    protected override void OnModelCreating(ModelBuilder mb) =>\n        mb.Entity<Customer>().HasQueryFilter(c => c.DeletedAt == null && c.TenantId == tenant.Id);\n}\n",
+    "options": [
+      "t1.Customers\n    .IgnoreQueryFilters()\n    .Count(c => c.DeletedAt != null)",
+      "t1.Customers\n    .Count(c => c.DeletedAt != null)",
+      "t1.Customers\n    .IgnoreQueryFilters()\n    .Count(c => c.TenantId == 1)",
+      "t1.Customers\n    .IgnoreQueryFilters()\n    .Where(c => c.TenantId == 1)\n    .Count(c => c.DeletedAt != null)"
+    ],
+    "expectOutput": "1"
+  }
+]

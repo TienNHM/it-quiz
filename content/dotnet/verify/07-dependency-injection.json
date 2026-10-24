@@ -1,0 +1,118 @@
+[
+  {
+    "id": "dotnet-m07-01",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\nservices.AddSingleton<IGreeter, EnGreeter>();\nservices.AddSingleton<IGreeter, ViGreeter>();\nusing var sp = services.BuildServiceProvider();\n\nConsole.WriteLine(sp.GetRequiredService<IGreeter>().Hello());\nConsole.WriteLine(sp.GetServices<IGreeter>().Count());\n\ninterface IGreeter { string Hello(); }\nclass EnGreeter : IGreeter { public string Hello() => \"Hello\"; }\nclass ViGreeter : IGreeter { public string Hello() => \"Xin chao\"; }\n"
+  },
+  {
+    "id": "dotnet-m07-02",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\nservices.AddTransient<TransientSvc>();\nservices.AddScoped<ScopedSvc>();\nservices.AddSingleton<SingletonSvc>();\nusing var sp = services.BuildServiceProvider();\n\nusing var s1 = sp.CreateScope();\nusing var s2 = sp.CreateScope();\nvar p1 = s1.ServiceProvider;\nvar p2 = s2.ServiceProvider;\n\nConsole.WriteLine(ReferenceEquals(p1.GetRequiredService<TransientSvc>(), p1.GetRequiredService<TransientSvc>()));\nConsole.WriteLine(ReferenceEquals(p1.GetRequiredService<ScopedSvc>(), p1.GetRequiredService<ScopedSvc>()));\nConsole.WriteLine(ReferenceEquals(p1.GetRequiredService<ScopedSvc>(), p2.GetRequiredService<ScopedSvc>()));\nConsole.WriteLine(ReferenceEquals(p1.GetRequiredService<SingletonSvc>(), p2.GetRequiredService<SingletonSvc>()));\n\nclass TransientSvc { }\nclass ScopedSvc { }\nclass SingletonSvc { }\n"
+  },
+  {
+    "id": "dotnet-m07-03",
+    "kind": "cs-outcome",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\nservices.AddScoped<CrmDbContext>();\nservices.AddSingleton<CacheRefresher>();\nusing var sp = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });\n\nvar r = sp.GetRequiredService<CacheRefresher>();\nConsole.WriteLine(\"resolved\");\n\nclass CrmDbContext { }\nclass CacheRefresher(CrmDbContext db) { }\n",
+    "expect": "runtime-error"
+  },
+  {
+    "id": "dotnet-m07-04",
+    "kind": "cs-choose",
+    "template": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\n{{X}}\nusing var sp = services.BuildServiceProvider();\nvar repo = sp.GetRequiredService<IRepository<Customer>>();\nConsole.WriteLine(repo.GetType().Name);\n\nrecord Customer;\ninterface IRepository<T> { }\nclass EfRepository<T> : IRepository<T> { }\n",
+    "options": [
+      "services.AddScoped<IRepository<>, EfRepository<>>();",
+      "services.AddScoped<IRepository<T>, EfRepository<T>>();",
+      "services.AddScoped(\n    typeof(IRepository<Customer>),\n    typeof(EfRepository<>));",
+      "services.AddScoped(\n    typeof(IRepository<>),\n    typeof(EfRepository<>));"
+    ],
+    "expectOutput": "EfRepository`1"
+  },
+  {
+    "id": "dotnet-m07-05",
+    "kind": "cs-find-error",
+    "template": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\nservices.AddScoped<UnitOfWork>();\nservices.AddSingleton<Clock>();\nservices.AddTransient<Scorer>();\nusing var sp = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });\n\n{{X}}\nConsole.WriteLine(\"ok\");\n\nclass UnitOfWork { }\nclass Clock { }\nclass Scorer { }\n",
+    "options": [
+      "var a = sp.GetRequiredService<Clock>();",
+      "var a = sp.GetRequiredService<UnitOfWork>();",
+      "var a = sp.GetRequiredService<Scorer>();",
+      "using var scope = sp.CreateScope();\nvar a = scope.ServiceProvider\n    .GetRequiredService<UnitOfWork>();"
+    ],
+    "errorKind": "runtime"
+  },
+  {
+    "id": "dotnet-m07-06",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\nusing Microsoft.Extensions.DependencyInjection.Extensions;\n\nvar services = new ServiceCollection();\nservices.AddSingleton<IEmail, Smtp>();\nservices.TryAddSingleton<IEmail, SendGrid>();\nservices.AddSingleton<IRule, MinLength>();\nservices.TryAddEnumerable(ServiceDescriptor.Singleton<IRule, MinLength>());\nservices.TryAddEnumerable(ServiceDescriptor.Singleton<IRule, HasAt>());\nusing var sp = services.BuildServiceProvider();\n\nConsole.WriteLine(sp.GetRequiredService<IEmail>().GetType().Name);\nConsole.WriteLine(sp.GetServices<IRule>().Count());\n\ninterface IEmail { }\nclass Smtp : IEmail { }\nclass SendGrid : IEmail { }\ninterface IRule { }\nclass MinLength : IRule { }\nclass HasAt : IRule { }\n"
+  },
+  {
+    "id": "dotnet-m07-07",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\nservices.AddTransient<Made>();\nservices.AddSingleton(new Own(\"tu-new\"));\nvar sp = services.BuildServiceProvider();\n\nsp.GetRequiredService<Made>();\nsp.GetRequiredService<Own>();\nConsole.WriteLine(\"truoc\");\nsp.Dispose();\nConsole.WriteLine(\"sau\");\n\nclass Made : IDisposable { public void Dispose() => Console.WriteLine(\"dispose Made\"); }\nclass Own(string n) : IDisposable { public void Dispose() => Console.WriteLine(\"dispose \" + n); }\n"
+  },
+  {
+    "id": "dotnet-m07-08",
+    "kind": "cs-outcome",
+    "program": "#:package Microsoft.Extensions.Options@10.0.0\nusing Microsoft.Extensions.Options;\n\nvar settings = new EmailSettings();\nnew ConfigureEmailSettings().Configure(settings);\nConsole.WriteLine(settings.SenderEmail);\n\nclass EmailSettings\n{\n    public string SenderEmail { get; init; } = \"\";\n}\n\nclass ConfigureEmailSettings : IConfigureOptions<EmailSettings>\n{\n    public void Configure(EmailSettings options)\n    {\n        if (options.SenderEmail == \"\")\n            options.SenderEmail = \"no-reply@crm.local\";\n    }\n}\n",
+    "expect": "compile-error",
+    "code": "CS8852"
+  },
+  {
+    "id": "dotnet-m07-09",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\n#:package Microsoft.Extensions.Options@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\nusing Microsoft.Extensions.Options;\n\nvar services = new ServiceCollection();\nservices.Configure<ApiSettings>(\"crm\", o => o.Url = \"https://crm.local\");\nservices.Configure<ApiSettings>(\"mail\", o => o.Url = \"https://mail.local\");\nusing var sp = services.BuildServiceProvider();\n\nvar monitor = sp.GetRequiredService<IOptionsMonitor<ApiSettings>>();\nConsole.WriteLine(monitor.Get(\"mail\").Url);\nConsole.WriteLine(monitor.Get(\"crm\").Url);\nConsole.WriteLine(monitor.Get(\"khac\").Url.Length);\n\nclass ApiSettings { public string Url { get; set; } = \"\"; }\n"
+  },
+  {
+    "id": "dotnet-m07-11",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar s = new ServiceCollection();\ns.AddSingleton<IRule, EmailRule>();\ns.AddKeyedSingleton<IRule, PhoneRule>(\"phone\");\ns.AddKeyedSingleton<IRule, TaxRule>(\"tax\");\nvar p = s.BuildServiceProvider();\n\nConsole.WriteLine(p.GetServices<IRule>().Count());\nConsole.WriteLine(p.GetRequiredKeyedService<IRule>(\"tax\").GetType().Name);\nConsole.WriteLine(p.GetKeyedServices<IRule>(\"phone\").Count());\n\ninterface IRule { }\nclass EmailRule : IRule { }\nclass PhoneRule : IRule { }\nclass TaxRule : IRule { }\n"
+  },
+  {
+    "id": "dotnet-m07-12",
+    "kind": "cs-outcome",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar s = new ServiceCollection();\ns.AddKeyedSingleton<IRule, PhoneRule>(\"phone\");\nvar p = s.BuildServiceProvider();\n\nvar one = p.GetKeyedService<IRule>(KeyedService.AnyKey);\nConsole.WriteLine(\"done\");\n\ninterface IRule { }\nclass PhoneRule : IRule { }\n",
+    "expect": "runtime-error"
+  },
+  {
+    "id": "dotnet-m07-13",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar s = new ServiceCollection();\ns.AddKeyedSingleton<IMail, SendGrid>(\"sendgrid\");\ns.AddKeyedSingleton<IMail, Default>(KeyedService.AnyKey);\nvar p = s.BuildServiceProvider();\n\nConsole.WriteLine(p.GetRequiredKeyedService<IMail>(\"sendgrid\").GetType().Name);\nConsole.WriteLine(p.GetRequiredKeyedService<IMail>(\"sendgrdi\").GetType().Name);\n\ninterface IMail { }\nclass SendGrid : IMail { }\nclass Default : IMail { }\n"
+  },
+  {
+    "id": "dotnet-m07-14",
+    "kind": "cs-find-error",
+    "errorKind": "runtime",
+    "template": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar s = new ServiceCollection();\ns.AddScoped<Db>();\ns.AddSingleton<Cache>();\nvar p = s.BuildServiceProvider({{X}});\nConsole.WriteLine(\"started\");\n\nclass Db { }\nclass Cache(Db db) { public Db D => db; }\n",
+    "options": [
+      "new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true }",
+      "new ServiceProviderOptions { ValidateScopes = true }",
+      "new ServiceProviderOptions { ValidateOnBuild = true }",
+      "new ServiceProviderOptions()"
+    ]
+  },
+  {
+    "id": "dotnet-m07-15",
+    "kind": "cs-predict",
+    "program": "var a = Work(\"A\", 40);\nvar b = Work(\"B\", 10);\nawait Task.WhenAll(a, b);\nConsole.WriteLine(await a);\nConsole.WriteLine(await b);\n\nstatic async Task<string> Work(string tenant, int ms)\n{\n    Ambient.Tenant = tenant;\n    Ambient.Local.Value = tenant;\n    await Task.Delay(ms);\n    return $\"{tenant}: static={Ambient.Tenant} \" +\n           $\"local={Ambient.Local.Value}\";\n}\nstatic class Ambient\n{\n    public static string? Tenant;\n    public static readonly AsyncLocal<string?> Local = new();\n}\n"
+  },
+  {
+    "id": "dotnet-m07-16",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar s = new ServiceCollection();\ns.AddScoped<RequestContext>();\ns.AddSingleton<CacheService>();\nvar p = s.BuildServiceProvider();\n\nusing var request = p.CreateScope();\nrequest.ServiceProvider.GetRequiredService<RequestContext>()\n    .TenantId = 7;\n\nvar cache = p.GetRequiredService<CacheService>();\nConsole.WriteLine(cache.BuildKey(\"leads\"));\n\nclass RequestContext { public int TenantId { get; set; } }\n\nclass CacheService(IServiceScopeFactory factory)\n{\n    public string BuildKey(string key)\n    {\n        using var scope = factory.CreateScope();\n        var ctx = scope.ServiceProvider\n            .GetRequiredService<RequestContext>();\n        return $\"{ctx.TenantId}:{key}\";\n    }\n}\n"
+  },
+  {
+    "id": "dotnet-m07-17",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\n#:package Scrutor@7.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar s = new ServiceCollection();\ns.AddScoped<IRepo, SqlRepo>();\ns.Decorate<IRepo, CachedRepo>();\ns.Decorate<IRepo, TimedRepo>();\ns.AddScoped<IRepo, SqlRepo>();\n\nusing var p = s.BuildServiceProvider();\nusing var scope = p.CreateScope();\nConsole.WriteLine(scope.ServiceProvider\n    .GetRequiredService<IRepo>().GetType().Name);\n\ninterface IRepo { }\nclass SqlRepo : IRepo { }\nclass CachedRepo(IRepo inner) : IRepo { public IRepo I => inner; }\nclass TimedRepo(IRepo inner) : IRepo { public IRepo I => inner; }\n"
+  },
+  {
+    "id": "dotnet-m07-18",
+    "kind": "cs-outcome",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\n#:package Scrutor@7.0.0\n#:package Microsoft.Extensions.Caching.Memory@10.0.0\nusing Microsoft.Extensions.Caching.Memory;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar s = new ServiceCollection();\ns.AddScoped<IRepo, SqlRepo>();\ns.Decorate<IRepo, CachedRepo>();\n\nusing var p = s.BuildServiceProvider(\n    new ServiceProviderOptions\n    { ValidateScopes = true, ValidateOnBuild = true });\nConsole.WriteLine(\"built\");\nusing var scope = p.CreateScope();\nscope.ServiceProvider.GetRequiredService<IRepo>();\nConsole.WriteLine(\"resolved\");\n\ninterface IRepo { }\nclass SqlRepo : IRepo { }\nclass CachedRepo(IRepo inner, IMemoryCache cache) : IRepo { public IRepo I => inner; public IMemoryCache C => cache; }\n",
+    "expect": "runtime-error"
+  },
+  {
+    "id": "dotnet-m07-19",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\n\nvar s = new ServiceCollection();\ns.AddSingleton<IPay, CardPay>();\ns.AddSingleton<IPay, WalletPay>();\ns.AddSingleton<PayService>();\nvar svc = s.BuildServiceProvider()\n    .GetRequiredService<PayService>();\nConsole.WriteLine(svc.Pick(40_000));\nConsole.WriteLine(svc.Pick(90_000));\n\ninterface IPay { bool CanHandle(int a); }\nclass CardPay : IPay { public bool CanHandle(int a) => a <= 100_000; }\nclass WalletPay : IPay { public bool CanHandle(int a) => a <= 50_000; }\nclass PayService(IEnumerable<IPay> all)\n{\n    public string Pick(int a) =>\n        all.FirstOrDefault(x => x.CanHandle(a))\n           ?.GetType().Name ?? \"none\";\n}\n"
+  }
+]

@@ -1,0 +1,319 @@
+{
+  "id": "dotnet-m09",
+  "title": "Module 9: Web API Professional",
+  "description": "REST, versioning, phân trang, upload an toàn và rate limiting cho Web API.",
+  "questions": [
+    {
+      "id": "dotnet-m09-01",
+      "topic": "Vỏ phân trang",
+      "source": "Module 9 - Pagination, Filtering, Sorting",
+      "question": "Một API trả 41 bản ghi, `pageSize` = 20, client đang xin trang 2. Đoạn code sau in ra gì (theo thứ tự `TotalPages`, `HasNext`, phép chia nguyên)?",
+      "code": "var r = new PagedResponse<int>([], 2, 20, 41);\nConsole.WriteLine($\"{r.TotalPages} {r.HasNext} {r.TotalCount / r.PageSize}\");\n\nrecord PagedResponse<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount)\n{\n    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);\n    public bool HasNext => Page < TotalPages;\n}",
+      "codeLang": "csharp",
+      "options": [
+        "2 False 2",
+        "3 True 2",
+        "3 True 3",
+        "2 True 3"
+      ],
+      "answer": 1,
+      "explanation": "Ở `TotalPages`, phép chia được ép sang `double` trước khi `Math.Ceiling`: 41 / 20 = 2,05 làm tròn lên thành **3** trang, nên trang 2 vẫn còn trang sau (`HasNext` = True). Biểu thức cuối là chia số nguyên 41 / 20 = **2** (phần dư bị cắt). Kết quả thật: `3 True 2`.\n- `2 False 2` mắc lỗi kinh điển: chia nguyên làm mất trang cuối (1 bản ghi bị bỏ sót) và `HasNext` sai.\n- `3 True 3` nhầm rằng phép chia nguyên cũng làm tròn lên.\n- `2 True 3` đảo ngược cả hai giá trị."
+    },
+    {
+      "id": "dotnet-m09-02",
+      "topic": "Concurrency limiter",
+      "source": "Module 9 - Rate Limiting",
+      "question": "Dùng thuật toán Concurrency của `System.Threading.RateLimiting`. Đoạn code sau in ra gì (`using System.Threading.RateLimiting;` đã có)?",
+      "code": "var limiter = new ConcurrencyLimiter(new ConcurrencyLimiterOptions\n{\n    PermitLimit = 2,\n    QueueLimit = 0\n});\n\nvar l1 = limiter.AttemptAcquire();\nvar l2 = limiter.AttemptAcquire();\nvar l3 = limiter.AttemptAcquire();\nl1.Dispose();\nvar l4 = limiter.AttemptAcquire();\n\nConsole.WriteLine($\"{l1.IsAcquired} {l2.IsAcquired} {l3.IsAcquired} {l4.IsAcquired}\");",
+      "codeLang": "csharp",
+      "options": [
+        "True True False False",
+        "True True True False",
+        "True False False True",
+        "True True False True"
+      ],
+      "answer": 3,
+      "explanation": "Concurrency limiter không quan tâm thời gian mà chỉ đếm **số lease đang giữ cùng lúc**. `PermitLimit = 2` nên `l1` và `l2` lấy được, `l3` bị từ chối vì đã đủ 2 và `QueueLimit = 0` (không xếp hàng). Khi `l1.Dispose()` trả lease về, một chỗ trống xuất hiện, nên `l4` lấy được.\n- `True True False False` quên rằng Dispose giải phóng chỗ (đó là khác biệt với fixed window, nơi chỗ chỉ trả khi sang cửa sổ mới).\n- `True True True False` bỏ qua giới hạn 2.\n- `True False False True` cho rằng lease thứ hai đã bị từ chối.\nKết quả thật khi chạy: `True True False True`."
+    },
+    {
+      "id": "dotnet-m09-03",
+      "topic": "Upload an toàn",
+      "source": "Module 9 - File Upload và Download",
+      "question": "Client gửi tên file độc hại `../../evil.txt`. Phương án nào tạo `path` luôn nằm trong thư mục upload (in `safe`)?",
+      "code": "var root = Path.Combine(Path.GetTempPath(), \"up\");\nvar clientName = \"../../evil.txt\";   // do client gửi lên\n\n// <đoạn code ở phương án>\n\nvar full = Path.GetFullPath(path);\nif (!full.StartsWith(Path.GetFullPath(root)))\n    throw new Exception(\"escaped\");\nConsole.WriteLine(\"safe\");",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nvar path = Path.Combine(root, clientName);\n```",
+        "```csharp\nvar path = Path.Combine(root,\n    clientName.Replace(\"..\", \"\"));\n```",
+        "```csharp\nvar name = Guid.NewGuid().ToString(\"N\")\n    + Path.GetExtension(clientName);\nvar path = Path.Combine(root, name);\n```",
+        "```csharp\nvar path = root + \"/\" + clientName;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Cách an toàn là **không bao giờ dùng tên gốc**: sinh tên mới bằng `Guid` và chỉ giữ phần mở rộng (đã lọc qua whitelist ở bước khác). Khi đó không còn ký tự `..` hay dấu phân cách nào do client kiểm soát.\n- `Path.Combine(root, clientName)` nối nguyên chuỗi, `../../` đưa đường dẫn thoát khỏi `root` (ném `escaped`).\n- `Replace(\"..\", \"\")` là lọc chuỗi nửa vời: `../../evil.txt` thành `//evil.txt`, một đường dẫn tuyệt đối và `Path.Combine` bỏ luôn `root`; ngoài ra các biến thể như `....//` vượt qua kiểu lọc này.\n- `root + \"/\" + clientName` ghép chuỗi thô nên cũng thoát ra ngoài."
+    },
+    {
+      "id": "dotnet-m09-04",
+      "topic": "Magic number",
+      "source": "Module 9 - File Upload và Download",
+      "question": "Kẻ tấn công upload một file thực thi Windows (bắt đầu bằng `4D 5A`, tức \"MZ\") nhưng đặt tên `avatar.png` và `Content-Type: image/png`. Đoạn code sau in ra gì?",
+      "code": "byte[] png = [0x89, 0x50, 0x4E, 0x47];\nbyte[] content = [0x4D, 0x5A, 0x90, 0x00, 0x03];\nvar name = \"avatar.png\";\nvar contentType = \"image/png\";\n\nvar extOk = Path.GetExtension(name) == \".png\";\nvar typeOk = contentType == \"image/png\";\nvar magicOk = content.AsSpan(0, png.Length).SequenceEqual(png);\nConsole.WriteLine($\"{extOk} {typeOk} {magicOk}\");",
+      "codeLang": "csharp",
+      "options": [
+        "True False False",
+        "True True True",
+        "False True False",
+        "True True False"
+      ],
+      "answer": 3,
+      "explanation": "Phần mở rộng và `ContentType` đều do **client tự khai**, nên kẻ tấn công cho cả hai khớp: `extOk` và `typeOk` đều True. Chỉ nội dung file là thứ không giả được: 4 byte đầu `4D 5A 90 00` khác chữ ký PNG `89 50 4E 47`, nên `magicOk` False. Đó là lý do magic number mới là kiểm tra thật.\n- `True False False` cho rằng `ContentType` bị lộ ra sai, nhưng chuỗi này khớp.\n- `True True True` tin rằng file hợp lệ, đúng lỗi mà bài cảnh báo.\n- `False True False` nhầm phần mở rộng không khớp.\nKết quả thật khi chạy: `True True False`."
+    },
+    {
+      "id": "dotnet-m09-05",
+      "topic": "Offset pagination",
+      "source": "Module 9 - Pagination, Filtering, Sorting",
+      "question": "Người dùng xem trang 1, rồi có 2 bản ghi mới được tạo trước khi họ bấm trang 2 (offset 3). Đoạn code mô phỏng điều này in ra gì?",
+      "code": "var db = new List<int> { 10, 9, 8, 7, 6, 5, 4, 3 };   // mới nhất trước\nvar page1 = db.Skip(0).Take(3).ToList();\n\ndb.Insert(0, 12);   // 2 bản ghi mới chen lên đầu\ndb.Insert(0, 11);\nvar page2 = db.Skip(3).Take(3).ToList();\n\nConsole.WriteLine(string.Join(\",\", page1) + \" | \" + string.Join(\",\", page2));",
+      "codeLang": "csharp",
+      "options": [
+        "10,9,8 | 7,6,5",
+        "10,9,8 | 8,7,6",
+        "10,9,8 | 9,8,7",
+        "10,9,8 | 11,12,10"
+      ],
+      "answer": 2,
+      "explanation": "Offset đếm theo **vị trí**, không theo bản ghi. Sau khi chèn 11 và 12 lên đầu, danh sách là `11,12,10,9,8,7,...`; bỏ qua 3 phần tử rồi lấy 3 cho `9,8,7`. Hai bản ghi `9` và `8` đã hiện ở trang 1 nay **lặp lại** ở trang 2. Nếu xoá bớt thì ngược lại, bản ghi bị sót. Cursor pagination tránh được điều này.\n- `7,6,5` là kết quả nếu dữ liệu không đổi, trong khi đề đã chèn thêm.\n- `8,7,6` chỉ đúng khi chèn 1 bản ghi.\n- `11,12,10` chỉ đúng nếu offset là 0.\nKết quả thật khi chạy: `10,9,8 | 9,8,7`."
+    },
+    {
+      "id": "dotnet-m09-06",
+      "topic": "Cursor pagination",
+      "source": "Module 9 - Pagination, Filtering, Sorting",
+      "question": "Cursor là cặp `(At, Id)` của dòng cuối trang trước, thứ tự là `At` giảm dần rồi `Id` giảm dần. Điều kiện nào lấy đúng các dòng đứng **sau** dòng đó, không sót, không lặp?",
+      "code": "var rows = new List<(int At, int Id)>\n{\n    (5, 4), (5, 3), (5, 2), (5, 1), (4, 9), (3, 7)\n};   // đã sắp xếp At DESC, Id DESC\nvar last = (At: 5, Id: 3);   // dòng cuối của trang trước\n\nvar page = rows\n    .Where(c => /* điều kiện ở phương án */)\n    .Select(c => $\"{c.At}-{c.Id}\");\nConsole.WriteLine(string.Join(\",\", page));",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nc.At < last.At ||\n(c.At == last.At && c.Id < last.Id)\n```",
+        "```csharp\nc.At < last.At\n```",
+        "```csharp\nc.At <= last.At\n```",
+        "```csharp\nc.Id < last.Id\n```"
+      ],
+      "answer": 0,
+      "explanation": "Phải so sánh theo cặp: hoặc `At` nhỏ hơn hẳn, hoặc `At` bằng và `Id` nhỏ hơn (`Id` là tie-breaker). Kết quả đúng là `5-2,5-1,4-9,3-7`.\n- Chỉ `c.At < last.At` bỏ sót `5-2` và `5-1`, những dòng cùng thời điểm nhưng Id nhỏ hơn.\n- `c.At <= last.At` lấy cả `5-4` và `5-3`, tức lặp lại dòng cuối trang trước.\n- Chỉ `c.Id < last.Id` bỏ sót `4-9` và `3-7` (Id lớn nhưng cũ hơn) vì Id không phải khoá sắp xếp chính."
+    },
+    {
+      "id": "dotnet-m09-07",
+      "topic": "Sorting",
+      "source": "Module 9 - Pagination, Filtering, Sorting",
+      "question": "Lập trình viên muốn thêm khoá phụ `Id` để thứ tự ổn định, nhưng gọi `ThenBy` ngay trên `IQueryable<Customer>` mà chưa có `OrderBy` nào. Kết quả là gì?",
+      "code": "IQueryable<Customer> query = new[]\n{\n    new Customer(2, \"An\"), new Customer(1, \"An\")\n}.AsQueryable();\n\nvar sorted = query.ThenBy(c => c.Id);\nConsole.WriteLine(string.Join(\",\", sorted.Select(c => c.Id)));\n\nrecord Customer(int Id, string Name);",
+      "codeLang": "csharp",
+      "options": [
+        "Lỗi biên dịch: `ThenBy` không có trên `IQueryable<T>`",
+        "Biên dịch được, in `2,1`",
+        "Biên dịch được, in `1,2`",
+        "Biên dịch được, ném `InvalidOperationException` lúc chạy"
+      ],
+      "answer": 0,
+      "explanation": "`ThenBy` là extension method của `IOrderedQueryable<T>`, kiểu mà chỉ `OrderBy` hoặc `OrderByDescending` mới trả về. Gọi nó trên `IQueryable<T>` thường bị trình biên dịch chặn ngay (CS1061), nên lỗi được phát hiện lúc build chứ không lọt tới production. Vì vậy `ApplySort` của bài luôn gọi `OrderBy` trước rồi mới `ThenBy`.\n- Ba phương án còn lại đều giả định đoạn code biên dịch được: không có đường nào biên dịch cho `ThenBy` trên `IQueryable<Customer>`, nên không thể in `2,1`, `1,2` hay ném exception lúc chạy."
+    },
+    {
+      "id": "dotnet-m09-08",
+      "topic": "Idempotent PATCH",
+      "source": "Module 9 - REST API Design Principles",
+      "question": "Client gửi `PATCH` hai lần vì timeout. Mô phỏng cho hai thiết kế: thay đổi tương đối và đặt giá trị. Đoạn code in ra gì?",
+      "code": "var credit = 0;\nvoid ApplyDelta(int d) => credit += d;   // {\"credit\": \"+100\"}\nvoid ApplySet(int v) => credit = v;      // {\"credit\": 500}\n\nApplyDelta(100);\nApplyDelta(100);   // client retry vì timeout\nvar a = credit;\n\ncredit = 0;\nApplySet(500);\nApplySet(500);     // client retry vì timeout\nConsole.WriteLine($\"{a} {credit}\");",
+      "codeLang": "csharp",
+      "options": [
+        "200 1000",
+        "200 500",
+        "100 500",
+        "500 500"
+      ],
+      "answer": 1,
+      "explanation": "Thay đổi tương đối (`+100`) gửi hai lần thì cộng hai lần thành **200**: PATCH kiểu này không idempotent nên retry gây sai số. Đặt giá trị (`credit = 500`) gửi mấy lần cũng ra **500**: trạng thái cuối giống nhau, tức idempotent. Vì vậy bài khuyên thiết kế PATCH theo kiểu đặt giá trị.\n- `200 1000` nhầm rằng đặt giá trị cũng cộng dồn.\n- `100 500` cho rằng lần retry của delta không có tác dụng.\n- `500 500` nhầm rằng delta cũng chỉ đặt giá trị.\nKết quả thật khi chạy: `200 500`."
+    },
+    {
+      "id": "dotnet-m09-09",
+      "topic": "Breaking change",
+      "source": "Module 9 - API Versioning",
+      "question": "Trong các thay đổi sau với API đang có client sử dụng, thay đổi nào **buộc** phải cân nhắc lên version mới?",
+      "options": [
+        "Thêm trường số điện thoại vào response của danh sách khách hàng",
+        "Thêm một endpoint mới để lấy danh sách liên hệ của khách hàng",
+        "Thêm tham số lọc tuỳ chọn theo trạng thái cho danh sách",
+        "Trường tổng tiền từng là giá chưa thuế, nay là giá đã thuế (cùng tên, cùng kiểu)"
+      ],
+      "answer": 3,
+      "explanation": "Đổi **ý nghĩa** của một trường là loại breaking nguy hiểm nhất vì không gây lỗi nào: client vẫn parse được nhưng hiển thị sai số tiền. Cách xử lý tốt là thêm trường mới với tên rõ nghĩa (ví dụ `totalWithTax`) thay vì chỉ lên version.\n- Thêm trường vào response không làm hỏng client cũ (họ bỏ qua trường lạ).\n- Thêm endpoint mới không ảnh hưởng đường dẫn nào đang dùng.\n- Thêm tham số tuỳ chọn thì client cũ không gửi vẫn chạy đúng như trước.\nNguyên tắc: nếu client cũ vẫn chạy đúng sau thay đổi thì không cần version mới."
+    },
+    {
+      "id": "dotnet-m09-10",
+      "topic": "Thứ tự middleware",
+      "source": "Module 9 - Rate Limiting",
+      "question": "Policy `per-user` phân vùng theo claim `NameIdentifier` (đã đăng nhập) hoặc theo IP (ẩn danh). Sau khi triển khai, mọi người dùng đã đăng nhập vẫn bị tính theo IP, không báo lỗi gì. Pipeline là `UseRateLimiter()`, `UseAuthentication()`, `UseAuthorization()`. Nguyên nhân khả dĩ nhất?",
+      "options": [
+        "`UseRateLimiter` đứng trước `UseAuthentication` nên lúc đó `context.User` còn ẩn danh",
+        "Chưa đặt `RejectionStatusCode`, nên mặc định bị tính theo IP",
+        "Token bucket không hỗ trợ phân vùng theo người dùng",
+        "`UseAuthorization` phải đứng trước `UseRateLimiter`"
+      ],
+      "answer": 0,
+      "explanation": "Rate limiter chạy tại vị trí của nó trong pipeline. Nếu đứng **trước** `UseAuthentication`, `context.User` chưa được điền từ token, nên mọi request rơi vào nhánh ẩn danh (theo IP) mà không có lỗi nào. Sửa: đặt `UseRateLimiter` sau `UseAuthentication` (và sau `UseForwardedHeaders` để có IP thật).\n- `RejectionStatusCode` chỉ quyết định mã trả về khi bị chặn (mặc định 503, nên đặt 429), không liên quan đến việc chọn phân vùng.\n- Mọi thuật toán, kể cả token bucket, đều phân vùng được qua `RateLimitPartition`.\n- Rate limiter chỉ cần danh tính đã được xác thực, không cần bước phân quyền; `UseAuthorization` không ảnh hưởng."
+    },
+    {
+      "topic": "Output cache và SetVaryByQuery",
+      "source": "Module 9 - Response Caching và Output Caching",
+      "question": "API khách hàng bật output cache với policy `list` như dưới. Endpoint trả về `{status} #{số lần handler đã chạy}`. Bốn request lần lượt được gửi (xem vòng `foreach`) thì in ra gì?",
+      "code": "builder.Services.AddOutputCache(o =>\n    o.AddPolicy(\"list\", b => b\n        .Expire(TimeSpan.FromMinutes(1))\n        .SetVaryByQuery(\"page\")));\n\nvar calls = 0;\napp.MapGet(\"/\", (string? status) => $\"{status} #{++calls}\")\n   .CacheOutput(\"list\");\n\n// Bốn GET lần lượt:\n// /?status=Active\n// /?status=Inactive\n// /?status=Active&page=2\n// /?status=Inactive&page=2",
+      "codeLang": "csharp",
+      "options": [
+        "Active #1\nInactive #2\nActive #3\nInactive #4",
+        "Active #1\nInactive #1\nActive #1\nInactive #1",
+        "Active #1\nActive #1\nActive #2\nActive #2",
+        "Active #1\nInactive #2\nActive #3\nInactive #3"
+      ],
+      "answer": 2,
+      "explanation": "`SetVaryByQuery(\"page\")` **thu hẹp** khoá cache: chỉ tham số `page` còn nằm trong khoá, mọi tham số khác (ở đây là `status`) bị bỏ qua.\n- Request 1 và 2 có cùng khoá (không có `page`), nên request 2 lấy bản cache của `Active`: in `Active #1` lần nữa. Đây chính là lỗi \"lọc Inactive lại thấy Active\" trong bài.\n- Request 3 và 4 có `page=2`, khoá mới, handler chạy một lần (`#2`) rồi request 4 lại dùng bản đó.\n- Phương án \"không bao giờ trúng cache\" sai vì khoá đã gộp được `status`.\n- Phương án \"cả bốn giống nhau\" bỏ qua việc `page=2` tạo khoá riêng.\n- Phương án `Inactive #3` giả định khoá vẫn gồm `status` ở request 4 nhưng không ở request 2: không nhất quán.\nChạy thật cho ra đúng kết quả đáp án. Bỏ `SetVaryByQuery` thì khoá mặc định đã gồm toàn bộ query string.",
+      "id": "dotnet-m09-11"
+    },
+    {
+      "topic": "Khoá output cache mặc định",
+      "source": "Module 9 - Response Caching và Output Caching",
+      "question": "Endpoint dưới dùng output cache, **không** gọi `SetVaryByQuery`. Bốn request GET `/items?page=1`, `?page=2`, `?page=1`, `?page=2` lần lượt in ra gì?",
+      "code": "var calls = 0;\napp.MapGet(\"/items\", (int page) =>\n        $\"page {page} -> call {++calls}\")\n   .CacheOutput(p => p.Expire(TimeSpan.FromMinutes(1)));\n\n// GET /items?page=1\n// GET /items?page=2\n// GET /items?page=1\n// GET /items?page=2",
+      "codeLang": "csharp",
+      "options": [
+        "page 1 -> call 1\npage 2 -> call 2\npage 1 -> call 3\npage 2 -> call 4",
+        "page 1 -> call 1\npage 2 -> call 2\npage 1 -> call 1\npage 2 -> call 2",
+        "page 1 -> call 1\npage 2 -> call 1\npage 1 -> call 1\npage 2 -> call 1",
+        "page 1 -> call 1\npage 2 -> call 2\npage 1 -> call 1\npage 2 -> call 3"
+      ],
+      "answer": 1,
+      "explanation": "Khoá mặc định đã gồm scheme, host, port, đường dẫn và **toàn bộ query string**, nên `page=1` và `page=2` tự có hai bản cache riêng mà không cần cấu hình.\n- Hai request đầu là cache miss: handler chạy (`call 1`, `call 2`).\n- Hai request sau trùng khoá với request đã lưu: trả bản cũ, handler không chạy, vẫn in `call 1` và `call 2`.\n- Phương án \"call 3, call 4\" nghĩa là không có cache nào trúng: sai vì policy có `Expire` 1 phút và request là GET.\n- Phương án \"luôn call 1\" nhầm rằng query string không nằm trong khoá, đúng thứ `SetVaryByQuery` mới làm.\n- Phương án cuối chỉ trúng một nửa: không có lý do gì để `page=2` bị bỏ qua cache.\nHiểu nhầm hay gặp là nghĩ phải gọi `SetVaryByQuery` mới phân biệt được trang.",
+      "id": "dotnet-m09-12"
+    },
+    {
+      "topic": "API của OutputCachePolicyBuilder",
+      "source": "Module 9 - Response Caching và Output Caching",
+      "question": "Một dev chép code từ bài viết cũ để thêm giá trị tuỳ ý vào khoá output cache. Kết quả khi biên dịch và chạy là gì?",
+      "code": "builder.Services.AddOutputCache(o =>\n    o.AddPolicy(\"lang\", b => b.SetVaryByValue(\"lang\", \"vi\")));\nConsole.WriteLine(\"built\");",
+      "codeLang": "csharp",
+      "options": [
+        "Chạy được và in `built`",
+        "Ném exception lúc chạy vì thiếu `UseOutputCache()`",
+        "Chạy được nhưng policy `lang` bị bỏ qua khi request đến",
+        "Lỗi biên dịch: `OutputCachePolicyBuilder` không có `SetVaryByValue`"
+      ],
+      "answer": 3,
+      "explanation": "Trên `OutputCachePolicyBuilder` phương thức tên đúng là **`VaryByValue`**, không có `SetVaryByValue`. Trình biên dịch báo `CS1061` ngay lúc build.\n- \"Chạy được và in built\" sai vì mã không qua được bước biên dịch.\n- \"Ném exception vì thiếu UseOutputCache()\" sai: chuyện đó chỉ liên quan tới pipeline lúc nhận request, còn đây chỉ là đăng ký policy, và lỗi xảy ra sớm hơn nhiều, ở build.\n- \"Policy bị bỏ qua\" cũng là hành vi lúc chạy, trong khi chương trình không hề chạy tới đó.\nĐây là một mục trong \"Lỗi thường gặp\" của bài: tên `SetVaryByQuery` và `SetVaryByHeader` có tiền tố `Set` nhưng `VaryByValue` thì không, nên rất dễ nhớ lẫn.",
+      "id": "dotnet-m09-13"
+    },
+    {
+      "topic": "ETag từ rowversion",
+      "source": "Module 9 - Response Caching và Output Caching",
+      "question": "Với SQL Server, `RowVersion` là `byte[]`. Một dev tạo ETag bằng nội suy chuỗi rồi so sánh với cách dùng `Convert.ToBase64String`. Hai dòng dưới in ra gì?",
+      "code": "byte[] version = [1, 2, 3];\nConsole.WriteLine($\"\\\"{version}\\\"\");\nConsole.WriteLine($\"\\\"{Convert.ToBase64String(version)}\\\"\");",
+      "codeLang": "csharp",
+      "options": [
+        "\"System.Byte[]\"\n\"AQID\"",
+        "\"1,2,3\"\n\"AQID\"",
+        "\"AQID\"\n\"AQID\"",
+        "\"System.Byte[]\"\n\"System.Byte[]\""
+      ],
+      "answer": 0,
+      "explanation": "Nội suy một mảng byte gọi `ToString()` mặc định của mảng, cho ra tên kiểu `System.Byte[]`. Dòng thứ hai mã hoá nội dung mảng thành Base64: `01 02 03` thành `AQID`.\n- `\"1,2,3\"` là điều nhiều người tưởng `ToString()` làm, nhưng mảng không in phần tử.\n- `\"AQID\"` ở cả hai dòng nghĩa là nội suy tự mã hoá Base64: không có chuyện đó.\n- `System.Byte[]` ở cả hai dòng bỏ qua tác dụng của `Convert.ToBase64String`.\nHậu quả thực tế: ETag luôn là `\"System.Byte[]\"` dù dữ liệu đã đổi, nên client nhận `304 Not Modified` mãi và không bao giờ thấy bản mới.",
+      "id": "dotnet-m09-14"
+    },
+    {
+      "topic": "BackgroundService và scoped service",
+      "source": "Module 9 - Hosted Service và Background Jobs",
+      "question": "Host chạy ở môi trường Development (bật kiểm tra scope). `Db` đăng ký **scoped**, `Clock` đăng ký **singleton**, `Worker` đăng ký bằng `AddHostedService`. Constructor nào của `Worker` làm ứng dụng ném exception ngay khi `Build()`?",
+      "code": "b.Services.AddScoped<Db>();\nb.Services.AddSingleton<Clock>();\nb.Services.AddHostedService<Worker>();\nusing var host = b.Build();\nawait host.StartAsync();\n// class Worker(???) : BackgroundService",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nclass Worker(Clock clock)\n```",
+        "```csharp\nclass Worker(Db db)\n```",
+        "```csharp\nclass Worker(IServiceScopeFactory f)\n```",
+        "```csharp\nclass Worker(IServiceProvider sp)\n```"
+      ],
+      "answer": 1,
+      "explanation": "`BackgroundService` đăng ký qua `AddHostedService` là **singleton**; tiêm service scoped vào constructor là captive dependency. Trong Development, DI kiểm tra và ném `InvalidOperationException: Cannot consume scoped service 'Db' from singleton`.\n- `Worker(Clock clock)` ổn: singleton dùng singleton.\n- `Worker(IServiceScopeFactory f)` là cách đúng: factory là singleton, worker tự tạo scope cho mỗi lần chạy rồi lấy `Db` từ scope đó.\n- `Worker(IServiceProvider sp)` biên dịch và khởi động được (nhận provider gốc). Nhưng lấy `Db` từ đó mới sinh vấn đề, nên dùng scope factory sẽ rõ ràng hơn.\nChạy thật: chỉ `Worker(Db db)` thất bại, ba cái còn lại in `ok`. Ngoài lỗi lúc Build, tiêm thẳng `DbContext` còn khiến nó sống mãi và tích luỹ entity trong change tracker.",
+      "id": "dotnet-m09-15"
+    },
+    {
+      "topic": "Exception trong BackgroundService",
+      "source": "Module 9 - Hosted Service và Background Jobs",
+      "question": "Worker `Boom` ném exception ngay sau `await Task.Yield()` và không tự bắt lỗi. Vòng `foreach` thử hai giá trị của `BackgroundServiceExceptionBehavior`, đợi 500 ms rồi hỏi host đã bắt đầu dừng chưa. Chương trình in ra gì?",
+      "code": "foreach (var behavior in new[]\n    { BackgroundServiceExceptionBehavior.StopHost,\n      BackgroundServiceExceptionBehavior.Ignore })\n{\n    var b = Host.CreateApplicationBuilder();\n    b.Logging.ClearProviders();\n    b.Services.Configure<HostOptions>(o =>\n        o.BackgroundServiceExceptionBehavior = behavior);\n    b.Services.AddHostedService<Boom>();\n    using var host = b.Build();\n    await host.StartAsync();\n    await Task.Delay(500);\n    var life = host.Services\n        .GetRequiredService<IHostApplicationLifetime>();\n    Console.WriteLine($\"{behavior}: stopping=\" +\n        life.ApplicationStopping.IsCancellationRequested);\n    await host.StopAsync();\n}\n// Boom.ExecuteAsync: await Task.Yield(); rồi throw",
+      "codeLang": "csharp",
+      "options": [
+        "StopHost: stopping=False\nIgnore: stopping=True",
+        "StopHost: stopping=True\nIgnore: stopping=True",
+        "StopHost: stopping=True\nIgnore: stopping=False",
+        "StopHost: stopping=False\nIgnore: stopping=False"
+      ],
+      "answer": 2,
+      "explanation": "Với **StopHost** (mặc định từ .NET 6), exception chưa xử lý trong worker khiến host tự gọi dừng ứng dụng: `ApplicationStopping` đã bị huỷ, nên in `True`. Một lỗi tạm thời của worker kéo sập cả API.\n- Với **Ignore**, host chỉ ghi log và vẫn chạy: `stopping=False`. Nhưng worker đã chết và **không bao giờ được khởi động lại**; ứng dụng trông khoẻ mạnh mà việc nền đã ngừng.\n- Phương án đảo hai giá trị nhầm ý nghĩa của hai chế độ.\n- Phương án \"cả hai True\" cho rằng Ignore cũng dừng host: không đúng.\n- Phương án \"cả hai False\" cho rằng StopHost không làm gì khi worker lỗi: sai với mặc định hiện nay.\nVì cả hai đều tệ nên bài dạy tự `try/catch` bên trong vòng lặp, log, rồi chờ chu kỳ sau.",
+      "id": "dotnet-m09-16"
+    },
+    {
+      "topic": "Idempotency và race condition",
+      "source": "Module 9 - Ví dụ thực tế nhanh",
+      "question": "Hai request cùng `Idempotency-Key` `K` đến gần như đồng thời. `Check` kiểm tra rồi mới ghi; `Claim` giành khoá trước rồi mới xử lý (tương tự unique index). `a` và `b` đếm số lần \"tạo đơn\". Chương trình in ra gì?",
+      "code": "// done, claimed: ConcurrentDictionary<string, bool>; a, b: int = 0\nasync Task Check(string k)\n{\n    if (done.ContainsKey(k)) return;\n    await Task.Delay(100);        // \"tạo đơn\"\n    done[k] = true;\n    Interlocked.Increment(ref a);\n}\nasync Task Claim(string k)\n{\n    if (!claimed.TryAdd(k, true)) return;\n    await Task.Delay(100);        // \"tạo đơn\"\n    Interlocked.Increment(ref b);\n}\nawait Task.WhenAll(Check(\"K\"), Check(\"K\"));\nawait Task.WhenAll(Claim(\"K\"), Claim(\"K\"));\nConsole.WriteLine($\"{a}\\n{b}\");",
+      "codeLang": "csharp",
+      "options": [
+        "1\n1",
+        "2\n2",
+        "1\n2",
+        "2\n1"
+      ],
+      "answer": 3,
+      "explanation": "`Check` có khoảng hở giữa \"đã có chưa\" và \"ghi khoá\": cả hai request cùng thấy chưa có, cùng đi tiếp, tạo hai đơn nên `a = 2`.\n`Claim` dùng `TryAdd` nguyên tử: chỉ một request giành được khoá, request kia thoát ngay, nên `b = 1`. Trong hệ thống thật, vai trò của `TryAdd` do **unique index** của database đảm nhận.\n- `1\n1` coi cả hai cách đều an toàn: bỏ qua khoảng hở của \"kiểm tra rồi ghi\".\n- `2\n2` coi cả hai cách đều hở: nhầm về tính nguyên tử của `TryAdd`.\n- `1\n2` đảo ngược hai cách.\nCâu `if` luôn có khoảng hở, chỉ ràng buộc duy nhất của kho dữ liệu mới đảm bảo được tính nguyên tử.",
+      "id": "dotnet-m09-17"
+    },
+    {
+      "topic": "InMemory provider không có ràng buộc",
+      "source": "Module 9 - API Testing",
+      "question": "`Crm` có unique index trên `Customer.Email`. `mem` dùng `UseInMemoryDatabase`, `sql` dùng SQLite in-memory đã `EnsureCreated()`. Cả hai đều thêm hai khách cùng email rồi `SaveChangesAsync`. Chương trình in ra gì?",
+      "code": "// Crm: HasIndex(c => c.Email).IsUnique()\nasync Task<string> Save(Crm db)\n{\n    db.Customers.Add(new Customer { Email = \"a@x.com\" });\n    db.Customers.Add(new Customer { Email = \"a@x.com\" });\n    try { await db.SaveChangesAsync(); return \"saved\"; }\n    catch (DbUpdateException) { return \"DbUpdateException\"; }\n}\n// mem: UseInMemoryDatabase(\"t\")\n// sql: UseSqlite(conn) + EnsureCreated()\nConsole.WriteLine(\"InMemory: \" + await Save(mem));\nConsole.WriteLine(\"Sqlite: \" + await Save(sql));",
+      "codeLang": "csharp",
+      "options": [
+        "InMemory: saved\nSqlite: DbUpdateException",
+        "InMemory: DbUpdateException\nSqlite: saved",
+        "InMemory: DbUpdateException\nSqlite: DbUpdateException",
+        "InMemory: saved\nSqlite: saved"
+      ],
+      "answer": 0,
+      "explanation": "InMemory provider **không phải database quan hệ**: nó là kho object biết LINQ, nên không thực thi unique index, khoá ngoại, `NOT NULL`. Hai khách cùng email vẫn được lưu: `saved`. SQLite là database thật, unique index tồn tại trong bảng nên lần ghi thứ hai vi phạm và `SaveChangesAsync` ném `DbUpdateException`.\n- Phương án đảo hai provider nhầm vai trò.\n- Phương án \"cả hai đều exception\" cho rằng InMemory cũng thực thi ràng buộc: sai.\n- Phương án \"cả hai saved\" quên rằng SQLite thực sự áp ràng buộc.\nĐó là lý do bài 9.8 nói test `POST` trùng email phải trả `409` thì cần database thật (Testcontainers): với InMemory, cả hai request đều trả `201`.",
+      "id": "dotnet-m09-18"
+    },
+    {
+      "topic": "Response caching và dữ liệu cá nhân",
+      "source": "Module 9 - Response Caching và Output Caching",
+      "question": "Endpoint `GET /api/me/orders` trả đơn hàng của người đang đăng nhập và được gắn `[Authorize]` cùng `[ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]`. API chạy sau một CDN. Điều gì đúng, và nên sửa thế nào?",
+      "options": [
+        "Chỉ tốn bộ nhớ CDN, nên tăng `Duration` lên cho đỡ tốn",
+        "An toàn vì `[Authorize]` làm CDN tự bỏ qua response này",
+        "CDN có thể trả đơn của người này cho người khác, nên đổi sang `Client` hoặc `NoStore`",
+        "An toàn vì output cache tự chặn request có `Authorization`"
+      ],
+      "answer": 2,
+      "explanation": "`Location = Any` sinh header `Cache-Control: public,max-age=60`, cho phép CDN và proxy dùng chung một bản sao. CDN không biết người dùng là ai, nên người tiếp theo hỏi cùng URL trong 60 giây có thể nhận **đơn hàng của người trước**: rò rỉ dữ liệu. Dữ liệu theo người dùng phải dùng `Location = Client` (`private`) hoặc `NoStore`.\n- \"Chỉ tốn bộ nhớ\" bỏ qua hậu quả bảo mật, thứ nghiêm trọng nhất của caching.\n- \"`[Authorize]` làm CDN bỏ qua\" sai: `[Authorize]` chạy trong ứng dụng, còn header `public` vẫn được gửi đi và CDN tin vào nó.\n- \"Output cache tự chặn\" lẫn hai cơ chế: ở đây là response caching sinh header; cơ chế chặn `Authorization` chỉ áp dụng cho bộ nhớ cache phía server, không điều khiển được CDN.",
+      "id": "dotnet-m09-19"
+    },
+    {
+      "topic": "Chữ ký webhook",
+      "source": "Module 9 - Sinh client, webhook và GraphQL (nâng cao)",
+      "question": "Webhook gửi header `X-Signature: t=<timestamp>,v1=<hmac>`, trong đó hmac tính trên chuỗi `timestamp.payload`. Vì sao timestamp phải nằm **trong** chuỗi được ký, và phía nhận cần làm gì thêm?",
+      "options": [
+        "Để sắp xếp sự kiện theo thời gian, phía nhận không cần kiểm tra",
+        "Để kẻ tấn công không sửa được timestamp, và phía nhận từ chối timestamp quá cũ",
+        "Để mã hoá payload, phía nhận giải mã bằng timestamp",
+        "Để retry có backoff, phía nhận phải lưu timestamp vào database"
+      ],
+      "answer": 1,
+      "explanation": "Nếu timestamp chỉ là header rời, kẻ tấn công bắt được một request hợp lệ có thể gửi lại nó mãi: chữ ký vẫn đúng. Khi timestamp nằm trong chuỗi ký, sửa timestamp thì chữ ký lệch; còn giữ nguyên thì phía nhận **từ chối** vì timestamp nằm ngoài cửa sổ cho phép. Đó là cơ chế chống tấn công phát lại.\n- \"Sắp xếp sự kiện\" không phải mục đích của chữ ký, và bỏ qua bước kiểm tra là bỏ mất tác dụng.\n- HMAC chỉ **xác thực**, không mã hoá payload; không có chuyện giải mã bằng timestamp.\n- Retry và backoff thuộc phía gửi (qua outbox), không liên quan tới timestamp trong chữ ký; chống trùng dùng `X-Event-Id`.\nHai chi tiết còn lại: ký trên raw body, và so chữ ký bằng `FixedTimeEquals` thay vì `==`.",
+      "id": "dotnet-m09-20"
+    }
+  ]
+}

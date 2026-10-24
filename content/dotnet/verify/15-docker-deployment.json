@@ -1,0 +1,72 @@
+[
+  {
+    "id": "dotnet-m15-01",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Configuration.EnvironmentVariables@10.0.0\nusing Microsoft.Extensions.Configuration;\nEnvironment.SetEnvironmentVariable(\"Redis__Host\", \"cache\");\nEnvironment.SetEnvironmentVariable(\"Redis_Port\", \"6379\");\nvar cfg = new ConfigurationBuilder().AddEnvironmentVariables().Build();\nConsole.WriteLine(cfg[\"Redis:Host\"] ?? \"(null)\");\nConsole.WriteLine(cfg[\"Redis:Port\"] ?? \"(null)\");\n"
+  },
+  {
+    "id": "dotnet-m15-02",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Configuration.EnvironmentVariables@10.0.0\n#:package Microsoft.Extensions.Configuration.CommandLine@10.0.0\nusing Microsoft.Extensions.Configuration;\nEnvironment.SetEnvironmentVariable(\"Logging__Level\", \"Warning\");\nEnvironment.SetEnvironmentVariable(\"App__Name\", \"FromEnv\");\nvar cfg = new ConfigurationBuilder()\n    .AddInMemoryCollection(new Dictionary<string, string?>\n    {\n        [\"Logging:Level\"] = \"Information\",\n        [\"App:Name\"] = \"FromJson\",\n        [\"App:Mode\"] = \"Json\",\n    })\n    .AddEnvironmentVariables()\n    .AddCommandLine([\"--Logging:Level=Debug\"])\n    .Build();\nConsole.WriteLine(cfg[\"Logging:Level\"]);\nConsole.WriteLine(cfg[\"App:Name\"]);\nConsole.WriteLine(cfg[\"App:Mode\"]);\n"
+  },
+  {
+    "id": "dotnet-m15-03",
+    "kind": "cs-choose",
+    "template": "#:package Microsoft.Extensions.Hosting@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\nusing Microsoft.Extensions.Hosting;\nusing Microsoft.Extensions.Logging;\nusing Microsoft.Extensions.Options;\nvar b = Host.CreateApplicationBuilder();\nb.Logging.ClearProviders();\nb.Services.AddOptions<JwtOptions>()\n    .Configure(o => o.SecretKey = \"abc\")\n    {{X}};\nusing var host = b.Build();\ntry { await host.StartAsync(); Console.WriteLine(\"started\"); }\ncatch (OptionsValidationException) { Console.WriteLine(\"start failed\"); }\nclass JwtOptions { public string SecretKey { get; set; } = \"\"; }\n",
+    "options": [
+      ".Validate(o => o.SecretKey.Length >= 32, \"short\")",
+      ".Validate(o => o.SecretKey.Length >= 32, \"short\")\n    .ValidateOnStart()",
+      ".ValidateOnStart()",
+      ".PostConfigure(o => o.SecretKey += \"!\")"
+    ],
+    "expectOutput": "start failed"
+  },
+  {
+    "id": "dotnet-m15-04",
+    "kind": "cs-predict",
+    "program": "#:package System.IdentityModel.Tokens.Jwt@8.*\nusing System.IdentityModel.Tokens.Jwt;\nusing System.Text;\nusing Microsoft.IdentityModel.Tokens;\nvar oldKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(\"old-key-old-key-old-key-old-key-1234\"));\nvar newKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(\"new-key-new-key-new-key-new-key-5678\"));\nvar handler = new JwtSecurityTokenHandler();\nvar token = handler.WriteToken(new JwtSecurityToken(\n    expires: DateTime.UtcNow.AddMinutes(5),\n    signingCredentials: new SigningCredentials(oldKey, SecurityAlgorithms.HmacSha256)));\nbool Valid(params SecurityKey[] keys)\n{\n    var p = new TokenValidationParameters\n    {\n        ValidateIssuer = false, ValidateAudience = false,\n        IssuerSigningKeys = keys,\n    };\n    try { handler.ValidateToken(token, p, out _); return true; }\n    catch (SecurityTokenException) { return false; }\n}\nConsole.WriteLine(Valid(newKey, oldKey));\nConsole.WriteLine(Valid(newKey));\n"
+  },
+  {
+    "id": "dotnet-m15-05",
+    "kind": "cs-predict",
+    "program": "var path = Path.Combine(Path.GetTempPath(), \"db_password.txt\");\nFile.WriteAllText(path, \"s3cret\\n\");\nvar raw = File.ReadAllText(path);\nConsole.WriteLine(raw.Length);\nConsole.WriteLine(raw.Trim().Length);\nConsole.WriteLine($\"Password={raw};Timeout=30\".Contains('\\n'));\nFile.Delete(path);\n"
+  },
+  {
+    "id": "dotnet-m15-06",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Configuration@10.0.0\n#:package Microsoft.Extensions.Configuration.Binder@10.0.0\nusing Microsoft.Extensions.Configuration;\nvar dir = Path.Combine(Path.GetTempPath(), \"secrets-demo\");\nDirectory.CreateDirectory(dir);\nFile.WriteAllText(Path.Combine(dir, \"ConnectionStrings__Default\"), \"Host=db\\n\");\nFile.WriteAllText(Path.Combine(dir, \"Jwt_Key\"), \"k1\");\nvar secrets = Directory.GetFiles(dir)\n    .ToDictionary(\n        f => Path.GetFileName(f).Replace(\"__\", \":\"),\n        f => File.ReadAllText(f).Trim());\nvar cfg = new ConfigurationBuilder().AddInMemoryCollection(secrets!).Build();\nConsole.WriteLine(cfg[\"ConnectionStrings:Default\"]);\nConsole.WriteLine(cfg[\"Jwt:Key\"] ?? \"(null)\");\nConsole.WriteLine(cfg.GetSection(\"ConnectionStrings\").GetChildren().Count());\nDirectory.Delete(dir, true);\n"
+  },
+  {
+    "id": "dotnet-m15-11",
+    "kind": "cs-predict",
+    "program": "var times = new List<double>();\nfor (int i = 0; i < 95; i++) times.Add(50);\nfor (int i = 0; i < 5; i++) times.Add(10000);\ntimes.Sort();\nvar avg = times.Average();\nvar p99 = times[(int)Math.Ceiling(0.99 * times.Count) - 1];\nConsole.WriteLine($\"avg={(int)avg} p99={p99}\");\nConsole.WriteLine(avg > 2000 ? \"alert-avg\" : \"quiet-avg\");\nConsole.WriteLine(p99 > 2000 ? \"alert-p99\" : \"quiet-p99\");\n"
+  },
+  {
+    "id": "dotnet-m15-13",
+    "kind": "cs-predict",
+    "program": "using System.Diagnostics.Metrics;\nvar meter = new Meter(\"Crm.Orders\");\nvar created = meter.CreateCounter<long>(\"orders.created\");\nvar series = new HashSet<string>();\nusing var listener = new MeterListener();\nlistener.InstrumentPublished = (inst, l) => { if (inst.Meter.Name == \"Crm.Orders\") l.EnableMeasurementEvents(inst); };\nlistener.SetMeasurementEventCallback<long>((inst, value, tags, state) =>\n{\n    series.Add(string.Join(\",\", tags.ToArray().Select(t => $\"{t.Key}={t.Value}\")));\n});\nlistener.Start();\nstring[] channels = { \"web\", \"app\", \"web\", \"web\", \"app\" };\nfor (int i = 1; i <= 5; i++)\n    created.Add(1, new KeyValuePair<string, object?>(\"channel\", channels[i - 1]));\nConsole.WriteLine(\"by channel: \" + series.Count);\nseries.Clear();\nfor (int i = 1; i <= 5; i++)\n    created.Add(1, new KeyValuePair<string, object?>(\"orderId\", i));\nConsole.WriteLine(\"by orderId: \" + series.Count);\n"
+  },
+  {
+    "id": "dotnet-m15-14",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Hosting@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\nusing Microsoft.Extensions.Hosting;\nusing Microsoft.Extensions.Logging;\nvar builder = Host.CreateApplicationBuilder();\nbuilder.Logging.ClearProviders();\nbuilder.Services.AddHostedService<W>();\nvar host = builder.Build();\nvar life = host.Services.GetRequiredService<IHostApplicationLifetime>();\nlife.ApplicationStarted.Register(() => Console.WriteLine(\"started\"));\nlife.ApplicationStopping.Register(() => Console.WriteLine(\"stopping\"));\nlife.ApplicationStopped.Register(() => Console.WriteLine(\"stopped\"));\nawait host.StartAsync();\nlife.StopApplication();\nawait host.StopAsync();\nclass W : IHostedService\n{\n    public Task StartAsync(CancellationToken ct) => Task.CompletedTask;\n    public Task StopAsync(CancellationToken ct) { Console.WriteLine(\"worker stop\"); return Task.CompletedTask; }\n}\n"
+  },
+  {
+    "id": "dotnet-m15-15",
+    "kind": "cs-outcome",
+    "program": "var http = new HttpClient { BaseAddress = new Uri(\"https+http://payment-service\") };\nvar res = await http.GetAsync(\"/pay\");\nConsole.WriteLine(res.StatusCode);\n",
+    "expect": "runtime-error"
+  },
+  {
+    "id": "dotnet-m15-16",
+    "kind": "cs-choose",
+    "template": "#:package Microsoft.Extensions.Hosting@10.0.0\nusing Microsoft.Extensions.DependencyInjection;\nusing Microsoft.Extensions.Hosting;\nusing Microsoft.Extensions.Options;\nvar b = Host.CreateApplicationBuilder();\nb.Services.Configure<HostOptions>(o => { {{X}} });\nvar host = b.Build();\nvar t = host.Services.GetRequiredService<IOptions<HostOptions>>().Value.ShutdownTimeout;\nConsole.WriteLine((int)t.TotalSeconds);\n",
+    "options": [
+      "o.ShutdownTimeout = 25;",
+      "o.StopTimeout = TimeSpan.FromSeconds(25);",
+      "o.ShutdownTimeout = TimeSpan.FromSeconds(25);",
+      "o.ShutdownTimeout = TimeSpan.FromMilliseconds(25);"
+    ],
+    "expectOutput": "25"
+  }
+]

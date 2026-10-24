@@ -1,0 +1,323 @@
+{
+  "id": "dotnet-m07",
+  "title": "Module 7: Dependency Injection",
+  "description": "Vấn đề DI giải quyết, container, cách tiêm, lifetime, đăng ký service, Program.cs và Options pattern.",
+  "questions": [
+    {
+      "id": "dotnet-m07-01",
+      "topic": "ServiceCollection",
+      "source": "Module 7 - IoC Container và DI Container",
+      "question": "Hai dịch vụ cùng cài `IGreeter` được đăng ký lần lượt. Chương trình in ra gì?",
+      "code": "using Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\nservices.AddSingleton<IGreeter, EnGreeter>();\nservices.AddSingleton<IGreeter, ViGreeter>();\nusing var sp = services.BuildServiceProvider();\n\nConsole.WriteLine(sp.GetRequiredService<IGreeter>().Hello());\nConsole.WriteLine(sp.GetServices<IGreeter>().Count());\n\ninterface IGreeter { string Hello(); }\nclass EnGreeter : IGreeter { public string Hello() => \"Hello\"; }\nclass ViGreeter : IGreeter { public string Hello() => \"Xin chao\"; }",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nHello\n2\n```",
+        "```text\nXin chao\n2\n```",
+        "```text\nXin chao\n1\n```",
+        "```text\nHello\n1\n```"
+      ],
+      "answer": 1,
+      "explanation": "`ServiceCollection` là một danh sách `ServiceDescriptor`, đăng ký sau thắng đăng ký trước khi resolve một instance, nên `GetRequiredService<IGreeter>()` trả về `ViGreeter` (\"Xin chao\").\n`GetServices<IGreeter>()` trả về cả hai đăng ký nên đếm được 2.\nPhương án bắt đầu bằng \"Hello\" nhầm rằng đăng ký đầu tiên thắng.\nPhương án kết thúc bằng 1 nhầm rằng đăng ký thứ hai ghi đè (xoá) đăng ký thứ nhất trong danh sách; thật ra cả hai vẫn nằm đó."
+    },
+    {
+      "id": "dotnet-m07-02",
+      "topic": "Service lifetime",
+      "source": "Module 7 - Service Lifetimes",
+      "question": "Hai scope `s1`, `s2` được tạo từ cùng một provider. Bốn dòng in ra (theo thứ tự) có kết quả nào?",
+      "code": "\nvar services = new ServiceCollection();\nservices.AddTransient<TransientSvc>();\nservices.AddScoped<ScopedSvc>();\nservices.AddSingleton<SingletonSvc>();\nusing var sp = services.BuildServiceProvider();\nusing var s1 = sp.CreateScope();\nusing var s2 = sp.CreateScope();\nvar p1 = s1.ServiceProvider;\nvar p2 = s2.ServiceProvider;\nConsole.WriteLine(ReferenceEquals(p1.GetRequiredService<TransientSvc>(), p1.GetRequiredService<TransientSvc>()));\nConsole.WriteLine(ReferenceEquals(p1.GetRequiredService<ScopedSvc>(), p1.GetRequiredService<ScopedSvc>()));\nConsole.WriteLine(ReferenceEquals(p1.GetRequiredService<ScopedSvc>(), p2.GetRequiredService<ScopedSvc>()));\nConsole.WriteLine(ReferenceEquals(p1.GetRequiredService<SingletonSvc>(), p2.GetRequiredService<SingletonSvc>()));\n",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nFalse\nTrue\nTrue\nTrue\n```",
+        "```text\nTrue\nTrue\nFalse\nTrue\n```",
+        "```text\nFalse\nTrue\nFalse\nTrue\n```",
+        "```text\nFalse\nFalse\nFalse\nTrue\n```"
+      ],
+      "answer": 2,
+      "explanation": "Dòng 1: `Transient` tạo mới mỗi lần resolve nên hai instance khác nhau (False).\nDòng 2: `Scoped` trong cùng một scope dùng lại một instance (True).\nDòng 3: hai scope khác nhau cho hai instance `Scoped` khác nhau (False).\nDòng 4: `Singleton` chỉ có một instance cho cả ứng dụng (True).\nCác phương án còn lại sai ở một dòng: coi Transient như dùng lại, coi Scoped là dùng chung giữa các scope, hoặc coi Scoped như Transient."
+    },
+    {
+      "id": "dotnet-m07-03",
+      "topic": "Captive dependency",
+      "source": "Module 7 - Service Lifetimes",
+      "question": "Đoạn code sau (chạy trên .NET 10, `ValidateScopes = true`) cho kết quả nào?",
+      "code": "using Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\nservices.AddScoped<CrmDbContext>();\nservices.AddSingleton<CacheRefresher>();\nusing var sp = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });\n\nvar r = sp.GetRequiredService<CacheRefresher>();\nConsole.WriteLine(\"resolved\");\n\nclass CrmDbContext { }\nclass CacheRefresher(CrmDbContext db) { }",
+      "codeLang": "csharp",
+      "options": [
+        "Ném `InvalidOperationException` ngay lúc `GetRequiredService<CacheRefresher>()`: không được dùng service Scoped từ Singleton",
+        "Lỗi biên dịch vì Singleton không được nhận service Scoped trong constructor",
+        "Chạy bình thường và in `resolved`, rủi ro chỉ lộ ra khi chạy lâu",
+        "In `resolved`, rồi ném exception khi ứng dụng tắt và container Dispose"
+      ],
+      "answer": 0,
+      "explanation": "Với `ValidateScopes = true`, container kiểm tra đồ thị phụ thuộc khi resolve và ném `InvalidOperationException: Cannot consume scoped service 'CrmDbContext' from singleton 'CacheRefresher'`.\nKhông phải lỗi biên dịch: trình biên dịch C# không biết gì về lifetime, đây là kiểm tra của container lúc chạy.\nChạy bình thường và in `resolved` chỉ xảy ra khi KHÔNG bật kiểm tra scope (thường là Production), đó chính là captive dependency âm thầm.\nContainer không hoãn lỗi tới lúc Dispose."
+    },
+    {
+      "id": "dotnet-m07-04",
+      "topic": "Open generic",
+      "source": "Module 7 - Đăng ký Services",
+      "question": "Muốn một dòng đăng ký phục vụ mọi `IRepository<T>` (Customer, Lead, Order...) bằng `EfRepository<T>`. Dòng đăng ký nào làm cho `GetRequiredService<IRepository<Customer>>()` chạy được?",
+      "code": "using Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\n// ... dòng đăng ký ở đây ...\nusing var sp = services.BuildServiceProvider();\nvar repo = sp.GetRequiredService<IRepository<Customer>>();\nConsole.WriteLine(repo.GetType().Name);\n\nrecord Customer;\ninterface IRepository<T> { }\nclass EfRepository<T> : IRepository<T> { }",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nservices.AddScoped<IRepository<>, EfRepository<>>();\n```",
+        "```csharp\nservices.AddScoped<IRepository<T>, EfRepository<T>>();\n```",
+        "```csharp\nservices.AddScoped(\n    typeof(IRepository<Customer>),\n    typeof(EfRepository<>));\n```",
+        "```csharp\nservices.AddScoped(\n    typeof(IRepository<>),\n    typeof(EfRepository<>));\n```"
+      ],
+      "answer": 3,
+      "explanation": "Open generic phải đăng ký bằng `typeof(IRepository<>)` và `typeof(EfRepository<>)`; container ghép kiểu lúc resolve.\nDạng `AddScoped<IRepository<>, EfRepository<>>()` không hợp lệ về cú pháp C# (CS7003: unbound generic name không dùng được làm type argument).\nDạng `<IRepository<T>, EfRepository<T>>` lỗi CS0246 vì `T` không tồn tại ở chỗ gọi.\nDạng trộn `typeof(IRepository<Customer>)` với `typeof(EfRepository<>)` biên dịch được nhưng ném `ArgumentException` khi dựng provider vì không ghép được kiểu mở với kiểu đóng."
+    },
+    {
+      "id": "dotnet-m07-05",
+      "topic": "ValidateScopes",
+      "source": "Module 7 - Service Lifetimes",
+      "question": "Provider được dựng với `ValidateScopes = true` và đăng ký `UnitOfWork` Scoped, `Clock` Singleton, `Scorer` Transient. Đoạn nào ném exception khi chạy?",
+      "code": "services.AddScoped<UnitOfWork>();\nservices.AddSingleton<Clock>();\nservices.AddTransient<Scorer>();\nusing var sp = services.BuildServiceProvider(\n    new ServiceProviderOptions { ValidateScopes = true });\n\n// ... đoạn code cần xét ...",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nvar a = sp.GetRequiredService<Clock>();\n```",
+        "```csharp\nvar a = sp.GetRequiredService<UnitOfWork>();\n```",
+        "```csharp\nvar a = sp.GetRequiredService<Scorer>();\n```",
+        "```csharp\nusing var scope = sp.CreateScope();\nvar a = scope.ServiceProvider\n    .GetRequiredService<UnitOfWork>();\n```"
+      ],
+      "answer": 1,
+      "explanation": "`sp` là root provider. Xin trực tiếp service Scoped từ root khi `ValidateScopes` bật sẽ ném `Cannot resolve scoped service 'UnitOfWork' from root provider`.\nResolve `Singleton` từ root là bình thường: nó vốn sống ở root.\nResolve `Transient` từ root cũng chạy được (không có ràng buộc scope, dù nếu nó là `IDisposable` thì sẽ bị giữ tới khi ứng dụng tắt).\nTạo scope bằng `CreateScope()` rồi resolve `Scoped` từ `scope.ServiceProvider` là cách dùng đúng."
+    },
+    {
+      "id": "dotnet-m07-06",
+      "topic": "TryAdd",
+      "source": "Module 7 - Đăng ký Services",
+      "question": "Chương trình in ra gì? Chú ý khác biệt giữa `Add`, `TryAdd` và `TryAddEnumerable`.",
+      "code": "using Microsoft.Extensions.DependencyInjection;\nusing Microsoft.Extensions.DependencyInjection.Extensions;\n\nvar services = new ServiceCollection();\nservices.AddSingleton<IEmail, Smtp>();\nservices.TryAddSingleton<IEmail, SendGrid>();\nservices.AddSingleton<IRule, MinLength>();\nservices.TryAddEnumerable(ServiceDescriptor.Singleton<IRule, MinLength>());\nservices.TryAddEnumerable(ServiceDescriptor.Singleton<IRule, HasAt>());\nusing var sp = services.BuildServiceProvider();\n\nConsole.WriteLine(sp.GetRequiredService<IEmail>().GetType().Name);\nConsole.WriteLine(sp.GetServices<IRule>().Count());\n\ninterface IEmail { }\nclass Smtp : IEmail { }\nclass SendGrid : IEmail { }\ninterface IRule { }\nclass MinLength : IRule { }\nclass HasAt : IRule { }",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nSmtp\n2\n```",
+        "```text\nSendGrid\n2\n```",
+        "```text\nSmtp\n3\n```",
+        "```text\nSendGrid\n3\n```"
+      ],
+      "answer": 0,
+      "explanation": "`TryAddSingleton<IEmail, SendGrid>()` không làm gì vì `IEmail` đã có đăng ký (`Smtp`), nên kết quả là `Smtp`; đáp án `SendGrid` nhầm `TryAdd` với `Add`.\nVới `IRule`: `AddSingleton<IRule, MinLength>()` thêm 1; `TryAddEnumerable(... MinLength)` so cả `ServiceType` lẫn `ImplementationType` nên bị bỏ qua; `HasAt` là cặp mới nên được thêm. Tổng 2.\nKết quả đếm được 3 là do nhầm rằng `TryAddEnumerable` vẫn thêm bản trùng."
+    },
+    {
+      "id": "dotnet-m07-07",
+      "topic": "Dispose",
+      "source": "Module 7 - Đăng ký Services",
+      "question": "`Made` do container tạo, còn `Own` là instance tự `new` rồi đăng ký. Cả hai cài `IDisposable`. Chương trình in ra gì?",
+      "code": "using Microsoft.Extensions.DependencyInjection;\n\nvar services = new ServiceCollection();\nservices.AddTransient<Made>();\nservices.AddSingleton(new Own(\"tu-new\"));\nvar sp = services.BuildServiceProvider();\n\nsp.GetRequiredService<Made>();\nsp.GetRequiredService<Own>();\nConsole.WriteLine(\"truoc\");\nsp.Dispose();\nConsole.WriteLine(\"sau\");\n\nclass Made : IDisposable { public void Dispose() => Console.WriteLine(\"dispose Made\"); }\nclass Own(string n) : IDisposable { public void Dispose() => Console.WriteLine(\"dispose \" + n); }",
+      "codeLang": "csharp",
+      "options": [
+        "```text\ntruoc\nsau\n```",
+        "```text\ntruoc\ndispose tu-new\nsau\n```",
+        "```text\ntruoc\ndispose Made\nsau\n```",
+        "```text\ntruoc\ndispose Made\ndispose tu-new\nsau\n```"
+      ],
+      "answer": 2,
+      "explanation": "Container chỉ gọi `Dispose` cho đối tượng nó TẠO RA: `Made` (resolve từ container) được Dispose khi `sp.Dispose()` chạy, trước dòng \"sau\".\nInstance đưa sẵn vào bằng `AddSingleton(new Own(...))` thuộc quyền sở hữu của code gọi, container không Dispose; nếu cần dọn, bạn phải tự gọi.\nCác phương án khác sai vì: bỏ sót việc container tự Dispose `Made`; nhầm rằng chỉ instance tự new mới bị Dispose; hoặc cho rằng container Dispose cả hai."
+    },
+    {
+      "id": "dotnet-m07-08",
+      "topic": "IConfigureOptions",
+      "source": "Module 7 - Options Pattern",
+      "question": "Lớp `EmailSettings` khai báo `SenderEmail` với `init`, còn `ConfigureEmailSettings` gán lại nó. Điều gì xảy ra khi biên dịch và chạy?",
+      "code": "class EmailSettings\n{\n    public string SenderEmail { get; init; } = \"\";\n}\n\nclass ConfigureEmailSettings : IConfigureOptions<EmailSettings>\n{\n    public void Configure(EmailSettings options)\n    {\n        if (options.SenderEmail == \"\")\n            options.SenderEmail = \"no-reply@crm.local\";\n    }\n}",
+      "codeLang": "csharp",
+      "options": [
+        "Biên dịch được, in `no-reply@crm.local`",
+        "Biên dịch được, nhưng ném `InvalidOperationException` lúc chạy vì options là chỉ đọc",
+        "Lỗi biên dịch CS0103: không thấy `options` trong phương thức `Configure`",
+        "Lỗi biên dịch CS8852: không gán được thuộc tính `init` bên ngoài object initializer hay constructor"
+      ],
+      "answer": 3,
+      "explanation": "Thuộc tính `init` chỉ gán được trong object initializer hoặc constructor. `Configure` gán sau khi đối tượng đã dựng nên trình biên dịch báo CS8852.\nĐó là lý do bài học để `SenderEmail` là `set` khi dùng `IConfigureOptions<T>`.\nKhông có `InvalidOperationException` nào lúc chạy: lỗi xảy ra sớm hơn, ở bước biên dịch.\n`options` là tham số hợp lệ của `Configure`, nên CS0103 là sai."
+    },
+    {
+      "id": "dotnet-m07-09",
+      "topic": "Named options",
+      "source": "Module 7 - Options Pattern",
+      "question": "Hai cấu hình `ApiSettings` được đặt tên `crm` và `mail`. Chương trình in ra gì?",
+      "code": "using Microsoft.Extensions.DependencyInjection;\nusing Microsoft.Extensions.Options;\n\nvar services = new ServiceCollection();\nservices.Configure<ApiSettings>(\"crm\", o => o.Url = \"https://crm.local\");\nservices.Configure<ApiSettings>(\"mail\", o => o.Url = \"https://mail.local\");\nusing var sp = services.BuildServiceProvider();\n\nvar monitor = sp.GetRequiredService<IOptionsMonitor<ApiSettings>>();\nConsole.WriteLine(monitor.Get(\"mail\").Url);\nConsole.WriteLine(monitor.Get(\"crm\").Url);\nConsole.WriteLine(monitor.Get(\"khac\").Url.Length);\n\nclass ApiSettings { public string Url { get; set; } = \"\"; }",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nhttps://crm.local\nhttps://mail.local\n0\n```",
+        "```text\nhttps://mail.local\nhttps://crm.local\n0\n```",
+        "```text\nhttps://mail.local\nhttps://crm.local\nnull\n```",
+        "```text\nhttps://mail.local\nhttps://mail.local\n0\n```"
+      ],
+      "answer": 1,
+      "explanation": "`IOptionsMonitor<T>.Get(name)` trả về cấu hình đúng tên: `Get(\"mail\")` cho `mail.local` rồi `Get(\"crm\")` cho `crm.local`, nên thứ tự in là mail trước, crm sau.\nTên chưa đăng ký (`\"khac\"`) không ném lỗi: nó trả về một đối tượng `ApiSettings` mới với giá trị mặc định, nên `Url` là chuỗi rỗng `\"\"` và `Length` là 0 (không phải `null`).\nĐáp án đổi thứ tự nhầm tên với thứ tự đăng ký; đáp án in hai lần mail nhầm rằng các tên dùng chung một cấu hình."
+    },
+    {
+      "id": "dotnet-m07-10",
+      "topic": "Method injection",
+      "source": "Module 7 - Ba cách tiêm phụ thuộc",
+      "question": "Trong ASP.NET Core, middleware cần dùng `IAuditService` (Scoped). Vì sao nên nhận nó qua tham số của `InvokeAsync` thay vì constructor?",
+      "options": [
+        "Constructor của middleware không được phép có tham số nào ngoài RequestDelegate",
+        "Gọi qua tham số của InvokeAsync nhanh hơn vì tránh được reflection",
+        "Middleware được dựng một lần lúc khởi động nên tiêm Scoped vào constructor giam nó mãi, còn tham số của InvokeAsync được resolve theo từng request",
+        "Container .NET chỉ hỗ trợ method injection cho Scoped, còn constructor chỉ dành cho Singleton"
+      ],
+      "answer": 2,
+      "explanation": "Middleware được tạo một lần khi khởi động (hành xử như Singleton). Nếu tiêm service Scoped qua constructor, instance đó bị giam suốt vòng đời ứng dụng: đó là captive dependency.\n`InvokeAsync` được gọi cho mỗi request và framework resolve tham số từ scope của request đó, nên nhận đúng instance Scoped của request.\nConstructor middleware vẫn nhận được tham số khác (ví dụ service Singleton, `ILogger<T>`), nên phát biểu đầu sai.\nKhông có chuyện nhanh hơn nhờ tránh reflection, và container không phân chia \"constructor cho Singleton, method cho Scoped\" như phương án cuối nói."
+    },
+    {
+      "id": "dotnet-m07-11",
+      "topic": "Keyed services",
+      "source": "Module 7 - Keyed Services",
+      "question": "Đoạn code dưới in ra những gì (theo thứ tự ba dòng)?",
+      "code": "var s = new ServiceCollection();\ns.AddSingleton<IRule, EmailRule>();\ns.AddKeyedSingleton<IRule, PhoneRule>(\"phone\");\ns.AddKeyedSingleton<IRule, TaxRule>(\"tax\");\nvar p = s.BuildServiceProvider();\n\nConsole.WriteLine(p.GetServices<IRule>().Count());\nConsole.WriteLine(p.GetRequiredKeyedService<IRule>(\"tax\")\n    .GetType().Name);\nConsole.WriteLine(p.GetKeyedServices<IRule>(\"phone\").Count());",
+      "codeLang": "csharp",
+      "options": [
+        "3\nTaxRule\n1",
+        "1\nTaxRule\n0",
+        "1\nTaxRule\n1",
+        "2\nTaxRule\n1"
+      ],
+      "answer": 2,
+      "explanation": "Service có khoá và không khoá nằm ở **hai không gian tách biệt**. `GetServices<IRule>()` chỉ thấy đăng ký không khoá, tức `EmailRule`, nên ra `1`. `GetRequiredKeyedService(\"tax\")` trả về `TaxRule`. `GetKeyedServices(\"phone\")` trả về mọi đăng ký cùng khoá `\"phone\"`, tức đúng 1 phần tử.\nHậu quả thực tế: validator lỡ đăng ký bằng `AddKeyed...` sẽ không bao giờ chạy trong vòng `foreach` trên `IEnumerable<IValidator>`, và không có lỗi nào báo.\n- Đếm ra 3 hoặc 2: nhầm rằng `IEnumerable<IRule>` gom cả đăng ký có khoá; thật ra hai không gian không cộng vào nhau.\n- Đếm khoá `\"phone\"` ra 0: sai, khoá này có đúng một đăng ký nên `GetKeyedServices` trả về 1 phần tử."
+    },
+    {
+      "id": "dotnet-m07-12",
+      "topic": "KeyedService.AnyKey",
+      "source": "Module 7 - Keyed Services",
+      "question": "Trên .NET 10, đoạn code dưới cho kết quả nào?",
+      "code": "var s = new ServiceCollection();\ns.AddKeyedSingleton<IRule, PhoneRule>(\"phone\");\nvar p = s.BuildServiceProvider();\n\nvar one = p.GetKeyedService<IRule>(KeyedService.AnyKey);\nConsole.WriteLine(\"done\");",
+      "codeLang": "csharp",
+      "options": [
+        "Chạy bình thường, `one` là `PhoneRule` vì khoá `\"phone\"` là khoá duy nhất",
+        "Ném `InvalidOperationException` lúc chạy: `AnyKey` không dùng để xin một service",
+        "Lỗi biên dịch vì `AnyKey` không phải kiểu `object`",
+        "Chạy bình thường, `one` là `null` vì chưa đăng ký bằng `AnyKey`"
+      ],
+      "answer": 1,
+      "explanation": "Từ .NET 10, xin **một** service bằng chính `KeyedService.AnyKey` bị chặn và ném `InvalidOperationException: KeyedService.AnyKey cannot be used to resolve a single service.` Khi lấy ra, `AnyKey` chỉ có nghĩa \"mọi khoá\" và dùng với `GetKeyedServices` (số nhiều).\n- Trả về `PhoneRule`: sai, container không tự chọn \"khoá duy nhất\" thay bạn.\n- Lỗi biên dịch: sai, tham số khoá có kiểu `object?` nên biên dịch được.\n- Trả về `null`: sai, đó là hành vi của khoá thường chưa đăng ký chứ không phải của `AnyKey`."
+    },
+    {
+      "id": "dotnet-m07-13",
+      "topic": "KeyedService.AnyKey",
+      "source": "Module 7 - Keyed Services",
+      "question": "Một fallback đăng ký bằng `AnyKey`, rồi có người gõ nhầm khoá khi resolve. Đoạn code in ra gì?",
+      "code": "var s = new ServiceCollection();\ns.AddKeyedSingleton<IMail, SendGrid>(\"sendgrid\");\ns.AddKeyedSingleton<IMail, Default>(KeyedService.AnyKey);\nvar p = s.BuildServiceProvider();\n\nConsole.WriteLine(p.GetRequiredKeyedService<IMail>(\"sendgrid\")\n    .GetType().Name);\nConsole.WriteLine(p.GetRequiredKeyedService<IMail>(\"sendgrdi\")\n    .GetType().Name);",
+      "codeLang": "csharp",
+      "options": [
+        "SendGrid\nSendGrid",
+        "Default\nDefault",
+        "SendGrid\n(ném InvalidOperationException)",
+        "SendGrid\nDefault"
+      ],
+      "answer": 3,
+      "explanation": "Khoá `\"sendgrid\"` có đăng ký riêng nên được ưu tiên: `SendGrid`. Khoá gõ sai `\"sendgrdi\"` không có đăng ký riêng nên rơi vào `AnyKey`: `Default`. Đây là điểm yếu của fallback: **lỗi gõ sai khoá bị che đi**, bạn dùng nhầm implementation mà không có exception.\n- `SendGrid, SendGrid`: sai, khoá gõ sai không khớp đăng ký riêng.\n- `Default, Default`: sai, đăng ký riêng luôn thắng `AnyKey`.\n- Ném exception: sẽ xảy ra nếu **không** có đăng ký `AnyKey`, nhưng ở đây có."
+    },
+    {
+      "id": "dotnet-m07-14",
+      "topic": "ValidateScopes và ValidateOnBuild",
+      "source": "Module 7 - Captive dependency làm lộ dữ liệu giữa tenant",
+      "question": "`Cache` (Singleton) nhận `Db` (Scoped) qua constructor. Cấu hình `ServiceProviderOptions` nào làm chương trình ném lỗi **ngay lúc `BuildServiceProvider`**, trước dòng `started`?",
+      "code": "var s = new ServiceCollection();\ns.AddScoped<Db>();\ns.AddSingleton<Cache>();\nvar p = s.BuildServiceProvider(options);\nConsole.WriteLine(\"started\");\n\nclass Db { }\nclass Cache(Db db) { }",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nnew ServiceProviderOptions {\n  ValidateScopes = true,\n  ValidateOnBuild = true }\n```",
+        "```csharp\nnew ServiceProviderOptions {\n  ValidateScopes = true }\n```",
+        "```csharp\nnew ServiceProviderOptions {\n  ValidateOnBuild = true }\n```",
+        "```csharp\nnew ServiceProviderOptions()\n```"
+      ],
+      "answer": 0,
+      "explanation": "Hai cờ làm hai việc khác nhau. `ValidateOnBuild` duyệt mọi đăng ký lúc build nhưng chỉ bắt **thiếu đăng ký**, không biết luật lifetime. `ValidateScopes` mới biết Singleton không được dùng Scoped, nhưng chỉ kiểm tra **lúc resolve**. Chỉ khi bật **cả hai**, captive dependency nổ ngay lúc khởi động với thông báo \"Cannot consume scoped service 'Db' from singleton 'Cache'\".\n- Chỉ `ValidateScopes`: build vẫn qua, lỗi chờ tới lần resolve `Cache`.\n- Chỉ `ValidateOnBuild`: `Db` có đăng ký nên không thiếu gì, im lặng.\n- Mặc định rỗng: không kiểm tra gì cả (môi trường Development của host mới bật sẵn)."
+    },
+    {
+      "id": "dotnet-m07-15",
+      "topic": "Ambient context",
+      "source": "Module 7 - Anti-patterns",
+      "question": "Hai tác vụ chạy đồng thời, mỗi tác vụ gán tenant của mình vào một biến `static` và một `AsyncLocal` rồi `await`. Đoạn code in ra gì?",
+      "code": "var a = Work(\"A\", 40);\nvar b = Work(\"B\", 10);\nawait Task.WhenAll(a, b);\nConsole.WriteLine(await a);\nConsole.WriteLine(await b);\n\nstatic async Task<string> Work(string tenant, int ms)\n{\n    Ambient.Tenant = tenant;\n    Ambient.Local.Value = tenant;\n    await Task.Delay(ms);\n    return $\"{tenant}: static={Ambient.Tenant} \" +\n           $\"local={Ambient.Local.Value}\";\n}\nstatic class Ambient\n{\n    public static string? Tenant;\n    public static readonly AsyncLocal<string?> Local = new();\n}",
+      "codeLang": "csharp",
+      "options": [
+        "A: static=A local=A\nB: static=B local=B",
+        "A: static=B local=A\nB: static=B local=B",
+        "A: static=B local=B\nB: static=B local=B",
+        "A: static=A local=B\nB: static=B local=B"
+      ],
+      "answer": 1,
+      "explanation": "Biến `static` được **mọi** tác vụ dùng chung: tác vụ B gán `\"B\"` sau A, nên khi A tỉnh dậy sau `await` nó đọc thấy `\"B\"`, tức A đọc nhầm tenant của B. `AsyncLocal` lưu theo luồng thực thi logic, mỗi nhánh giữ bản riêng, nên A vẫn thấy `\"A\"`.\n- `static=A local=A`: sai, đó là điều bạn mong muốn nhưng `static` không làm được.\n- `local=B` ở dòng A: sai, `AsyncLocal` không bị tác vụ khác ghi đè.\n- `static=A local=B`: ngược hẳn, vô lý cả hai chiều.\nTrong web, lỗi này nghĩa là truy vấn dữ liệu của khách hàng khác. Tuy `AsyncLocal` đúng, nó vẫn là phụ thuộc ẩn; cách sạch hơn là service Scoped khai báo qua constructor."
+    },
+    {
+      "id": "dotnet-m07-16",
+      "topic": "IServiceScopeFactory",
+      "source": "Module 7 - Captive dependency làm lộ dữ liệu giữa tenant",
+      "question": "Để \"sửa\" captive dependency, `CacheService` (Singleton) tạo scope mới bằng `IServiceScopeFactory` để lấy `RequestContext` (Scoped). Middleware đã gán `TenantId = 7` cho request. Đoạn code in ra gì?",
+      "code": "using var request = p.CreateScope();\nrequest.ServiceProvider.GetRequiredService<RequestContext>()\n    .TenantId = 7;\n\nvar cache = p.GetRequiredService<CacheService>();\nConsole.WriteLine(cache.BuildKey(\"leads\"));\n\nclass RequestContext { public int TenantId { get; set; } }\n\nclass CacheService(IServiceScopeFactory factory)\n{\n    public string BuildKey(string key)\n    {\n        using var scope = factory.CreateScope();\n        var ctx = scope.ServiceProvider\n            .GetRequiredService<RequestContext>();\n        return $\"{ctx.TenantId}:{key}\";\n    }\n}",
+      "codeLang": "csharp",
+      "options": [
+        "7:leads",
+        "leads",
+        "Ném InvalidOperationException vì resolve Scoped từ Singleton",
+        "0:leads"
+      ],
+      "answer": 3,
+      "explanation": "`CreateScope()` tạo một scope **mới tinh**, không phải scope của request đang chạy. `RequestContext` lấy từ đó là bản mới với `TenantId` mặc định `0`, nên ra `0:leads`. `IServiceScopeFactory` dùng để có một đơn vị công việc riêng (ví dụ trong `BackgroundService`), không phải để \"với tới\" scope của request.\n- `7:leads`: sai, đây là điều người viết mong đợi nhưng bản `RequestContext` này không phải bản đã gán.\n- `leads`: sai, chuỗi luôn có tiền tố `TenantId:`.\n- Ném exception: sai, vì scope tạo ra là hợp lệ, `ValidateScopes` không phản đối.\nCách sửa đúng: truyền tenant làm tham số, hoặc đọc `IHttpContextAccessor` ngay trong phương thức."
+    },
+    {
+      "id": "dotnet-m07-17",
+      "topic": "Decorator với Scrutor",
+      "source": "Module 7 - Decorator, module đăng ký và Scrutor",
+      "question": "Với Scrutor, người dùng `Decorate` hai lần rồi vô tình đăng ký lại repository ở một dòng phía dưới. Lớp nào được resolve cho `IRepo`?",
+      "code": "var s = new ServiceCollection();\ns.AddScoped<IRepo, SqlRepo>();\ns.Decorate<IRepo, CachedRepo>();\ns.Decorate<IRepo, TimedRepo>();\ns.AddScoped<IRepo, SqlRepo>();\n\nusing var p = s.BuildServiceProvider();\nusing var scope = p.CreateScope();\nConsole.WriteLine(scope.ServiceProvider\n    .GetRequiredService<IRepo>().GetType().Name);",
+      "codeLang": "csharp",
+      "options": [
+        "SqlRepo",
+        "TimedRepo",
+        "CachedRepo",
+        "Ném InvalidOperationException vì đăng ký trùng IRepo"
+      ],
+      "answer": 0,
+      "explanation": "Khi resolve một instance, đăng ký **sau cùng** thắng. Dòng `AddScoped<IRepo, SqlRepo>()` cuối cùng là một đăng ký thường, không bọc gì, nên `SqlRepo` được trả về và cả hai decorator biến mất **âm thầm**. Muốn bắt lỗi này, viết test khẳng định lớp ngoài cùng.\n- `TimedRepo`: sẽ đúng nếu dòng đăng ký trùng không có, vì `Decorate` gọi sau nằm ngoài cùng.\n- `CachedRepo`: không bao giờ là lớp ngoài cùng khi đã có `Timed`.\n- Ném exception: container .NET không bao giờ báo lỗi vì đăng ký trùng."
+    },
+    {
+      "id": "dotnet-m07-18",
+      "topic": "Decorator và ValidateOnBuild",
+      "source": "Module 7 - Decorator, module đăng ký và Scrutor",
+      "question": "Quên `AddMemoryCache()`, nhưng `CachedRepo` (decorator qua Scrutor) cần `IMemoryCache`. Container build với `ValidateScopes` và `ValidateOnBuild` đều bật. Chương trình dưới xảy ra điều gì?",
+      "code": "var s = new ServiceCollection();\ns.AddScoped<IRepo, SqlRepo>();\ns.Decorate<IRepo, CachedRepo>();   // không AddMemoryCache\n\nusing var p = s.BuildServiceProvider(\n    new ServiceProviderOptions\n    { ValidateScopes = true, ValidateOnBuild = true });\nConsole.WriteLine(\"built\");\nusing var scope = p.CreateScope();\nscope.ServiceProvider.GetRequiredService<IRepo>();\nConsole.WriteLine(\"resolved\");\n\nclass CachedRepo(IRepo inner, IMemoryCache cache) : IRepo { }",
+      "codeLang": "csharp",
+      "options": [
+        "Ném lỗi ngay ở BuildServiceProvider vì ValidateOnBuild thấy thiếu IMemoryCache",
+        "In built rồi resolved, CachedRepo nhận cache là null",
+        "In built, rồi ném InvalidOperationException ở lần resolve IRepo đầu tiên",
+        "Lỗi biên dịch vì Decorate không phải phương thức của IServiceCollection"
+      ],
+      "answer": 2,
+      "explanation": "`Decorate` của Scrutor được cài bằng **factory**, mà `ValidateOnBuild` không nhìn vào bên trong factory. Vì vậy build thành công và in `built`; thiếu `IMemoryCache` chỉ lộ ra khi resolve lần đầu: \"Unable to resolve service for type 'IMemoryCache' while attempting to activate 'CachedRepo'\".\n- Ném lỗi ở build: đó là điều ta mong, nhưng đây chính là giới hạn của `ValidateOnBuild` với factory.\n- Chạy bình thường với `cache` null: container không bao giờ truyền null cho tham số bắt buộc, nó ném lỗi.\n- Lỗi biên dịch: `Decorate` là extension method của Scrutor nằm trong namespace `Microsoft.Extensions.DependencyInjection`, biên dịch được.\nVì thế mỗi service có decorator nên có một test resolve thật."
+    },
+    {
+      "id": "dotnet-m07-19",
+      "topic": "Strategy pattern với CanHandle",
+      "source": "Module 7 - Keyed Services",
+      "question": "Strategy chọn bằng `CanHandle` và `FirstOrDefault`. Hai lớp thanh toán cùng nhận đơn nhỏ. Đoạn code in ra gì?",
+      "code": "var s = new ServiceCollection();\ns.AddSingleton<IPay, CardPay>();\ns.AddSingleton<IPay, WalletPay>();\ns.AddSingleton<PayService>();\nvar svc = s.BuildServiceProvider()\n    .GetRequiredService<PayService>();\nConsole.WriteLine(svc.Pick(40_000));\nConsole.WriteLine(svc.Pick(90_000));\n\nclass CardPay : IPay { public bool CanHandle(int a) => a <= 100_000; }\nclass WalletPay : IPay { public bool CanHandle(int a) => a <= 50_000; }\nclass PayService(IEnumerable<IPay> all)\n{\n    public string Pick(int a) =>\n        all.FirstOrDefault(x => x.CanHandle(a))\n           ?.GetType().Name ?? \"none\";\n}",
+      "codeLang": "csharp",
+      "options": [
+        "WalletPay\nCardPay",
+        "WalletPay\nnone",
+        "CardPay\nnone",
+        "CardPay\nCardPay"
+      ],
+      "answer": 3,
+      "explanation": "Đơn 40.000 cả hai lớp đều nhận, `FirstOrDefault` lấy lớp **đăng ký trước** là `CardPay`. Đơn 90.000 chỉ `CardPay` nhận. Bẫy của `CanHandle`: khi nhiều cài đặt cùng nhận, **thứ tự đăng ký trong `Program.cs` quyết định kết quả**, tức là nghiệp vụ bị giấu ở nơi không ngờ tới.\n- `WalletPay` cho đơn 40.000: sai vì giả định container chọn lớp \"cụ thể nhất\"; nó không làm vậy.\n- `none` ở dòng hai: sai, `CardPay` nhận được đơn dưới 100.000.\nCách làm tường minh: thêm `Priority` vào interface và `OrderBy(g => g.Priority)` trước khi chọn."
+    },
+    {
+      "id": "dotnet-m07-20",
+      "topic": "Over-injection",
+      "source": "Module 7 - Anti-patterns",
+      "question": "Một `CustomerService` có 11 phụ thuộc trong constructor (repository, email, SMS, báo cáo, cache...). Cách xử lý nào **đúng** nhất?",
+      "options": [
+        "Gom 11 phụ thuộc vào một `CustomerDependencies` rồi tiêm đúng một tham số",
+        "Tách lớp theo trách nhiệm, mỗi lớp mới chỉ giữ các phụ thuộc nó thật sự dùng",
+        "Tiêm `IServiceProvider` và resolve từng service khi cần dùng",
+        "Giữ nguyên, vì DI sinh ra để cho phép constructor có bao nhiêu tham số cũng được"
+      ],
+      "answer": 1,
+      "explanation": "Constructor dài là **triệu chứng**: lớp đang làm quá nhiều việc. DI không gây ra vấn đề này, nó chỉ làm cho vấn đề nhìn thấy được. Tách theo trách nhiệm (thông báo, lead, báo cáo...) làm mỗi lớp nhỏ lại và chỉ có một nhóm lý do để thay đổi.\n- Gom vào facade: số phụ thuộc thật vẫn là 11 và lớp vẫn làm 11 việc, chỉ là constructor không còn tố cáo nữa.\n- Tiêm `IServiceProvider`: đây là service locator, giấu phụ thuộc và đẩy lỗi thiếu đăng ký từ lúc khởi động sang lúc chạy.\n- Giữ nguyên: bỏ qua tín hiệu; quá khoảng 5 phụ thuộc (không tính `ILogger`) là lúc cần dừng lại xem xét."
+    }
+  ]
+}

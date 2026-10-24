@@ -1,0 +1,127 @@
+[
+  {
+    "id": "dotnet-m01-01",
+    "kind": "cs-predict",
+    "program": "double a = 0.1, b = 0.2;\nConsole.WriteLine(a + b == 0.3);\n\ndecimal c = 0.1m, d = 0.2m;\nConsole.WriteLine(c + d == 0.3m);\n"
+  },
+  {
+    "id": "dotnet-m01-02",
+    "kind": "cs-predict",
+    "program": "Customer c = new() { Name = \"An\" };\nReplace(c);\nConsole.WriteLine(c.Name);\nRename(c);\nConsole.WriteLine(c.Name);\n\nvoid Rename(Customer x) { x.Name = \"Binh\"; }\nvoid Replace(Customer x) { x = new Customer { Name = \"Chi\" }; }\n\nclass Customer { public string Name { get; set; } = \"\"; }\n"
+  },
+  {
+    "id": "dotnet-m01-03",
+    "kind": "cs-outcome",
+    "expect": "compile-error",
+    "code": "CS0029",
+    "program": "var email = \"a@company.com\";\nemail = 42;\nConsole.WriteLine(email);\n"
+  },
+  {
+    "id": "dotnet-m01-04",
+    "kind": "cs-predict",
+    "program": "int max = int.MaxValue;\nint next = max + 1;\nConsole.WriteLine(next);\n\nlong big = max;\nConsole.WriteLine(big + 1);\n"
+  },
+  {
+    "id": "dotnet-m01-05",
+    "kind": "cs-find-error",
+    "errorKind": "runtime",
+    "template": "Customer? c = null;\n\n{{X}}\n\nConsole.WriteLine(\"ok\");\n\nclass Customer { public bool IsActive { get; set; } }\n",
+    "options": [
+      "if (c != null && c.IsActive)\n    Console.WriteLine(\"a\");",
+      "if (c is not null && c.IsActive)\n    Console.WriteLine(\"a\");",
+      "if (c != null & c.IsActive)\n    Console.WriteLine(\"a\");",
+      "if (c?.IsActive == true)\n    Console.WriteLine(\"a\");"
+    ]
+  },
+  {
+    "id": "dotnet-m01-06",
+    "kind": "cs-find-error",
+    "errorKind": "runtime",
+    "template": "var orders = new List<Order>\n{\n    new(1, 7), new(2, 7), new(3, 8)\n};\n\n{{X}}\n\nConsole.WriteLine(\"ok\");\n\nrecord Order(int Id, int CustomerId);\n",
+    "options": [
+      "var d = orders.GroupBy(o => o.CustomerId)\n    .ToDictionary(g => g.Key, g => g.ToList());",
+      "var d = orders.ToDictionary(o => o.CustomerId);",
+      "var d = orders.ToDictionary(o => o.Id);",
+      "var d = orders.ToLookup(o => o.CustomerId);"
+    ]
+  },
+  {
+    "id": "dotnet-m01-07",
+    "kind": "cs-choose",
+    "expectOutput": "1,3",
+    "template": "var nums = new List<int> { 1, 2, 2, 3, 4 };\n\n{{X}}\n\nConsole.WriteLine(string.Join(\",\", nums));\n",
+    "options": [
+      "foreach (var n in nums)\n    if (n % 2 == 0) nums.Remove(n);",
+      "for (int i = 0; i < nums.Count; i++)\n    if (nums[i] % 2 == 0) nums.RemoveAt(i);",
+      "for (int i = nums.Count; i >= 0; i--)\n    if (nums[i] % 2 == 0) nums.RemoveAt(i);",
+      "nums.RemoveAll(n => n % 2 == 0);"
+    ]
+  },
+  {
+    "id": "dotnet-m01-08",
+    "kind": "cs-predict",
+    "program": "IEnumerable<int> Gen()\n{\n    Console.WriteLine(\"start\");\n    for (int i = 1; i <= 3; i++)\n    {\n        Console.WriteLine($\"yield {i}\");\n        yield return i;\n    }\n}\n\nvar seq = Gen();\nConsole.WriteLine(\"created\");\nforeach (var x in seq.Take(2))\n    Console.WriteLine($\"got {x}\");\n"
+  },
+  {
+    "id": "dotnet-m01-11",
+    "kind": "cs-predict",
+    "program": "var list = new List<int> { 1, 2, 3, 4 };\nvar evens = list.Where(x => x % 2 == 0);\nvar snap = evens.ToList();\nlist.Add(6);\nConsole.WriteLine(snap.Count);\nConsole.WriteLine(evens.Count());\n"
+  },
+  {
+    "id": "dotnet-m01-12",
+    "kind": "cs-predict",
+    "program": "var data = new List<int> { 1, 2, 3, 4, 5 };\nvar queries = new List<IEnumerable<int>>();\nfor (int i = 0; i < 3; i++)\n    queries.Add(data.Where(x => x > i));\nConsole.WriteLine(string.Join(\",\",\n    queries.Select(q => q.Count())));\n"
+  },
+  {
+    "id": "dotnet-m01-13",
+    "kind": "cs-outcome",
+    "program": "var p1 = new Person(\"An\", 20);\nvar p2 = p1 with { Age = 21 };\np1.Age = 22;\nConsole.WriteLine(p2);\nrecord Person(string Name, int Age);\n",
+    "expect": "compile-error",
+    "code": "CS8852"
+  },
+  {
+    "id": "dotnet-m01-14",
+    "kind": "cs-predict",
+    "program": "var p1 = new Person(\"An\", 20);\nvar p2 = p1 with { Age = 21 };\nConsole.WriteLine(p1);\nConsole.WriteLine(p1 == p2);\nConsole.WriteLine(p2.Age);\nrecord Person(string Name, int Age);\n"
+  },
+  {
+    "id": "dotnet-m01-15",
+    "kind": "cs-choose",
+    "template": "var fs = new List<Func<int>>();\nfor (int i = 0; i < 3; i++)\n{\n    {{X}}\n}\nConsole.WriteLine(string.Join(\",\",\n    fs.Select(f => f())));\n",
+    "options": [
+      "fs.Add(() => i);",
+      "int copy = i;\nfs.Add(() => copy);",
+      "int copy = i;\nfs.Add(() => i);",
+      "int copy = i + 1;\nfs.Add(() => copy);"
+    ],
+    "expectOutput": "0,1,2"
+  },
+  {
+    "id": "dotnet-m01-16",
+    "kind": "cs-find-error",
+    "template": "var d = new Dictionary<string, int> { [\"a\"] = 1 };\n{{X}}\nConsole.WriteLine(\"xong\");\n",
+    "options": [
+      "d.TryGetValue(\"z\", out var v);",
+      "var v = d.GetValueOrDefault(\"z\", 0);",
+      "d[\"z\"] = 5;",
+      "var v = d[\"z\"];"
+    ],
+    "errorKind": "runtime"
+  },
+  {
+    "id": "dotnet-m01-17",
+    "kind": "cs-predict",
+    "program": "var seen = new HashSet<int>();\nvar dup = new List<int>();\nforeach (var id in new[] { 3, 1, 3, 2, 1 })\n{\n    if (!seen.Add(id)) dup.Add(id);\n}\nConsole.WriteLine(string.Join(\",\", dup));\nConsole.WriteLine(seen.Count);\n"
+  },
+  {
+    "id": "dotnet-m01-18",
+    "kind": "cs-predict",
+    "program": "const decimal T2 = 100_000_000m;\nconst decimal T3 = 500_000_000m;\n\ndecimal Tiered(decimal s)\n{\n    decimal c = Math.Min(s, T2) * 0.02m;\n    if (s > T2) c += (Math.Min(s, T3) - T2) * 0.05m;\n    if (s > T3) c += (s - T3) * 0.08m;\n    return c;\n}\n\ndecimal Flat(decimal s) => s switch\n{\n    < T2 => s * 0.02m,\n    <= T3 => s * 0.05m,\n    _ => s * 0.08m,\n};\n\nConsole.WriteLine((long)(Tiered(501_000_000m) - Tiered(500_000_000m)));\nConsole.WriteLine((long)(Flat(501_000_000m) - Flat(500_000_000m)));\n"
+  },
+  {
+    "id": "dotnet-m01-19",
+    "kind": "cs-outcome",
+    "program": "string Rank(decimal spent) => spent switch\n{\n    >= 100_000_000m => \"Vàng\",\n    >= 10_000_000m => \"Bạc\",\n};\nConsole.WriteLine(Rank(5_000_000m));\n",
+    "expect": "runtime-error"
+  }
+]

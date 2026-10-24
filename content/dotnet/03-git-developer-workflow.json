@@ -1,0 +1,297 @@
+{
+  "id": "dotnet-m03",
+  "title": "Module 3: Git + Developer Workflow",
+  "description": "Git là gì, cấu hình, an toàn, workflow cơ bản, nhánh, pull request và giải xung đột.",
+  "questions": [
+    {
+      "id": "dotnet-m03-01",
+      "topic": "Commit bất biến",
+      "source": "Module 3 - Git là gì và tại sao cần",
+      "question": "Bạn chạy `git commit --amend -m \"fix: correct typo\"` cho commit cuối. Điều nào mô tả đúng nhất những gì xảy ra trong kho?",
+      "options": [
+        "Commit cũ được sửa tại chỗ, mã băm của nó vẫn giữ nguyên",
+        "Nội dung commit cũ bị ghi đè trong kho, mã băm đổi theo",
+        "Chỉ message trong commit cũ được đổi, mã băm vẫn như cũ",
+        "Tạo commit mới, commit cũ còn trong kho nhưng không nhánh nào trỏ tới"
+      ],
+      "answer": 3,
+      "explanation": "Commit là bất biến: mã băm được tính từ tree, parent, author, committer và message, nên đổi message là ra mã băm khác. `--amend` thực chất tạo một commit mới rồi dịch con trỏ nhánh sang đó; commit cũ vẫn nằm trong kho (tìm lại bằng `git reflog`) cho tới khi bị dọn.\n- Sửa tại chỗ giữ nguyên mã băm: sai, mã băm phụ thuộc nội dung.\n- Ghi đè nội dung commit cũ: sai, object trong kho không bao giờ bị sửa.\n- Chỉ đổi message mà mã băm giữ nguyên: sai, message nằm trong khối được băm."
+    },
+    {
+      "id": "dotnet-m03-02",
+      "topic": "Ba vùng làm việc",
+      "source": "Module 3 - Git là gì và tại sao cần",
+      "question": "Bạn sửa 5 file, rồi chỉ `git add` 2 file trong số đó. Lệnh `git diff --staged` sẽ hiển thị gì?",
+      "options": [
+        "Thay đổi của cả 5 file so với commit cuối",
+        "Thay đổi của 2 file đã add, so với commit cuối",
+        "Thay đổi của 3 file chưa add, so với staging",
+        "Các commit local mà origin/main chưa có"
+      ],
+      "answer": 1,
+      "explanation": "`git diff --staged` so sánh staging area với commit cuối, nên chỉ thấy phần bạn đã `git add` (2 file). Đây là lần kiểm tra cuối trước khi commit.\n- Cả 5 file so với commit cuối: đó là gộp `git diff` và `git diff --staged`, không phải lệnh này.\n- 3 file chưa add so với staging: đó là việc của `git diff` (không cờ).\n- Commit local mà origin/main chưa có: phải dùng `git log origin/main..HEAD`, không liên quan tới staging."
+    },
+    {
+      "id": "dotnet-m03-03",
+      "topic": ".gitignore cho .NET",
+      "source": "Module 3 - Cài đặt và cấu hình Git",
+      "question": "File `.env` đã được commit từ tuần trước. Hôm nay bạn thêm `.env` vào `.gitignore`, nhưng `git status` vẫn báo `.env` thay đổi mỗi khi bạn sửa. Vì sao và xử lý thế nào?",
+      "options": [
+        "Chỉ áp cho file chưa theo dõi, cần gỡ khỏi chỉ mục rồi commit",
+        "Git cache .gitignore cũ, đóng mở lại terminal là hết",
+        "Phải viết /.env thay vì .env thì mới khớp",
+        "Phải xoá file bằng git clean để Git đọc lại .gitignore"
+      ],
+      "answer": 0,
+      "explanation": "Git đã theo dõi `.env` từ commit trước, và `.gitignore` chỉ có tác dụng với file CHƯA được theo dõi. Cách xử lý: `git rm --cached .env` (gỡ khỏi theo dõi nhưng giữ file trên đĩa) rồi commit. Nhớ rằng nếu file chứa bí mật thì còn phải thu hồi bí mật đó.\n- Cache và terminal: Git đọc `.gitignore` mỗi lần chạy, không có cache để làm mới.\n- Viết `/.env`: chỉ đổi phạm vi khớp, không làm file đã theo dõi bị bỏ qua.\n- `git clean -fd`: xoá file chưa theo dõi (nguy hiểm, mất vĩnh viễn) và không liên quan tới file đã được theo dõi."
+    },
+    {
+      "id": "dotnet-m03-04",
+      "topic": "Lộ bí mật",
+      "source": "Module 3 - Cài đặt và cấu hình Git",
+      "question": "Bạn vừa phát hiện mình đã `push` lên GitHub một commit chứa chuỗi kết nối database có mật khẩu thật. Việc ĐẦU TIÊN và bắt buộc phải làm là gì?",
+      "options": [
+        "`git reset --soft HEAD~1` rồi `git push --force`",
+        "Xoá file trong một commit mới và push thêm một lần nữa",
+        "Thu hồi: đổi mật khẩu database ngay, coi như bí mật đã lộ",
+        "Chạy `git filter-repo` để xoá bí mật khỏi toàn bộ lịch sử"
+      ],
+      "answer": 2,
+      "explanation": "Bí mật đã push thì coi như đã lộ: có thể đã bị clone, CI đọc, hoặc bot quét tìm thấy. Việc đầu tiên là thu hồi và tạo khoá mới. Dọn lịch sử chỉ là bước tuỳ chọn để tránh lộ thêm.\n- Reset rồi force push: chỉ xoá commit trên remote, không lấy lại được các bản sao đã có, và `--force` còn rủi ro cho đồng đội.\n- Commit xoá file: bí mật vẫn nằm nguyên trong lịch sử.\n- `git filter-repo` đầu tiên: bước này chậm, làm sau; nếu chưa đổi mật khẩu thì kẻ xấu đã kịp dùng."
+    },
+    {
+      "id": "dotnet-m03-05",
+      "topic": "origin/main",
+      "source": "Module 3 - Workflow cơ bản",
+      "question": "Đồng nghiệp báo vừa push commit mới lên `main`. Nhưng `git status` trên máy bạn vẫn ghi \"Your branch is up to date with 'origin/main'\". Vì sao?",
+      "options": [
+        "Git hỏi GitHub mỗi lần chạy status, nên máy bạn đang lỗi",
+        "`origin/main` là bản ghi nhớ cục bộ, chỉ cập nhật khi bạn `fetch` hoặc `pull`",
+        "Commit của đồng nghiệp tự động nằm ở nhánh khác trên GitHub",
+        "Phải chạy `git commit` trước thì status mới cập nhật"
+      ],
+      "answer": 1,
+      "explanation": "`origin/main` là nhánh theo dõi (remote-tracking branch): bản ghi nhớ trên máy bạn về vị trí của `main` trên GitHub tại lần liên lạc cuối. Nó không tự cập nhật; `git fetch` mới tải commit mới và dịch nó.\n- Git hỏi GitHub mỗi lần status: sai, status làm việc offline và chỉ so với bản ghi nhớ cục bộ.\n- Commit tự nằm ở nhánh khác: không có cơ chế đó; đồng nghiệp push vào `main` thì nó ở `main`.\n- Phải commit: commit chỉ ghi vào kho local, không liên quan tới việc biết trạng thái remote."
+    },
+    {
+      "id": "dotnet-m03-06",
+      "topic": "Hoàn tác an toàn",
+      "source": "Module 3 - Workflow cơ bản",
+      "question": "Một commit đã được push lên nhánh `main` chung và đồng đội đã pull về. Sau đó phát hiện commit này gây lỗi. Cách gỡ nào an toàn nhất?",
+      "options": [
+        "`git reset --hard HEAD~1` rồi `git push --force`",
+        "`git commit --amend` để sửa commit đó rồi push",
+        "`git restore .` để bỏ mọi sửa đổi",
+        "`git revert <mã commit>` rồi push như bình thường"
+      ],
+      "answer": 3,
+      "explanation": "`git revert` tạo một commit MỚI đảo ngược thay đổi, không viết lại lịch sử nên an toàn trên nhánh chung; đồng đội chỉ cần pull.\n- `reset --hard` + `push --force`: viết lại lịch sử đã chia sẻ, làm đồng đội bị phân kỳ và có thể mất việc.\n- `--amend`: tạo commit mới thay thế commit đã push, kết quả y như viết lại lịch sử, push sẽ bị từ chối hoặc phải ép.\n- `git restore .`: chỉ bỏ sửa đổi chưa commit trong thư mục làm việc, không đụng tới commit đã có."
+    },
+    {
+      "id": "dotnet-m03-07",
+      "topic": "Rebase",
+      "source": "Module 3 - Branching và Merging",
+      "question": "Nhánh `feature` có hai commit D và E. Bạn chạy `git rebase main` trên nhánh này. Điều gì đúng về D và E sau đó, và vì sao đây là lý do không nên rebase nhánh chung?",
+      "options": [
+        "Thành D và E mới có mã băm khác, đồng đội giữ bản cũ sẽ bị phân kỳ",
+        "Giữ nguyên mã băm vì nội dung thay đổi không đổi",
+        "Git tạo một merge commit có hai cha nối vào main",
+        "Chúng bị sửa tại chỗ, không ai nhận ra sự khác biệt"
+      ],
+      "answer": 0,
+      "explanation": "Commit là bất biến, nên rebase không di chuyển D và E mà tạo commit mới D' và E' (cha khác nên mã băm khác), rồi dịch con trỏ nhánh. Ai đang giữ D, E cũ sẽ thấy hai dãy commit cùng nội dung nhưng khác mã băm, và phải giải quyết phân kỳ khó chịu.\n- Giữ nguyên mã băm: sai, mã băm gồm cả commit cha mà rebase đã đổi.\n- Merge commit hai cha: đó là kết quả của merge, rebase thì tạo lịch sử thẳng.\n- Sửa tại chỗ: commit không sửa được, và đồng đội chắc chắn nhận ra khi pull."
+    },
+    {
+      "id": "dotnet-m03-08",
+      "topic": "Squash merge và xoá nhánh",
+      "source": "Module 3 - GitHub và Pull Request",
+      "question": "PR đã được **Squash and merge** trên GitHub. Ở máy bạn, `git branch -d feature/report` báo `not fully merged` dù nội dung đã có trong `main`. Nên làm gì?",
+      "options": [
+        "Chạy `git merge feature/report` thêm lần nữa",
+        "Chạy `git reset --hard origin/main` trên nhánh feature",
+        "Xác nhận PR đã merged trên GitHub, rồi dùng `git branch -D`",
+        "Chạy `git gc` để Git nhận ra nhánh đã merge"
+      ],
+      "answer": 2,
+      "explanation": "Squash merge tạo một commit MỚI trên `main`, nên các commit gốc của nhánh không bao giờ nằm trong `main`; `-d` kiểm tra theo commit nên từ chối. Khi đã chắc PR merged, dùng `-D` là đúng và an toàn.\n- Merge lại nhánh: kéo các commit cũ vào `main`, gây lịch sử trùng lặp, có thể sinh xung đột.\n- `reset --hard origin/main` trên nhánh feature: không xoá nhánh, còn mất việc chưa commit.\n- `git gc`: chỉ dọn object, không đổi quan hệ commit nên `-d` vẫn từ chối."
+    },
+    {
+      "id": "dotnet-m03-09",
+      "topic": "--ours và --theirs khi rebase",
+      "source": "Module 3 - Git Conflicts",
+      "question": "Bạn đang đứng trên `feature`, chạy `git rebase main` và gặp xung đột ở `Order.cs`. Bạn muốn lấy nguyên phiên bản code do CHÍNH MÌNH viết (commit của feature đang được đặt lại). Lệnh nào đúng?",
+      "options": [
+        "```bash\ngit restore --ours Order.cs\n```",
+        "```bash\ngit restore --theirs Order.cs\n```",
+        "```bash\ngit checkout main -- Order.cs\n```",
+        "```bash\ngit rebase --skip\n```"
+      ],
+      "answer": 1,
+      "explanation": "Nghĩa của hai từ đảo ngược giữa merge và rebase. Khi rebase, Git đặt commit của bạn lên nhánh đích, nên `--ours` là nhánh đích (main) còn `--theirs` là commit của bạn. Vì vậy muốn giữ code của mình phải dùng `--theirs`.\n- `--ours`: lấy bản của `main`, tức là bỏ code của bạn.\n- `git checkout main -- Order.cs`: cũng lấy bản của `main`.\n- `git rebase --skip`: bỏ HẲN cả commit của bạn, không chỉ file này.\nMẹo an toàn: khi rebase đừng dùng hai cờ này theo phản xạ, hãy mở file ra đọc."
+    },
+    {
+      "id": "dotnet-m03-10",
+      "topic": "Xung đột ngữ nghĩa",
+      "source": "Module 3 - Git Conflicts",
+      "question": "Nhánh A đổi tên phương thức `CalculateTotal` thành `ComputeTotal`. Nhánh B (sửa file khác) thêm một chỗ gọi `CalculateTotal`. `git merge` chạy sạch, không xung đột. Với kết quả đã merge dưới đây, `dotnet build` cho kết quả gì?",
+      "code": "var service = new OrderService();\nConsole.WriteLine(service.CalculateTotal(10m, 3));\n\nclass OrderService\n{\n    public decimal ComputeTotal(decimal price, int qty)\n        => price * qty;\n}",
+      "codeLang": "csharp",
+      "options": [
+        "Biên dịch được và in `30`",
+        "Git chặn merge vì phát hiện tên phương thức đổi",
+        "Lỗi biên dịch CS1061: không có `CalculateTotal`",
+        "Biên dịch được, nhưng ném MissingMethodException lúc chạy"
+      ],
+      "answer": 2,
+      "explanation": "Đây là xung đột ngữ nghĩa: hai nhánh sửa hai vùng khác nhau nên Git gộp sạch, nhưng ý nghĩa va chạm. Kết quả thật khi biên dịch là lỗi CS1061 vì `OrderService` không còn `CalculateTotal`.\n- Biên dịch được và in 30: chỉ đúng nếu phương thức tên cũ vẫn tồn tại.\n- Git chặn merge: Git làm việc trên dòng chữ, không hiểu tên phương thức nên không phát hiện được.\n- MissingMethodException: C# kiểm tra tên lúc biên dịch, lỗi này xảy ra sớm hơn chứ không đợi tới lúc chạy.\nLưới an toàn duy nhất là CI build và test sau mỗi lần merge."
+    },
+    {
+      "id": "dotnet-m03-11",
+      "topic": "Conventional Commits",
+      "source": "Module 3 - Conventional Commits",
+      "question": "Đội dùng công cụ tự động tăng phiên bản theo Conventional Commits và SemVer. Phiên bản hiện tại là `1.2.3`, có bốn commit mới như trong code (`feat` tăng MINOR, `fix` tăng PATCH, dấu `!` tăng MAJOR; chỉ áp mức cao nhất, các số bên phải về 0). Chương trình in ra gì?",
+      "code": "string[] commits = [\"fix: handle null\", \"feat(api): add filter\", \"refactor: split class\", \"docs: update readme\"];\nvar (major, minor, patch) = (1, 2, 3);\nvar level = 0; // 0 none, 1 patch, 2 minor, 3 major\nforeach (var c in commits)\n{\n    var header = c.Split(':')[0];\n    var l = header.EndsWith('!') ? 3 : header.StartsWith(\"feat\") ? 2 : header.StartsWith(\"fix\") ? 1 : 0;\n    level = Math.Max(level, l);\n}\nif (level == 3) (major, minor, patch) = (major + 1, 0, 0);\nelse if (level == 2) (minor, patch) = (minor + 1, 0);\nelse if (level == 1) patch++;\nConsole.WriteLine($\"{major}.{minor}.{patch}\");",
+      "codeLang": "csharp",
+      "options": [
+        "1.2.4",
+        "1.3.0",
+        "1.3.1",
+        "2.0.0"
+      ],
+      "answer": 1,
+      "explanation": "Có một `feat` nên mức cao nhất là MINOR: 1.2.3 thành **1.3.0**. Khi tăng MINOR thì PATCH về 0.\n- `1.2.4`: chỉ tính `fix` mà bỏ quên `feat`, mức cao hơn.\n- `1.3.1`: vừa tăng MINOR vừa cộng PATCH. SemVer chỉ tăng một mức và reset các số bên phải.\n- `2.0.0`: chỉ đúng nếu có breaking change (`!` hoặc footer `BREAKING CHANGE:`); ở đây không commit nào có.\n`refactor` và `docs` không ảnh hưởng phiên bản. Kết quả chạy thật: 1.3.0."
+    },
+    {
+      "id": "dotnet-m03-12",
+      "topic": "git bisect",
+      "source": "Module 3 - Debugging Workflow",
+      "question": "Mô phỏng `git bisect` trên 10.000 commit (commit 1 tốt, commit 10.000 xấu, commit lỗi đầu tiên là 6.000). Mỗi lần kiểm tra một commit ở giữa khoảng còn lại. Chương trình in ra gì (commit lỗi tìm được, số lần kiểm tra)?",
+      "code": "int first = 1, last = 10_000, firstBad = 6_000;\nint tests = 0;\nint good = first, bad = last;\nwhile (bad - good > 1)\n{\n    int mid = (good + bad) / 2;\n    tests++;\n    if (mid >= firstBad) bad = mid; else good = mid;\n}\nConsole.WriteLine($\"{bad} {tests}\");",
+      "codeLang": "csharp",
+      "options": [
+        "6000 5999",
+        "6000 13",
+        "6000 14",
+        "6000 100"
+      ],
+      "answer": 2,
+      "explanation": "Mỗi lần kiểm tra loại một nửa khoảng còn lại nên cần cỡ log2(10.000), làm tròn lên là **14** lần, và tìm đúng commit **6000**.\n- `6000 5999`: là kiểu tìm tuần tự từ đầu, hoàn toàn không phải bisect.\n- `6000 100`: nhầm với kiểu chia khối; bisect là chia đôi liên tục.\n- `6000 13`: lệch một bước. Với 10.000 phần tử, 13 lần chia đôi (2^13 = 8.192) chưa đủ để thu khoảng về 1.\nĐây chính là O(log n) của tìm kiếm nhị phân áp lên lịch sử commit. Kết quả chạy thật: 6000 14."
+    },
+    {
+      "id": "dotnet-m03-13",
+      "topic": "git bisect run",
+      "source": "Module 3 - Debugging Workflow",
+      "question": "Hàm dưới đây mô phỏng cách `git bisect run` đọc mã thoát của lệnh kiểm tra. Chương trình in ra gì?",
+      "code": "static string Verdict(int code) => code switch\n{\n    0 => \"good\",\n    125 => \"skip\",\n    >= 1 and <= 127 => \"bad\",\n    _ => \"abort\"\n};\nforeach (var code in new[] { 0, 1, 2, 125, 127 })\n    Console.WriteLine($\"{code}: {Verdict(code)}\");",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n0: good\n1: bad\n2: bad\n125: skip\n127: bad\n```",
+        "```text\n0: good\n1: bad\n2: bad\n125: bad\n127: bad\n```",
+        "```text\n0: good\n1: bad\n2: skip\n125: skip\n127: skip\n```",
+        "```text\n0: good\n1: bad\n2: bad\n125: skip\n127: abort\n```"
+      ],
+      "answer": 0,
+      "explanation": "`0` là good; `125` là \"không kiểm tra được, bỏ qua\" (như `git bisect skip`); mọi mã từ 1 đến 127 còn lại là bad, kể cả `2` và `127`.\n- Phương án coi `125` là bad: làm commit không build được bị kết luận nhầm là commit gây lỗi, đúng cái bẫy của bài.\n- Phương án coi `2` hay `127` là skip: sai, chỉ riêng `125` mới là skip.\n- Phương án coi `127` là abort: sai, `abort` chỉ dành cho mã ngoài khoảng 1-127 trong hàm này, còn `127` vẫn là bad.\nKết quả chạy thật khớp phương án đúng."
+    },
+    {
+      "id": "dotnet-m03-14",
+      "topic": "Log có cấu trúc",
+      "source": "Module 3 - Debugging Workflow",
+      "question": "Hai dòng log dưới đây hiển thị cùng nội dung nhưng khác cách viết. Provider tuỳ biến in ra **tên các trường** (key) mà mỗi bản ghi mang theo. Chương trình in ra gì?",
+      "code": "var logger = factory.CreateLogger(\"demo\");\nint orderId = 4729, customerId = 7;\n\nlogger.LogInformation($\"Xu ly don {orderId} cho khach {customerId}\");\nlogger.LogInformation(\"Xu ly don {OrderId} cho khach {CustomerId}\",\n    orderId, customerId);\n\n// KeyProvider.Log in danh sách key của state, nối bằng dấu phẩy",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nOrderId,CustomerId\nOrderId,CustomerId,{OriginalFormat}\n```",
+        "```text\n{OriginalFormat}\n{OriginalFormat}\n```",
+        "```text\n{OriginalFormat}\nOrderId,CustomerId\n```",
+        "```text\n{OriginalFormat}\nOrderId,CustomerId,{OriginalFormat}\n```"
+      ],
+      "answer": 3,
+      "explanation": "Nội suy chuỗi `$\"...\"` biến thông điệp thành **một chuỗi phẳng** trước khi tới logger, nên bản ghi chỉ có key `{OriginalFormat}`; công cụ gom log không có trường `OrderId` để lọc.\nTemplate có tên tham số thì logger giữ riêng `OrderId`, `CustomerId` cùng `{OriginalFormat}`.\n- Hai dòng đều chỉ `{OriginalFormat}`: sai, dòng template có tham số có tên.\n- Phương án dòng hai không có `{OriginalFormat}`: sai, logger luôn thêm key này.\n- Phương án dòng đầu có `OrderId`: sai, giá trị đã bị trộn vào chuỗi.\nKết quả chạy thật khớp phương án đúng."
+    },
+    {
+      "id": "dotnet-m03-15",
+      "topic": "Chọn mô hình nhánh",
+      "source": "Module 3 - Developer Workflow thực tế",
+      "question": "Đội 5 người làm một API nội bộ, deploy 3 lần mỗi tuần, chỉ có một phiên bản chạy, CI mất 6 phút. Cách tổ chức nhánh nào hợp nhất?",
+      "options": [
+        "Git Flow đủ 5 loại nhánh, vì nhiều nhánh thì an toàn hơn",
+        "Mỗi người một nhánh dài hạn, gộp vào main cuối mỗi quý",
+        "Trunk-based kiểu GitHub Flow: nhánh ngắn, PR, squash merge, feature flag",
+        "Mọi người commit thẳng vào main, bỏ PR và CI cho nhanh"
+      ],
+      "answer": 2,
+      "explanation": "Đội nhỏ, deploy liên tục, một phiên bản duy nhất là đúng bối cảnh của **trunk-based / GitHub Flow**; CI 6 phút (dưới 10 phút) cũng đáp ứng điều kiện của mô hình này, còn feature flag cho phép merge phần chưa xong mà chưa bật.\n- Git Flow sinh ra cho phần mềm phát hành theo bản, nhiều phiên bản song song; ở đây nó chỉ thêm nghi lễ.\n- Nhánh dài hạn gộp theo quý là công thức cho xung đột nặng và công sức mất trắng.\n- Bỏ PR và CI mất lớp review và kiểm thử, trong khi trunk-based còn đòi bộ test tin cậy hơn."
+    },
+    {
+      "id": "dotnet-m03-16",
+      "topic": "Hotfix",
+      "source": "Module 3 - Developer Workflow thực tế",
+      "question": "Đội dùng Git Flow (có `main` và `develop`). Production đang trả sai tổng tiền của đơn. Quy trình hotfix nào đúng?",
+      "options": [
+        "Tách từ main, sửa nhỏ nhất, vẫn qua PR và CI, deploy, gộp ngược về develop",
+        "Tách từ develop, sửa kèm dọn dẹp luôn, bỏ CI vì đang gấp, rồi deploy ngay",
+        "Tách từ main, sửa nhỏ nhất, qua PR và CI, deploy, không cần động tới develop",
+        "Sửa thẳng trên nhánh feature đang làm vì code ở đó là mới nhất"
+      ],
+      "answer": 0,
+      "explanation": "Hotfix tách từ **trạng thái đang chạy** (`main`), sửa **nhỏ nhất có thể**, vẫn chạy CI, và cuối cùng **gộp ngược về `develop`**.\n- Tách từ `develop` kéo theo mọi thứ chưa kiểm thử vào bản vá khẩn cấp; dọn dẹp lúc này làm bản vá phình to; bỏ CI là lúc lỗi thứ hai gây hại nhất.\n- Quên gộp ngược: lần phát hành sau từ `develop` sẽ **xoá mất bản vá**, lỗi quay lại. Đây là lỗi kinh điển của Git Flow.\n- Sửa trên nhánh feature thì bản vá lẫn với việc dở dang, không đưa riêng lên production được."
+    },
+    {
+      "id": "dotnet-m03-17",
+      "topic": "Git hook",
+      "source": "Module 3 - Git hook, cherry-pick và worktree",
+      "question": "Nhóm đã commit `.githooks/pre-commit` chặn dòng chứa `Password=`, vậy mà một chuỗi kết nối vẫn lọt vào `main`. Giải thích nào đúng, và nên làm gì thêm?",
+      "options": [
+        "Git bỏ qua hook khi push nên hook chỉ có tác dụng lúc commit cục bộ",
+        "Hook chỉ chạy được trên Linux, còn máy Windows thì không chạy",
+        "core.hooksPath tự bật khi clone, nên chắc chắn file hook thiếu quyền chạy",
+        "Hook chạy ở máy người dùng nên bỏ qua được, cần kiểm tra lại ở CI hoặc push protection"
+      ],
+      "answer": 3,
+      "explanation": "Hook là **lớp tiện lợi** chạy trên máy lập trình viên. Nó không chạy nếu người đó chưa chạy `git config core.hooksPath .githooks`, bị bỏ qua bằng `git commit --no-verify`, và không chạy với commit tạo trên giao diện web GitHub. Lớp **bảo đảm** là CI, branch protection và Push protection.\n- \"Git bỏ qua hook khi push\": vấn đề ở đây là hook commit không được kích hoạt, không liên quan tới push.\n- \"Chỉ chạy trên Linux\": Git for Windows chạy hook bằng Git Bash.\n- `core.hooksPath` là cấu hình local trong `.git/config`, **không** đi theo `git clone`, nên không tự bật."
+    },
+    {
+      "id": "dotnet-m03-18",
+      "topic": "Viết lại lịch sử và đồng đội",
+      "source": "Module 3 - Mini case study: lộ mật khẩu database",
+      "question": "An đã chạy `git filter-repo` xoá file chứa mật khẩu rồi `push --force`. Bình còn bản clone cũ, gặp lỗi `refusing to merge unrelated histories` khi `git pull`, nên thêm `--allow-unrelated-histories` rồi `git push`. Hậu quả đúng nhất là gì?",
+      "options": [
+        "Không sao, vì filter-repo đã xoá bí mật khỏi mọi bản clone",
+        "Push bị chặn vì Git phát hiện lịch sử đã bị viết lại",
+        "Lịch sử cũ chứa bí mật quay lại kho chung, công dọn mất trắng",
+        "Chỉ commit riêng của Bình bị mất, bí mật vẫn sạch"
+      ],
+      "answer": 2,
+      "explanation": "Sau filter-repo mọi commit có mã băm mới nên lịch sử mới và cũ không chung tổ tiên; cờ `--allow-unrelated-histories` ép Git nối chúng lại, kéo toàn bộ lịch sử cũ (kèm mật khẩu) vào nhánh của Bình, và `push` đẩy nó lên kho chung. Cách đúng: xoá bản clone cũ, clone lại, rồi áp lại việc dở bằng `cherry-pick`.\n- Filter-repo chỉ sửa kho nơi nó chạy, không động tới các bản clone khác.\n- Push của Bình chỉ là thêm commit merge lên trên lịch sử mới nên Git không chặn; chỉ branch protection mới ngăn được kiểu này.\n- Commit của Bình được giữ nguyên trong merge; thứ bị thêm vào mới là lịch sử cũ."
+    },
+    {
+      "id": "dotnet-m03-19",
+      "topic": "Xung đột file sinh tự động",
+      "source": "Module 3 - Xung đột ở file sinh tự động",
+      "question": "Hai nhánh thêm hai gói NuGet khác nhau; merge xong có xung đột ở cả `Crm.csproj` và `packages.lock.json`. Cách xử lý nào đúng?",
+      "options": [
+        "Ghép tay .csproj giữ cả hai gói, lock file lấy một bên rồi dotnet restore --force-evaluate",
+        "Ghép tay cả hai file bằng cách giữ nội dung cả hai bên, xoá dấu xung đột",
+        "Xoá packages.lock.json khỏi kho để lần sau không xung đột nữa",
+        "Giữ .csproj của một bên, chỉ giữ gói của bên đó rồi báo người kia thêm lại"
+      ],
+      "answer": 0,
+      "explanation": "`.csproj` là file **bạn viết**: ý định của hai bên rõ nên ghép tay, giữ cả hai `PackageReference`. `packages.lock.json` là file NuGet **sinh ra**: lấy một bên rồi để NuGet tính lại (`--force-evaluate`), sau đó kiểm chứng bằng `--locked-mode --force`. Phải giải `.csproj` trước vì lock file sinh ra từ nó.\n- Giữ cả hai bên của lock file thường cho JSON hỏng mà `dotnet restore` thường không báo, lỗi chỉ lộ ở CI.\n- Xoá lock file làm mỗi máy một bộ gói, mất lý do bật lock file.\n- Bỏ gói của một bên là mất tính năng của người kia."
+    },
+    {
+      "id": "dotnet-m03-20",
+      "topic": "Squash merge và Conventional Commits",
+      "source": "Module 3 - Conventional Commits",
+      "question": "Nhóm dùng squash merge, mặc định lấy tiêu đề PR làm message commit trên `main`. PR có 3 commit `wip`, `fix again`, `address review` và tiêu đề `update customer page`. Cần chỉnh gì?",
+      "options": [
+        "Rebase tương tác để viết lại cả 3 commit, vì từng commit sẽ đi vào main",
+        "Không cần chỉnh gì, vì message các commit bên trong quyết định changelog",
+        "Đổi tiêu đề PR thành dạng feat(customers): ..., commit wip bên trong giữ nguyên",
+        "Thêm ! vào cả 3 commit để chắc chắn công cụ tăng phiên bản"
+      ],
+      "answer": 2,
+      "explanation": "Với squash merge, chỉ **một commit** đi vào `main`, và message của nó lấy từ tiêu đề PR, nên quy ước Conventional Commits áp lên **tiêu đề PR** (có thể kiểm bằng một bước CI). Các commit `wip` bên trong bị gộp, thoải mái.\n- Viết lại 3 commit là công sức vô ích vì chúng không vào `main`.\n- `update customer page` không có loại, công cụ sinh changelog sẽ bỏ qua nó, nên không thể \"không cần chỉnh\".\n- Dấu `!` đánh dấu breaking change và ép tăng MAJOR, dùng sai chỗ gây hại."
+    }
+  ]
+}

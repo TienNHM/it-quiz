@@ -40,3 +40,14 @@ Nguồn: khóa học 30 ngày ở repo sql-challenge, 31 chương (ngày 1-30 v�
 - `npm run sql:subject`: dựng lại `content/sql/subject.json` từ các file chương.
 
 CI chạy lint và verify trước khi deploy.
+
+## Bộ câu hỏi .NET
+
+Nguồn: khóa .NET Backend Zero → Senior (repo dotnet-course), 20 module (0 đến 19), 402 câu trắc nghiệm. Đáp án của các câu về C# được kiểm chứng bằng cách biên dịch và chạy thật bằng .NET SDK (291 mục kiểm chứng ở `content/dotnet/verify/`).
+
+- `npm run dotnet:run -- --file x.cs`: chạy thử một chương trình C# (top-level statements, có thể dùng package qua dòng `#:package Tên@phiên-bản`).
+- `npm run dotnet:lint`: kiểm tra định dạng câu hỏi.
+- `npm run dotnet:verify`: biên dịch và chạy thật mọi mục kiểm chứng (mất vài phút, cần .NET 10 SDK và mạng để tải NuGet).
+- `npm run dotnet:subject`: dựng lại `content/dotnet/subject.json` từ các file chương.
+
+CI chỉ chạy lint cho .NET (verify chạy cục bộ vì chậm và cần SDK).

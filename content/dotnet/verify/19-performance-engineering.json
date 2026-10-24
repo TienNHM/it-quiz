@@ -1,0 +1,91 @@
+[
+  {
+    "id": "dotnet-m19-01",
+    "kind": "cs-outcome",
+    "program": "#:package Microsoft.Extensions.Caching.Memory@10.0.0\nusing Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions { SizeLimit = 100 });\ncache.Set(\"lead:1\", \"Nguyen Van An\", TimeSpan.FromMinutes(5));\nConsole.WriteLine(cache.Count);\n",
+    "expect": "runtime-error"
+  },
+  {
+    "id": "dotnet-m19-02",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\nusing Microsoft.EntityFrameworkCore;\nusing Microsoft.Data.Sqlite;\n\nusing var db = new Db();\ndb.Database.EnsureCreated();\ndb.Customers.AddRange(new Customer { Id = 1, Name = \"An\" }, new Customer { Id = 2, Name = \"Binh\" });\ndb.Orders.AddRange(new Order { Id = 1, CustomerId = 1 }, new Order { Id = 2, CustomerId = 2 }, new Order { Id = 3, CustomerId = 1 });\ndb.SaveChanges();\ndb.ChangeTracker.Clear();\n\nvar orders = db.Orders.AsNoTracking().Include(o => o.Customer).ToList();\nConsole.WriteLine(db.ChangeTracker.Entries().Count());\nvar orders2 = db.Orders.Include(o => o.Customer).ToList();\nConsole.WriteLine(db.ChangeTracker.Entries().Count());\n\nclass Customer { public int Id { get; set; } public string Name { get; set; } = \"\"; }\nclass Order { public int Id { get; set; } public int CustomerId { get; set; } public Customer Customer { get; set; } = null!; }\nclass Db : DbContext\n{\n    public static readonly SqliteConnection Conn = Open();\n    static SqliteConnection Open() { var c = new SqliteConnection(\"Data Source=:memory:\"); c.Open(); return c; }\n    public DbSet<Customer> Customers => Set<Customer>();\n    public DbSet<Order> Orders => Set<Order>();\n    protected override void OnConfiguring(DbContextOptionsBuilder o) => o.UseSqlite(Conn);\n}\n"
+  },
+  {
+    "id": "dotnet-m19-03",
+    "kind": "cs-choose",
+    "template": "#:package Microsoft.EntityFrameworkCore.Sqlite@10.0.0\n#:property PublishAot=false\nusing Microsoft.EntityFrameworkCore;\nusing Microsoft.Data.Sqlite;\nusing Microsoft.EntityFrameworkCore.Diagnostics;\nusing System.Data.Common;\n\nvar counter = new Counter();\nusing var db = new Db(counter);\ndb.Database.EnsureCreated();\ndb.Customers.AddRange(new Customer { Id = 1, Name = \"An\" }, new Customer { Id = 2, Name = \"Binh\" });\ndb.Orders.AddRange(new Order { Id = 1, CustomerId = 1 }, new Order { Id = 2, CustomerId = 2 }, new Order { Id = 3, CustomerId = 1 }, new Order { Id = 4, CustomerId = 2 }, new Order { Id = 5, CustomerId = 1 });\ndb.SaveChanges();\ndb.ChangeTracker.Clear();\ncounter.N = 0;\n\n{{X}}\n\nConsole.WriteLine(counter.N);\n\nclass Customer { public int Id { get; set; } public string Name { get; set; } = \"\"; }\nclass Order { public int Id { get; set; } public int CustomerId { get; set; } public Customer Customer { get; set; } = null!; }\nclass Counter : DbCommandInterceptor\n{\n    public int N;\n    public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand c, CommandEventData e, InterceptionResult<DbDataReader> r) { N++; return r; }\n    public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand c, CommandEventData e, InterceptionResult<DbDataReader> r, CancellationToken ct = default) { N++; return new(r); }\n}\nclass Db(Counter c) : DbContext\n{\n    public static readonly SqliteConnection Conn = Open();\n    static SqliteConnection Open() { var c = new SqliteConnection(\"Data Source=:memory:\"); c.Open(); return c; }\n    public DbSet<Customer> Customers => Set<Customer>();\n    public DbSet<Order> Orders => Set<Order>();\n    protected override void OnConfiguring(DbContextOptionsBuilder o) => o.UseSqlite(Conn).AddInterceptors(c);\n}\n",
+    "options": [
+      "var orders = db.Orders.ToList();\nforeach (var o in orders)\n    _ = db.Customers.AsNoTracking()\n        .First(c => c.Id == o.CustomerId).Name;",
+      "var orders = db.Orders.ToList();\nvar customers = db.Customers.ToList();\nforeach (var o in orders)\n    _ = customers.First(c => c.Id == o.CustomerId).Name;",
+      "var orders = db.Orders.ToList();\nforeach (var o in orders)\n    db.Entry(o).Reference(x => x.Customer).Load();",
+      "var orders = db.Orders\n    .Include(o => o.Customer)\n    .ToList();\nforeach (var o in orders) _ = o.Customer.Name;"
+    ],
+    "expectOutput": "1"
+  },
+  {
+    "id": "dotnet-m19-04",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Caching.Memory@10.0.0\nusing Microsoft.Extensions.Caching.Memory;\n\nvar cache = new MemoryCache(new MemoryCacheOptions());\nvar gate = new SemaphoreSlim(1, 1);\nvar dbCalls = 0;\n\nasync Task<string> GetAsync()\n{\n    if (cache.TryGetValue(\"featured\", out string? v)) return v!;\n\n    await gate.WaitAsync();\n    try\n    {\n        dbCalls++;\n        await Task.Delay(50);\n        cache.Set(\"featured\", \"data\");\n        return \"data\";\n    }\n    finally { gate.Release(); }\n}\n\nawait Task.WhenAll(Enumerable.Range(0, 5).Select(_ => GetAsync()));\nConsole.WriteLine(dbCalls);\n"
+  },
+  {
+    "id": "dotnet-m19-05",
+    "kind": "cs-outcome",
+    "program": "async Task<int> LuuAsync(string dong)\n{\n    ReadOnlySpan<char> s = dong;\n    await Task.Delay(1);\n    return s.Length;\n}\nConsole.WriteLine(await LuuAsync(\"LEAD-1\"));\n",
+    "expect": "compile-error",
+    "code": "CS4007"
+  },
+  {
+    "id": "dotnet-m19-06",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Extensions.Caching.Hybrid@10.0.0\n#:package Microsoft.Extensions.DependencyInjection@10.0.0\nusing Microsoft.Extensions.Caching.Hybrid;\nusing Microsoft.Extensions.DependencyInjection;\n\nvar sp = new ServiceCollection().AddHybridCache().Services.BuildServiceProvider();\nvar cache = sp.GetRequiredService<HybridCache>();\nvar calls = 0;\nvar tasks = Enumerable.Range(0, 20).Select(_ => cache.GetOrCreateAsync(\"featured\", async ct =>\n{\n    Interlocked.Increment(ref calls);\n    await Task.Delay(200, ct);\n    return \"data\";\n}).AsTask());\nawait Task.WhenAll(tasks);\nConsole.WriteLine(calls);\n"
+  },
+  {
+    "id": "dotnet-m19-11",
+    "kind": "cs-predict",
+    "program": "var store = new Dictionary<string, (string Token, int Expires)>();\nvar now = 0;\nstring? Acquire(string key, string token, int ttl)\n{\n    if (store.TryGetValue(key, out var e) && e.Expires > now) return null;\n    store[key] = (token, now + ttl);\n    return token;\n}\nvoid ReleaseUnsafe(string key) => store.Remove(key);\n\nConsole.WriteLine(Acquire(\"job\", \"A\", 5) is not null);\nnow = 6;\nConsole.WriteLine(Acquire(\"job\", \"B\", 5) is not null);\nReleaseUnsafe(\"job\");\nConsole.WriteLine(Acquire(\"job\", \"C\", 5) is not null);\nConsole.WriteLine(store[\"job\"].Token);\n"
+  },
+  {
+    "id": "dotnet-m19-12",
+    "kind": "cs-choose",
+    "template": "var store = new Dictionary<string, (string Token, int Expires)>();\nvar now = 0;\nbool Acquire(string key, string token, int ttl)\n{\n    if (store.TryGetValue(key, out var e) && e.Expires > now) return false;\n    store[key] = (token, now + ttl);\n    return true;\n}\nvoid Release(string key, string token)\n{\n    {{X}}\n}\n\nAcquire(\"job\", \"A\", 5);\nnow = 6;\nAcquire(\"job\", \"B\", 5);\nRelease(\"job\", \"A\");\nConsole.WriteLine(Acquire(\"job\", \"C\", 5));\nRelease(\"job\", \"B\");\nConsole.WriteLine(Acquire(\"job\", \"D\", 5));\n",
+    "options": [
+      "store.Remove(key);",
+      "if (store.TryGetValue(key, out var e)\n        && e.Token == key)\n        store.Remove(key);",
+      "if (store.TryGetValue(key, out var e)\n        && e.Token == token)\n        store.Remove(key);",
+      "if (store.TryGetValue(key, out var e)\n        && e.Expires > now)\n        store.Remove(key);"
+    ],
+    "expectOutput": "False\nTrue"
+  },
+  {
+    "id": "dotnet-m19-13",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Data.Sqlite@10.0.0\nusing Microsoft.Data.Sqlite;\nusing var c = new SqliteConnection(\"DataSource=:memory:\");\nc.Open();\nvoid Exec(string sql, params (string, object)[] p)\n{\n    using var cmd = c.CreateCommand();\n    cmd.CommandText = sql;\n    foreach (var (n, v) in p) cmd.Parameters.AddWithValue(n, v);\n    Console.WriteLine(cmd.ExecuteNonQuery());\n}\nusing (var cmd = c.CreateCommand())\n{\n    cmd.CommandText = \"CREATE TABLE Reports(Id INT, Data TEXT, FencingToken INT); INSERT INTO Reports VALUES(1,'-',40)\";\n    cmd.ExecuteNonQuery();\n}\nconst string sql = \"UPDATE Reports SET Data=@d, FencingToken=@t WHERE Id=1 AND FencingToken < @t\";\nExec(sql, (\"@d\", \"B\"), (\"@t\", 42));\nExec(sql, (\"@d\", \"A\"), (\"@t\", 41));\nExec(sql, (\"@d\", \"C\"), (\"@t\", 43));\nusing var q = c.CreateCommand();\nq.CommandText = \"SELECT Data FROM Reports\";\nConsole.WriteLine(q.ExecuteScalar());\n"
+  },
+  {
+    "id": "dotnet-m19-14",
+    "kind": "cs-choose",
+    "template": "var rows = new List<(int Id, int At)>\n{\n    (1, 10), (2, 10), (3, 10), (4, 9), (5, 9), (6, 8)\n};\nvar cursor = (Id: 2, At: 10);\n\nvar page = rows\n    .Where(x => {{X}})\n    .OrderByDescending(x => x.At)\n    .ThenByDescending(x => x.Id)\n    .Take(3)\n    .Select(x => x.Id);\nConsole.WriteLine(string.Join(\",\", page));\n",
+    "options": [
+      "x.At <= cursor.At",
+      "x.At < cursor.At\n&& x.Id < cursor.Id",
+      "x.Id < cursor.Id",
+      "x.At < cursor.At\n|| (x.At == cursor.At && x.Id < cursor.Id)"
+    ],
+    "expectOutput": "1,5,4"
+  },
+  {
+    "id": "dotnet-m19-15",
+    "kind": "cs-predict",
+    "program": "using System.Buffers;\n\nvar a = ArrayPool<byte>.Shared.Rent(100);\nvar b = ArrayPool<byte>.Shared.Rent(4096);\nvar c = ArrayPool<byte>.Shared.Rent(5000);\nConsole.WriteLine(a.Length);\nConsole.WriteLine(b.Length);\nConsole.WriteLine(c.Length);\n"
+  },
+  {
+    "id": "dotnet-m19-16",
+    "kind": "cs-predict",
+    "program": "var rows = Enumerable.Range(1, 10);\nvar batches = rows.Chunk(4).ToList();\n\nConsole.WriteLine(batches.Count);\nConsole.WriteLine(string.Join(\",\", batches.Select(b => b.Length)));\n"
+  },
+  {
+    "id": "dotnet-m19-17",
+    "kind": "cs-predict",
+    "program": "Console.WriteLine(GC.GetGeneration(new byte[1000]));\nConsole.WriteLine(GC.GetGeneration(new byte[100_000]));\n"
+  }
+]

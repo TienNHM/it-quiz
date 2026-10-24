@@ -1,0 +1,129 @@
+[
+  {
+    "id": "dotnet-m04-01",
+    "kind": "cs-predict",
+    "program": "var c1 = new Box { V = 1 };\nvar c2 = c1;\nc2.V = 2;\nvar s1 = new Pt { V = 1 };\nvar s2 = s1;\ns2.V = 2;\nConsole.WriteLine($\"{c1.V} {s1.V}\");\n\nclass Box { public int V; }\nstruct Pt { public int V; }"
+  },
+  {
+    "id": "dotnet-m04-02",
+    "kind": "cs-outcome",
+    "expect": "compile-error",
+    "code": "CS9035",
+    "program": "var c = new Customer { Name = \"A\" };\nConsole.WriteLine(c.Name);\n\nclass Customer\n{\n    public required string Name { get; init; }\n    public required string Email { get; init; }\n}"
+  },
+  {
+    "id": "dotnet-m04-03",
+    "kind": "cs-find-error",
+    "errorKind": "compile",
+    "code": "CS1612",
+    "template": "var items = new List<Pt> { new Pt { X = 1 } };\nvar arr = new Pt[] { new Pt { X = 1 } };\nvar boxes = new List<Box> { new Box { X = 1 } };\n{{X}}\nConsole.WriteLine(\"done\");\n\nstruct Pt { public int X; }\nclass Box { public int X; }",
+    "options": [
+      "items[0].X = 99;",
+      "arr[0].X = 99;",
+      "boxes[0].X = 99;",
+      "var t = items[0];\nt.X = 99;\nitems[0] = t;"
+    ]
+  },
+  {
+    "id": "dotnet-m04-04",
+    "kind": "cs-predict",
+    "program": "A x = new B();\nA y = new C();\nConsole.WriteLine(x.Who());\nConsole.WriteLine(y.Who());\nConsole.WriteLine(((C)y).Who());\n\nclass A { public virtual string Who() => \"A\"; }\nclass B : A { public override string Who() => \"B\"; }\nclass C : A { public new string Who() => \"C\"; }"
+  },
+  {
+    "id": "dotnet-m04-05",
+    "kind": "cs-predict",
+    "program": "var d = new Derived(\"hi\");\n\nclass Base\n{\n    public Base() { Console.WriteLine($\"Base: {Describe()}\"); }\n    public virtual string Describe() => \"base\";\n}\nclass Derived : Base\n{\n    private readonly string _text;\n    public Derived(string text)\n    {\n        _text = text;\n        Console.WriteLine($\"Derived: {Describe()}\");\n    }\n    public override string Describe() => $\"text={_text ?? \"null\"}\";\n}"
+  },
+  {
+    "id": "dotnet-m04-06",
+    "kind": "cs-choose",
+    "expectOutput": "1",
+    "template": "var o = new Order();\no.Add(1);\nif (o.Lines is List<int> list) list.Clear();\nConsole.WriteLine(o.Count);\n\nclass Order\n{\n    private readonly List<int> _l = new();\n    public void Add(int n) => _l.Add(n);\n    public int Count => _l.Count;\n    {{X}}\n}",
+    "options": [
+      "public List<int> Lines => _l;",
+      "public IReadOnlyList<int> Lines => _l;",
+      "public IReadOnlyList<int> Lines\n    => _l.AsReadOnly();",
+      "public IEnumerable<int> Lines => _l;"
+    ]
+  },
+  {
+    "id": "dotnet-m04-07",
+    "kind": "cs-outcome",
+    "expect": "compile-error",
+    "code": "CS1061",
+    "program": "var h = new Greeter();\nh.Hello();\n\ninterface IGreeter { void Hello(); }\nclass Greeter : IGreeter\n{\n    void IGreeter.Hello() => Console.WriteLine(\"hi\");\n}"
+  },
+  {
+    "id": "dotnet-m04-08",
+    "kind": "cs-predict",
+    "program": "var a = new Cart(\"x\", [1]);\nvar b = a with { };\nb.Items.Add(2);\nConsole.WriteLine(a.Items.Count);\nConsole.WriteLine(a == b);\nConsole.WriteLine(a == new Cart(\"x\", [1, 2]));\n\nrecord Cart(string Name, List<int> Items);"
+  },
+  {
+    "id": "dotnet-m04-09",
+    "kind": "cs-outcome",
+    "expect": "compile-error",
+    "code": "CS0122",
+    "program": "var a = new Account();\nConsole.WriteLine(a.Balance);\n\nclass Account { decimal Balance; }"
+  },
+  {
+    "id": "dotnet-m04-11",
+    "kind": "cs-predict",
+    "program": "Console.WriteLine(Fee(null));\nConsole.WriteLine(Fee(new Order(null, 900_000m)));\nConsole.WriteLine(Fee(new Order(new Customer(true), 400_000m)));\nConsole.WriteLine(Fee(new Order(new Customer(true), 500_000m)));\n\nstatic string Fee(Order? o) =>\n    o is { Customer.IsVip: true, Total: >= 500_000m } ? \"giam\" : \"khong\";\n\nrecord Customer(bool IsVip);\nrecord Order(Customer? Customer, decimal Total);\n"
+  },
+  {
+    "id": "dotnet-m04-12",
+    "kind": "cs-predict",
+    "program": "Console.WriteLine(Route(\"GET api orders 7\"));\nConsole.WriteLine(Route(\"GET api orders\"));\nConsole.WriteLine(Route(\"DELETE api orders 7\"));\nConsole.WriteLine(Route(\"\"));\n\nstatic string Route(string request)\n{\n    string[] p = request.Split(' ', StringSplitOptions.RemoveEmptyEntries);\n    return p switch\n    {\n        [\"GET\", \"api\", \"orders\"] => \"list\",\n        [\"GET\", \"api\", \"orders\", var id] => $\"detail {id}\",\n        [var m, ..] => $\"unsupported {m}\",\n        [] => \"empty\"\n    };\n}\n"
+  },
+  {
+    "id": "dotnet-m04-13",
+    "kind": "cs-choose",
+    "template": "int[] ages = [17, 18, 30, 65, 70];\nforeach (var age in ages)\n    Console.Write({{X}} ? \"Y\" : \"N\");\n",
+    "options": [
+      "age is >= 18 and < 65",
+      "age is >= 18 && < 65",
+      "age is >= 18 or < 65",
+      "age is > 18 and <= 65"
+    ],
+    "expectOutput": "NYYNN"
+  },
+  {
+    "id": "dotnet-m04-14",
+    "kind": "cs-outcome",
+    "expect": "runtime-error",
+    "program": "Console.WriteLine(Describe(Status.Draft));\nConsole.WriteLine(Describe((Status)7));\n\nstatic string Describe(Status s) => s switch\n{\n    Status.Draft => \"Nhap\",\n    Status.Shipped => \"Giao\",\n    Status.Done => \"Xong\"\n};\n\nenum Status { Draft, Shipped, Done }\n"
+  },
+  {
+    "id": "dotnet-m04-15",
+    "kind": "cs-find-error",
+    "errorKind": "compile",
+    "code": "CS0534",
+    "template": "Console.WriteLine(\"ok\");\n\nabstract class Shape\n{\n    public abstract double Area();\n}\n\n{{X}}",
+    "options": [
+      "class Sq(double s) : Shape\n{\n    public override double Area() => s * s;\n}",
+      "class Sq(double s) : Shape\n{\n    public double Area() => s * s;\n}",
+      "abstract class Sq : Shape\n{\n}",
+      "class Sq(double s) : Shape\n{\n    public override double Area() => s * s;\n    public virtual string Name => \"sq\";\n}"
+    ]
+  },
+  {
+    "id": "dotnet-m04-16",
+    "kind": "cs-predict",
+    "program": "var c = new Counter(5);\nc.Inc();\nc.Inc();\nvar d = new Counter(5);\nd.Inc();\nConsole.WriteLine($\"{c.Current} {d.Current}\");\n\nclass Counter(int start)\n{\n    public void Inc() => start++;\n    public int Current => start;\n}\n"
+  },
+  {
+    "id": "dotnet-m04-17",
+    "kind": "cs-predict",
+    "program": "#pragma warning disable CS0659\nvar a = new Addr(\"12\", \"Hue\");\nvar b = new Addr(\"12\", \"Hue\");\nConsole.WriteLine(a.Equals(b));\nConsole.WriteLine(new List<Addr> { a }.Contains(b));\nConsole.WriteLine(new HashSet<Addr> { a }.Contains(b));\n\nclass Addr(string no, string street)\n{\n    public string No { get; } = no;\n    public string Street { get; } = street;\n    public override bool Equals(object? obj) =>\n        obj is Addr o && o.No == No && o.Street == Street;\n}\n"
+  },
+  {
+    "id": "dotnet-m04-18",
+    "kind": "cs-predict",
+    "program": "using (var a = new Res(\"A\"))\n{\n    using var b = new Res(\"B\");\n    using var c = new Res(\"C\");\n    Console.WriteLine(\"work\");\n}\n\nclass Res(string name) : IDisposable\n{\n    public void Dispose() => Console.WriteLine($\"dispose {name}\");\n}\n"
+  },
+  {
+    "id": "dotnet-m04-19",
+    "kind": "cs-predict",
+    "program": "using System.Globalization;\n\nCultureInfo.CurrentCulture = new CultureInfo(\"tr-TR\");\nConsole.WriteLine(\"admin\".ToUpper() == \"ADMIN\");\nConsole.WriteLine(\"admin\".ToUpperInvariant() == \"ADMIN\");\nConsole.WriteLine(string.Equals(\"admin\", \"ADMIN\",\n    StringComparison.OrdinalIgnoreCase));\n"
+  }
+]

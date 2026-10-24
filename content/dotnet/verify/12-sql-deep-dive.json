@@ -1,0 +1,93 @@
+[
+  {
+    "id": "dotnet-m12-01",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Data.Sqlite@9.0.0\nusing Microsoft.Data.Sqlite;\nusing var db = new SqliteConnection(\"Data Source=:memory:\");\ndb.Open();\nvoid Run(string s) { using var c = new SqliteCommand(s, db); c.ExecuteNonQuery(); }\nlong One(string s) { using var c = new SqliteCommand(s, db); return (long)c.ExecuteScalar()!; }\nRun(\"CREATE TABLE Customers (Id INT, Name TEXT); CREATE TABLE Orders (Id INT, CustomerId INT, Status TEXT);\");\nRun(\"INSERT INTO Customers VALUES (1,'A'),(2,'B'),(3,'C'); INSERT INTO Orders VALUES (1,1,'Paid'),(2,1,'Cancelled'),(3,2,'Cancelled');\");\nConsole.WriteLine(One(\"SELECT COUNT(*) FROM Customers c LEFT JOIN Orders o ON o.CustomerId = c.Id WHERE o.Status = 'Paid'\"));\nConsole.WriteLine(One(\"SELECT COUNT(*) FROM Customers c LEFT JOIN Orders o ON o.CustomerId = c.Id AND o.Status = 'Paid'\"));\n"
+  },
+  {
+    "id": "dotnet-m12-02",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Data.Sqlite@9.0.0\nusing Microsoft.Data.Sqlite;\nusing var db = new SqliteConnection(\"Data Source=:memory:\");\ndb.Open();\nvoid Run(string s) { using var c = new SqliteCommand(s, db); c.ExecuteNonQuery(); }\nlong One(string s) { using var c = new SqliteCommand(s, db); return (long)c.ExecuteScalar()!; }\nRun(\"CREATE TABLE Users (Id INT); CREATE TABLE Leads (Id INT, OwnerId INT);\");\nRun(\"INSERT INTO Users VALUES (1),(2),(3); INSERT INTO Leads VALUES (10,1),(11,NULL);\");\nConsole.WriteLine(One(\"SELECT COUNT(*) FROM Users WHERE Id NOT IN (SELECT OwnerId FROM Leads)\"));\nConsole.WriteLine(One(\"SELECT COUNT(*) FROM Users u WHERE NOT EXISTS (SELECT 1 FROM Leads l WHERE l.OwnerId = u.Id)\"));\n"
+  },
+  {
+    "id": "dotnet-m12-03",
+    "kind": "cs-outcome",
+    "expect": "runtime-error",
+    "program": "#:package Microsoft.Data.Sqlite@9.0.0\nusing Microsoft.Data.Sqlite;\nusing var db = new SqliteConnection(\"Data Source=:memory:\");\ndb.Open();\nnew SqliteCommand(\"CREATE TABLE Leads (Id INT, Status TEXT, Value INT);\" +\n  \"INSERT INTO Leads VALUES (1,'New',5),(2,'New',9),(3,'Won',7)\", db)\n  .ExecuteNonQuery();\n\nvar sql = @\"SELECT Id,\n  ROW_NUMBER() OVER (PARTITION BY Status ORDER BY Value DESC) AS rn\n  FROM Leads WHERE rn = 1\";\nusing var r = new SqliteCommand(sql, db).ExecuteReader();\nwhile (r.Read()) Console.WriteLine(r.GetInt32(0));\n"
+  },
+  {
+    "id": "dotnet-m12-05",
+    "kind": "cs-choose",
+    "expectOutput": "1: ok\n2: ok\n3: ok\n4: fail\n5: ok",
+    "template": "#:package Microsoft.Data.Sqlite@9.0.0\nusing Microsoft.Data.Sqlite;\nusing var db = new SqliteConnection(\"Data Source=:memory:\");\ndb.Open();\nvoid Run(string label, string s) {\n  try { using var c = new SqliteCommand(s, db); c.ExecuteNonQuery(); Console.WriteLine(label + \": ok\"); }\n  catch (SqliteException) { Console.WriteLine(label + \": fail\"); }\n}\nusing (var c = new SqliteCommand(\"CREATE TABLE Users (Id INTEGER PRIMARY KEY, Email TEXT NOT NULL, DeletedAt TEXT NULL)\", db)) c.ExecuteNonQuery();\nusing (var c = new SqliteCommand(\"\"\"\n{{X}}\n\"\"\", db)) c.ExecuteNonQuery();\nRun(\"1\", \"INSERT INTO Users (Email) VALUES ('an@x.com')\");\nRun(\"2\", \"UPDATE Users SET DeletedAt = '2026-01-01' WHERE Id = 1\");\nRun(\"3\", \"INSERT INTO Users (Email) VALUES ('an@x.com')\");\nRun(\"4\", \"INSERT INTO Users (Email) VALUES ('an@x.com')\");\nRun(\"5\", \"UPDATE Users SET DeletedAt = '2026-02-01' WHERE DeletedAt IS NULL\");\n",
+    "options": [
+      "CREATE UNIQUE INDEX ux ON Users(Email);",
+      "CREATE UNIQUE INDEX ux ON Users(Email)\n  WHERE DeletedAt IS NULL;",
+      "CREATE UNIQUE INDEX ux\n  ON Users(Email, DeletedAt);",
+      "CREATE INDEX ux ON Users(Email)\n  WHERE DeletedAt IS NULL;"
+    ]
+  },
+  {
+    "id": "dotnet-m12-06",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Data.Sqlite@9.0.0\nusing Microsoft.Data.Sqlite;\nusing var db = new SqliteConnection(\"Data Source=:memory:\");\ndb.Open();\nvoid Run(string s) { using var c = new SqliteCommand(s, db); c.ExecuteNonQuery(); }\nstring Plan(string q) { using var c = new SqliteCommand(\"EXPLAIN QUERY PLAN \" + q, db); using var r = c.ExecuteReader(); r.Read(); return r.GetString(3); }\nRun(\"CREATE TABLE Leads (Id INTEGER PRIMARY KEY, Email TEXT, CreatedAt TEXT)\");\nRun(\"CREATE INDEX ix_email ON Leads(Email)\");\nRun(\"CREATE INDEX ix_created ON Leads(CreatedAt)\");\nstring Kind(string where) => Plan(\"SELECT * FROM Leads WHERE \" + where).Split(' ')[0];\nConsole.WriteLine(\"A: \" + Kind(\"Email = 'a@b.com'\"));\nConsole.WriteLine(\"B: \" + Kind(\"lower(Email) = 'a@b.com'\"));\nConsole.WriteLine(\"C: \" + Kind(\"CreatedAt >= '2026-01-01' AND CreatedAt < '2027-01-01'\"));\nConsole.WriteLine(\"D: \" + Kind(\"strftime('%Y', CreatedAt) = '2026'\"));\n"
+  },
+  {
+    "id": "dotnet-m12-07",
+    "kind": "cs-choose",
+    "expectOutput": "seek=3 sort=no",
+    "template": "#:package Microsoft.Data.Sqlite@9.0.0\nusing Microsoft.Data.Sqlite;\nusing System.Linq;\nusing var db = new SqliteConnection(\"Data Source=:memory:\");\ndb.Open();\nvoid Run(string s) { using var c = new SqliteCommand(s, db); c.ExecuteNonQuery(); }\nRun(\"CREATE TABLE Leads (Id INTEGER PRIMARY KEY, TenantId INT, Status TEXT, CreatedAt TEXT, Value INT)\");\nRun(\"\"\"\n{{X}}\n\"\"\");\nvar details = new List<string>();\nusing (var c = new SqliteCommand(\"EXPLAIN QUERY PLAN SELECT * FROM Leads WHERE TenantId = 1 AND Status = 'New' AND CreatedAt > '2026-01-01' ORDER BY CreatedAt DESC\", db))\nusing (var r = c.ExecuteReader()) while (r.Read()) details.Add(r.GetString(3));\nvar first = details[0];\nint seek = first.Count(ch => ch == '?');\nbool sort = details.Any(d => d.Contains(\"TEMP B-TREE\"));\nConsole.WriteLine($\"seek={seek} sort={(sort ? \"yes\" : \"no\")}\");\n",
+    "options": [
+      "CREATE INDEX ix ON Leads(CreatedAt, Status, TenantId);",
+      "CREATE INDEX ix ON Leads(Status, TenantId);",
+      "CREATE INDEX ix ON Leads(TenantId, CreatedAt, Status);",
+      "CREATE INDEX ix ON Leads(TenantId, Status, CreatedAt);"
+    ]
+  },
+  {
+    "id": "dotnet-m12-09",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Data.Sqlite@9.0.0\nusing Microsoft.Data.Sqlite;\nusing var db = new SqliteConnection(\"Data Source=:memory:\");\ndb.Open();\nint Run(string s) {\n  using var c = new SqliteCommand(s, db);\n  return c.ExecuteNonQuery();\n}\nRun(\"CREATE TABLE Inventory (ProductId INT PRIMARY KEY, Quantity INT)\");\nRun(\"INSERT INTO Inventory VALUES (1, 5)\");\nvar sql = \"UPDATE Inventory SET Quantity = Quantity - 3 \" +\n          \"WHERE ProductId = 1 AND Quantity >= 3\";\nConsole.WriteLine(Run(sql));\nConsole.WriteLine(Run(sql));\nvar q = new SqliteCommand(\"SELECT Quantity FROM Inventory\", db);\nConsole.WriteLine(q.ExecuteScalar());\n"
+  },
+  {
+    "id": "dotnet-m12-11",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Data.Sqlite@10.0.0\nusing Microsoft.Data.Sqlite;\nusing var c = new SqliteConnection(\"Data Source=:memory:\");\nc.Open();\nvoid Exec(string s) { using var k = c.CreateCommand(); k.CommandText = s; k.ExecuteNonQuery(); }\nExec(\"CREATE TABLE M(Thang INT, DoanhThu INT)\");\nExec(\"INSERT INTO M VALUES (1,10),(2,20),(2,30),(3,40)\");\nusing var q = c.CreateCommand();\nq.CommandText = \"SELECT Thang, SUM(DoanhThu) OVER (ORDER BY Thang) FROM M ORDER BY rowid\";\nusing var r = q.ExecuteReader();\nwhile (r.Read()) Console.WriteLine($\"{r.GetInt32(0)}:{r.GetInt32(1)}\");\n"
+  },
+  {
+    "id": "dotnet-m12-12",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Data.Sqlite@10.0.0\nusing Microsoft.Data.Sqlite;\nusing var c = new SqliteConnection(\"Data Source=:memory:\");\nc.Open();\nvoid Exec(string s) { using var k = c.CreateCommand(); k.CommandText = s; k.ExecuteNonQuery(); }\nExec(\"CREATE TABLE S(Ten TEXT, Diem INT)\");\nExec(\"INSERT INTO S VALUES ('A',100),('B',90),('C',90),('D',80)\");\nforeach (var fn in new[] { \"RANK\", \"DENSE_RANK\" })\n{\n    using var q = c.CreateCommand();\n    q.CommandText = $\"SELECT {fn}() OVER (ORDER BY Diem DESC) FROM S ORDER BY Diem DESC, Ten\";\n    using var r = q.ExecuteReader();\n    var l = new List<long>();\n    while (r.Read()) l.Add(r.GetInt64(0));\n    Console.WriteLine(string.Join(\",\", l));\n}\n"
+  },
+  {
+    "id": "dotnet-m12-13",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Data.Sqlite@10.0.0\nusing Microsoft.Data.Sqlite;\nusing var c = new SqliteConnection(\"Data Source=:memory:\");\nc.Open();\nvoid Exec(string s) { using var k = c.CreateCommand(); k.CommandText = s; k.ExecuteNonQuery(); }\nExec(\"CREATE TABLE Leads(Id INTEGER PRIMARY KEY, Status TEXT)\");\nExec(\"INSERT INTO Leads(Status) VALUES ('New'),('New'),('Won')\");\nExec(\"CREATE VIEW vw_Count AS SELECT COUNT(*) AS N FROM Leads\");\nExec(\"CREATE TABLE snap_Count AS SELECT COUNT(*) AS N FROM Leads\");\nExec(\"INSERT INTO Leads(Status) VALUES ('New'),('Lost')\");\nlong One(string s) { using var k = c.CreateCommand(); k.CommandText = s; return (long)k.ExecuteScalar()!; }\nConsole.WriteLine(One(\"SELECT N FROM vw_Count\"));\nConsole.WriteLine(One(\"SELECT N FROM snap_Count\"));\n"
+  },
+  {
+    "id": "dotnet-m12-14",
+    "kind": "cs-choose",
+    "template": "#:package Microsoft.Data.Sqlite@10.0.0\nusing Microsoft.Data.Sqlite;\nusing var c = new SqliteConnection(\"Data Source=:memory:\");\nc.Open();\nvoid Exec(string s) { using var k = c.CreateCommand(); k.CommandText = s; k.ExecuteNonQuery(); }\nExec(\"CREATE TABLE P(Name TEXT)\");\nExec(\"INSERT INTO P VALUES ('An'),('Binh'),('Chi')\");\nlong Count(string sql, params SqliteParameter[] ps)\n{\n    using var k = c.CreateCommand();\n    k.CommandText = sql;\n    foreach (var p in ps) k.Parameters.Add(p);\n    return (long)k.ExecuteScalar()!;\n}\nvar input = \"' OR 1=1 --\";\n{{X}}\nConsole.WriteLine(n);\n",
+    "options": [
+      "var sql = \"SELECT COUNT(*) FROM P \"\n        + \"WHERE Name = '\" + input + \"'\";\nvar n = Count(sql);",
+      "var sql = $\"SELECT COUNT(*) FROM P \"\n        + $\"WHERE Name = '{input}'\";\nvar n = Count(sql);",
+      "var n = Count(\"SELECT COUNT(*) FROM P WHERE Name = @n\",\n    new SqliteParameter(\"@n\", input));",
+      "var safe = input.Replace(\"--\", \"\");\nvar sql = \"SELECT COUNT(*) FROM P WHERE Name='\"\n        + safe + \"'\";\nvar n = Count(sql);"
+    ]
+  },
+  {
+    "id": "dotnet-m12-15",
+    "kind": "cs-predict",
+    "program": "static string Plan(params int[] ids) =>\n    string.Join(\">\", ids.OrderBy(id => id));\n\n// hai giao dịch chuyển điểm ngược chiều nhau\nConsole.WriteLine(Plan(7, 3));\nConsole.WriteLine(Plan(3, 7));\n// một giao dịch chạm ba tài khoản\nConsole.WriteLine(Plan(9, 2, 5));\n"
+  },
+  {
+    "id": "dotnet-m12-16",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Data.Sqlite@10.0.0\nusing Microsoft.Data.Sqlite;\nusing var c = new SqliteConnection(\"Data Source=:memory:\");\nc.Open();\nvoid Exec(string s) { using var k = c.CreateCommand(); k.CommandText = s; k.ExecuteNonQuery(); }\nExec(\"CREATE TABLE L(Id INTEGER PRIMARY KEY, CreatedAt TEXT, TenantId TEXT, Status TEXT)\");\nExec(\"CREATE INDEX ix_created ON L(CreatedAt)\");\nExec(\"CREATE INDEX ix_tenant_status ON L(TenantId, Status)\");\nforeach (var s in new[]\n{\n    \"SELECT * FROM L WHERE strftime('%Y', CreatedAt) = '2026'\",\n    \"SELECT * FROM L WHERE CreatedAt >= '2026-01-01' AND CreatedAt < '2027-01-01'\",\n    \"SELECT * FROM L WHERE TenantId = 'acme' AND Status = 'New'\",\n    \"SELECT * FROM L WHERE Status = 'New'\"\n})\n{\n    using var q = c.CreateCommand();\n    q.CommandText = \"EXPLAIN QUERY PLAN \" + s;\n    using var r = q.ExecuteReader();\n    r.Read();\n    Console.WriteLine(r.GetString(3).Split(' ')[0]);\n}\n"
+  },
+  {
+    "id": "dotnet-m12-17",
+    "kind": "cs-predict",
+    "program": "#:package Microsoft.Data.Sqlite@10.0.0\nusing Microsoft.Data.Sqlite;\nusing var c = new SqliteConnection(\"Data Source=:memory:\");\nc.Open();\nvoid Exec(string s) { using var k = c.CreateCommand(); k.CommandText = s; k.ExecuteNonQuery(); }\nExec(\"CREATE TABLE C(Id INTEGER PRIMARY KEY, Tier TEXT)\");\nExec(\"INSERT INTO C(Tier) VALUES ('Std'),('Std'),('Std'),(NULL),(NULL),(NULL),(NULL),(NULL),(NULL),(NULL)\");\nint rows;\ndo\n{\n    using var k = c.CreateCommand();\n    k.CommandText = \"UPDATE C SET Tier = 'Std' WHERE Id IN (SELECT Id FROM C WHERE Tier IS NULL LIMIT 4)\";\n    rows = k.ExecuteNonQuery();\n    Console.WriteLine(rows);\n} while (rows > 0);\n"
+  }
+]

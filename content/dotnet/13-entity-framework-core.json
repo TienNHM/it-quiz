@@ -1,0 +1,321 @@
+{
+  "id": "dotnet-m13",
+  "title": "Module 13: Entity Framework Core",
+  "description": "EF Core: change tracker, DbContext và cấu hình mô hình, quan hệ, migration, mẫu truy vấn, N+1 và hiệu năng.",
+  "questions": [
+    {
+      "id": "dotnet-m13-01",
+      "topic": "Change tracker và identity map",
+      "source": "Module 13 - EF Core Overview",
+      "question": "`db` là một `DbContext` mới, change tracker đang rỗng; bảng `Customers` có đúng một dòng với `Id = 1`. Chương trình in ra gì?",
+      "code": "var a = db.Customers.Find(1);\nvar b = db.Customers.Find(1);\nvar c = db.Customers.AsNoTracking().First(x => x.Id == 1);\nvar d = db.Customers.First(x => x.Id == 1);\n\nConsole.WriteLine(ReferenceEquals(a, b));\nConsole.WriteLine(ReferenceEquals(a, c));\nConsole.WriteLine(ReferenceEquals(a, d));\nConsole.WriteLine(db.ChangeTracker.Entries().Count());",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nTrue\nTrue\nTrue\n1\n```",
+        "```text\nTrue\nFalse\nTrue\n1\n```",
+        "```text\nTrue\nFalse\nFalse\n2\n```",
+        "```text\nFalse\nFalse\nFalse\n3\n```"
+      ],
+      "answer": 1,
+      "explanation": "Trong một `DbContext` mỗi khoá chính chỉ có **một** instance (identity map). `Find(1)` lần hai lấy luôn object đang được theo dõi nên `a` và `b` là cùng một object (True).\n`AsNoTracking()` không đăng ký vào change tracker nên `c` là object mới, khác `a` (False).\nTruy vấn `First` có tracking gặp khoá 1 đã được theo dõi thì trả về chính `a` (True), không tạo bản mới.\nChỉ có 1 entry trong tracker (`c` không được theo dõi). Phương án toàn True nhầm rằng `AsNoTracking` vẫn dùng identity map; hai phương án có 2 hoặc 3 entry trong tracker nhầm rằng mỗi truy vấn tạo thêm object được theo dõi."
+    },
+    {
+      "id": "dotnet-m13-02",
+      "topic": "ExecuteUpdate và change tracker",
+      "source": "Module 13 - Performance",
+      "question": "Bảng `Leads` có một dòng `Id = 1`, `Status = \"New\"`. Chương trình in ra gì?",
+      "code": "var lead = db.Leads.First(l => l.Id == 1);   // Status = \"New\"\n\ndb.Leads.Where(l => l.Id == 1)\n    .ExecuteUpdate(s => s.SetProperty(l => l.Status, \"Lost\"));\n\nConsole.WriteLine(lead.Status);\nConsole.WriteLine(db.Leads.AsNoTracking().First(l => l.Id == 1).Status);\ndb.ChangeTracker.Clear();\nConsole.WriteLine(db.Leads.First(l => l.Id == 1).Status);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nLost\nLost\nLost\n```",
+        "```text\nNew\nNew\nLost\n```",
+        "```text\nNew\nLost\nNew\n```",
+        "```text\nNew\nLost\nLost\n```"
+      ],
+      "answer": 3,
+      "explanation": "`ExecuteUpdate` chạy ngay một câu `UPDATE` ở database và **bỏ qua change tracker**. Object `lead` đã nạp trước đó không được cập nhật nên vẫn in `New`.\nTruy vấn `AsNoTracking` đọc lại từ database nên thấy `Lost`. Sau `ChangeTracker.Clear()`, truy vấn mới tạo object mới từ dữ liệu thật nên cũng là `Lost`.\nPhương án bắt đầu bằng `Lost` nhầm rằng EF tự đồng bộ entity đang theo dõi. Phương án `New, New, Lost` nhầm rằng truy vấn không tracking trả giá trị cũ. Phương án kết thúc bằng `New` nhầm rằng database chưa đổi."
+    },
+    {
+      "id": "dotnet-m13-03",
+      "topic": "Identity map",
+      "source": "Module 13 - EF Core Overview",
+      "question": "Đoạn code dưới đây cho kết quả nào?",
+      "code": "// Customer { Id, Name }; đã có dòng Id = 1 trong database\nvar loaded = db.Customers.Find(1);\n\ndb.Customers.Attach(new Customer { Id = 1, Name = \"Binh\" });\nConsole.WriteLine(\"done\");",
+      "codeLang": "csharp",
+      "options": [
+        "Ném `InvalidOperationException` lúc chạy vì đã có instance cùng khoá đang được theo dõi",
+        "In `done`, và EF sẽ ghi đè tên `An` bằng `Binh` ở lần `SaveChanges` sau",
+        "Lỗi biên dịch vì `Attach` không nhận entity tạo bằng `new`",
+        "In `done`, hai instance cùng tồn tại trong tracker với cùng `Id`"
+      ],
+      "answer": 0,
+      "explanation": "Identity map cho phép mỗi khoá chính chỉ có một instance trong một `DbContext`. `Find(1)` đã đưa một `Customer` có `Id = 1` vào tracker, nên `Attach` một object **khác** cùng khoá ném `InvalidOperationException` (\"another instance with the same key value ... is already being tracked\").\nĐây là lỗi lúc chạy, không phải lỗi biên dịch, nên phương án nói về lỗi biên dịch sai: `Attach` nhận bất kỳ entity nào.\nHai phương án còn lại nhầm rằng EF chấp nhận hai instance cùng khoá hoặc tự ghi đè; điều đó vi phạm chính identity map."
+    },
+    {
+      "id": "dotnet-m13-04",
+      "topic": "Value converter và ValueComparer",
+      "source": "Module 13 - DbContext và Entity Configuration",
+      "question": "Với đoạn cấu hình dưới đây, `SaveChanges()` phải trả về `1` (có một dòng được UPDATE) sau khi thêm `\"hot\"` vào `Tags`. Đoạn nào cần điền vào chỗ trống?",
+      "code": "// Lead.Tags là List<string>, lưu thành chuỗi \"a,b,c\"\nvar p = modelBuilder.Entity<Lead>()\n    .Property(l => l.Tags)\n    .HasConversion(\n        v => string.Join(',', v),\n        v => v.Split(',').ToList());\n// <<< đoạn cần chọn >>>\n\n// Về sau, Tags ban đầu là [\"b2b\"]:\nvar lead = db.Leads.First();\nlead.Tags.Add(\"hot\");\nConsole.WriteLine(db.SaveChanges());",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\np.Metadata.SetValueComparer(new ValueComparer<List<string>>(\n    (a, b) => a!.SequenceEqual(b!),\n    v => v.Count,\n    v => v));\n```",
+        "```csharp\np.Metadata.SetValueComparer(new ValueComparer<List<string>>(\n    (a, b) => ReferenceEquals(a, b),\n    v => v.Count,\n    v => v));\n```",
+        "```csharp\np.Metadata.SetValueComparer(new ValueComparer<List<string>>(\n    (a, b) => a!.SequenceEqual(b!),\n    v => v.Count,\n    v => v.ToList()));\n```",
+        "```csharp\np.HasMaxLength(500);\n```"
+      ],
+      "answer": 2,
+      "explanation": "Value converter cho kiểu tham chiếu có thể thay đổi cần `ValueComparer` đủ ba phần: so sánh theo nội dung (`SequenceEqual`), băm theo nội dung, và **snapshot là bản sao** (`v.ToList()`).\nPhương án có snapshot `v => v` trả về chính list đó nên bản gốc bị sửa cùng lúc với bản hiện tại, EF thấy \"không đổi\": `SaveChanges` trả 0.\nPhương án so sánh bằng `ReferenceEquals` kèm snapshot `v => v` cũng vậy: hai tham chiếu luôn trùng nhau nên không bao giờ phát hiện thay đổi, trả 0.\nPhương án `HasMaxLength(500)` chỉ đặt độ dài tối đa, không liên quan tới việc phát hiện thay đổi: vẫn trả 0, và đây là lỗi im lặng vì không có exception nào."
+    },
+    {
+      "id": "dotnet-m13-05",
+      "topic": "DeleteBehavior mặc định",
+      "source": "Module 13 - Relationships",
+      "question": "Dùng quy ước mặc định của EF Core, chương trình in ra gì?",
+      "code": "// Contact.CustomerId là int (bắt buộc), Lead.AssignedUserId là int? (tuỳ chọn).\n// Không cấu hình DeleteBehavior. Có 1 Customer (2 Contact) và\n// 1 User có 1 Lead được gán.\nvar c = db.Customers.Include(x => x.Contacts).First();\nvar u = db.Users.Include(x => x.Leads).First();\ndb.Remove(c);\ndb.Remove(u);\ndb.SaveChanges();\n\nConsole.WriteLine($\"contacts={db.Contacts.Count()}\");\nConsole.WriteLine($\"leads={db.Leads.Count()}\");\nConsole.WriteLine($\"assigned={db.Leads.First().AssignedUserId?.ToString() ?? \"null\"}\");",
+      "codeLang": "csharp",
+      "options": [
+        "```text\ncontacts=2\nleads=1\nassigned=null\n```",
+        "```text\ncontacts=0\nleads=1\nassigned=null\n```",
+        "```text\ncontacts=0\nleads=1\nassigned=1\n```",
+        "```text\ncontacts=2\nleads=1\nassigned=1\n```"
+      ],
+      "answer": 1,
+      "explanation": "Khoá ngoại `int` (bắt buộc) có `DeleteBehavior.Cascade` mặc định: xoá `Customer` kéo theo xoá cả hai `Contact` (EF tự sinh lệnh xoá vì chúng đã nằm trong tracker), nên `contacts=0`.\nKhoá ngoại `int?` (tuỳ chọn) mặc định là `ClientSetNull`: xoá `User` không xoá `Lead`, mà EF gán `AssignedUserId = null` cho entity đã nạp. Nên `leads=1` và `assigned=null`.\nPhương án còn `contacts=2` nhầm rằng quan hệ bắt buộc không cascade. Phương án `assigned=1` nhầm rằng khoá ngoại giữ nguyên giá trị trỏ vào người dùng đã xoá, điều mà database sẽ không cho phép."
+    },
+    {
+      "id": "dotnet-m13-06",
+      "topic": "Truy vấn không dịch được",
+      "source": "Module 13 - EF Core Overview",
+      "question": "`Check.IsValid` là một hàm C# tĩnh tự viết. Đoạn nào ném exception lúc chạy vì EF Core không dịch được sang SQL?",
+      "code": "static class Check\n{\n    public static bool IsValid(string e) => e.Contains('@');\n}",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nvar list = db.Customers\n    .Where(c => Check.IsValid(c.Email))\n    .ToList();\n```",
+        "```csharp\nvar list = db.Customers\n    .Where(c => c.Email.EndsWith(\"@company.com\"))\n    .ToList();\n```",
+        "```csharp\nvar list = db.Customers.ToList()\n    .Where(c => Check.IsValid(c.Email))\n    .ToList();\n```",
+        "```csharp\nvar list = db.Customers.AsEnumerable()\n    .Where(c => Check.IsValid(c.Email))\n    .ToList();\n```"
+      ],
+      "answer": 0,
+      "explanation": "Ở đoạn đầu, `Where` còn nằm trên `IQueryable`, nên EF Core phải dịch `Check.IsValid(...)` sang SQL, mà nó không biết hàm tuỳ ý của bạn: `InvalidOperationException` (\"could not be translated\").\n`EndsWith` là phương thức EF dịch được thành `LIKE`, chạy bình thường.\nHai đoạn còn lại gọi `ToList()` hoặc `AsEnumerable()` **trước** `Where`, nên bộ lọc chạy trong bộ nhớ và không lỗi. Nhưng chúng kéo cả bảng về trước khi lọc, nên chỉ chấp nhận được khi đã thu hẹp tập ở SQL trước."
+    },
+    {
+      "id": "dotnet-m13-07",
+      "topic": "N+1 và cách sửa",
+      "source": "Module 13 - N+1 Problem",
+      "question": "Có 5 `Customer`, mỗi người 2 `Contact`. Chương trình in `tổng-contact số-truy-vấn` (đếm số lần \"Executed DbCommand\" trong log). Đoạn nào tránh được N+1, cho kết quả `10 1`?",
+      "code": "var total = 0;\n// <<< đoạn cần chọn >>>\nConsole.WriteLine($\"{total} {count}\");",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nforeach (var c in db.Customers.ToList())\n    total += db.Contacts\n        .Count(x => x.CustomerId == c.Id);\n```",
+        "```csharp\nforeach (var c in db.Customers.ToList())\n{\n    db.Entry(c).Collection(x => x.Contacts).Load();\n    total += c.Contacts.Count;\n}\n```",
+        "```csharp\ntotal = db.Customers.Include(c => c.Contacts)\n    .ToList().Sum(c => c.Contacts.Count);\n```",
+        "```csharp\nvar ids = db.Customers.Select(c => c.Id).ToList();\nforeach (var id in ids)\n    total += db.Contacts\n        .Count(x => x.CustomerId == id);\n```"
+      ],
+      "answer": 2,
+      "explanation": "`Include(c => c.Contacts)` nạp khách hàng và contact bằng **một** truy vấn JOIN, rồi đếm trong bộ nhớ: `10 1`.\nPhương án đầu là N+1 kinh điển: 1 truy vấn lấy khách hàng rồi mỗi vòng lặp một `COUNT` riêng, tổng `10 6`.\nPhương án dùng explicit loading trong vòng lặp cũng là N+1: mỗi `Load()` là một truy vấn, tổng `10 6`.\nPhương án lấy danh sách `ids` trước rồi lặp vẫn mỗi `id` một truy vấn (1 + 5 = 6). Dấu hiệu nhận ra trong log: nhiều truy vấn giống hệt nhau chỉ khác tham số."
+    },
+    {
+      "id": "dotnet-m13-08",
+      "topic": "Filtered include",
+      "source": "Module 13 - Query Patterns",
+      "question": "Chương trình dưới đây in ra gì?",
+      "code": "// Customer có 3 Contact, chỉ 1 contact IsPrimary = true\nvar a = db.Customers\n    .Include(c => c.Contacts.Where(x => x.IsPrimary)).First();\nConsole.WriteLine(a.Contacts.Count);\n\ndb.ChangeTracker.Clear();\ndb.Contacts.ToList();            // nạp cả 3 contact vào tracker\nvar b = db.Customers\n    .Include(c => c.Contacts.Where(x => x.IsPrimary)).First();\nConsole.WriteLine(b.Contacts.Count);\n\ndb.ChangeTracker.Clear();\ndb.Contacts.ToList();\nvar d = db.Customers.AsNoTracking()\n    .Include(c => c.Contacts.Where(x => x.IsPrimary)).First();\nConsole.WriteLine(d.Contacts.Count);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n1\n1\n1\n```",
+        "```text\n1\n3\n3\n```",
+        "```text\n3\n3\n1\n```",
+        "```text\n1\n3\n1\n```"
+      ],
+      "answer": 3,
+      "explanation": "Lần đầu, tracker rỗng nên filtered include chỉ nạp contact `IsPrimary`: 1.\nLần hai, cả 3 contact đã nằm trong change tracker. EF Core thực hiện \"fixup\" nối mọi contact đã được theo dõi vào navigation, nên `Contacts` có 3 phần tử dù đã lọc: kết quả phụ thuộc vào những gì context đã nạp trước đó.\nLần ba dùng `AsNoTracking`, không có fixup từ tracker nên bộ lọc có hiệu lực: 1.\nPhương án `1, 1, 1` bỏ qua hiệu ứng fixup. Phương án `3, 3, 1` nhầm rằng lần đầu cũng thấy đủ. Phương án `1, 3, 3` nhầm rằng `AsNoTracking` vẫn lấy contact đã nạp."
+    },
+    {
+      "id": "dotnet-m13-09",
+      "topic": "Split query và projection",
+      "source": "Module 13 - Query Patterns",
+      "question": "`count` được đặt về 0 trước câu truy vấn đầu tiên. Chương trình in ra gì?",
+      "code": "// count tăng 1 mỗi lần EF ghi log \"Executed DbCommand\"\n// Customer có 2 Contact và 3 Lead\ndb.Customers.Include(c => c.Contacts).Include(c => c.Leads).First();\nConsole.WriteLine($\"single: {count}\");\n\ndb.ChangeTracker.Clear(); count = 0;\ndb.Customers.Include(c => c.Contacts).Include(c => c.Leads)\n    .AsSplitQuery().First();\nConsole.WriteLine($\"split: {count}\");\n\ndb.ChangeTracker.Clear(); count = 0;\ndb.Customers\n    .Select(c => new { c.Id, N = c.Contacts.Count, M = c.Leads.Count })\n    .First();\nConsole.WriteLine($\"projection: {count}\");",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nsingle: 1\nsplit: 1\nprojection: 1\n```",
+        "```text\nsingle: 1\nsplit: 3\nprojection: 1\n```",
+        "```text\nsingle: 3\nsplit: 3\nprojection: 2\n```",
+        "```text\nsingle: 1\nsplit: 2\nprojection: 3\n```"
+      ],
+      "answer": 1,
+      "explanation": "Hai `Include` collection không có `AsSplitQuery` được dịch thành **một** câu SQL với hai `LEFT JOIN` (2 x 3 = 6 dòng, đây là cartesian explosion thu nhỏ): `single: 1`.\n`AsSplitQuery()` tách mỗi collection thành một truy vấn riêng: 1 cho `Customer`, 1 cho `Contacts`, 1 cho `Leads`, tổng 3. Đổi lại ít dữ liệu lặp, nhưng mất đảm bảo nhất quán nếu không có transaction.\nProjection dùng subquery đếm nên chỉ **một** truy vấn và không cần `Include`: `projection: 1`.\nCác phương án khác nhầm số truy vấn của single hoặc split, hoặc cho rằng projection sinh nhiều truy vấn."
+    },
+    {
+      "id": "dotnet-m13-10",
+      "topic": "Migration đổi tên cột",
+      "source": "Module 13 - Migrations",
+      "question": "Bạn đổi tên thuộc tính `Lead.Email` thành `Lead.ContactEmail`, rồi chạy `dotnet ef migrations add RenameEmail`. EF Core sinh ra gì, và bạn nên làm gì trước khi áp dụng lên production?",
+      "options": [
+        "Tự nhận ra đổi tên và sinh RenameColumn, dữ liệu được giữ, không cần kiểm tra thêm",
+        "Chỉ cập nhật ModelSnapshot, Up và Down rỗng nên cột trong database không đổi",
+        "Sinh DropColumn + AddColumn (mất dữ liệu), cần sửa tay thành RenameColumn",
+        "Báo lỗi lúc chạy lệnh, vì EF Core không cho đổi tên thuộc tính đã có migration"
+      ],
+      "answer": 2,
+      "explanation": "EF Core so sánh model với `ModelSnapshot` và chỉ thấy một cột biến mất và một cột mới xuất hiện; nó không đoán được đó là đổi tên. Vì vậy migration sinh `DropColumn(\"Email\")` + `AddColumn(\"ContactEmail\")`, và dữ liệu cũ **mất** khi chạy.\nCách xử lý: luôn đọc migration và SQL (`migrations script --idempotent`) trước khi lên production, rồi sửa tay thành `migrationBuilder.RenameColumn(...)`.\nPhương án nói EF tự nhận ra đổi tên sai vì EF không suy đoán ý định. Phương án `Up/Down` rỗng sai vì snapshot khác model nên EF sinh thao tác thật. Phương án báo lỗi sai vì đổi tên thuộc tính là thao tác hợp lệ, vấn đề chỉ nằm ở dữ liệu."
+    },
+    {
+      "id": "dotnet-m13-11",
+      "topic": "Last write wins và concurrency token",
+      "source": "Module 13 - Concurrency Control",
+      "question": "Hai context `a` và `b` cùng đọc dữ liệu (Lead.Value = 100, Product.Stock = 10), rồi A lưu trước, B lưu sau. `Lead.Value` **không** có concurrency token, còn `Product.Stock` có `[ConcurrencyCheck]`. Chương trình in ra gì?",
+      "code": "using var a = new Db(opt);\nusing var b = new Db(opt);\nvar la = a.Leads.First();     var lb = b.Leads.First();\nvar pa = a.Products.First();  var pb = b.Products.First();\n\nla.Value = 150; pa.Stock = 7; a.SaveChanges();     // A lưu\nlb.Value = 200; b.SaveChanges();                   // B lưu Lead\nConsole.WriteLine(\"lead: \" + Read().Leads.First().Value);\n\npb.Stock = 5;\ntry { b.SaveChanges(); Console.WriteLine(\"product: saved\"); }\ncatch (DbUpdateConcurrencyException)\n{ Console.WriteLine(\"product: conflict\"); }\nConsole.WriteLine(\"stock: \" + Read().Products.First().Stock);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nlead: 150\nproduct: conflict\nstock: 7\n```",
+        "```text\nlead: 200\nproduct: saved\nstock: 5\n```",
+        "```text\nlead: 200\nproduct: conflict\nstock: 7\n```",
+        "```text\nlead: 200\nproduct: conflict\nstock: 5\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đúng: `lead: 200`, `product: conflict`, `stock: 7`.\n- Lead không có token nên `UPDATE ... WHERE Id = 1` luôn khớp 1 dòng: B ghi đè giá trị 150 của A mà không có lỗi nào (last write wins).\n- Product có token trên `Stock`, nên lệnh của B là `WHERE Id = 1 AND Stock = 10`; A đã đổi Stock thành 7 nên khớp 0 dòng và EF ném `DbUpdateConcurrencyException`.\n- `lead: 150` sai vì không có token thì không ai chặn B. `product: saved` / `stock: 5` sai vì xung đột làm lệnh của B không được ghi, DB vẫn giữ 7."
+    },
+    {
+      "id": "dotnet-m13-12",
+      "topic": "Test concurrency cần hai DbContext",
+      "source": "Module 13 - Concurrency Control",
+      "question": "`Lead.Value` có `[ConcurrencyCheck]`. Đoạn test dưới đây mô phỏng \"hai người cùng sửa\" theo hai cách. Chương trình in ra gì?",
+      "code": "using (var ctx = new Db(opt))\n{\n    var l1 = ctx.Leads.First();\n    var l2 = ctx.Leads.First();\n    Console.WriteLine(ReferenceEquals(l1, l2));\n    l1.Value = 150; ctx.SaveChanges();\n    l2.Value = 200;\n    try { ctx.SaveChanges(); Console.WriteLine(\"saved\"); }\n    catch (DbUpdateConcurrencyException) { Console.WriteLine(\"conflict\"); }\n}\nusing var ctxA = new Db(opt);\nusing var ctxB = new Db(opt);\nvar a = ctxA.Leads.First(); var b = ctxB.Leads.First();\na.Value = 1; ctxA.SaveChanges();\nb.Value = 2;\ntry { ctxB.SaveChanges(); Console.WriteLine(\"saved\"); }\ncatch (DbUpdateConcurrencyException) { Console.WriteLine(\"conflict\"); }",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nTrue\nsaved\nconflict\n```",
+        "```text\nFalse\nconflict\nconflict\n```",
+        "```text\nTrue\nconflict\nconflict\n```",
+        "```text\nFalse\nsaved\nsaved\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đúng: `True`, `saved`, `conflict`.\n- Trong cùng một context, identity map trả về **cùng một instance** cho cùng một dòng, nên `l1` và `l2` là một đối tượng và `ReferenceEquals` là `True`. Không có \"hai phiên bản\" nào để xung đột, lần lưu thứ hai thành công.\n- Với `ctxA` và `ctxB` riêng, mỗi context giữ OriginalValues riêng. B vẫn nhớ `Value = 100` trong khi DB đã là 1, nên `WHERE Value = 100` khớp 0 dòng và ném exception.\n- Vì vậy bài test concurrency bắt buộc dùng hai `DbContext`; dùng một context thì test luôn xanh một cách giả tạo."
+    },
+    {
+      "id": "dotnet-m13-13",
+      "topic": "Gán OriginalValue từ token client",
+      "source": "Module 13 - Concurrency Control",
+      "question": "Endpoint `PUT` nạp lại Lead từ DB rồi sửa. Client đã gửi lên `clientVersion` là token nó thấy ở lần GET trước, trong lúc đó người khác đã lưu thay đổi. Đoạn nào chèn vào chỗ trống để endpoint phát hiện xung đột và trả 409?",
+      "code": "var lead = db.Leads.First(l => l.Id == 1);\n// ... chèn đoạn code vào đây ...\nlead.Title = \"B\";\nlead.Version = Guid.NewGuid();\ntry { db.SaveChanges(); Console.WriteLine(\"204\"); }\ncatch (DbUpdateConcurrencyException)\n{ Console.WriteLine(\"409\"); }",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nlead.Version = clientVersion;\n```",
+        "```csharp\ndb.Entry(lead).Property(l => l.Version)\n    .IsModified = true;\n```",
+        "```csharp\ndb.Entry(lead).Property(l => l.Version)\n    .OriginalValue = clientVersion;\n```",
+        "```csharp\n// token đã khai báo IsConcurrencyToken\n// nên EF tự biết phiên bản client thấy\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng gán `OriginalValue` của token bằng phiên bản client đã thấy. EF dựng `WHERE Version = <OriginalValue>`, nên nó khớp 0 dòng và ném exception, endpoint trả 409.\n- `lead.Version = clientVersion` chỉ đổi CurrentValue (và dòng sau lại ghi đè bằng Guid mới), còn OriginalValue vẫn là token vừa đọc từ DB nên `WHERE` luôn khớp: in `204`.\n- `IsModified = true` chỉ buộc cột được ghi, không đổi giá trị gốc dùng trong `WHERE`: vẫn `204`.\n- Chỉ khai báo token là chưa đủ: EF so với giá trị lúc nạp trong request này, không phải giá trị client đã thấy. Xung đột bị bỏ sót và in `204`."
+    },
+    {
+      "id": "dotnet-m13-14",
+      "topic": "ExecuteUpdate bỏ qua concurrency token",
+      "source": "Module 13 - Concurrency Control",
+      "question": "`Lead.Value` có `[ConcurrencyCheck]`. Context `b` đã đọc Lead trước khi `a` lưu thay đổi. Chương trình in ra gì?",
+      "code": "var la = a.Leads.First(); var lb = b.Leads.First();\nla.Value = 150; a.SaveChanges();\n\nlb.Value = 200;\ntry { b.SaveChanges(); Console.WriteLine(\"SaveChanges: ok\"); }\ncatch (DbUpdateConcurrencyException)\n{ Console.WriteLine(\"SaveChanges: conflict\"); }\n\nint n = b.Leads.Where(l => l.Id == 1)\n    .ExecuteUpdate(s => s.SetProperty(l => l.Value, 300));\nConsole.WriteLine(\"ExecuteUpdate: \" + n);\nConsole.WriteLine(Read().Leads.First().Value);",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nSaveChanges: ok\nExecuteUpdate: 1\n300\n```",
+        "```text\nSaveChanges: conflict\nExecuteUpdate: 0\n150\n```",
+        "```text\nSaveChanges: ok\nExecuteUpdate: 0\n200\n```",
+        "```text\nSaveChanges: conflict\nExecuteUpdate: 1\n300\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đúng: `SaveChanges: conflict`, `ExecuteUpdate: 1`, giá trị cuối là `300`.\n- `SaveChanges` đưa token (`Value = 100` gốc) vào `WHERE`; A đã đổi thành 150 nên 0 dòng bị ảnh hưởng và có exception.\n- `ExecuteUpdate` sinh `UPDATE ... WHERE Id = 1` mà **không** có token, nên luôn khớp 1 dòng và ghi đè 150 thành 300 mà không báo gì.\n- Phương án `SaveChanges: ok` sai vì token đã lỗi thời. Phương án `ExecuteUpdate: 0` sai vì lệnh này không kiểm tra token. Muốn kiểm tra thì phải tự thêm điều kiện token vào `Where` và xét số dòng trả về."
+    },
+    {
+      "id": "dotnet-m13-15",
+      "topic": "Cập nhật nguyên tử thay cho đọc-sửa-lưu",
+      "source": "Module 13 - Concurrency Control",
+      "question": "Kho còn 5 sản phẩm, ba đơn hàng lần lượt đặt 3, 2 và 2. Yêu cầu: trừ kho **nguyên tử** trong một câu lệnh, chỉ thành công khi đủ hàng (đúng 2 đơn thành công, kho về 0). Đoạn nào thực hiện đúng? Chương trình in `<số đơn thành công> <tồn kho>`.",
+      "code": "foreach (var qty in new[] { 3, 2, 2 })\n{\n    using var db = new Db(opt);\n    // ... chèn đoạn code tạo biến affected ...\n    if (affected == 1) ok++;\n}\nConsole.WriteLine(ok + \" \" + Read().Products.First().Stock);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nvar affected = db.Products\n    .Where(p => p.Id == 1 && p.Stock > qty)\n    .ExecuteUpdate(s => s.SetProperty(\n        p => p.Stock, p => p.Stock - qty));\n```",
+        "```csharp\nvar affected = db.Products\n    .Where(p => p.Id == 1 && p.Stock >= qty)\n    .ExecuteUpdate(s => s.SetProperty(\n        p => p.Stock, p => p.Stock - qty));\n```",
+        "```csharp\nvar affected = db.Products\n    .Where(p => p.Id == 1)\n    .ExecuteUpdate(s => s.SetProperty(\n        p => p.Stock, p => p.Stock - qty));\n```",
+        "```csharp\nvar affected = db.Products\n    .Where(p => p.Id == 1 && p.Stock >= qty)\n    .ExecuteUpdate(s => s.SetProperty(\n        p => p.Stock, qty));\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng đặt điều kiện `Stock >= qty` ngay trong `WHERE` và trừ bằng biểu thức `Stock - qty`: kiểm tra và ghi nằm trong một câu lệnh nên không có khe hở. Kết quả `2 0`.\n- Dùng `>` thay vì `>=` làm đơn thứ hai (còn đúng 2, cần 2) bị từ chối oan: `1 2`.\n- Bỏ điều kiện tồn kho thì cả ba đơn đều \"thành công\" và kho âm: `3 -2`.\n- Gán `Stock` bằng chính `qty` (thay vì trừ) làm số tồn sai hoàn toàn: `3 2`.\nĐây là cách tránh xung đột thay vì xử lý xung đột: không đọc trước nên không cần concurrency token."
+    },
+    {
+      "id": "dotnet-m13-16",
+      "topic": "Global query filter và IgnoreQueryFilters",
+      "source": "Module 13 - Global Query Filters",
+      "question": "Context của **tenant 1** được cấu hình filter như bên dưới. Bốn lệnh `Count` dưới đây lần lượt in ra gì?",
+      "code": "// Db(opt, tenant): filter cấu hình trong OnModelCreating\nmodelBuilder.Entity<Customer>().HasQueryFilter(\n    c => c.DeletedAt == null && c.TenantId == tenant.Id);\n\n// Bảng có 4 dòng: A1 (tenant 1), A2 (tenant 1, đã xoá),\n//                 B1 (tenant 2), B2 (tenant 2, đã xoá)\n\nConsole.WriteLine(db.Customers.Count());\nConsole.WriteLine(db.Customers.IgnoreQueryFilters().Count());\nConsole.WriteLine(db.Customers.Count(c => c.DeletedAt != null));\nConsole.WriteLine(db.Customers.IgnoreQueryFilters()\n    .Count(c => c.DeletedAt != null));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\n1\n4\n0\n2\n```",
+        "```text\n2\n4\n1\n2\n```",
+        "```text\n1\n4\n1\n1\n```",
+        "```text\n1\n2\n0\n1\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đúng: `1`, `4`, `0`, `2`.\n- `db.Customers.Count()` chịu filter: chỉ A1 (đúng tenant, chưa xoá) nên là 1.\n- `IgnoreQueryFilters().Count()` bỏ **cả hai** điều kiện, đếm hết 4 dòng của mọi tenant.\n- `Count(c => c.DeletedAt != null)` vẫn nằm sau filter `DeletedAt == null`, hai điều kiện loại nhau nên là 0.\n- `IgnoreQueryFilters().Count(DeletedAt != null)` đếm A2 và B2, tức 2 dòng, trong đó có dữ liệu của tenant khác.\nCác phương án khác nhầm rằng filter chỉ bỏ điều kiện soft delete hoặc chỉ bỏ điều kiện tenant, trong khi `IgnoreQueryFilters` bỏ tất cả."
+    },
+    {
+      "id": "dotnet-m13-17",
+      "topic": "Filter đọc tenant từ instance context",
+      "source": "Module 13 - Global Query Filters",
+      "question": "Hai context cùng kiểu `Db` nhưng nhận tenant khác nhau qua constructor (primary constructor), chạy trong cùng một tiến trình, dùng chung một mô hình EF đã được cache. Filter đọc `tenant.Id` của instance context hiện tại. Chương trình in ra gì?",
+      "code": "// tenant 1: A1 (còn), A2 (đã xoá); tenant 2: B1 (còn), B2 (đã xoá)\nclass Db(DbContextOptions<Db> o, Tenant tenant) : DbContext(o)\n{\n    protected override void OnModelCreating(ModelBuilder mb) =>\n        mb.Entity<Customer>().HasQueryFilter(\n            c => c.DeletedAt == null && c.TenantId == tenant.Id);\n}\n\nusing var t1 = new Db(opt, new Tenant(1));\nusing var t2 = new Db(opt, new Tenant(2));\nConsole.WriteLine(string.Join(\",\", t1.Customers.Select(c => c.Name)));\nConsole.WriteLine(string.Join(\",\", t2.Customers.Select(c => c.Name)));\nConsole.WriteLine(string.Join(\",\", t1.Customers.Select(c => c.Name)));",
+      "codeLang": "csharp",
+      "options": [
+        "```text\nA1\nB1\nA1\n```",
+        "```text\nA1\nA1\nA1\n```",
+        "```text\nA1,A2\nB1,B2\nA1,A2\n```",
+        "```text\nA1\nB1\nB1\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đúng: `A1`, `B1`, `A1`.\n- `OnModelCreating` chỉ chạy một lần và cây biểu thức filter được cache, nhưng vì filter tham chiếu tới giá trị thuộc **instance context** (ở đây `tenant` do primary constructor lưu thành field), EF biến nó thành tham số và đọc lại mỗi lần truy vấn từ context đang chạy. Mỗi context thấy đúng tenant của mình.\n- `A1,A2` / `B1,B2` sai vì filter soft delete `DeletedAt == null` vẫn áp dụng, A2 và B2 bị loại.\n- `A1,A1,A1` hay `A1,B1,B1` mô tả đúng cái bẫy sẽ xảy ra nếu filter bắt giá trị cố định của lần dựng mô hình đầu tiên (ví dụ nhúng thẳng tenant của request đầu), nhưng ở đây filter đọc từ context nên không xảy ra."
+    },
+    {
+      "id": "dotnet-m13-18",
+      "topic": "IgnoreQueryFilters an toàn với đa tenant",
+      "source": "Module 13 - Global Query Filters",
+      "question": "Trang quản trị của **tenant 1** cần đếm số khách hàng **đã xoá mềm của chính tenant 1** (trong dữ liệu mẫu đáp án là `1`). Filter của entity gồm cả soft delete lẫn tenant. Biểu thức nào đúng?",
+      "code": "// Db(opt, tenant): filter cấu hình trong OnModelCreating\nmodelBuilder.Entity<Customer>().HasQueryFilter(\n    c => c.DeletedAt == null && c.TenantId == tenant.Id);\n\n// Bảng có 4 dòng: A1 (tenant 1), A2 (tenant 1, đã xoá),\n//                 B1 (tenant 2), B2 (tenant 2, đã xoá)\n\nvar n = ...;   // chèn biểu thức\nConsole.WriteLine(n);",
+      "codeLang": "csharp",
+      "options": [
+        "```csharp\nt1.Customers\n    .IgnoreQueryFilters()\n    .Count(c => c.DeletedAt != null)\n```",
+        "```csharp\nt1.Customers\n    .Count(c => c.DeletedAt != null)\n```",
+        "```csharp\nt1.Customers\n    .IgnoreQueryFilters()\n    .Count(c => c.TenantId == 1)\n```",
+        "```csharp\nt1.Customers\n    .IgnoreQueryFilters()\n    .Where(c => c.TenantId == 1)\n    .Count(c => c.DeletedAt != null)\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng gọi `IgnoreQueryFilters()` rồi **tự áp lại** điều kiện tenant, chỉ cần soft delete bị bỏ: có A2, kết quả 1.\n- `IgnoreQueryFilters()` rồi đếm `DeletedAt != null` thì bỏ luôn cách ly tenant, đếm cả B2 của tenant 2 (ra 2), một lỗ hổng rò rỉ dữ liệu.\n- Không bỏ filter mà đếm `DeletedAt != null` thì hai điều kiện loại nhau, luôn ra 0.\n- Bỏ filter rồi chỉ lọc tenant thì đếm cả A1 chưa xoá (ra 2), sai yêu cầu \"đã xoá\".\nFilter ở đây là một biểu thức gộp nên không bỏ riêng được. EF Core 10 có named query filters (đặt tên từng filter, rồi `IgnoreQueryFilters([\"SoftDelete\"])`) để chỉ bỏ đúng một điều kiện; nếu không dùng, hãy gói cách làm trên thành extension method như `IncludingDeleted(tenantId)`."
+    },
+    {
+      "id": "dotnet-m13-19",
+      "topic": "Khi nào nên dùng repository",
+      "source": "Module 13 - Unit of Work và Repository Pattern",
+      "question": "Team dùng EF Core và đang tranh luận có nên bọc `DbContext` bằng `IRepository<T>` generic (GetAll, GetById, Add, Remove) cùng `IUnitOfWork` hay không. Lý do nào **chính đáng nhất** để tạo repository?",
+      "options": [
+        "Vì `DbContext` không phải Unit of Work, nên cần `IUnitOfWork` để gom các thay đổi vào một transaction.",
+        "Để sau này đổi ORM dễ hơn, nên mỗi repository trả `IQueryable<T>` cho tầng trên tự truy vấn.",
+        "Tầng domain không được tham chiếu EF Core, nên cần interface cụ thể như `GetStaleLeadsAsync` đặt tên cho truy vấn nghiệp vụ.",
+        "Để tránh phải viết `Include` và `AsNoTracking`, repository generic luôn nạp entity đầy đủ cho mọi use case."
+      ],
+      "answer": 2,
+      "explanation": "Lý do đáng giá nhất đến từ kiến trúc: domain không phụ thuộc hạ tầng, và interface cụ thể (mỗi phương thức có tên nghiệp vụ) còn gom logic truy vấn vào một chỗ.\n- `DbContext` đã là Unit of Work (change tracker theo dõi, `SaveChanges` gói trong một transaction), nên `IUnitOfWork` chỉ chuyển tiếp lời gọi không thêm giá trị.\n- Trả `IQueryable` làm trừu tượng rò rỉ: người gọi vẫn phụ thuộc hành vi EF Core, nên \"dễ đổi ORM\" chỉ là ảo tưởng.\n- Repository generic nạp entity đầy đủ làm **mất** `Include`, projection, `AsNoTracking`, phân trang và `ExecuteUpdate`: đó là cái giá, không phải lợi ích."
+    },
+    {
+      "id": "dotnet-m13-20",
+      "topic": "ETag, If-Match và mã trạng thái",
+      "source": "Module 13 - Concurrency Control",
+      "question": "API dùng `RowVersion` làm ETag. `GET` trả header `ETag`, `PUT` yêu cầu header `If-Match`. Xét hai request `PUT`: (1) client cũ **không gửi** `If-Match`; (2) client gửi `If-Match` là token cũ, trong khi người khác đã sửa bản ghi. Mã trạng thái đúng theo ngữ nghĩa HTTP là gì?",
+      "options": [
+        "(1) 428 Precondition Required, (2) 412 Precondition Failed",
+        "(1) 412 Precondition Failed, (2) 428 Precondition Required",
+        "(1) 400 Bad Request, (2) 500 Internal Server Error",
+        "(1) 204 No Content, (2) 409 Conflict"
+      ],
+      "answer": 0,
+      "explanation": "Thiếu điều kiện tiên quyết thì trả **428 Precondition Required**: bắt buộc client gửi `If-Match`, không để mặc định cho qua. Token không khớp thì trả **412 Precondition Failed**.\n- Đảo hai mã là sai ngữ nghĩa: 412 nghĩa là điều kiện có gửi nhưng không thoả.\n- 400 cho trường hợp thiếu header thì quá chung chung, còn 500 cho xung đột nghĩa là quên bắt `DbUpdateConcurrencyException`, lỗi cần tránh.\n- Trả 204 khi thiếu `If-Match` nghĩa là lặng lẽ bỏ kiểm tra, vô hiệu hoá toàn bộ cơ chế. 409 phù hợp khi token đi trong body và có chi tiết xung đột, không phải với `If-Match`."
+    }
+  ]
+}
