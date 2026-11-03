@@ -18,7 +18,11 @@
     "dotnet:verify": "node scripts/cs-verify.mjs",
     "dotnet:run": "node scripts/cs-run.mjs",
     "dotnet:merge": "node scripts/merge-parts.mjs dotnet",
-    "dotnet:subject": "node scripts/build-subject.mjs dotnet"
+    "dotnet:subject": "node scripts/build-subject.mjs dotnet",
+    "cpp:lint": "node scripts/quiz-lint.mjs cpp",
+    "cpp:verify": "node scripts/cpp-verify.mjs",
+    "cpp:run": "node scripts/cpp-run.mjs",
+    "cpp:subject": "node scripts/build-subject.mjs cpp"
   },
   "dependencies": {
     "@fontsource/be-vietnam-pro": "^5.3.0",

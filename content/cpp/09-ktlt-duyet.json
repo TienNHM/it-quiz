@@ -1,0 +1,349 @@
+{
+  "id": "cpp-c09",
+  "title": "Chương 9: Phương pháp duyệt",
+  "description": "Vét cạn, quay lui, cắt nhánh và nhánh cận qua các bài đệ quy, hoán vị, tổ hợp, N quân hậu.",
+  "questions": [
+    {
+      "id": "cpp-c09-01",
+      "topic": "Khái niệm vét cạn",
+      "source": "KTLT C3 (Phương pháp duyệt)",
+      "question": "Phương pháp vét cạn (brute force) trong kỹ thuật lập trình là gì?",
+      "options": [
+        "Chia bài toán thành các bài con độc lập rồi ghép kết quả",
+        "Liệt kê toàn bộ cấu hình có thể có, kiểm tra từng cấu hình để tìm lời giải",
+        "Tại mỗi bước luôn chọn phương án trông tốt nhất",
+        "Lưu lại kết quả bài con để không phải tính lại"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: vét cạn thử mọi cấu hình rồi chọn cấu hình thỏa mãn yêu cầu, đơn giản nhưng chi phí lớn.\n- `Chia bài toán thành các bài con độc lập rồi ghép kết quả`: đó là chia để trị (divide and conquer).\n- `Tại mỗi bước luôn chọn phương án trông tốt nhất`: đó là tham lam (greedy), không đảm bảo duyệt hết các khả năng.\n- `Lưu lại kết quả bài con để không phải tính lại`: đó là quy hoạch động (dynamic programming)."
+    },
+    {
+      "id": "cpp-c09-02",
+      "topic": "Quay lui",
+      "source": "KTLT C3 (Phương pháp duyệt)",
+      "question": "Ý tưởng cốt lõi của thuật toán quay lui (backtracking) là gì?",
+      "options": [
+        "Duyệt các cấu hình theo thứ tự ngẫu nhiên rồi dừng khi gặp cấu hình đúng đầu tiên",
+        "Sắp xếp dữ liệu trước rồi dùng tìm kiếm nhị phân",
+        "Chỉ dùng vòng lặp và không bao giờ dùng đệ quy",
+        "Xây dựng lời giải từng bước, nếu bước hiện tại không thể dẫn tới lời giải thì hủy lựa chọn đó và thử lựa chọn khác"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: quay lui xây dựng nghiệm từng phần và bỏ lựa chọn khi nó vi phạm ràng buộc.\n- `Duyệt các cấu hình theo thứ tự ngẫu nhiên rồi dừng khi gặp cấu hình đúng đầu tiên`: quay lui duyệt có hệ thống, không ngẫu nhiên.\n- `Sắp xếp dữ liệu trước rồi dùng tìm kiếm nhị phân`: đó là một kỹ thuật khác, không liên quan đến việc xây dựng nghiệm từng phần.\n- `Chỉ dùng vòng lặp và không bao giờ dùng đệ quy`: quay lui thường cài bằng đệ quy, mỗi lần gọi đệ quy là một bước chọn."
+    },
+    {
+      "id": "cpp-c09-03",
+      "topic": "Đếm cấu hình",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài xâu nhị phân",
+      "question": "Số xâu nhị phân độ dài 10 được in ra là bao nhiêu?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    cout << (1 << 10) << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "1024",
+        "100",
+        "20",
+        "3628800"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: mỗi vị trí có 2 lựa chọn nên có 2^10 = 1024 xâu.\n- `100`: đó là 10^2, nhầm công thức.\n- `20`: đó là 2*10, nhầm nhân với cộng.\n- `3628800`: đó là 10!, số hoán vị chứ không phải số xâu nhị phân."
+    },
+    {
+      "id": "cpp-c09-04",
+      "topic": "Cắt nhánh",
+      "source": "KTLT C3 (Phương pháp duyệt)",
+      "question": "Mục đích của kỹ thuật cắt nhánh (pruning) khi duyệt là gì?",
+      "options": [
+        "Làm cho thuật toán chạy theo thứ tự từ điển",
+        "Giảm lượng bộ nhớ của mảng đầu vào",
+        "Bỏ qua sớm các nhánh chắc chắn không dẫn tới lời giải để giảm số cấu hình phải xét",
+        "Thay đệ quy bằng vòng lặp"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: cắt nhánh kiểm tra ràng buộc ngay khi chọn dở dang và dừng nhánh vô vọng.\n- `Làm cho thuật toán chạy theo thứ tự từ điển`: thứ tự duyệt do cách lặp quyết định, không phải cắt nhánh.\n- `Giảm lượng bộ nhớ của mảng đầu vào`: cắt nhánh giảm số bước duyệt, không đổi kích thước dữ liệu.\n- `Thay đệ quy bằng vòng lặp`: cắt nhánh dùng được trong cả đệ quy lẫn vòng lặp, không để khử đệ quy."
+    },
+    {
+      "id": "cpp-c09-05",
+      "topic": "Số hoán vị",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài hoán vị",
+      "question": "Chương trình đếm số hoán vị của 5 phần tử bằng cách sinh hết; kết quả in ra là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint x[5], cnt = 0;\nbool used[6] = {false};\nvoid gen(int i)\n{\n    if (i == 5) { cnt++; return; }\n    for (int v = 1; v <= 5; v++)\n        if (!used[v]) { used[v] = true; x[i] = v; gen(i + 1); used[v] = false; }\n}\nint main()\n{\n    gen(0);\n    cout << cnt << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "25",
+        "32",
+        "120",
+        "3125"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: 5! = 120 hoán vị.\n- `25`: đó là 5^2.\n- `32`: đó là 2^5, số xâu nhị phân.\n- `3125`: đó là 5^5, số dãy có lặp, không phải hoán vị."
+    },
+    {
+      "id": "cpp-c09-06",
+      "topic": "Độ phức tạp duyệt tập con",
+      "source": "KTLT C3 (Phương pháp duyệt)",
+      "question": "Duyệt mọi tập con của tập n phần tử và với mỗi tập tính tổng các phần tử (mất O(n)) thì độ phức tạp thời gian là bao nhiêu?",
+      "options": [
+        "O(n * 2^n)",
+        "O(2^n)",
+        "O(n^2)",
+        "O(n!)"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: có 2^n tập con, mỗi tập tốn O(n) để tính tổng.\n- `O(2^n)`: bỏ sót chi phí O(n) tính tổng cho mỗi tập.\n- `O(n^2)`: số tập con tăng theo hàm mũ chứ không phải bình phương.\n- `O(n!)`: n! là số hoán vị, không phải số tập con."
+    },
+    {
+      "id": "cpp-c09-07",
+      "topic": "Nhánh cận",
+      "source": "KTLT C3 (Phương pháp duyệt)",
+      "question": "Trong bài toán tối ưu (tìm giá trị nhỏ nhất) giải bằng nhánh cận (branch and bound), một nhánh bị loại khi nào?",
+      "options": [
+        "Khi nhánh đó có độ sâu lớn hơn n/2",
+        "Khi nhánh đó là nhánh đầu tiên được duyệt",
+        "Khi giá trị hiện tại bằng 0",
+        "Khi cận dưới chi phí của nhánh đã không tốt hơn lời giải tốt nhất hiện có"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: nếu ngay cả phương án lạc quan nhất của nhánh cũng không cải thiện kết quả tốt nhất thì không cần đi tiếp.\n- `Khi nhánh đó có độ sâu lớn hơn n/2`: độ sâu không phải tiêu chí cắt.\n- `Khi nhánh đó là nhánh đầu tiên được duyệt`: nhánh đầu tiên không bị loại; nó thường dùng để khởi tạo lời giải tốt nhất.\n- `Khi giá trị hiện tại bằng 0`: giá trị 0 không nói gì về triển vọng của nhánh."
+    },
+    {
+      "id": "cpp-c09-08",
+      "topic": "Đệ quy tìm min",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài min đệ quy",
+      "question": "Chương trình sau in ra gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint mn(int A[], int n)\n{\n    if (n == 1) return A[0];\n    int m = mn(A, n - 1);\n    cout << n << \":\" << m << \" \";\n    return A[n - 1] < m ? A[n - 1] : m;\n}\nint main()\n{\n    int A[] = {4, 2, 7, 1, 5};\n    cout << mn(A, 5) << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "5:1 4:2 3:2 2:4 1",
+        "2:4 3:2 4:2 5:1 1",
+        "2:4 3:2 4:1 5:1 1",
+        "2:4 3:2 4:2 5:1 5"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: mỗi lần in diễn ra sau khi lời gọi con trả về; kết quả cuối cùng 1 in ra sau cùng.\n- `5:1 4:2 3:2 2:4 1`: thứ tự in sai: lời gọi sâu nhất in trước, không phải sau.\n- `2:4 3:2 4:1 5:1 1`: dòng in dùng m trước khi so với A[n-1], nên tại n=4 in 4:2 chứ không phải 4:1.\n- `2:4 3:2 4:2 5:1 5`: giá trị trả về là phần tử nhỏ nhất, không phải số phần tử."
+    },
+    {
+      "id": "cpp-c09-09",
+      "topic": "Quay lui với cắt nhánh",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài xâu nhị phân",
+      "question": "Chương trình sinh xâu nhị phân độ dài 3 bằng quay lui, bỏ qua nhánh có hai bit 1 liên tiếp. Kết quả in ra là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint x[3];\nvoid gen(int i)\n{\n    if (i == 3) {\n        for (int j = 0; j < 3; j++) cout << x[j];\n        cout << endl;\n        return;\n    }\n    for (int v = 0; v <= 1; v++) {\n        if (i > 0 && x[i - 1] == 1 && v == 1) continue;\n        x[i] = v;\n        gen(i + 1);\n    }\n}\nint main()\n{\n    gen(0);\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "000\n001\n010\n011\n100\n101\n110\n111",
+        "000\n001\n010\n100",
+        "001\n010\n100\n101",
+        "000\n001\n010\n100\n101"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: các xâu 011, 110, 111 chứa hai bit 1 liền nhau nên bị cắt.\n- `000 / 001 / 010 / 011 / 100 / 101 / 110 / 111`: đây là kết quả khi không cắt nhánh.\n- `000 / 001 / 010 / 100`: thiếu 101, xâu này không có hai bit 1 liên tiếp.\n- `001 / 010 / 100 / 101`: thiếu 000, xâu hợp lệ đầu tiên."
+    },
+    {
+      "id": "cpp-c09-10",
+      "topic": "Hoán vị có điều kiện",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài hoán vị",
+      "question": "Chương trình sau in ra gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint x[3];\nbool used[4] = {false};\nvoid gen(int i)\n{\n    if (i == 3) {\n        if (x[0] < x[2]) {\n            for (int j = 0; j < 3; j++) cout << x[j];\n            cout << endl;\n        }\n        return;\n    }\n    for (int v = 1; v <= 3; v++)\n        if (!used[v]) { used[v] = true; x[i] = v; gen(i + 1); used[v] = false; }\n}\nint main()\n{\n    gen(0);\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "231\n312\n321",
+        "123\n132\n213",
+        "123\n132\n213\n231\n312\n321",
+        "123\n213\n312"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: chỉ các hoán vị có phần tử đầu nhỏ hơn phần tử cuối được in, theo thứ tự từ điển.\n- `231 / 312 / 321`: đây là các hoán vị có x[0] > x[2].\n- `123 / 132 / 213 / 231 / 312 / 321`: đây là toàn bộ hoán vị, không có điều kiện lọc.\n- `123 / 213 / 312`: sai thứ tự và sai tập: 312 có x[0]=3 > x[2]=2."
+    },
+    {
+      "id": "cpp-c09-11",
+      "topic": "Tổ hợp bằng quay lui",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài tổ hợp",
+      "question": "Chương trình liệt kê tổ hợp chập 2 của {1..4} và chỉ in các tổ hợp có tổng chẵn. Kết quả là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint x[2];\nvoid gen(int i, int start)\n{\n    if (i == 2) {\n        if ((x[0] + x[1]) % 2 == 0) cout << x[0] << x[1] << endl;\n        return;\n    }\n    for (int v = start; v <= 4; v++) { x[i] = v; gen(i + 1, v + 1); }\n}\nint main()\n{\n    gen(0, 1);\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "12\n14\n23\n34",
+        "13\n24\n31\n42",
+        "13\n24",
+        "13"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: 12(3) 13(4) 14(5) 23(5) 24(6) 34(7): chỉ 13 và 24 có tổng chẵn.\n- `12 / 14 / 23 / 34`: đây là các tổ hợp có tổng lẻ.\n- `13 / 24 / 31 / 42`: tổ hợp không xét thứ tự, đệ quy bắt đầu từ v+1 nên không có 31 và 42.\n- `13`: thiếu tổ hợp 24 có tổng 6 chẵn."
+    },
+    {
+      "id": "cpp-c09-12",
+      "topic": "Bài toán N quân hậu",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài N quân hậu",
+      "question": "Chương trình đếm số cách đặt n quân hậu lên bàn cờ n x n sao cho không ăn nhau, với n = 4, 5, 6. Kết quả in ra là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint n, col[10], cnt;\nbool ok(int r, int c)\n{\n    for (int i = 0; i < r; i++)\n        if (col[i] == c || abs(col[i] - c) == r - i) return false;\n    return true;\n}\nvoid go(int r)\n{\n    if (r == n) { cnt++; return; }\n    for (int c = 0; c < n; c++)\n        if (ok(r, c)) { col[r] = c; go(r + 1); }\n}\nint main()\n{\n    for (n = 4; n <= 6; n++) {\n        cnt = 0;\n        go(0);\n        cout << cnt << \" \";\n    }\n    cout << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "2 10 4",
+        "2 10 6",
+        "4 10 4",
+        "2 4 10"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: n=4 có 2 nghiệm, n=5 có 10, n=6 có 4 (không tăng đều).\n- `2 10 6`: n=6 thực tế chỉ có 4 nghiệm.\n- `4 10 4`: n=4 có 2 nghiệm, không phải 4.\n- `2 4 10`: đảo thứ tự: n=5 có 10 nghiệm, n=6 có 4."
+    },
+    {
+      "id": "cpp-c09-13",
+      "topic": "Đếm tập con có tổng cho trước",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài tập con",
+      "question": "Hàm cnt đếm số tập con của {3,5,2,7} có tổng bằng 10, đồng thời đếm số lần gọi hàm (có cắt nhánh khi tổng vượt 10). Kết quả là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint a[] = {3, 5, 2, 7}, n = 4, calls = 0;\nint cnt(int i, int s)\n{\n    calls++;\n    if (s == 10) return 1;\n    if (i == n || s > 10) return 0;\n    return cnt(i + 1, s + a[i]) + cnt(i + 1, s);\n}\nint main()\n{\n    int r = cnt(0, 0);\n    cout << r << \" \" << calls << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "2 29",
+        "1 29",
+        "3 29",
+        "4 29"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: hai tập {3,7} và {3,5,2} có tổng 10; 29 là số lần gọi hàm thực tế.\n- `1 29`: bỏ sót một tập, {3,5,2} hoặc {3,7}.\n- `3 29`: không tồn tại tập thứ ba có tổng 10 (7+2=9, 5+2=7, 5+7=12).\n- `4 29`: đếm quá; chỉ có hai tập có tổng 10."
+    },
+    {
+      "id": "cpp-c09-14",
+      "topic": "Số lần gọi đệ quy",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài Fibonacci",
+      "question": "Hàm fib đệ quy thuần túy (không nhớ). Chương trình in ra giá trị fib(5) và tổng số lần gọi hàm. Kết quả là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint calls = 0;\nint fib(int n)\n{\n    calls++;\n    if (n <= 1) return n;\n    return fib(n - 1) + fib(n - 2);\n}\nint main()\n{\n    int r = fib(5);\n    cout << r << \" \" << calls << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "5 5",
+        "5 9",
+        "5 15",
+        "8 15"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: fib(5)=5; số lần gọi T(n)=T(n-1)+T(n-2)+1 cho T(5)=15.\n- `5 5`: nhầm số lần gọi bằng n; thực tế lặp lại rất nhiều lời gọi con.\n- `5 9`: thiếu các lời gọi lặp ở nhánh con; T(5) = 15.\n- `8 15`: fib(5) = 5 (0,1,1,2,3,5), không phải 8."
+    },
+    {
+      "id": "cpp-c09-15",
+      "topic": "Vét cạn hai máy",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài chia việc cho hai máy",
+      "question": "Có 3 việc; việc i làm trên máy A mất A[i], trên máy B mất B[i]. Vét cạn mọi cách gán, chi phí là max(tổng thời gian máy A, tổng thời gian máy B). Chương trình in ra chi phí nhỏ nhất và số cách gán đạt chi phí đó. Kết quả là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int A[3] = {3, 5, 2}, B[3] = {4, 1, 6};\n    int best = 1000000, ways = 0;\n    for (int mask = 0; mask < 8; mask++) {\n        int t1 = 0, t2 = 0;\n        for (int i = 0; i < 3; i++)\n            if ((mask >> i) & 1) t1 += A[i]; else t2 += B[i];\n        int cost = t1 > t2 ? t1 : t2;\n        if (cost < best) { best = cost; ways = 1; }\n        else if (cost == best) ways++;\n    }\n    cout << best << \" \" << ways << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "5 1",
+        "5 2",
+        "7 2",
+        "11 1"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: hai cách gán (chỉ việc 2 cho A; việc 0 và 2 cho A) đều cho chi phí 5.\n- `5 1`: bỏ sót một cách gán đạt chi phí 5.\n- `7 2`: 7 xuất hiện ở hai cách khác nhưng không phải nhỏ nhất.\n- `11 1`: 11 là chi phí khi mọi việc cho máy B, không phải nhỏ nhất."
+    },
+    {
+      "id": "cpp-c09-16",
+      "topic": "Tháp Hà Nội",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài tháp Hà Nội",
+      "question": "Chương trình sau in ra gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nvoid hanoi(int n, char from, char to, char via)\n{\n    if (n == 0) return;\n    hanoi(n - 1, from, via, to);\n    cout << from << \" \" << to << endl;\n    hanoi(n - 1, via, to, from);\n}\nint main()\n{\n    hanoi(2, 'A', 'C', 'B');\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "A C\nA B\nC B",
+        "A C\nB C\nA B",
+        "A B\nB C\nA C",
+        "A B\nA C\nB C"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: chuyển đĩa nhỏ sang cọc phụ, đĩa lớn sang đích, rồi đĩa nhỏ về đích.\n- `A C / A B / C B`: đây là cách chuyển từ A sang B, không phải sang C.\n- `A C / B C / A B`: đĩa lớn chưa thể chuyển trước khi đĩa nhỏ nhường chỗ.\n- `A B / B C / A C`: thứ tự sai: đĩa lớn phải chuyển sang C trước khi đĩa nhỏ về C."
+    },
+    {
+      "id": "cpp-c09-17",
+      "topic": "Đếm cấu hình có ràng buộc",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài hoán vị",
+      "question": "Chương trình đếm số hoán vị của 1..4 sao cho không có vị trí i nào có x[i] = i + 1. Kết quả in ra là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint x[4], cnt = 0;\nbool used[5] = {false};\nvoid gen(int i)\n{\n    if (i == 4) { cnt++; return; }\n    for (int v = 1; v <= 4; v++)\n        if (!used[v] && v != i + 1) { used[v] = true; x[i] = v; gen(i + 1); used[v] = false; }\n}\nint main()\n{\n    gen(0);\n    cout << cnt << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "24",
+        "9",
+        "6",
+        "12"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: đây là số hoán vị không có điểm bất động của 4 phần tử.\n- `24`: đó là tổng số hoán vị, chưa loại trường hợp x[i] = i+1.\n- `6`: đó là 3!, nhầm cách loại.\n- `12`: không khớp; kết quả đúng là 9."
+    },
+    {
+      "id": "cpp-c09-18",
+      "topic": "Phân tích số",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài phân tích số",
+      "question": "Chương trình đếm số cách viết 5 thành tổng các số nguyên dương không tăng (không phân biệt thứ tự). Kết quả là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint cnt = 0;\nvoid go(int remain, int maxPart)\n{\n    if (remain == 0) { cnt++; return; }\n    for (int p = (remain < maxPart ? remain : maxPart); p >= 1; p--)\n        go(remain - p, p);\n}\nint main()\n{\n    go(5, 5);\n    cout << cnt << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "7",
+        "5",
+        "8",
+        "16"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: 5, 4+1, 3+2, 3+1+1, 2+2+1, 2+1+1+1, 1+1+1+1+1.\n- `5`: chưa tính 3+2 và 2+2+1.\n- `8`: đếm thừa một cách.\n- `16`: đó là 2^4, số cách khi có phân biệt thứ tự (compositions)."
+    },
+    {
+      "id": "cpp-c09-19",
+      "topic": "Điều kiện dừng đệ quy",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài đệ quy",
+      "question": "Chọn điều kiện dừng đúng để hàm tong(n) = 1 + 2 + ... + n (tong(0) = 0) in ra 10 với n = 4.",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint tong(int n)\n{\n    {{X}}\n    return n + tong(n - 1);\n}\nint main()\n{\n    cout << tong(4) << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nif (n == 1) return 0;\n```",
+        "```cpp\nif (n == 0) return 1;\n```",
+        "```cpp\nif (n == 2) return 0;\n```",
+        "```cpp\nif (n == 0) return 0;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: tại n = 0 trả về 0, nên tong(4) = 4+3+2+1+0 = 10.\n- `if (n == 1) return 0;`: bỏ mất số 1 nên được 9.\n- `if (n == 0) return 1;`: cộng thêm 1 nên được 11.\n- `if (n == 2) return 0;`: bỏ mất 2 và 1 nên được 7."
+    },
+    {
+      "id": "cpp-c09-20",
+      "topic": "Khôi phục trạng thái khi quay lui",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài hoán vị",
+      "question": "Chọn dòng cần đặt sau lời gọi đệ quy để chương trình đếm đúng 6 hoán vị của {1,2,3}.",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint n = 3, x[3], cnt = 0;\nbool used[4] = {false};\nvoid gen(int i)\n{\n    if (i == n) { cnt++; return; }\n    for (int v = 1; v <= n; v++)\n        if (!used[v]) {\n            used[v] = true;\n            x[i] = v;\n            gen(i + 1);\n            {{X}}\n        }\n}\nint main()\n{\n    gen(0);\n    cout << cnt << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nx[i] = 0;\n```",
+        "```cpp\nused[v] = true;\n```",
+        "```cpp\nused[v] = false;\n```",
+        "```cpp\nused[i] = false;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: bỏ đánh dấu để các nhánh sau có thể chọn lại v (đúng bản chất quay lui).\n- `x[i] = 0;`: không bỏ đánh dấu used nên chỉ sinh được 1 hoán vị.\n- `used[v] = true;`: giữ nguyên đánh dấu, các nhánh sau không chọn được v nữa.\n- `used[i] = false;`: dùng nhầm chỉ số i thay cho v nên không khôi phục đúng."
+    },
+    {
+      "id": "cpp-c09-21",
+      "topic": "Hàm chưa khai báo",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài đệ quy",
+      "question": "Hàm f tính n! bằng đệ quy. Phương án nào gây lỗi biên dịch?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\n{{X}}\nint main()\n{\n    cout << f(4) << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nint f(int n) { return n == 0 ? 1 : n * f(n - 1); }\n```",
+        "```cpp\nint f(int n) { if (n <= 1) return 1; else return n * f(n - 1); }\n```",
+        "```cpp\nint f(int n) { if (n == 0) return 1; return n * g(n - 1); }\n```",
+        "```cpp\nint f(int n) { if (n == 0) return 1; return n * f(n - 1); }\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: hàm g chưa được khai báo hay định nghĩa nên trình biên dịch báo lỗi.\n- `int f(int n) { return n == 0 ? 1 : n * f(n - 1); }`: biên dịch tốt; toán tử ba ngôi viết gọn điều kiện dừng.\n- `int f(int n) { if (n <= 1) return 1; else return n * f(n - 1); }`: biên dịch tốt; điều kiện dừng n <= 1 đúng.\n- `int f(int n) { if (n == 0) return 1; return n * f(n - 1); }`: biên dịch tốt; hàm tự gọi chính nó được phép."
+    },
+    {
+      "id": "cpp-c09-22",
+      "topic": "Điều kiện an toàn N quân hậu",
+      "source": "KTLT C3 (Phương pháp duyệt) - bài N quân hậu",
+      "question": "Chọn điều kiện kiểm tra quân hậu ở hàng r, cột c có an toàn so với hàng i < r. Chương trình phải in số nghiệm với n = 6 là 4.",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint n = 6, col[6], cnt = 0;\nbool ok(int r, int c)\n{\n    for (int i = 0; i < r; i++) {\n        {{X}}\n    }\n    return true;\n}\nvoid go(int r)\n{\n    if (r == n) { cnt++; return; }\n    for (int c = 0; c < n; c++)\n        if (ok(r, c)) { col[r] = c; go(r + 1); }\n}\nint main()\n{\n    go(0);\n    cout << cnt << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nif (col[i] == c) return false;\n```",
+        "```cpp\nif (abs(col[i] - c) == r - i) return false;\n```",
+        "```cpp\nif (col[i] == c || col[i] - c == r - i) return false;\n```",
+        "```cpp\nif (col[i] == c || abs(col[i] - c) == r - i) return false;\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: kiểm tra cùng cột và cả hai đường chéo (chênh lệch cột bằng chênh lệch hàng).\n- `if (col[i] == c) return false;`: chỉ kiểm tra cột, bỏ qua đường chéo nên đếm ra 720.\n- `if (abs(col[i] - c) == r - i) return false;`: chỉ kiểm tra đường chéo, bỏ qua cột.\n- `if (col[i] == c || col[i] - c == r - i) return false;`: chỉ kiểm tra một đường chéo vì thiếu abs."
+    }
+  ]
+}

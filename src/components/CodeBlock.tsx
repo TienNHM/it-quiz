@@ -21,6 +21,16 @@ const CS_KW = set(
 );
 const CS_TYPES = set('int long short byte sbyte uint ulong ushort double float decimal bool char string object void nint nuint');
 
+const CPP_KW = set(
+  'alignas alignof and asm auto bool break case catch class const constexpr const_cast continue decltype default delete do dynamic_cast else enum explicit export extern false ' +
+    'for friend goto if inline mutable namespace new noexcept not nullptr operator or override private protected public register reinterpret_cast return sizeof ' +
+    'static static_assert static_cast struct switch template this throw true try typedef typeid typename union using virtual volatile while final',
+);
+const CPP_TYPES = set(
+  'int long short char float double void signed unsigned size_t string wchar_t int8_t int16_t int32_t int64_t uint8_t uint16_t uint32_t uint64_t FILE ifstream ofstream fstream ' +
+    'vector map set pair array bitset queue stack deque list istream ostream stringstream',
+);
+
 const BASH_KW = set('if then else elif fi for in do done while until case esac function return exit export source alias unset local readonly cd echo sudo apt git dotnet docker npm curl cat ls rm mkdir cp mv');
 
 type Rule = {re: string; cls: string | ((m: string) => string | null)};
@@ -56,6 +66,17 @@ const LANGS: Record<string, Lang> = {
       {re: '\\b\\d[\\d_]*(?:\\.\\d+)?(?:[fFdDmMuUlL]{0,2})\\b', cls: 'n'},
       {re: '[A-Za-z_][A-Za-z_0-9]*(?=\\s*[(<]\\s*[\\w(]|\\s*\\()', cls: (m) => (CS_KW.has(m) ? 'k' : CS_TYPES.has(m) ? 't' : /^[A-Z]/.test(m) ? 'f' : null)},
       {re: '[A-Za-z_][A-Za-z_0-9]*', cls: word(CS_KW, CS_TYPES)},
+    ],
+  },
+  cpp: {
+    flags: 'gm',
+    rules: [
+      {re: String.raw`//[^\n]*|/\*[\s\S]*?\*/`, cls: 'c'},
+      {re: String.raw`"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)+'`, cls: 's'},
+      {re: String.raw`^[ \t]*#\s*\w+[^\n]*`, cls: 'c'},
+      {re: String.raw`\b(?:0[xX][0-9a-fA-F]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)[fFuUlL]{0,3}\b`, cls: 'n'},
+      {re: String.raw`[A-Za-z_][A-Za-z_0-9]*(?=\s*\()`, cls: fnOrWord(CPP_KW, CPP_TYPES)},
+      {re: String.raw`[A-Za-z_][A-Za-z_0-9]*`, cls: word(CPP_KW, CPP_TYPES)},
     ],
   },
   bash: {
@@ -116,7 +137,7 @@ const LANGS: Record<string, Lang> = {
     ],
   },
 };
-const ALIAS: Record<string, string> = {cs: 'csharp', 'c#': 'csharp', sh: 'bash', shell: 'bash', yml: 'yaml', html: 'xml', csproj: 'xml', docker: 'dockerfile', postgresql: 'sql', pgsql: 'sql'};
+const ALIAS: Record<string, string> = {c: 'cpp', 'c++': 'cpp', h: 'cpp', cs: 'csharp', 'c#': 'csharp', sh: 'bash', shell: 'bash', yml: 'yaml', html: 'xml', csproj: 'xml', docker: 'dockerfile', postgresql: 'sql', pgsql: 'sql'};
 
 const compiled = new Map<string, {re: RegExp; rules: Rule[]}>();
 function getLang(lang: string) {

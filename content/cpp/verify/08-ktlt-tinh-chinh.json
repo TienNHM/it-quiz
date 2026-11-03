@@ -1,0 +1,111 @@
+[
+  {
+    "id": "cpp-c08-01",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\ndouble power(double x, int p, int& calls) {\n    calls++;\n    if (p == 0) return 1;\n    if (p == 1) return x;\n    double t = power(x, p / 2, calls);\n    return p % 2 ? x * t * t : t * t;\n}\nint main() { int calls = 0; cout << power(2, 10, calls) << \" \" << calls << endl; }\n"
+  },
+  {
+    "id": "cpp-c08-03",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\nint main() {\n    double A[4] = {1, 2, 3, 4};\n    int n = 3, muls = 0;\n    double x = 2, s = A[n];\n    for (int i = n - 1; i >= 0; i--) { s = s * x + A[i]; muls++; }\n    cout << s << \" \" << muls << endl;\n}\n"
+  },
+  {
+    "id": "cpp-c08-04",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <cstring>\nusing namespace std;\nint calls = 0;\nsize_t len(const char* s) { calls++; return strlen(s); }\nint main() {\n    const char* s = \"hello\";\n    for (int i = 0; i < (int)len(s); i++) { }\n    cout << calls << \" \";\n    calls = 0;\n    int n = (int)len(s);\n    for (int i = 0; i < n; i++) { }\n    cout << calls << endl;\n}\n"
+  },
+  {
+    "id": "cpp-c08-05",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\nusing namespace std;\nint main() {\n    int A[9] = {0, 3, 1, 4, 1, 5, 9, 2, 6};\n    int P[9] = {0};\n    for (int i = 1; i <= 8; i++) P[i] = P[i - 1] + A[i];\n    int l = 2, r = 5;\n    int q = {{X}};\n    cout << q << endl;\n}\n",
+    "options": [
+      "P[r] - P[l - 1]",
+      "P[r] - P[l]",
+      "P[r - 1] - P[l - 1]",
+      "P[r] + P[l - 1]"
+    ],
+    "expectOutput": "11"
+  },
+  {
+    "id": "cpp-c08-06",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\nint main() {\n    int A[4] = {2, 4, 1, 3}, P[5];\n    P[0] = 0;\n    for (int i = 1; i <= 4; i++) P[i] = P[i - 1] + A[i - 1];\n    for (int i = 0; i <= 4; i++) cout << P[i] << \" \";\n    cout << endl;\n}\n"
+  },
+  {
+    "id": "cpp-c08-07",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\nint main() { int n = 10, dem = 0; for (int i = 0; i < n; i++) for (int j = i; j < n; j++) dem++; cout << dem << endl; }\n"
+  },
+  {
+    "id": "cpp-c08-08",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\nint main() { int n = 1000, dem = 0; for (int i = 1; i < n; i *= 2) dem++; cout << dem << endl; }\n"
+  },
+  {
+    "id": "cpp-c08-10",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\nint main() {\n    const int N = 30;\n    bool hop[N + 1] = {};\n    for (int i = 2; i * i <= N; i++)\n        if (!hop[i])\n            for (int j = i * i; j <= N; j += i) hop[j] = true;\n    int dem = 0, last = 0;\n    for (int i = 2; i <= N; i++) if (!hop[i]) { dem++; last = i; }\n    cout << dem << \" \" << last << endl;\n}\n"
+  },
+  {
+    "id": "cpp-c08-11",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\nusing namespace std;\n{{X}}\nint main() {\n    int T[5] = {1, 2, 4, 9, 17};\n    for (int i = 0; i < 5; i++) cout << isPrime(T[i]) << \" \";\n    cout << endl;\n}\n",
+    "options": [
+      "bool isPrime(int n) {\n    for (int i = 2; i * i <= n; i++)\n        if (n % i == 0) return false;\n    return true;\n}",
+      "bool isPrime(int n) {\n    if (n < 2) return false;\n    for (int i = 2; i * i < n; i++)\n        if (n % i == 0) return false;\n    return true;\n}",
+      "bool isPrime(int n) {\n    if (n < 2) return false;\n    for (int i = 3; i * i <= n; i += 2)\n        if (n % i == 0) return false;\n    return true;\n}",
+      "bool isPrime(int n) {\n    if (n < 2) return false;\n    for (int i = 2; i * i <= n; i++)\n        if (n % i == 0) return false;\n    return true;\n}"
+    ],
+    "expectOutput": "0 1 0 0 1"
+  },
+  {
+    "id": "cpp-c08-13",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\nint main() { unsigned int a = 4000000000u; a += 500000000u; long long y = 100000LL * 100000; cout << a << \" \" << y << endl; }\n"
+  },
+  {
+    "id": "cpp-c08-14",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\nint main() { long long f = 1; for (int i = 1; i <= 20; i++) f *= i; cout << f << endl; }\n"
+  },
+  {
+    "id": "cpp-c08-15",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\nint lastZero(int n) { int count = 0; while (n >= 5) { n /= 5; count += n; } return count; }\nint main() { cout << lastZero(100) << \" \" << lastZero(25) << endl; }\n"
+  },
+  {
+    "id": "cpp-c08-16",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\nint main() { double s = 0, tmp = 1; int muls = 0; for (int i = 1; i <= 5; i++) { tmp *= i; muls++; s += tmp; } cout << s << \" \" << muls << endl; }\n"
+  },
+  {
+    "id": "cpp-c08-17",
+    "kind": "cpp-predict",
+    "program": "#include <cstdio>\n#include <iostream>\nusing namespace std;\nint main() { double s = 1, tmp = 1; for (int i = 1; i <= 10; i++) { tmp *= i; s += 1 / tmp; } printf(\"%.6f\\n\", s); }\n"
+  },
+  {
+    "id": "cpp-c08-18",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\nint calls = 0;\nint fib(int n) { calls++; if (n <= 2) return 1; return fib(n - 1) + fib(n - 2); }\nint main() { int v = fib(10); cout << v << \" \" << calls << endl; }\n"
+  },
+  {
+    "id": "cpp-c08-19",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <cctype>\n#include <string>\nusing namespace std;\nint main() {\n    string s = \"Hello World 2024!\";\n    int c[4] = {0};\n    for (char ch : s) {\n        if (islower(ch)) c[0]++;\n        else if (isupper(ch)) c[1]++;\n        else if (isdigit(ch)) c[2]++;\n        else c[3]++;\n    }\n    cout << c[0] << \" \" << c[1] << \" \" << c[2] << \" \" << c[3] << endl;\n}\n"
+  },
+  {
+    "id": "cpp-c08-21",
+    "kind": "cpp-predict",
+    "program": "#include <cstdio>\n#include <iostream>\nusing namespace std;\ndouble power(double x, int p) {\n    if (p < 0) return 1 / power(x, -p);\n    if (p == 0) return 1;\n    if (p == 1) return x;\n    double t = power(x, p / 2);\n    return p % 2 ? x * t * t : t * t;\n}\nint main() { printf(\"%.4f %.4f\\n\", power(2, -3), power(2, 0)); }\n"
+  },
+  {
+    "id": "cpp-c08-22",
+    "kind": "cpp-predict",
+    "program": "#include <cstdio>\n#include <iostream>\nusing namespace std;\nint main() { double s = 0, i = 0; while (s < 3) { i++; s += 1 / i; } printf(\"%.0f\\n\", i); }\n"
+  },
+  {
+    "id": "cpp-c08-23",
+    "kind": "cpp-predict",
+    "program": "#include <cstdio>\n#include <iostream>\nusing namespace std;\nint main() { double a = 0, b = 0; for (int i = 1; i <= 5; i++) a += 1 / i; for (int i = 1; i <= 5; i++) b += 1.0 / i; printf(\"%.2f %.2f\\n\", a, b); }\n"
+  }
+]

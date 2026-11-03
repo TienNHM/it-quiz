@@ -1,0 +1,389 @@
+{
+  "id": "cpp-c05",
+  "title": "Chương 5: Chuỗi và mảng hai chiều",
+  "description": "Chuỗi ký tự (char[] và string), các thuật toán duyệt chuỗi, mảng hai chiều, đường chéo ma trận và nén chuỗi RLE.",
+  "questions": [
+    {
+      "id": "cpp-c05-01",
+      "topic": "Chuỗi C",
+      "source": "NMLT C05 - bài 3 Đảo ngược chuỗi",
+      "question": "Với mảng char dùng như chuỗi C (C-string), vì sao bắt buộc phải có ký tự '\\0' ở cuối chuỗi?",
+      "options": [
+        "Vì '\\0' làm trình biên dịch tự cấp phát thêm bộ nhớ cho chuỗi",
+        "Vì có '\\0' thì hai chuỗi mới so sánh được bằng toán tử ==",
+        "Vì mảng char không lưu độ dài, các hàm như strlen, puts, strcpy dựa vào '\\0' để biết chuỗi kết thúc ở đâu",
+        "Vì '\\0' đảm bảo độ dài chuỗi luôn là số chẵn"
+      ],
+      "answer": 2,
+      "explanation": "- Mảng char chỉ là một dãy byte, không kèm thông tin độ dài. Quy ước '\\0' đánh dấu điểm dừng cho strlen, puts, strcpy, strcat...\n- Thiếu '\\0' thì các hàm trên đọc tiếp qua vùng nhớ sau mảng, kết quả không xác định.\n- '\\0' không làm trình biên dịch cấp phát thêm bộ nhớ; bạn phải tự chừa 1 phần tử cho nó.\n- So sánh C-string bằng == chỉ so sánh địa chỉ, muốn so sánh nội dung phải dùng `strcmp`.\n- Độ dài chuỗi không liên quan chẵn lẻ."
+    },
+    {
+      "id": "cpp-c05-02",
+      "topic": "Chuỗi C",
+      "source": "NMLT C05 - bài 3 Đảo ngược chuỗi",
+      "question": "Đoạn code sau in ra gì? (sizeof tính theo byte, sizeof(char) = 1)",
+      "code": "char s[] = \"abc\";\ncout << sizeof(s) << \" \" << strlen(s);",
+      "codeLang": "cpp",
+      "options": [
+        "4 3",
+        "3 3",
+        "4 4",
+        "3 4"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `4 3`: `\"abc\"` gồm 3 ký tự cộng '\\0' nên mảng s có 4 phần tử, sizeof(s) = 4.\n- strlen đếm đến '\\0' mà không tính nó, nên trả về 3.\n- `3 3` sai vì quên '\\0' khi tính sizeof; `4 4` và `3 4` sai vì nhầm vai trò hai hàm."
+    },
+    {
+      "id": "cpp-c05-03",
+      "topic": "Truyền mảng hai chiều",
+      "source": "NMLT C05 - bài 12 Tổng mảng 2 chiều",
+      "question": "Hàm get nhận mảng 2 chiều có 3 cột và trả về a[i][j]. Khai báo tham số a nào đúng?",
+      "code": "int get(___, int i, int j) { return a[i][j]; }",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nint a[][]\n```",
+        "```cpp\nint a[3][]\n```",
+        "```cpp\nint a[]\n```",
+        "```cpp\nint a[][3]\n```"
+      ],
+      "answer": 3,
+      "explanation": "- `int a[][3]` đúng: với mảng nhiều chiều, trình biên dịch cần biết kích thước mọi chiều trừ chiều đầu để tính địa chỉ a[i][j].\n- `int a[][]` và `int a[3][]` sai vì thiếu kích thước cột, không biên dịch được.\n- `int a[]` là mảng 1 chiều nên biểu thức a[i][j] bị lỗi và không nhận được m làm đối số."
+    },
+    {
+      "id": "cpp-c05-04",
+      "topic": "Nhập chuỗi",
+      "source": "NMLT C05 - bài 3 Nhập chuỗi",
+      "question": "Nhập vào dòng `hello world` rồi Enter. Chương trình in ra gì? (dấu ngoặc vuông chỉ để dễ nhìn)",
+      "code": "string a, b;\ncin >> a;\ngetline(cin, b);\ncout << \"[\" << a << \"][\" << b << \"]\";",
+      "codeLang": "cpp",
+      "options": [
+        "[hello world][]",
+        "[hello][ world]",
+        "[hello][world]",
+        "[hello][]"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả `[hello][ world]`: `cin >> a` dừng ở khoảng trắng và để lại \" world\" cùng ký tự xuống dòng trong bộ đệm.\n- getline đọc phần còn lại đến hết dòng, nên b = \" world\" (còn khoảng trắng đầu).\n- `[hello world][]` sai vì >> không đọc khoảng trắng; `[hello][world]` sai vì getline không bỏ khoảng trắng đầu; `[hello][]` sai vì getline vẫn còn dữ liệu để đọc."
+    },
+    {
+      "id": "cpp-c05-05",
+      "topic": "Chuỗi C",
+      "source": "NMLT C05 - bài 3 Chuỗi C",
+      "question": "Gán '\\0' vào giữa chuỗi thì chuỗi bị \"cắt\" theo cách nhìn của strlen và cout. Đoạn code in ra gì?",
+      "code": "char s[] = \"hello\";\ns[2] = '\\0';\ncout << strlen(s) << \" \" << s << \" \" << sizeof(s);",
+      "codeLang": "cpp",
+      "options": [
+        "5 he 6",
+        "2 he 6",
+        "2 hello 6",
+        "2 he 3"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả `2 he 6`: sau khi s[2] = '\\0', chuỗi hiệu lực chỉ còn \"he\", nên strlen = 2 và cout in \"he\".\n- sizeof(s) là kích thước mảng khai báo (6 byte gồm cả '\\0' cuối), không đổi khi bạn sửa nội dung.\n- `5 he 6` sai vì strlen dừng ở '\\0' mới; `2 hello 6` sai vì cout cũng dừng ở '\\0'; `2 he 3` sai vì sizeof không phụ thuộc nội dung."
+    },
+    {
+      "id": "cpp-c05-06",
+      "topic": "Duyệt chuỗi",
+      "source": "NMLT C05 - bài 3 Đảo ngược chuỗi",
+      "question": "Một bạn viết hàm đảo chuỗi bằng cách hoán đổi s[i] với s[n-1-i] nhưng cho i chạy hết từ 0 đến n-1. Đoạn code in ra gì?",
+      "code": "char s[] = \"abcde\";\nint n = strlen(s);\nfor (int i = 0; i < n; i++)\n    swap(s[i], s[n - 1 - i]);\ncout << s;",
+      "codeLang": "cpp",
+      "options": [
+        "edcba",
+        "ebcda",
+        "abcd",
+        "abcde"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả `abcde`: mỗi cặp vị trí bị hoán đổi hai lần (một lần khi i đi từ đầu, một lần khi i đi từ cuối), nên chuỗi trở về nguyên trạng.\n- Cách đúng là chỉ lặp đến `i < n / 2`, khi đó mới ra `edcba`.\n- `edcba` chỉ có khi vòng lặp dừng ở n/2; `ebcda` và `abcd` không phát sinh từ lỗi này."
+    },
+    {
+      "id": "cpp-c05-07",
+      "topic": "Đếm từ",
+      "source": "NMLT C05 - bài 4 Đếm số từ",
+      "question": "Đếm từ đúng là đếm những chỗ một từ bắt đầu, còn \"số khoảng trắng + 1\" là cách đếm sai khi chuỗi có khoảng trắng thừa. Đoạn code in ra gì?",
+      "code": "string s = \"  hi  there \";\nint spaces = 0, words = 0;\nfor (int i = 0; i < (int)s.size(); i++)\n    if (s[i] == ' ') spaces++;\nfor (int i = 0; i < (int)s.size(); i++)\n    if (s[i] != ' ' && (i == 0 || s[i-1] == ' ')) words++;\ncout << words << \" \" << spaces + 1;",
+      "codeLang": "cpp",
+      "options": [
+        "2 6",
+        "6 2",
+        "2 5",
+        "3 6"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `2 6`: chuỗi có đúng 2 từ (\"hi\", \"there\"), nhưng có 5 khoảng trắng nên \"spaces + 1\" cho 6.\n- Một từ bắt đầu khi ký tự hiện tại khác khoảng trắng và ký tự trước đó là khoảng trắng (hoặc là đầu chuỗi).\n- `6 2` bị đảo thứ tự; `2 5` quên cộng 1; `3 6` đếm sai số từ."
+    },
+    {
+      "id": "cpp-c05-08",
+      "topic": "Chuỗi đối xứng",
+      "source": "NMLT C05 - bài 3 Đảo ngược chuỗi (kiểm tra đối xứng)",
+      "question": "Hàm kiểm tra chuỗi đối xứng (palindrome) bằng hai chỉ số i, j chạy từ hai đầu vào giữa. Đoạn code in ra gì?",
+      "code": "bool isPal(const string& s) {\n    int i = 0, j = s.size() - 1;\n    while (i < j) {\n        if (s[i] != s[j]) return false;\n        i++; j--;\n    }\n    return true;\n}\nint main() {\n    cout << isPal(\"abcba\") << isPal(\"abca\") << isPal(\"x\");\n}",
+      "codeLang": "cpp",
+      "options": [
+        "100",
+        "111",
+        "101",
+        "001"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả `101`: \"abcba\" đối xứng (1); \"abca\" có s[0] = 'a' bằng s[3] = 'a' nhưng s[1] = 'b' khác s[2] = 'c' nên trả về 0; chuỗi 1 ký tự luôn đối xứng (1).\n- Điều kiện `i < j` dừng khi hai chỉ số gặp nhau, nên ký tự ở giữa không cần so sánh.\n- `100` sai vì chuỗi 1 ký tự vẫn đối xứng; `111` sai vì \"abca\" không đối xứng; `001` sai vì \"abcba\" đối xứng."
+    },
+    {
+      "id": "cpp-c05-09",
+      "topic": "Ký tự số",
+      "source": "NMLT C05 - bài 7 Tổng ký tự số trong chuỗi",
+      "question": "Bài 7 yêu cầu tính tổng các ký tự số trong chuỗi. Một bạn quên trừ '0' khi cộng dồn. Với chuỗi \"12\" (mã ASCII của '1' là 49, '2' là 50), đoạn code in ra gì?",
+      "code": "string s = \"12\";\nint sum = 0;\nfor (char c : s)\n    if (c >= '0' && c <= '9') sum += c;\ncout << sum;",
+      "codeLang": "cpp",
+      "options": [
+        "3",
+        "12",
+        "51",
+        "99"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả `99`: `sum += c` cộng mã ASCII của ký tự (49 + 50), không phải giá trị chữ số.\n- Phải đổi bằng `sum += c - '0'` để được 1 + 2 = 3.\n- `3` là kết quả của thuật toán đúng; `12` là phép ghép chữ số chứ không phải phép cộng; `51` không xuất phát từ cách tính nào ở đây."
+    },
+    {
+      "id": "cpp-c05-10",
+      "topic": "Đường chéo ma trận",
+      "source": "NMLT C05 - bài 14 Tổng đường chéo chính, phụ",
+      "question": "Đoạn code tính tổng đường chéo chính (d1) và đường chéo phụ (d2) của ma trận vuông 3x3. Kết quả in ra là gì?",
+      "code": "int a[3][3] = {{2,9,3},{4,5,6},{7,8,1}};\nint d1 = 0, d2 = 0;\nfor (int i = 0; i < 3; i++) {\n    d1 += a[i][i];\n    d2 += a[i][2 - i];\n}\ncout << d1 << \" \" << d2;",
+      "codeLang": "cpp",
+      "options": [
+        "15 8",
+        "8 15",
+        "8 8",
+        "15 15"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả `8 15`: đường chéo chính gồm 2 + 5 + 1 = 8; đường chéo phụ gồm a[0][2] + a[1][1] + a[2][0] = 3 + 5 + 7 = 15.\n- Đường chéo chính có i == j, đường chéo phụ có i + j == n - 1.\n- Các phương án khác hoặc đảo hai tổng, hoặc dùng cùng một công thức cho cả hai đường chéo."
+    },
+    {
+      "id": "cpp-c05-11",
+      "topic": "Đường chéo ma trận",
+      "source": "NMLT C05 - bài 14 Đường chéo phụ",
+      "question": "Với ma trận vuông a cỡ n x n, biểu thức nào thay vào chỗ trống để s là tổng đường chéo phụ (từ góc trên phải xuống góc dưới trái)?",
+      "code": "int s = 0;\nfor (int i = 0; i < n; i++)\n    s += ___;",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\na[i][i]\n```",
+        "```cpp\na[i][(n - i) % n]\n```",
+        "```cpp\na[i][n - 1 - i]\n```",
+        "```cpp\na[i][n - 1]\n```"
+      ],
+      "answer": 2,
+      "explanation": "- `a[i][n - 1 - i]` đúng: các phần tử (0,n-1), (1,n-2), ..., (n-1,0) thoả i + j = n - 1.\n- `a[i][i]` là đường chéo chính.\n- `a[i][(n - i) % n]` chọn (0,0), (1,2), (2,1), một đường zích zắc không phải đường chéo.\n- `a[i][n - 1]` chỉ cộng cột cuối.\n- Lưu ý `a[i][n - i]` (quên trừ 1) sẽ truy cập ngoài biên khi i = 0."
+    },
+    {
+      "id": "cpp-c05-12",
+      "topic": "Duyệt ma trận",
+      "source": "NMLT C05 - bài 16 Vị trí số lớn nhất",
+      "question": "Tìm vị trí số lớn nhất của ma trận. Dùng toán tử `>=` thay cho `>` trong điều kiện cập nhật thì vị trí lưu lại là lần xuất hiện nào? Đoạn code in ra gì?",
+      "code": "int a[2][3] = {{3,9,2},{9,1,9}};\nint mx = a[0][0], r = 0, c = 0;\nfor (int i = 0; i < 2; i++)\n    for (int j = 0; j < 3; j++)\n        if (a[i][j] >= mx) { mx = a[i][j]; r = i; c = j; }\ncout << r << \" \" << c;",
+      "codeLang": "cpp",
+      "options": [
+        "1 2",
+        "0 1",
+        "1 0",
+        "0 0"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `1 2`: số 9 xuất hiện ở (0,1), (1,0), (1,2). Với `>=`, mỗi lần gặp giá trị bằng mx thì vị trí bị ghi đè, nên giữ lại lần cuối là (1,2).\n- Với `>` ta sẽ giữ lần xuất hiện đầu tiên là (0,1).\n- `1 0` là lần xuất hiện thứ hai, không phải lần đầu hay lần cuối; `0 0` là vị trí khởi tạo, giá trị 3 không phải lớn nhất."
+    },
+    {
+      "id": "cpp-c05-13",
+      "topic": "Duyệt biên ma trận",
+      "source": "NMLT C05 - bài 18 Đếm số chẵn trên biên",
+      "question": "Đếm số chẵn nằm trên biên (dòng đầu, dòng cuối, cột đầu, cột cuối) của ma trận 3x4. Đoạn code in ra gì?",
+      "code": "int a[3][4] = {{2,4,6,8},{1,5,10,3},{7,12,9,14}};\nint cnt = 0;\nfor (int i = 0; i < 3; i++)\n    for (int j = 0; j < 4; j++)\n        if ((i == 0 || i == 2 || j == 0 || j == 3) && a[i][j] % 2 == 0)\n            cnt++;\ncout << cnt;",
+      "codeLang": "cpp",
+      "options": [
+        "6",
+        "7",
+        "4",
+        "8"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `6`: dòng đầu có 4 số chẵn (2,4,6,8); dòng cuối có 12 và 14; hai ô biên ở dòng giữa là 1 và 3 đều lẻ.\n- Số 10 nằm bên trong (i = 1, j = 2) nên không tính; đếm cả số 10 sẽ ra `7`.\n- `4` chỉ đếm dòng đầu; `8` đếm dư so với điều kiện biên."
+    },
+    {
+      "id": "cpp-c05-14",
+      "topic": "RLE",
+      "source": "NMLT C05 - bài RLE nén chuỗi",
+      "question": "RLE (run-length encoding) thay mỗi dãy ký tự giống nhau liên tiếp bằng \"số lần + ký tự\". Đoạn code nén chuỗi sau in ra gì?",
+      "code": "string s = \"aaabccdddd\", out;\nfor (size_t i = 0; i < s.size();) {\n    size_t j = i;\n    while (j < s.size() && s[j] == s[i]) j++;\n    out += to_string(j - i) + s[i];\n    i = j;\n}\ncout << out;",
+      "codeLang": "cpp",
+      "options": [
+        "a3b1c2d4",
+        "3a1b2c4",
+        "3a1b2c4d",
+        "3a1b2c3d"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả `3a1b2c4d`: các dãy lần lượt là aaa (3), b (1), cc (2), dddd (4), mỗi dãy ghi dạng \"số rồi ký tự\".\n- `a3b1c2d4` đảo thứ tự số và ký tự; `3a1b2c4` thiếu ký tự d ở cuối; `3a1b2c3d` đếm sai dãy d.\n- Điều kiện `j < s.size()` chặn việc đọc quá cuối chuỗi."
+    },
+    {
+      "id": "cpp-c05-15",
+      "topic": "RLE",
+      "source": "NMLT C05 - bài RLE - xử lý nhóm cuối",
+      "question": "Thuật toán RLE so sánh s[i] với s[i-1], chỉ ghi nhóm khi gặp ký tự khác. Cần thêm lệnh nào sau vòng lặp để không mất nhóm cuối?",
+      "code": "string s = \"aabbbc\", out; int cnt = 1;\nfor (size_t i = 1; i < s.size(); i++) {\n    if (s[i] == s[i-1]) cnt++;\n    else { out += to_string(cnt) + s[i-1]; cnt = 1; }\n}\n___\ncout << out;   // mong đợi 2a3b1c",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\n// không cần làm gì thêm\n```",
+        "```cpp\nout += to_string(cnt) + s.back();\n```",
+        "```cpp\nout += cnt + s.back();\n```",
+        "```cpp\nout += to_string(cnt);\n```"
+      ],
+      "answer": 1,
+      "explanation": "- Vòng lặp chỉ ghi nhóm khi thấy ký tự khác, nên nhóm cuối (\"c\") vẫn đang chờ trong cnt và phải ghi thủ công sau vòng lặp bằng `to_string(cnt) + s.back()`.\n- Không làm gì thêm thì kết quả thiếu \"1c\".\n- `out += cnt + s.back()` cộng số nguyên với char (1 + 'c' = 100) ra ký tự 'd', sai.\n- `out += to_string(cnt)` chỉ ghi số mà thiếu ký tự."
+    },
+    {
+      "id": "cpp-c05-16",
+      "topic": "RLE",
+      "source": "NMLT C05 - bài RLE giải nén",
+      "question": "Giải nén RLE với số lần có nhiều chữ số. Đoạn code đọc \"12a3b\" và in độ dài chuỗi kết quả, rồi in từ vị trí 10 trở đi. Kết quả là gì?",
+      "code": "string t = \"12a3b\", out;\nint cnt = 0;\nfor (char c : t) {\n    if (isdigit(c)) cnt = cnt * 10 + (c - '0');\n    else { out += string(cnt, c); cnt = 0; }\n}\ncout << out.size() << \" \" << out.substr(10);",
+      "codeLang": "cpp",
+      "options": [
+        "15 bbb",
+        "5 aabbb",
+        "15 aaabb",
+        "15 aabbb"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả `15 aabbb`: \"12a\" thành 12 chữ a, \"3b\" thành 3 chữ b, tổng 15 ký tự.\n- Công thức `cnt = cnt * 10 + chữ số` ghép nhiều chữ số thành một số; nếu đọc từng chữ số riêng lẻ sẽ ra 1 và 2 thay vì 12.\n- Vị trí 10 và 11 vẫn là chữ a (12 chữ a chiếm vị trí 0 đến 11), sau đó là bbb, nên được \"aabbb\".\n- Các phương án còn lại sai độ dài hoặc số chữ a còn sót."
+    },
+    {
+      "id": "cpp-c05-17",
+      "topic": "Ký tự và mã ASCII",
+      "source": "NMLT C05 - bài 10 Chữ cái đầu mỗi từ thành chữ hoa",
+      "question": "Phép cộng giữa char và int cho kết quả kiểu int. Đoạn code in ra gì? (mã ASCII của 'a' là 97)",
+      "code": "char c = 'a';\ncout << c + 1 << \" \" << (char)(c + 1);",
+      "codeLang": "cpp",
+      "options": [
+        "b 98",
+        "98 98",
+        "98 b",
+        "b b"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả `98 b`: `c + 1` được thăng cấp thành int (97 + 1 = 98) nên cout in số 98.\n- Ép kiểu `(char)(c + 1)` cho ra ký tự 'b', cout in chữ b.\n- Muốn đổi chữ thường thành hoa, ta dùng `c - 'a' + 'A'` hoặc toupper.\n- Các phương án khác nhầm kiểu in của hai biểu thức."
+    },
+    {
+      "id": "cpp-c05-18",
+      "topic": "Chữ hoa đầu từ",
+      "source": "NMLT C05 - bài 10 Chữ cái đầu mỗi từ thành chữ hoa",
+      "question": "Đổi chữ cái đầu của mỗi từ thành chữ hoa. Chuỗi có hai khoảng trắng liên tiếp ở giữa. Đoạn code in ra gì?",
+      "code": "string s = \"hello big  world\";\nbool start = true;\nfor (char &c : s) {\n    if (start && isalpha(c)) c = toupper(c);\n    start = (c == ' ');\n}\ncout << s;",
+      "codeLang": "cpp",
+      "options": [
+        "Hello Big  World",
+        "Hello big  world",
+        "HELLO BIG  WORLD",
+        "Hello Big World"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `Hello Big  World`: biến start bật lại mỗi khi gặp khoảng trắng, nên ký tự chữ đầu tiên sau đó được đổi thành hoa.\n- Hai khoảng trắng liên tiếp vẫn được giữ nguyên vì code không xoá khoảng trắng.\n- `Hello big  world` chỉ viết hoa từ đầu; `HELLO BIG  WORLD` viết hoa mọi chữ; `Hello Big World` đã bị bớt một khoảng trắng."
+    },
+    {
+      "id": "cpp-c05-19",
+      "topic": "Hàm xử lý chuỗi C",
+      "source": "NMLT C05 - bài 8 Trích chuỗi con",
+      "question": "strcpy ghi cả ký tự '\\0' kết thúc của chuỗi nguồn vào đích. Đoạn code in ra gì?",
+      "code": "char a[20] = \"Hi\";\nstrcat(a, \" there\");\nstrcpy(a + 3, \"all\");\ncout << a << \" \" << strlen(a);",
+      "codeLang": "cpp",
+      "options": [
+        "Hi there 8",
+        "Hi all 8",
+        "Hi all 5",
+        "Hi all 6"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả `Hi all 6`: sau strcat a = \"Hi there\"; strcpy(a + 3, \"all\") ghi \"all\" và '\\0' đè lên vị trí 3 đến 6, nên chuỗi thành \"Hi all\" và strlen = 6.\n- Các ký tự \"re\" còn nằm sau '\\0' nhưng không thuộc chuỗi nữa.\n- `Hi there 8` bỏ qua lệnh strcpy; `Hi all 8` quên '\\0' ngắt chuỗi; `Hi all 5` đếm thiếu khoảng trắng."
+    },
+    {
+      "id": "cpp-c05-20",
+      "topic": "Chuỗi string",
+      "source": "NMLT C05 - bài 8 Trích chuỗi con, 9 Chuỗi con",
+      "question": "Dùng std::string để trích chuỗi con và tìm vị trí ký tự. Đoạn code in ra gì?",
+      "code": "string s = \"hello world\";\ncout << s.substr(6, 3) << \" \" << s.find('o') << \" \"\n     << (s.find('z') == string::npos);",
+      "codeLang": "cpp",
+      "options": [
+        "wor 5 1",
+        "wor 4 1",
+        "world 4 1",
+        "wor 4 0"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả `wor 4 1`: `substr(6, 3)` lấy 3 ký tự từ vị trí 6, tức \"wor\".\n- `find('o')` trả về vị trí xuất hiện đầu tiên, tính từ 0: chữ o đầu tiên ở vị trí 4.\n- Không tìm thấy thì find trả về `string::npos`, nên biểu thức so sánh cho 1 (true).\n- `world` nhầm tham số thứ hai của substr là vị trí kết thúc; `5` đếm từ 1; `0` nhầm kết quả so sánh."
+    },
+    {
+      "id": "cpp-c05-21",
+      "topic": "Chuẩn hoá chuỗi",
+      "source": "NMLT C05 - bài 5 Xoá khoảng trắng thừa",
+      "question": "Xoá khoảng trắng thừa: bỏ khoảng trắng đầu, cuối và gộp các khoảng trắng liên tiếp thành một. Đoạn code in ra gì? (dấu ngoặc vuông chỉ để dễ nhìn)",
+      "code": "string s = \"  a   b  c \", out;\nfor (char c : s) {\n    if (c != ' ') out += c;\n    else if (!out.empty() && out.back() != ' ') out += ' ';\n}\nif (!out.empty() && out.back() == ' ') out.pop_back();\ncout << \"[\" << out << \"]\";",
+      "codeLang": "cpp",
+      "options": [
+        "[a b c]",
+        "[a b c ]",
+        "[ a b c]",
+        "[abc]"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `[a b c]`: khoảng trắng chỉ được thêm khi đã có nội dung và ký tự cuối chưa phải khoảng trắng, nên khoảng trắng đầu bị bỏ và các khoảng trắng liên tiếp gộp lại.\n- Khoảng trắng cuối còn sót lại sẽ bị `pop_back()` xoá.\n- `[a b c ]` thiếu bước xoá cuối; `[ a b c]` giữ khoảng trắng đầu; `[abc]` xoá hết khoảng trắng giữa các từ."
+    },
+    {
+      "id": "cpp-c05-22",
+      "topic": "Đảo từ",
+      "source": "NMLT C05 - bài 6 Đảo ngược các từ trong chuỗi",
+      "question": "Đảo ngược thứ tự các từ trong chuỗi bằng stringstream, mỗi từ đọc được sẽ được ghép lên đầu kết quả. Đoạn code in ra gì?",
+      "code": "string s = \"hoc sinh gioi\", w, out;\nstringstream ss(s);\nwhile (ss >> w)\n    out = w + (out.empty() ? \"\" : \" \") + out;\ncout << out;",
+      "codeLang": "cpp",
+      "options": [
+        "hoc sinh gioi",
+        "gioi hoc sinh",
+        "gioi sinh hoc",
+        "igoi hnis coh"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả `gioi sinh hoc`: mỗi từ mới đọc được đặt lên trước phần đã có, nên từ cuối cùng trở thành từ đầu tiên.\n- Toán tử `>>` của stringstream tự bỏ qua khoảng trắng, nên tách từ rất gọn.\n- `hoc sinh gioi` là chuỗi gốc; `gioi hoc sinh` không đảo đúng thứ tự; `igoi hnis coh` là đảo từng ký tự chứ không phải đảo từ."
+    },
+    {
+      "id": "cpp-c05-23",
+      "topic": "Hệ số",
+      "source": "NMLT C05 - bài 1 Đổi hệ 16 sang hệ 10",
+      "question": "Đổi số thập lục phân \"1F\" sang hệ 10 theo công thức val = val * 16 + chữ số. Đoạn code in ra gì?",
+      "code": "string h = \"1F\";\nint val = 0;\nfor (char c : h) {\n    int d = isdigit(c) ? c - '0' : toupper(c) - 'A' + 10;\n    val = val * 16 + d;\n}\ncout << val;",
+      "codeLang": "cpp",
+      "options": [
+        "16",
+        "31",
+        "15",
+        "241"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả `31`: sau chữ '1' có val = 1; sau chữ 'F' (giá trị 15) có val = 1 * 16 + 15.\n- `16` bỏ qua chữ F; `15` bỏ qua chữ số 1; `241` là kết quả của \"F1\" (đọc ngược thứ tự).\n- Duyệt từ trái sang phải với val * 16 + d là cách làm gọn (Horner), không cần tính luỹ thừa của 16."
+    },
+    {
+      "id": "cpp-c05-24",
+      "topic": "Hệ số",
+      "source": "NMLT C05 - bài 2 Đổi sang nhị phân",
+      "question": "Đổi n = 10 sang nhị phân bằng cách chia 2 lấy dư. Các chữ số thu được theo thứ tự ngược. Đoạn code in chuỗi trước và sau khi đảo. Kết quả là gì?",
+      "code": "int n = 10;\nstring bits;\nwhile (n > 0) { bits += char('0' + n % 2); n /= 2; }\ncout << bits << \" \";\nreverse(bits.begin(), bits.end());\ncout << bits;",
+      "codeLang": "cpp",
+      "options": [
+        "1010 0101",
+        "1010 1010",
+        "0101 0101",
+        "0101 1010"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả `0101 1010`: các số dư lần lượt là 0, 1, 0, 1 (10 -> 5 -> 2 -> 1 -> 0), nên chuỗi ban đầu là \"0101\".\n- Chữ số dư đầu tiên là bit thấp nhất, vì vậy phải đảo chuỗi để được \"1010\", tức 10 ở hệ nhị phân.\n- Các phương án khác in sai chuỗi trước khi đảo hoặc nhầm thứ tự của hai vế."
+    }
+  ]
+}

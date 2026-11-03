@@ -1,0 +1,130 @@
+[
+  {
+    "id": "cpp-c10-04",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int cnt = 0;\n    for (int mask = 0; mask < 64; mask++)\n        if (bitset<6>(mask).count() == 3) cnt++;\n    cout << cnt << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-07",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint getbit(int n, int k) { return (n >> k) & 1; }\nvoid onbit(int &n, int k) { n = n | (1 << k); }\nvoid offbit(int &n, int k) { n = n & ~(1 << k); }\nint main()\n{\n    int n = 10;\n    cout << getbit(n, 1) << getbit(n, 2) << \" \";\n    onbit(n, 0);\n    offbit(n, 3);\n    cout << n << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-08",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int n = 0x2A5, sum = 0;\n    for (int i = 31; i >= 0; i--)\n        if ((n >> i) & 1) sum++;\n    cout << sum << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-09",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int n = 1000, c = 0;\n    while (n) { n &= n - 1; c++; }\n    cout << c << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-10",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int a[4] = {0, 1, 1, 0};\n    for (int t = 0; t < 3; t++) {\n        int i = 3;\n        while (i >= 0 && a[i] == 1) { a[i] = 0; i--; }\n        if (i >= 0) a[i] = 1;\n    }\n    for (int i = 0; i < 4; i++) cout << a[i];\n    cout << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-11",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int cnt = 0;\n    for (int k = 0; k < 32; k++)\n        if ((k & (k >> 1)) == 0) cnt++;\n    cout << cnt << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-12",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint nextComb(int a[], int n, int k)\n{\n    int i = k - 1;\n    while (i >= 0 && a[i] == n - k + i + 1) i--;\n    if (i < 0) return 0;\n    a[i]++;\n    for (int j = i + 1; j < k; j++) a[j] = a[j - 1] + 1;\n    return 1;\n}\nint main()\n{\n    int a[3] = {1, 2, 3};\n    for (int t = 0; t < 6; t++) nextComb(a, 5, 3);\n    for (int i = 0; i < 3; i++) cout << a[i];\n    cout << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-13",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint nextComb(int a[], int n, int k)\n{\n    int i = k - 1;\n    while (i >= 0 && a[i] == n - k + i + 1) i--;\n    if (i < 0) return 0;\n    a[i]++;\n    for (int j = i + 1; j < k; j++) a[j] = a[j - 1] + 1;\n    return 1;\n}\nint main()\n{\n    int a[3] = {1, 2, 3}, cnt = 0;\n    do {\n        if (a[0] + a[1] + a[2] == 9) cnt++;\n    } while (nextComb(a, 5, 3));\n    cout << cnt << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-14",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int a[3] = {1, 3, 2};\n    next_permutation(a, a + 3);\n    for (int i = 0; i < 3; i++) cout << a[i];\n    cout << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-15",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int a[3] = {3, 2, 1};\n    bool r = next_permutation(a, a + 3);\n    cout << r << \" \" << a[0] << a[1] << a[2] << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-16",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    string s = \"aabb\";\n    int cnt = 0;\n    do { cnt++; } while (next_permutation(s.begin(), s.end()));\n    cout << cnt << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-17",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int a[4] = {1, 2, 3, 4};\n    for (int t = 0; t < 10; t++) next_permutation(a, a + 4);\n    for (int i = 0; i < 4; i++) cout << a[i];\n    cout << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-18",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    unsigned x = 0x96;\n    unsigned r = ((x << 3) | (x >> 5)) & 0xFF;\n    cout << bitset<8>(r) << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-19",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int n = 4;\n    if (n & 1 == 0) cout << \"even\";\n    else cout << \"odd\";\n    cout << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-20",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    string s = \"abc\";\n    do { cout << s << \" \"; } while (next_permutation(s.begin(), s.end()));\n    cout << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-21",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    for (int k = 0; k < 8; k++)\n        if (bitset<3>(k).count() == 2) cout << bitset<3>(k) << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c10-22",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int n = 4, a[4] = {0, 1, 1, 1};\n    int i = n - 1;\n    {{X}}\n    if (i >= 0) a[i] = 1;\n    for (int j = 0; j < n; j++) cout << a[j];\n    cout << endl;\n    return 0;\n}\n",
+    "options": [
+      "while (i >= 0 && a[i] == 0) { a[i] = 1; i--; }",
+      "while (i >= 0 && a[i] == 1) i--;",
+      "while (i >= 0 && a[i] == 1) { a[i] = 0; i -= 2; }",
+      "while (i >= 0 && a[i] == 1) { a[i] = 0; i--; }"
+    ],
+    "expectOutput": "1000"
+  },
+  {
+    "id": "cpp-c10-23",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int n = 5, k = 3, a[3] = {1, 4, 5};\n    int i = k - 1;\n    {{X}}\n    if (i >= 0) {\n        a[i]++;\n        for (int j = i + 1; j < k; j++) a[j] = a[j - 1] + 1;\n    }\n    for (int j = 0; j < k; j++) cout << a[j];\n    cout << endl;\n    return 0;\n}\n",
+    "options": [
+      "while (i >= 0 && a[i] == n - k + i + 1) i--;",
+      "while (i >= 0 && a[i] == n) i--;",
+      "while (i >= 0 && a[i] == n - k + i) i--;",
+      "while (i >= 0 && a[i] != n - k + i + 1) i--;"
+    ],
+    "expectOutput": "234"
+  },
+  {
+    "id": "cpp-c10-24",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    unsigned x = 0x96;\n    unsigned r = {{X}};\n    cout << r << endl;\n    return 0;\n}\n",
+    "options": [
+      "(x << 3) | (x >> 5)",
+      "((x << 3) | (x >> 5)) & 0xFF",
+      "(x << 3) & (x >> 5)",
+      "((x >> 3) | (x << 5)) & 0xFF"
+    ],
+    "expectOutput": "180"
+  },
+  {
+    "id": "cpp-c10-25",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int a[3] = {1, 2, 3}, cnt = 0;\n    {{X}}\n    cout << cnt << endl;\n    return 0;\n}\n",
+    "options": [
+      "while (next_permutation(a, a + 3)) cnt++;",
+      "do { cnt++; } while (next_permutation(a, a + 3));",
+      "do { cnt++; } while (prev_permutation(a, a + 3));",
+      "for (int i = 0; i < 3; i++) { next_permutation(a, a + 3); cnt++; }"
+    ],
+    "expectOutput": "6"
+  }
+]

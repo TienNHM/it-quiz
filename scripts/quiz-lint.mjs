@@ -20,6 +20,14 @@ const CONFIG = {
     count: [12, 24],
     minVerify: 0.25,
   },
+  cpp: {
+    idPrefix: (n) => `cpp-c${n}`,
+    lang: 'cpp',
+    isCode: (o) => /;|\{|\}|#include|->|::|<<|>>/.test(o) || /^\s*(int|long|char|float|double|void|bool|string|const|struct|for|while|if|return|cout|cin|printf|scanf)/.test(o),
+    codeFieldLooksLikeCode: (c) => /;|\{|\}|#include/.test(c),
+    count: [18, 26],
+    minVerify: 0.6,
+  },
 };
 const subject = process.argv[2];
 const cfg = CONFIG[subject];
@@ -33,7 +41,7 @@ const chapters = readdirSync(dir)
   .map((f) => f.replace(/\.json$/, ''))
   .filter((f) => !only.length || only.includes(f));
 const emoji = /[\u{1F300}-\u{1FAFF}☀-➿⬀-⯿️]/u;
-const ALLOWED_LANGS = new Set(['sql', 'csharp', 'bash', 'json', 'yaml', 'xml', 'dockerfile', 'text', 'http', 'ini', 'toml']);
+const ALLOWED_LANGS = new Set(['sql', 'csharp', 'cpp', 'c', 'bash', 'json', 'yaml', 'xml', 'dockerfile', 'text', 'http', 'ini', 'toml']);
 const seen = new Set();
 let bad = 0;
 const err = (ch, id, m) => {

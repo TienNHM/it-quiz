@@ -1,0 +1,136 @@
+[
+  {
+    "id": "cpp-c05-02",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nchar s[] = \"abc\";\ncout << sizeof(s) << \" \" << strlen(s);\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-03",
+    "kind": "cpp-choose",
+    "template": "#include <bits/stdc++.h>\nusing namespace std;\nint get({{X}}, int i, int j) { return a[i][j]; }\nint main() { int m[2][3] = {{1,2,3},{4,5,6}}; cout << get(m, 1, 2); }",
+    "options": [
+      "int a[][]",
+      "int a[3][]",
+      "int a[]",
+      "int a[][3]"
+    ]
+  },
+  {
+    "id": "cpp-c05-04",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nstring a, b;\ncin >> a;\ngetline(cin, b);\ncout << \"[\" << a << \"][\" << b << \"]\";\n}\n\n",
+    "stdin": "hello world\n"
+  },
+  {
+    "id": "cpp-c05-05",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nchar s[] = \"hello\";\ns[2] = '\\0';\ncout << strlen(s) << \" \" << s << \" \" << sizeof(s);\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-06",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nchar s[] = \"abcde\";\nint n = strlen(s);\nfor (int i = 0; i < n; i++)\n    swap(s[i], s[n - 1 - i]);\ncout << s;\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-07",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nstring s = \"  hi  there \";\nint spaces = 0, words = 0;\nfor (int i = 0; i < (int)s.size(); i++)\n    if (s[i] == ' ') spaces++;\nfor (int i = 0; i < (int)s.size(); i++)\n    if (s[i] != ' ' && (i == 0 || s[i-1] == ' ')) words++;\ncout << words << \" \" << spaces + 1;\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-08",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nbool isPal(const string& s) {\n    int i = 0, j = s.size() - 1;\n    while (i < j) {\n        if (s[i] != s[j]) return false;\n        i++; j--;\n    }\n    return true;\n}\nint main() {\n    cout << isPal(\"abcba\") << isPal(\"abca\") << isPal(\"x\");\n}\n"
+  },
+  {
+    "id": "cpp-c05-09",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nstring s = \"12\";\nint sum = 0;\nfor (char c : s)\n    if (c >= '0' && c <= '9') sum += c;\ncout << sum;\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-10",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nint a[3][3] = {{2,9,3},{4,5,6},{7,8,1}};\nint d1 = 0, d2 = 0;\nfor (int i = 0; i < 3; i++) {\n    d1 += a[i][i];\n    d2 += a[i][2 - i];\n}\ncout << d1 << \" \" << d2;\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-11",
+    "kind": "cpp-choose",
+    "template": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    int n = 3;\n    int a[3][3] = {{2,9,3},{4,5,6},{7,8,1}};\n    int s = 0;\n    for (int i = 0; i < n; i++)\n        s += {{X}};\n    cout << s;\n}",
+    "options": [
+      "a[i][i]",
+      "a[i][(n - i) % n]",
+      "a[i][n - 1 - i]",
+      "a[i][n - 1]"
+    ]
+  },
+  {
+    "id": "cpp-c05-12",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nint a[2][3] = {{3,9,2},{9,1,9}};\nint mx = a[0][0], r = 0, c = 0;\nfor (int i = 0; i < 2; i++)\n    for (int j = 0; j < 3; j++)\n        if (a[i][j] >= mx) { mx = a[i][j]; r = i; c = j; }\ncout << r << \" \" << c;\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-13",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nint a[3][4] = {{2,4,6,8},{1,5,10,3},{7,12,9,14}};\nint cnt = 0;\nfor (int i = 0; i < 3; i++)\n    for (int j = 0; j < 4; j++)\n        if ((i == 0 || i == 2 || j == 0 || j == 3) && a[i][j] % 2 == 0)\n            cnt++;\ncout << cnt;\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-14",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nstring s = \"aaabccdddd\", out;\nfor (size_t i = 0; i < s.size();) {\n    size_t j = i;\n    while (j < s.size() && s[j] == s[i]) j++;\n    out += to_string(j - i) + s[i];\n    i = j;\n}\ncout << out;\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-15",
+    "kind": "cpp-choose",
+    "template": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\n    string s = \"aabbbc\", out; int cnt = 1;\n    for (size_t i = 1; i < s.size(); i++) {\n        if (s[i] == s[i-1]) cnt++;\n        else { out += to_string(cnt) + s[i-1]; cnt = 1; }\n    }\n    {{X}}\n    cout << out;\n}",
+    "options": [
+      "// không cần làm gì thêm",
+      "out += to_string(cnt) + s.back();",
+      "out += cnt + s.back();",
+      "out += to_string(cnt);"
+    ]
+  },
+  {
+    "id": "cpp-c05-16",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nstring t = \"12a3b\", out;\nint cnt = 0;\nfor (char c : t) {\n    if (isdigit(c)) cnt = cnt * 10 + (c - '0');\n    else { out += string(cnt, c); cnt = 0; }\n}\ncout << out.size() << \" \" << out.substr(10);\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-17",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nchar c = 'a';\ncout << c + 1 << \" \" << (char)(c + 1);\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-18",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nstring s = \"hello big  world\";\nbool start = true;\nfor (char &c : s) {\n    if (start && isalpha(c)) c = toupper(c);\n    start = (c == ' ');\n}\ncout << s;\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-19",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nchar a[20] = \"Hi\";\nstrcat(a, \" there\");\nstrcpy(a + 3, \"all\");\ncout << a << \" \" << strlen(a);\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-20",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nstring s = \"hello world\";\ncout << s.substr(6, 3) << \" \" << s.find('o') << \" \"\n     << (s.find('z') == string::npos);\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-21",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nstring s = \"  a   b  c \", out;\nfor (char c : s) {\n    if (c != ' ') out += c;\n    else if (!out.empty() && out.back() != ' ') out += ' ';\n}\nif (!out.empty() && out.back() == ' ') out.pop_back();\ncout << \"[\" << out << \"]\";\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-22",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nstring s = \"hoc sinh gioi\", w, out;\nstringstream ss(s);\nwhile (ss >> w)\n    out = w + (out.empty() ? \"\" : \" \") + out;\ncout << out;\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-23",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nstring h = \"1F\";\nint val = 0;\nfor (char c : h) {\n    int d = isdigit(c) ? c - '0' : toupper(c) - 'A' + 10;\n    val = val * 16 + d;\n}\ncout << val;\n}\n\n"
+  },
+  {
+    "id": "cpp-c05-24",
+    "kind": "cpp-predict",
+    "program": "#include <bits/stdc++.h>\nusing namespace std;\nint main() {\nint n = 10;\nstring bits;\nwhile (n > 0) { bits += char('0' + n % 2); n /= 2; }\ncout << bits << \" \";\nreverse(bits.begin(), bits.end());\ncout << bits;\n}\n\n"
+  }
+]

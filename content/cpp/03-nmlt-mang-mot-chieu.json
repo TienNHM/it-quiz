@@ -1,0 +1,353 @@
+{
+  "id": "cpp-c03",
+  "title": "Chương 3: Mảng một chiều",
+  "description": "Nhập/xuất mảng, tổng, max/min, trung bình, đếm và tìm phần tử nguyên tố/hoàn thiện, UCLN mảng, Fibonacci và hoán đổi phần tử, kèm các lỗi thường gặp.",
+  "questions": [
+    {
+      "id": "cpp-c03-01",
+      "topic": "Chỉ số mảng",
+      "source": "NMLT C03 - bài 1 Nhập và xuất mảng",
+      "question": "Cho khai báo `int a[5];`. Các chỉ số (index) hợp lệ để truy cập phần tử của mảng là",
+      "options": [
+        "Từ 1 đến 5",
+        "Từ 0 đến 5",
+        "Từ 0 đến 4",
+        "Từ 1 đến 4"
+      ],
+      "answer": 2,
+      "explanation": "- Mảng trong C/C++ đánh chỉ số từ 0, nên 5 phần tử có chỉ số 0, 1, 2, 3, 4.\n- \"Từ 1 đến 5\" sai: `a[5]` nằm ngoài mảng (undefined behaviour) và bỏ sót `a[0]`.\n- \"Từ 0 đến 5\" sai: chứa `a[5]`, chính là lỗi off-by-one hay gặp khi viết `i <= n`.\n- \"Từ 1 đến 4\" sai: bỏ sót phần tử đầu `a[0]`."
+    },
+    {
+      "id": "cpp-c03-02",
+      "topic": "Khởi tạo mảng",
+      "source": "NMLT C03 - bài 1 Nhập và xuất mảng",
+      "question": "Đoạn chương trình sau in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {1, 2};\n    int n = 5;\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1 2 2 2 2",
+        "1 2 1 2 1",
+        "2 1 0 0 0",
+        "1 2 0 0 0"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả thật: `1 2 0 0 0`.\n- Khi danh sách khởi tạo ngắn hơn kích thước mảng, các phần tử còn lại được khởi tạo bằng 0 (value-initialization), không phải rác.\n- \"1 2 2 2 2\" và \"1 2 1 2 1\" sai: C++ không lặp lại hay nhân bản giá trị cuối.\n- \"2 1 0 0 0\" sai: thứ tự phần tử được giữ nguyên theo danh sách khởi tạo."
+    },
+    {
+      "id": "cpp-c03-03",
+      "topic": "Tổng các phần tử",
+      "source": "NMLT C03 - bài 2 Tổng mảng số thực",
+      "question": "Đoạn chương trình tính tổng mảng số thực nhưng khai báo biến tổng sai kiểu. Nó in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    double a[3] = {1.5, 2.25, 3.1};\n    int tong = 0;\n    for (int i = 0; i < 3; i++) tong += a[i];\n    cout << tong << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "6",
+        "6.85",
+        "7",
+        "6.1"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả thật: `6`.\n- `tong += a[i]` tính `tong + a[i]` bằng double rồi CẮT phần thập phân khi gán lại vào `int`: 0+1.5 -> 1, 1+2.25 -> 3, 3+3.1 -> 6.\n- \"6.85\" là tổng đúng nếu `tong` có kiểu `double` - ở đây thì không.\n- \"7\" sai: phép gán sang `int` cắt bỏ phần thập phân chứ không làm tròn.\n- \"6.1\" sai: `tong` là `int` nên không thể chứa phần lẻ."
+    },
+    {
+      "id": "cpp-c03-04",
+      "topic": "Trung bình cộng",
+      "source": "NMLT C03 - bài 4 Trung bình cộng của mảng",
+      "question": "Đoạn chương trình sau in ra gì? (cout mặc định in double ngắn gọn)",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[4] = {1, 2, 2, 2};\n    int n = 4, sum = 0;\n    for (int i = 0; i < n; i++) sum += a[i];\n    int tb1 = sum / n;\n    double tb2 = sum / n;\n    double tb3 = (double)sum / n;\n    cout << tb1 << ' ' << tb2 << ' ' << tb3 << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1.75 1.75 1.75",
+        "1 1 1.75",
+        "1 1.75 1.75",
+        "2 2 1.75"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả thật: `1 1 1.75` (sum = 7, n = 4).\n- `sum / n` là phép chia hai số nguyên nên cho 1; gán vào `double tb2` chỉ đổi kiểu SAU khi đã mất phần lẻ.\n- Chỉ khi ép kiểu một toán hạng trước phép chia, như `(double)sum / n`, mới ra 1.75.\n- \"1.75 1.75 1.75\" và \"1 1.75 1.75\" sai vì cho rằng `double` ở vế trái làm phép chia chính xác.\n- \"2 2 1.75\" sai: chia nguyên cắt bỏ phần thập phân, không làm tròn."
+    },
+    {
+      "id": "cpp-c03-05",
+      "topic": "Tìm số lớn nhất",
+      "source": "NMLT C03 - bài 3 Số lớn nhất trong mảng",
+      "question": "Chọn câu lệnh khởi tạo `mx` để chương trình tìm số lớn nhất đúng với mọi mảng, kể cả mảng toàn số âm.",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[3] = {-2, -9, -5};\n    int n = 3;\n    /* ... CHỖ TRỐNG ... */\n    for (int i = 1; i < n; i++)\n        if (a[i] > mx) mx = a[i];\n    cout << mx << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nint mx = 0;\n```",
+        "```cpp\nint mx = a[1];\n```",
+        "```cpp\nint mx = -1;\n```",
+        "```cpp\nint mx = a[0];\n```"
+      ],
+      "answer": 3,
+      "explanation": "- Đúng: lấy `a[0]` làm ứng viên đầu tiên rồi so sánh với các phần tử còn lại; kết quả thật: `-2`.\n- `int mx = 0;` sai: với mảng toàn số âm, `mx` giữ nguyên 0 - một giá trị không hề có trong mảng.\n- `int mx = -1;` sai vì cùng lý do: mọi phần tử nhỏ hơn -1 sẽ không bao giờ thắng.\n- `int mx = a[1];` sai: vòng lặp bắt đầu từ i = 1 nên bỏ qua `a[0]`, mảng này cho -5 thay vì -2."
+    },
+    {
+      "id": "cpp-c03-06",
+      "topic": "Số nguyên tố",
+      "source": "NMLT C03 - bài 6 Đếm số nguyên tố",
+      "question": "Hàm `isPrime` dưới đây thiếu một điều kiện. Chương trình đếm được bao nhiêu \"số nguyên tố\"?",
+      "code": "#include <iostream>\nusing namespace std;\n\nbool isPrime(int x) {\n    for (int i = 2; i * i <= x; i++)\n        if (x % i == 0) return false;\n    return true;\n}\n\nint main() {\n    int a[9] = {0, 1, 2, 3, 4, 5, -7, 9, 11};\n    int dem = 0;\n    for (int i = 0; i < 9; i++)\n        if (isPrime(a[i])) dem++;\n    cout << dem << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "4",
+        "5",
+        "7",
+        "6"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả thật: `7`.\n- Với x = 0, 1 hoặc số âm, điều kiện `i * i <= x` sai ngay từ đầu nên vòng lặp không chạy và hàm trả `true`.\n- Vậy các giá trị 0, 1, 2, 3, 5, -7, 11 đều bị tính là nguyên tố; chỉ 4 và 9 bị loại.\n- Con số 4 là đáp án ĐÚNG nếu hàm có dòng `if (x < 2) return false;` - đây là lỗi quên kiểm tra ngoại lệ.\n- 5 và 6 sai: không khớp với số phần tử thực sự bị `isPrime` chấp nhận."
+    },
+    {
+      "id": "cpp-c03-07",
+      "topic": "Số hoàn thiện",
+      "source": "NMLT C03 - bài 7 Đếm số hoàn thiện",
+      "question": "Số hoàn thiện là số bằng tổng các ước thực sự của nó. Chương trình sau đếm được bao nhiêu số?",
+      "code": "#include <iostream>\nusing namespace std;\n\nbool isPerfect(int x) {\n    int s = 0;\n    for (int i = 1; i <= x / 2; i++)\n        if (x % i == 0) s += i;\n    return s == x;\n}\n\nint main() {\n    int a[7] = {6, 28, 12, 496, 1, 0, 8128};\n    int dem = 0;\n    for (int i = 0; i < 7; i++)\n        if (isPerfect(a[i])) dem++;\n    cout << dem << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "4",
+        "5",
+        "3",
+        "6"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả thật: `5`.\n- 6, 28, 496, 8128 là các số hoàn thiện thật sự.\n- Với x = 0 vòng lặp không chạy, `s = 0` nên `s == x` đúng: 0 bị đếm nhầm là hoàn thiện. Đây là bẫy quên điều kiện `x > 0`.\n- x = 1 không bị đếm vì tổng ước thực sự của 1 là 0, khác 1.\n- \"4\" là đáp án nếu đã chặn x <= 0; \"3\" và \"6\" không khớp với bất kỳ cách đếm nào ở đây."
+    },
+    {
+      "id": "cpp-c03-08",
+      "topic": "Trung bình cộng có điều kiện",
+      "source": "NMLT C03 - bài 5 Trung bình cộng các số chia hết cho 5",
+      "question": "Chương trình tính trung bình cộng các phần tử chia hết cho 5. Nó in ra gì?",
+      "code": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main() {\n    int a[6] = {5, 12, 10, 7, 15, 0};\n    int tong = 0, dem = 0;\n    for (int i = 0; i < 6; i++)\n        if (a[i] % 5 == 0) { tong += a[i]; dem++; }\n    cout << fixed << setprecision(2) << (double)tong / dem << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "7.50",
+        "10.00",
+        "6.00",
+        "7"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả thật: `7.50`.\n- Các số chia hết cho 5 là 5, 10, 15 và cả 0 (vì `0 % 5 == 0`): tổng 30, đếm 4 phần tử, 30 / 4 = 7.5.\n- \"10.00\" sai: là kết quả khi quên đếm số 0 (30 / 3).\n- \"6.00\" sai: không tương ứng với cách chia nào của dữ liệu này.\n- \"7\" sai: định dạng `fixed` với `setprecision(2)` luôn in hai chữ số thập phân, và phép chia đã ép sang `double`."
+    },
+    {
+      "id": "cpp-c03-09",
+      "topic": "Số lẻ và số âm",
+      "source": "NMLT C03 - bài 28 Chữ số lẻ (kiểm tra tính chẵn lẻ)",
+      "question": "Chương trình đếm số lẻ bằng `a[i] % 2 == 1`. Nó in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {-3, -2, 5, 7, -1};\n    int dem = 0;\n    for (int i = 0; i < 5; i++)\n        if (a[i] % 2 == 1) dem++;\n    cout << dem << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "4",
+        "3",
+        "2",
+        "5"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả thật: `2`.\n- Với số âm, `%` trong C++ cho dấu theo số bị chia: `-3 % 2 == -1` và `-1 % 2 == -1`, không bằng 1.\n- Do đó chỉ 5 và 7 được đếm.\n- \"4\" là số lẻ thật sự của mảng (-3, 5, 7, -1); muốn đếm đúng phải viết `a[i] % 2 != 0`.\n- \"3\" và \"5\" sai: không khớp cách đếm nào."
+    },
+    {
+      "id": "cpp-c03-10",
+      "topic": "Số nguyên tố đầu tiên",
+      "source": "NMLT C03 - bài 11 Số nguyên tố đầu tiên",
+      "question": "Chọn cài đặt đúng của hàm tìm số nguyên tố đầu tiên trong mảng (trả -1 nếu không có).",
+      "code": "#include <iostream>\nusing namespace std;\n\nbool isPrime(int x) {\n    if (x < 2) return false;\n    for (int i = 2; i * i <= x; i++)\n        if (x % i == 0) return false;\n    return true;\n}\n\n/* ... CHỖ TRỐNG ... */\n\nint main() {\n    int a[4] = {4, 9, 7, 11};\n    cout << firstPrime(a, 4) << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nint firstPrime(int a[], int n) {\n    for (int i = 0; i < n; i++)\n        if (isPrime(a[i])) return a[i];\n    return -1;\n}\n```",
+        "```cpp\nint firstPrime(int a[], int n) {\n    for (int i = 0; i < n; i++) {\n        if (isPrime(a[i])) return a[i];\n        else return -1;\n    }\n    return -1;\n}\n```",
+        "```cpp\nint firstPrime(int a[], int n) {\n    for (int i = 0; i < n; i++)\n        if (isPrime(a[i])) return i;\n    return -1;\n}\n```",
+        "```cpp\nint firstPrime(int a[], int n) {\n    for (int i = n - 1; i >= 0; i--)\n        if (isPrime(a[i])) return a[i];\n    return -1;\n}\n```"
+      ],
+      "answer": 0,
+      "explanation": "- Đúng: duyệt từ đầu, gặp số nguyên tố đầu tiên thì trả về GIÁ TRỊ ngay; chỉ trả -1 sau khi duyệt hết. Kết quả: `7`.\n- Cài đặt có `else return -1;` trong vòng lặp sai: phần tử đầu (4) không nguyên tố nên hàm thoát ngay với -1.\n- Cài đặt trả `i` sai: trả vị trí (2) thay vì giá trị theo yêu cầu đề.\n- Cài đặt duyệt ngược sai: tìm số nguyên tố CUỐI cùng (11), đó là bài 14."
+    },
+    {
+      "id": "cpp-c03-11",
+      "topic": "Số dương cuối cùng",
+      "source": "NMLT C03 - bài 13 Số dương cuối cùng",
+      "question": "Hàm tìm \"số dương cuối cùng\" dưới đây dùng điều kiện `a[i] >= 0`. Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\ndouble lastPositive(double a[], int n) {\n    for (int i = n - 1; i >= 0; i--)\n        if (a[i] >= 0) return a[i];\n    return -1;\n}\n\nint main() {\n    double a[5] = {2.5, -1, 4, -3.5, 0};\n    cout << lastPositive(a, 5) << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "4",
+        "-3.5",
+        "-1",
+        "0"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả thật: `0`.\n- Duyệt ngược, phần tử cuối cùng là `0` thỏa `a[i] >= 0` nên hàm trả về 0 ngay.\n- 0 không phải số dương; điều kiện đúng phải là `a[i] > 0`, khi đó kết quả mới là 4.\n- \"-3.5\" và \"-1\" sai: các số âm không bao giờ thỏa `a[i] >= 0`."
+    },
+    {
+      "id": "cpp-c03-12",
+      "topic": "UCLN của mảng",
+      "source": "NMLT C03 - bài 23 UCLN của mảng",
+      "question": "Chương trình in ra UCLN tích lũy sau mỗi phần tử. Output là gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint ucln(int a, int b) {\n    while (b != 0) { int r = a % b; a = b; b = r; }\n    return a;\n}\n\nint main() {\n    int a[4] = {48, 18, 27, 9};\n    int g = a[0];\n    cout << g;\n    for (int i = 1; i < 4; i++) {\n        g = ucln(g, a[i]);\n        cout << ' ' << g;\n    }\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "48 18 9 3",
+        "48 6 3 3",
+        "48 6 3 1",
+        "6 3 3 3"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả thật: `48 6 3 3`.\n- UCLN(48, 18) = 6; UCLN(6, 27) = 3; UCLN(3, 9) = 3.\n- UCLN của cả mảng bằng cách gộp dần: `g = ucln(g, a[i])`, bắt đầu từ `g = a[0]`.\n- \"48 18 9 3\" sai: không phải dãy UCLN tích lũy.\n- \"48 6 3 1\" sai: UCLN(3, 9) là 3, không phải 1.\n- \"6 3 3 3\" sai: dòng đầu in giá trị khởi tạo `g = 48` trước khi gộp."
+    },
+    {
+      "id": "cpp-c03-13",
+      "topic": "Dãy Fibonacci",
+      "source": "NMLT C03 - bài 24 Dãy Fibonacci",
+      "question": "Chương trình lưu dãy Fibonacci vào mảng `long long`. Nó in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    long long f[51];\n    f[0] = 0; f[1] = 1;\n    for (int i = 2; i <= 50; i++) f[i] = f[i - 1] + f[i - 2];\n    cout << f[10] << ' ' << f[50] << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "89 20365011074",
+        "34 7778742049",
+        "55 12586269025",
+        "55 -811192543"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả thật: `55 12586269025` (F10 = 55, F50 = 12586269025).\n- Mảng cần 51 phần tử vì chỉ số chạy 0..50.\n- F50 vượt giới hạn `int` (khoảng 2.1 tỷ), nên phải dùng `long long`; với `int` phép cộng sẽ tràn số.\n- \"89 20365011074\" là F11 và F51 - lệch một chỉ số (off-by-one).\n- \"34 7778742049\" là F9 và F49 - lệch một chỉ số theo chiều ngược lại.\n- \"55 -811192543\" mô phỏng kết quả tràn `int`, không xảy ra với `long long`."
+    },
+    {
+      "id": "cpp-c03-14",
+      "topic": "Đổi chỗ lớn nhất và nhỏ nhất",
+      "source": "NMLT C03 - bài 26 Đổi chỗ phần tử lớn nhất và nhỏ nhất",
+      "question": "Sau khi tìm được chỉ số `imax` và `imin`, chọn đoạn lệnh đổi chỗ đúng hai phần tử đó.",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[4] = {3, 9, 1, 7};\n    int n = 4, imax = 0, imin = 0;\n    for (int i = 1; i < n; i++) {\n        if (a[i] > a[imax]) imax = i;\n        if (a[i] < a[imin]) imin = i;\n    }\n    /* ... CHỖ TRỐNG ... */\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nswap(imax, imin);\n```",
+        "```cpp\nswap(a[imax], a[imin]);\n```",
+        "```cpp\na[imax] = a[imin];\na[imin] = a[imax];\n```",
+        "```cpp\nswap(a[imax], a[imin]);\nswap(a[imax], a[imin]);\n```"
+      ],
+      "answer": 1,
+      "explanation": "- Đúng: `swap(a[imax], a[imin])` hoán đổi giá trị hai phần tử; kết quả: `3 1 9 7`.\n- `swap(imax, imin)` sai: chỉ đổi giá trị hai biến chỉ số, mảng không thay đổi.\n- Hai phép gán liên tiếp sai: sau dòng đầu cả hai phần tử đã cùng giá trị, dòng sau không khôi phục được (mất một giá trị, thiếu biến tạm).\n- Gọi `swap` hai lần sai: lần thứ hai hoàn tác lần thứ nhất, mảng giữ nguyên."
+    },
+    {
+      "id": "cpp-c03-15",
+      "topic": "Mảng tăng dần",
+      "source": "NMLT C03 - bài 22 Kiểm tra mảng tăng",
+      "question": "Hàm kiểm tra mảng tăng dần bị viết vòng lặp `i < n - 2`. Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {1, 2, 3, 5, 4};\n    int n = 5, kq = 1, dem = 0;\n    for (int i = 0; i < n - 2; i++) {\n        dem++;\n        if (a[i] > a[i + 1]) { kq = 0; break; }\n    }\n    cout << \"ket qua: \" << kq << endl;\n    cout << \"so cap: \" << dem << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "ket qua: 1\nso cap: 3",
+        "ket qua: 0\nso cap: 4",
+        "ket qua: 1\nso cap: 4",
+        "ket qua: 0\nso cap: 3"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả thật: `ket qua: 1 / so cap: 3`.\n- Mảng có 5 phần tử thì có 4 cặp liền kề (i = 0..3), nên điều kiện đúng là `i < n - 1`.\n- Vòng lặp `i < n - 2` chỉ xét 3 cặp, bỏ sót cặp cuối (5, 4) và kết luận sai \"tăng dần\".\n- \"ket qua: 0 / so cap: 4\" là kết quả mong muốn nếu vòng lặp đúng; \"ket qua: 0 / so cap: 3\" và \"ket qua: 1 / so cap: 4\" không khớp chương trình này."
+    },
+    {
+      "id": "cpp-c03-16",
+      "topic": "Số đối xứng",
+      "source": "NMLT C03 - bài 27 Số palindrome đầu tiên",
+      "question": "Hàm `palin` đảo ngược chữ số bằng `while (t > 0)`. Tìm phần tử palindrome đầu tiên thì chương trình in ra gì (-1 nếu không có)?",
+      "code": "#include <iostream>\nusing namespace std;\n\nbool palin(int x) {\n    int t = x, r = 0;\n    while (t > 0) { r = r * 10 + t % 10; t /= 10; }\n    return r == x;\n}\n\nint main() {\n    int a[4] = {-33, 10, 0, 121};\n    int kq = -1;\n    for (int i = 0; i < 4; i++)\n        if (palin(a[i])) { kq = a[i]; break; }\n    cout << kq << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "-33",
+        "121",
+        "-1",
+        "0"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả thật: `0`.\n- Với -33 vòng lặp không chạy, `r = 0` khác `-33` nên không phải palindrome (số âm bị loại).\n- Với 10: `r = 1` khác 10. Với 0: vòng lặp không chạy, `r = 0 == x` nên 0 được xem là palindrome.\n- \"121\" sai: bị bỏ qua vì đã tìm thấy 0 ở vị trí sớm hơn.\n- \"-33\" sai: số âm không qua được hàm này; \"-1\" sai vì có phần tử thỏa."
+    },
+    {
+      "id": "cpp-c03-17",
+      "topic": "Chữ số đầu tiên",
+      "source": "NMLT C03 - bài 28 Chữ số đầu tiên là lẻ",
+      "question": "Chọn đoạn lệnh lấy chữ số đầu tiên (bên trái nhất) của số nguyên dương `x` vào `t`.",
+      "code": "#include <iostream>\nusing namespace std;\n\nbool dauLe(int x) {\n    int t = x;\n    /* ... CHỖ TRỐNG ... */\n    return t % 2 == 1;\n}\n\nint main() {\n    int a[4] = {24, 83, 123, 57};\n    for (int i = 0; i < 4; i++)\n        if (dauLe(a[i])) { cout << a[i] << endl; return 0; }\n    cout << 0 << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nt %= 10;\n```",
+        "```cpp\nt /= 10;\n```",
+        "```cpp\nwhile (t >= 10) t /= 10;\n```",
+        "```cpp\nwhile (t % 10 != 0) t /= 10;\n```"
+      ],
+      "answer": 2,
+      "explanation": "- Đúng: chia 10 lặp lại cho đến khi chỉ còn một chữ số; kết quả: `123` (chữ số đầu của 123 là 1, lẻ).\n- `t %= 10;` sai: lấy chữ số CUỐI, nên 83 bị chọn nhầm (chữ số cuối 3 là lẻ).\n- `t /= 10;` sai: chỉ chia một lần, với số 3 chữ số vẫn còn dư 2 chữ số (123 -> 12, chẵn).\n- Vòng lặp `t % 10 != 0` sai: t sẽ giảm về 0, nên mọi số đều cho chữ số \"đầu\" là 0 (chẵn)."
+    },
+    {
+      "id": "cpp-c03-18",
+      "topic": "Đoạn chứa mọi giá trị",
+      "source": "NMLT C03 - bài 29 Đoạn [a, b] chứa mọi giá trị",
+      "question": "Tìm đoạn [lo, hi] chứa mọi giá trị của mảng, nhưng khởi tạo `lo` và `hi` bằng 0. Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    double a[4] = {3.5, 2.0, 8.25, 4.5};\n    double lo = 0, hi = 0;\n    for (int i = 0; i < 4; i++) {\n        if (a[i] < lo) lo = a[i];\n        if (a[i] > hi) hi = a[i];\n    }\n    cout << '[' << lo << \", \" << hi << ']' << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "[0, 8.25]",
+        "[2, 8.25]",
+        "[2, 4.5]",
+        "[0, 4.5]"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả thật: `[0, 8.25]`.\n- Mọi phần tử đều dương nên `lo` không bao giờ bị cập nhật và giữ nguyên 0, vốn không thuộc mảng.\n- Khởi tạo đúng là `lo = hi = a[0]` để đoạn ôm đúng giá trị nhỏ nhất và lớn nhất; khi đó kết quả là [2, 8.25].\n- \"[2, 8.25]\" là đáp án đúng của bài toán nhưng không phải output của đoạn code lỗi này.\n- \"[2, 4.5]\" và \"[0, 4.5]\" sai: `hi` vẫn được cập nhật bình thường lên 8.25."
+    },
+    {
+      "id": "cpp-c03-19",
+      "topic": "Giá trị âm cuối cùng lớn hơn x",
+      "source": "NMLT C03 - bài 30 Giá trị âm cuối cùng lớn hơn x",
+      "question": "Hàm tìm giá trị âm cuối cùng lớn hơn `x` (trả 0 nếu không có). Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\ndouble timCuoi(double a[], int n, double x) {\n    for (int i = n - 1; i >= 0; i--)\n        if (a[i] < 0 && a[i] > x) return a[i];\n    return 0;\n}\n\nint main() {\n    double a[5] = {-5, -1, 3, -2, -8};\n    cout << timCuoi(a, 5, -4) << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "-1",
+        "-2",
+        "-5",
+        "0"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả thật: `-2`.\n- Duyệt ngược: -8 không lớn hơn -4, bỏ qua; -2 là âm và lớn hơn -4 nên trả về ngay.\n- \"-1\" sai: -1 cũng thỏa điều kiện nhưng nằm TRƯỚC -2 trong mảng, còn đề yêu cầu phần tử cuối cùng.\n- \"-5\" sai: -5 nhỏ hơn -4 nên không thỏa `a[i] > x`.\n- \"0\" sai: giá trị 0 chỉ trả về khi duyệt hết mà không có phần tử nào thỏa."
+    },
+    {
+      "id": "cpp-c03-20",
+      "topic": "Duyệt mảng",
+      "source": "NMLT C03 - bài 1 Nhập và xuất mảng",
+      "question": "Khi duyệt mảng `a` có `n` phần tử, vì sao phải viết `for (int i = 0; i < n; i++)` chứ không phải `i <= n`?",
+      "options": [
+        "Vì `a[n]` nằm ngoài mảng, truy cập nó là undefined behaviour",
+        "Vì `a[n]` luôn bằng 0 nên chỉ làm tổng sai chứ không gây lỗi nào khác",
+        "Vì C++ bắt buộc điều kiện của `for` phải dùng toán tử `<`",
+        "Vì `i <= n` luôn làm vòng lặp chạy vô hạn"
+      ],
+      "answer": 0,
+      "explanation": "- Chỉ số hợp lệ là 0..n-1, nên `a[n]` vượt biên: đọc có thể ra giá trị rác, ghi có thể phá dữ liệu khác (undefined behaviour).\n- \"`a[n]` luôn bằng 0\" sai: giá trị ngoài mảng không được đảm bảo, và hậu quả không chỉ là tổng sai.\n- \"Bắt buộc dùng `<`\" sai: `i <= n - 1` vẫn hợp lệ, vấn đề nằm ở biên.\n- \"Chạy vô hạn\" sai: `i <= n` vẫn dừng, chỉ là chạy thừa một lần."
+    },
+    {
+      "id": "cpp-c03-21",
+      "topic": "Kích thước mảng",
+      "source": "NMLT C03 - bài 1 Nhập và xuất mảng",
+      "question": "Đoạn chương trình sau in ra gì? (sizeof(int) là 4 byte)",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[10];\n    cout << sizeof(a) / sizeof(a[0]) << ' ' << sizeof(a) << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "10 10",
+        "40 10",
+        "10 4",
+        "10 40"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả thật: `10 40`.\n- `sizeof(a)` là tổng số byte của mảng: 10 phần tử x 4 byte = 40.\n- Chia cho `sizeof(a[0])` (4 byte) cho ra số phần tử là 10; mẹo này chỉ đúng khi `a` còn là mảng, không phải tham số hàm.\n- \"10 10\" sai: `sizeof(a)` tính theo byte, không theo số phần tử.\n- \"40 10\" sai: hai giá trị bị đảo vị trí.\n- \"10 4\" sai: 4 là kích thước một phần tử, không phải cả mảng."
+    },
+    {
+      "id": "cpp-c03-22",
+      "topic": "Giá trị đặc biệt",
+      "source": "NMLT C03 - bài 10 Số chẵn đầu tiên",
+      "question": "Đề bài yêu cầu hàm tìm số chẵn đầu tiên và trả về -1 nếu mảng không có số chẵn. Vì sao -1 là giá trị trả về hợp lý?",
+      "options": [
+        "Vì -1 là giá trị nhỏ nhất mà kiểu `int` có thể lưu",
+        "Vì -1 là số lẻ nên không thể là một số chẵn hợp lệ trong mảng, giúp phân biệt được \"không tìm thấy\"",
+        "Vì C++ quy định hàm không tìm thấy phần tử thì phải trả về -1",
+        "Vì mảng số nguyên không thể chứa số âm"
+      ],
+      "answer": 1,
+      "explanation": "- Giá trị \"báo không tìm thấy\" (sentinel) phải nằm ngoài tập kết quả hợp lệ; -1 là số lẻ nên không bao giờ trùng với một số chẵn.\n- \"-1 là nhỏ nhất của `int`\" sai: giá trị nhỏ nhất là khoảng -2 tỷ.\n- \"C++ quy định trả -1\" sai: đây chỉ là quy ước của đề bài.\n- \"Mảng không chứa số âm\" sai: mảng số nguyên chứa số âm bình thường (ví dụ -4 là số chẵn hợp lệ)."
+    }
+  ]
+}

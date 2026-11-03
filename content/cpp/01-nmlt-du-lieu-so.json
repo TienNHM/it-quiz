@@ -1,0 +1,389 @@
+{
+  "id": "cpp-c01",
+  "title": "Chương 1: Xử lý trên dữ liệu số",
+  "description": "Kiểu dữ liệu, toán tử, chia nguyên và chia thực, ép kiểu, tràn số, if/switch, nhập xuất và các công thức toán cơ bản.",
+  "questions": [
+    {
+      "id": "cpp-c01-01",
+      "topic": "Chia nguyên và chia thực",
+      "source": "NMLT C01 - bài 2, 19 (phép chia)",
+      "question": "Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nint a = 7, b = 2;\ncout << a / b << \" \" << a % b << \" \" << (double)a / b;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "3.5 1 3.5",
+        "3 1 3.5",
+        "3 1 3",
+        "4 1 3.5"
+      ],
+      "answer": 1,
+      "explanation": "Với hai toán hạng đều là `int`, `a / b` là chia nguyên nên bằng 3, `a % b` là phần dư nên bằng 1. Ép một toán hạng sang `double` trước khi chia thì kết quả là 3.5.\n- \"3.5 1 3.5\" sai vì `a / b` vẫn là chia nguyên.\n- \"3 1 3\" sai vì `(double)a / b` là chia thực, không bị cắt phần lẻ.\n- \"4 1 3.5\" sai vì chia nguyên cắt bỏ phần thập phân chứ không làm tròn."
+    },
+    {
+      "id": "cpp-c01-02",
+      "topic": "Thứ tự tính toán và ép kiểu",
+      "source": "NMLT C01 - bài 3 (chu vi, diện tích)",
+      "question": "Đoạn code dưới in ra gì? Chú ý thứ tự tính của các phép toán.",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\ncout << 7 / 2 * 2.0 << \" \" << 7 / 2.0 * 2;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "7 7",
+        "6 6",
+        "7 6",
+        "6 7"
+      ],
+      "answer": 3,
+      "explanation": "Các phép `/` và `*` cùng độ ưu tiên, tính từ trái sang phải. Biểu thức đầu: `7 / 2` là chia nguyên = 3, rồi `3 * 2.0` = 6. Biểu thức sau: `7 / 2.0` = 3.5, rồi `3.5 * 2` = 7.\n- \"7 7\" sai vì quên rằng `7 / 2` ở biểu thức đầu đã bị cắt thành 3.\n- \"6 6\" sai vì biểu thức sau chia thực nên không mất phần lẻ.\n- \"7 6\" đảo ngược thứ tự hai kết quả."
+    },
+    {
+      "id": "cpp-c01-03",
+      "topic": "Chia và chia dư với số âm",
+      "source": "NMLT C01 - bài 1 (giá trị tuyệt đối)",
+      "question": "Từ C++11, đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\ncout << -7 / 2 << \" \" << -7 % 2;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "-3 -1",
+        "-4 1",
+        "-3 1",
+        "-4 -1"
+      ],
+      "answer": 0,
+      "explanation": "Từ C++11, phép chia nguyên cắt về 0: `-7 / 2` = -3. Phần dư luôn có dấu của số bị chia nên `-7 % 2` = -1 (kiểm tra: (-3)*2 + (-1) = -7).\n- \"-4 1\" sai vì đó là kiểu làm tròn xuống (floor) như Python, C++ không làm vậy.\n- \"-3 1\" sai vì phần dư mang dấu của số bị chia, không phải số dương.\n- \"-4 -1\" sai vì thương bị làm tròn xuống, không khớp với phần dư -1."
+    },
+    {
+      "id": "cpp-c01-04",
+      "topic": "Kiểu char và bảng ASCII",
+      "source": "NMLT C01 - bài 12 (đổi hoa thường)",
+      "question": "Biết mã ASCII của `'b'` là 98 và `'B'` là 66. Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nchar ch = 'b';\nch -= 32;\ncout << ch << (int)ch;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "b66",
+        "B98",
+        "B66",
+        "B32"
+      ],
+      "answer": 2,
+      "explanation": "`char` thực chất là số nguyên nhỏ: 98 - 32 = 66, mà 66 là mã của `'B'`. Vì thế `cout << ch` in ký tự `B` và `(int)ch` in 66, ghép lại thành `B66`. Hiệu giữa chữ thường và chữ hoa trong ASCII đúng bằng 32.\n- \"b66\" sai vì giá trị `ch` đã bị trừ nên không còn là `'b'`.\n- \"B98\" sai vì `(int)ch` là 66 chứ không phải 98.\n- \"B32\" nhầm `(int)ch` với số vừa trừ."
+    },
+    {
+      "id": "cpp-c01-05",
+      "topic": "Làm tròn số thực",
+      "source": "NMLT C01 - bài 18 (làm tròn)",
+      "question": "Một bạn làm tròn bằng công thức `(int)(x + 0.5)`. Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\ndouble x = 2.5, y = -2.5;\ncout << (int)(x + 0.5) << \" \" << (int)(y + 0.5);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "2 -3",
+        "3 -3",
+        "3 -2",
+        "2 -2"
+      ],
+      "answer": 2,
+      "explanation": "`(int)` cắt bỏ phần thập phân (về phía 0). Với 2.5: 3.0 cắt thành 3. Với -2.5: -2.0 cắt thành -2. Do đó in ra `3 -2`.\nCông thức này chỉ đúng với số không âm; với số âm phải trừ 0.5 (hoặc dùng `round()`) mới được -3.\n- \"2 -3\" và \"3 -3\" sai vì giả định công thức làm tròn đúng cho cả số âm.\n- \"2 -2\" sai vì 2.5 + 0.5 = 3.0 chứ không phải 2.0."
+    },
+    {
+      "id": "cpp-c01-06",
+      "topic": "floor và ép kiểu int",
+      "source": "NMLT C01 - bài 8 (số nguyên lớn nhất nhỏ hơn a)",
+      "question": "Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\ndouble a = -3.2;\ncout << (int)a << \" \" << floor(a);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "-3 -4",
+        "-4 -4",
+        "-3 -3",
+        "-4 -3"
+      ],
+      "answer": 0,
+      "explanation": "`(int)a` cắt về 0 nên -3.2 thành -3. `floor(a)` là số nguyên lớn nhất không vượt quá a nên bằng -4. Hai cách này chỉ trùng nhau với số không âm.\n- \"-4 -4\" sai vì ép kiểu sang `int` không làm tròn xuống.\n- \"-3 -3\" sai vì `floor(-3.2)` là -4.\n- \"-4 -3\" đảo ngược kết quả của hai cách."
+    },
+    {
+      "id": "cpp-c01-07",
+      "topic": "Tràn số unsigned",
+      "source": "NMLT C01 - kiểu dữ liệu và miền giá trị",
+      "question": "Đoạn code dưới in ra gì? (`unsigned int` 32 bit, `unsigned char` 8 bit)",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nunsigned int u = 0;\nu--;\ncout << u << \"\\n\";\nunsigned char c = 255;\nc++;\ncout << (int)c;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "-1\n0",
+        "4294967295\n256",
+        "-1\n256",
+        "4294967295\n0"
+      ],
+      "answer": 3,
+      "explanation": "Số không dấu tràn thì quay vòng theo modulo 2^n, đây là hành vi được định nghĩa rõ. `0 - 1` thành 2^32 - 1 = 4294967295, còn `255 + 1` trong `unsigned char` thành 0.\n- Các đáp án có -1 sai vì `unsigned` không thể âm.\n- Các đáp án có 256 sai vì `unsigned char` chỉ chứa 0..255, tăng lên 256 sẽ quay về 0.\nLưu ý: tràn số có dấu (`int`) mới là hành vi không xác định."
+    },
+    {
+      "id": "cpp-c01-08",
+      "topic": "Tràn số khi nhân int",
+      "source": "NMLT C01 - kiểu dữ liệu và miền giá trị",
+      "question": "Cho `int a = 100000, b = 100000;`. Cách nào lưu đúng tích 10^10 vào `long long p`?",
+      "options": [
+        "```cpp\nlong long p = a * b;\n```",
+        "```cpp\nlong long p = (long long)a * b;\n```",
+        "```cpp\nlong long p = (long long)(a * b);\n```",
+        "```cpp\nint p = a * b;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Phải ép một toán hạng sang `long long` TRƯỚC khi nhân thì phép nhân mới diễn ra ở 64 bit: `(long long)a * b`.\n- `long long p = a * b;` nhân hai `int` trước (tràn, hành vi không xác định) rồi mới gán sang `long long`.\n- `(long long)(a * b)` ép kiểu sau khi nhân, nên đã tràn rồi.\n- `int p = a * b;` vừa tràn vừa không chứa nổi 10^10 (giới hạn `int` khoảng 2.1 x 10^9)."
+    },
+    {
+      "id": "cpp-c01-09",
+      "topic": "printf định dạng",
+      "source": "NMLT C01 - nhập xuất printf/scanf",
+      "question": "Đoạn code dưới in ra gì? (dấu | để thấy rõ khoảng trắng)",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nprintf(\"%d|%5.2f|%c|%s\", 5, 3.14159, 'A', \"hi\");\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "5| 3.14|A|hi",
+        "5|3.14|A|hi",
+        "5|3.14159|A|hi",
+        "5|  3.14|A|hi"
+      ],
+      "answer": 0,
+      "explanation": "`%5.2f` in số thực rộng tối thiểu 5 ký tự với 2 chữ số lẻ: \"3.14\" chỉ dài 4 ký tự nên được thêm 1 dấu cách phía trước thành \" 3.14\".\n- \"5|3.14|A|hi\" sai vì quên độ rộng 5 nên thiếu dấu cách.\n- \"5|3.14159|A|hi\" sai vì `.2` giới hạn 2 chữ số sau dấu chấm.\n- \"5|  3.14|A|hi\" thừa một dấu cách vì độ rộng tối thiểu là 5, không phải 6."
+    },
+    {
+      "id": "cpp-c01-10",
+      "topic": "cout, fixed và setprecision",
+      "source": "NMLT C01 - nhập xuất cin/cout",
+      "question": "Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\ncout << fixed << setprecision(2)\n     << 3.14159 << \" \" << 10.0 / 4 << \" \" << 7 / 2;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "3.14 2.5 3.50",
+        "3.14159 2.50 3",
+        "3.14 2.50 3",
+        "3.14 2 3"
+      ],
+      "answer": 2,
+      "explanation": "`fixed` kèm `setprecision(2)` in đúng 2 chữ số sau dấu chấm cho số thực: `3.14` và `2.50`. Còn `7 / 2` là chia nguyên có kiểu `int` nên là 3 và không bị ảnh hưởng bởi `fixed`.\n- \"3.14 2.5 3.50\" sai vì fixed giữ nguyên số chữ số lẻ (2.50) và 7 / 2 không phải số thực.\n- \"3.14159 2.50 3\" sai vì setprecision(2) cũng áp dụng cho 3.14159.\n- \"3.14 2 3\" sai vì 10.0 / 4 là số thực 2.5 chứ không phải 2."
+    },
+    {
+      "id": "cpp-c01-11",
+      "topic": "Nhập số thực, in 2 chữ số lẻ",
+      "source": "NMLT C01 - bài 3 (chu vi hình chữ nhật)",
+      "question": "Chương trình dưới đọc chiều dài và rộng. Với dữ liệu nhập `3.5 2.25` nó in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\n    float d, r;\n    cin >> d >> r;\n    printf(\"%.2f\", 2 * (d + r));\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "11.5",
+        "11.50",
+        "11.00",
+        "11"
+      ],
+      "answer": 1,
+      "explanation": "Chu vi = 2 x (3.5 + 2.25) = 11.5. `%.2f` luôn in đủ 2 chữ số lẻ nên kết quả là `11.50`.\n- \"11.5\" sai vì `%.2f` bắt buộc có 2 chữ số sau dấu chấm.\n- \"11.00\" sai vì phép tính cho 11.5 chứ không phải số nguyên.\n- \"11\" sai vì cả phép tính lẫn định dạng đều giữ phần thập phân."
+    },
+    {
+      "id": "cpp-c01-12",
+      "topic": "Điều kiện giờ hợp lệ",
+      "source": "NMLT C01 - bài 5 (giờ phút giây hợp lệ)",
+      "question": "Hàm `hopLe` kiểm tra bộ giờ-phút-giây hợp lệ (giờ 0..23, phút và giây 0..59). Chọn biểu thức đúng thay vào chỗ trống trong `return ...;`.",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nbool hopLe(int h, int m, int s) {\n    return /* ... */;\n}\nint main() {\n    int t[4][3] = {{0,0,0},{24,0,0},{23,59,59},{5,70,5}};\n    for (int i = 0; i < 4; i++)\n        cout << hopLe(t[i][0], t[i][1], t[i][2]) << \" \";\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nh >= 0 && h <= 24 && m >= 0 && m < 60 && s >= 0 && s < 60\n```",
+        "```cpp\nh > 0 && h < 24 && m >= 0 && m < 60 && s >= 0 && s < 60\n```",
+        "```cpp\nh >= 0 && h < 24 && m >= 0 && m < 60 && s >= 0 && s < 60\n```",
+        "```cpp\nh >= 0 && h < 24 || m >= 0 && m < 60 && s >= 0 && s < 60\n```"
+      ],
+      "answer": 2,
+      "explanation": "Phải đủ cả sáu cận: giờ 0 <= h < 24, phút 0 <= m < 60, giây 0 <= s < 60, nối bằng `&&`.\n- Dùng `h <= 24` làm 24:00:00 bị coi là hợp lệ.\n- Dùng `h > 0` loại nhầm 0 giờ (nửa đêm 00:00:00).\n- Dùng `||` giữa giờ và phần còn lại làm (5, 70, 5) bị coi hợp lệ vì `&&` có độ ưu tiên cao hơn `||` nên chỉ cần giờ đúng là đủ."
+    },
+    {
+      "id": "cpp-c01-13",
+      "topic": "Tìm số nhỏ nhất của 3 số",
+      "source": "NMLT C01 - bài 7, 9 (min của 3 số)",
+      "question": "Chọn thân hàm `min3` trả về đúng số nhỏ nhất với mọi cặp giá trị (kể cả bằng nhau).",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint min3(int a, int b, int c) {\n    /* ... */\n}\nint main() {\n    cout << min3(1,2,3) << min3(3,2,1) << min3(2,1,3) << min3(1,3,0) << min3(5,5,5);\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nint m = a;\n    if (b < m) m = b;\n    if (c < m) m = c;\n    return m;\n```",
+        "```cpp\nif (a < b) return a;\n    if (b < c) return b;\n    return c;\n```",
+        "```cpp\nreturn (a < b) ? a : c;\n```",
+        "```cpp\nif (a < b && a < c) return a;\n    if (b < a) return b;\n    return c;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Cách \"giả sử a nhỏ nhất rồi so lần lượt với b, c\" luôn đúng.\n- Đáp án 2 sai: chỉ so `a` với `b` rồi trả về luôn, bỏ qua `c` (ví dụ min3(1,3,0) trả 1).\n- Đáp án 3 sai: `(a < b) ? a : c` không so `b` với `c` khi `a < b`, và không so `a` với `c`.\n- Đáp án 4 sai: khi `a` không phải nhỏ nhất, chỉ cần `b < a` đã trả `b` mà không so với `c` (min3(3,2,1) trả 2)."
+    },
+    {
+      "id": "cpp-c01-14",
+      "topic": "Năm nhuận",
+      "source": "NMLT C01 - bài 10 (năm nhuận)",
+      "question": "Năm nhuận: chia hết cho 4 mà không chia hết cho 100, hoặc chia hết cho 400. Chọn biểu thức đúng thay vào chỗ trống trong `return ...;`.",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nbool nhuan(int y) {\n    return /* ... */;\n}\nint main() {\n    int ys[4] = {1900, 2000, 2023, 2024};\n    for (int i = 0; i < 4; i++) cout << nhuan(ys[i]) << \" \";\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\ny % 4 == 0\n```",
+        "```cpp\ny % 4 == 0 && y % 100 != 0\n```",
+        "```cpp\ny % 4 == 0 || y % 400 == 0\n```",
+        "```cpp\n(y % 4 == 0 && y % 100 != 0) || y % 400 == 0\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đúng với quy tắc: `(y % 4 == 0 && y % 100 != 0) || y % 400 == 0`. Kết quả cho 1900, 2000, 2023, 2024 là 0 1 0 1.\n- `y % 4 == 0` sai với 1900 (chia hết cho 100 nhưng không cho 400).\n- `y % 4 == 0 && y % 100 != 0` sai với 2000 vì thiếu vế \"hoặc chia hết cho 400\".\n- `y % 4 == 0 || y % 400 == 0` vẫn sai với 1900 vì vế đầu đã đúng."
+    },
+    {
+      "id": "cpp-c01-15",
+      "topic": "switch thiếu break",
+      "source": "NMLT C01 - bài 14 (số ngày trong tháng)",
+      "question": "Một bạn viết switch tính số ngày trong tháng nhưng quên `break` ở nhánh tháng 2. Với `m = 2` nó in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nint m = 2, d;\nswitch (m) {\n    case 1: d = 31; break;\n    case 2: d = 28;\n    case 3: d = 31; break;\n    default: d = 30;\n}\ncout << d;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "28",
+        "31",
+        "30",
+        "29"
+      ],
+      "answer": 1,
+      "explanation": "Không có `break` sau `d = 28` nên chương trình \"rơi\" (fall through) sang nhánh `case 3` và gán `d = 31`, rồi gặp `break`. Kết quả là 31.\n- \"28\" sai vì chỉ đúng nếu nhánh tháng 2 có `break`.\n- \"30\" sai vì `default` chỉ chạy khi không khớp case nào và cũng không được rơi tới.\n- \"29\" không xuất hiện ở đâu trong code."
+    },
+    {
+      "id": "cpp-c01-16",
+      "topic": "Fall-through trong switch",
+      "source": "NMLT C01 - bài 11 (đọc số)",
+      "question": "Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nint n = 1;\nswitch (n) {\n    case 0: cout << \"A\";\n    case 1: cout << \"B\";\n    case 2: cout << \"C\"; break;\n    default: cout << \"D\";\n}\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "B",
+        "ABC",
+        "BCD",
+        "BC"
+      ],
+      "answer": 3,
+      "explanation": "`n == 1` nhảy vào `case 1`, in \"B\", vì không có `break` nên chạy tiếp `case 2` in \"C\", gặp `break` thì dừng. Kết quả `BC`.\n- \"B\" sai vì quên rằng thiếu `break` ở case 1.\n- \"ABC\" sai vì `case 0` không được thực thi (switch nhảy thẳng tới nhãn khớp).\n- \"BCD\" sai vì `break` ở `case 2` chặn không cho rơi vào `default`."
+    },
+    {
+      "id": "cpp-c01-17",
+      "topic": "So sánh số thực",
+      "source": "NMLT C01 - bài 6, 16 (kiểm tra tam giác)",
+      "question": "Ba cạnh 0.1, 0.2, 0.3 thực ra là tam giác suy biến (0.1 + 0.2 = 0.3). Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\ndouble a = 0.1, b = 0.2, c = 0.3;\ncout << boolalpha << (a + b > c);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "true",
+        "false",
+        "1",
+        "0"
+      ],
+      "answer": 0,
+      "explanation": "0.1 và 0.2 không biểu diễn chính xác trong nhị phân; `0.1 + 0.2` thực tế bằng 0.30000000000000004, lớn hơn `0.3` một chút nên biểu thức là `true`. Vì vậy với số thực không nên so sánh trực tiếp mà cần dùng sai số (epsilon).\n- \"false\" sai vì giả định phép cộng số thực chính xác.\n- \"1\" và \"0\" sai vì có `boolalpha` nên in chữ `true`/`false`."
+    },
+    {
+      "id": "cpp-c01-18",
+      "topic": "Tăng thời gian 1 giây",
+      "source": "NMLT C01 - bài 17 (sau 1 giây)",
+      "question": "Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nint h = 23, m = 59, s = 59;\ns++;\nif (s == 60) { s = 0; m++; }\nif (m == 60) { m = 0; h++; }\nif (h == 24) h = 0;\nprintf(\"%d:%d:%d\", h, m, s);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "24:0:0",
+        "23:59:60",
+        "0:0:0",
+        "0:0:1"
+      ],
+      "answer": 2,
+      "explanation": "Sau 23:59:59 là 0:0:0: giây tràn thành 60 nên về 0 và tăng phút; phút thành 60 nên về 0 và tăng giờ; giờ thành 24 nên về 0.\n- \"24:0:0\" sai vì thiếu bước đưa giờ 24 về 0.\n- \"23:59:60\" sai vì quên xử lý khi giây đạt 60.\n- \"0:0:1\" sai vì giây chỉ tăng đúng 1 đơn vị rồi về 0, không cộng thêm."
+    },
+    {
+      "id": "cpp-c01-19",
+      "topic": "Chia số thực cho 0",
+      "source": "NMLT C01 - bài 19 (chia cho 0)",
+      "question": "Với kiểu `double` trên g++ (IEEE 754), đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\ncout << 5.0 / 0 << \" \" << -5.0 / 0;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "inf inf",
+        "inf -inf",
+        "0 0",
+        "nan nan"
+      ],
+      "answer": 1,
+      "explanation": "Chia số thực khác 0 cho 0 cho vô cực mang dấu của tử: `inf` và `-inf`. Chương trình không bị crash. Chỉ có `0.0 / 0` mới cho NaN.\n- \"inf inf\" bỏ sót dấu âm của -5.0.\n- \"0 0\" sai vì không có quy ước chia cho 0 ra 0.\n- \"nan nan\" sai vì NaN chỉ xuất hiện với 0/0 hoặc vô cực trừ vô cực.\nVới `int` thì chia cho 0 mới là hành vi không xác định, nên luôn kiểm tra `b == 0` trước."
+    },
+    {
+      "id": "cpp-c01-20",
+      "topic": "Giải phương trình bậc nhất",
+      "source": "NMLT C01 - bài 20 (ax + b = 0)",
+      "question": "Với `a = 2, b = 5`, đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nint a = 2, b = 5;\ncout << -b / a << \" \" << -(double)b / a;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "-3 -2.5",
+        "-2.5 -2.5",
+        "-2 -2",
+        "-2 -2.5"
+      ],
+      "answer": 3,
+      "explanation": "`-b / a` là chia nguyên -5 / 2 = -2 (cắt về 0). `-(double)b / a` ép `b` sang `double` nên chia thực: -2.5. Nghiệm đúng của 2x + 5 = 0 là -2.5, nên phải ép kiểu.\n- \"-3 -2.5\" sai vì chia nguyên cắt về 0, không làm tròn xuống.\n- \"-2.5 -2.5\" sai vì biểu thức đầu toàn `int` nên không có phần lẻ.\n- \"-2 -2\" sai vì biểu thức sau đã ép sang `double`."
+    },
+    {
+      "id": "cpp-c01-21",
+      "topic": "Phương trình bậc hai",
+      "source": "NMLT C01 - bài 21 (ax^2 + bx + c = 0)",
+      "question": "Với `a = 1, b = -3, c = 2` (hai nghiệm 1 và 2), một bạn viết sai công thức nghiệm do thiếu ngoặc. Đoạn code in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\ndouble a = 1, b = -3, c = 2;\ndouble d = b * b - 4 * a * c;\ndouble x = -b + sqrt(d) / 2 * a;\ncout << x;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "3.5",
+        "2",
+        "1",
+        "4"
+      ],
+      "answer": 0,
+      "explanation": "`d = 9 - 8 = 1`. Do độ ưu tiên: `sqrt(d) / 2 * a` = 1 / 2 * 1 = 0.5, nên `x = 3 + 0.5 = 3.5`. Công thức đúng phải là `(-b + sqrt(d)) / (2 * a)` = (3 + 1) / 2 = 2.\n- \"2\" là kết quả của công thức đúng, không phải của code đã cho.\n- \"1\" là nghiệm còn lại (-b - sqrt(d)) / (2a), cũng không xuất hiện.\n- \"4\" xảy ra nếu cộng thẳng sqrt(d) mà không chia."
+    },
+    {
+      "id": "cpp-c01-22",
+      "topic": "Kích thước kiểu dữ liệu",
+      "source": "NMLT C01 - kiểu dữ liệu",
+      "question": "Trên g++ thông thường, đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\ncout << sizeof(int) << \" \" << sizeof(char) << \" \" << sizeof(double);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "2 1 4",
+        "4 1 8",
+        "4 2 8",
+        "4 1 4"
+      ],
+      "answer": 1,
+      "explanation": "`sizeof(int)` = 4 byte, `sizeof(char)` = 1 byte (theo định nghĩa), `sizeof(double)` = 8 byte.\n- \"2 1 4\" là kích thước của các kiểu cũ 16 bit, không dùng trên g++ hiện đại.\n- \"4 2 8\" sai vì `char` luôn có kích thước 1.\n- \"4 1 4\" sai vì đó là kích thước của `float`, còn `double` là 8."
+    },
+    {
+      "id": "cpp-c01-23",
+      "topic": "Toán tử tăng/giảm",
+      "source": "NMLT C01 - toán tử",
+      "question": "Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nint x = 5;\nint y = x++;\nint z = ++x;\ncout << x << \" \" << y << \" \" << z;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "6 6 7",
+        "7 6 6",
+        "7 5 7",
+        "6 5 6"
+      ],
+      "answer": 2,
+      "explanation": "`y = x++` gán giá trị cũ (5) cho `y` rồi mới tăng `x` lên 6. `z = ++x` tăng `x` lên 7 rồi gán 7 cho `z`. Kết quả `7 5 7`.\n- \"6 6 7\" sai vì `x++` trả về giá trị trước khi tăng, tức 5.\n- \"7 6 6\" lẫn lộn hậu tố và tiền tố.\n- \"6 5 6\" quên rằng `x` được tăng hai lần."
+    },
+    {
+      "id": "cpp-c01-24",
+      "topic": "Narrowing conversion",
+      "source": "NMLT C01 - kiểu dữ liệu, ép kiểu",
+      "question": "Chuyển double sang int bằng ngoặc nhọn. Đoạn code dưới cho kết quả nào?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\n    int x{3.7};\n    cout << x;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "Biên dịch được, in 3",
+        "Biên dịch được, in 4",
+        "Biên dịch được nhưng crash khi chạy",
+        "Lỗi biên dịch vì narrowing conversion từ double sang int"
+      ],
+      "answer": 3,
+      "explanation": "Khởi tạo bằng ngoặc nhọn `{}` (list-initialization) cấm các chuyển đổi làm mất thông tin như `double` sang `int`, g++ báo lỗi narrowing. Muốn dùng phải ép kiểu tường minh: `int x = (int)3.7;` (được 3).\n- \"in 3\" đúng với `int x = 3.7;` (kiểu cũ), không đúng với ngoặc nhọn.\n- \"in 4\" sai vì không có làm tròn lên.\n- Crash lúc chạy sai vì lỗi xảy ra ở bước biên dịch."
+    }
+  ]
+}

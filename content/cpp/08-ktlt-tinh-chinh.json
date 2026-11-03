@@ -1,0 +1,367 @@
+{
+  "id": "cpp-c08",
+  "title": "Chương 8: Tinh chỉnh chương trình",
+  "description": "Độ phức tạp thuật toán, tối ưu vòng lặp, tránh tính lặp, mảng cộng dồn, sàng nguyên tố và tránh tràn số khi tinh chỉnh chương trình.",
+  "questions": [
+    {
+      "id": "cpp-c08-01",
+      "topic": "Lũy thừa nhanh",
+      "source": "NMLT C08 - 201.cpp lũy thừa x^p",
+      "question": "Hàm `power` tính x^p bằng cách bình phương liên tiếp (chia đôi số mũ). Biến `calls` đếm số lần hàm được gọi. Chương trình in ra gì?",
+      "code": "double power(double x, int p, int& calls) {\n    calls++;\n    if (p == 0) return 1;\n    if (p == 1) return x;\n    double t = power(x, p / 2, calls);\n    return p % 2 ? x * t * t : t * t;\n}\n// int calls = 0;\n// cout << power(2, 10, calls) << \" \" << calls;",
+      "codeLang": "cpp",
+      "options": [
+        "1024 10",
+        "1024 4",
+        "1024 5",
+        "512 4"
+      ],
+      "answer": 1,
+      "explanation": "- Chuỗi số mũ: 10 -> 5 -> 2 -> 1, tức 4 lần gọi; 2^10 = 1024.\n- \"1024 10\" là số phép nhân của cách nhân từng bước (O(p)), không phải của lũy thừa nhanh.\n- \"1024 5\" đếm thiếu một lần gọi: p = 10, 5, 2 và 1 đều là các lần gọi hàm.\n- \"512 4\" sai kết quả: 2^9 = 512, còn 2^10 = 1024.\n- Độ phức tạp của cách này là O(log p)."
+    },
+    {
+      "id": "cpp-c08-02",
+      "topic": "Độ phức tạp lũy thừa",
+      "source": "NMLT C08 - 201.cpp lũy thừa x^p",
+      "question": "So sánh hai cách tính x^p: (1) nhân x liên tiếp p lần, (2) bình phương liên tiếp (chia đôi số mũ). Phát biểu nào đúng?",
+      "options": [
+        "Cách (1) có độ phức tạp O(p), cách (2) có độ phức tạp O(log p)",
+        "Cả hai cách đều có độ phức tạp O(p)",
+        "Cách (1) có độ phức tạp O(log p), cách (2) có độ phức tạp O(p)",
+        "Cách (2) có độ phức tạp O(p^2) vì có đệ quy"
+      ],
+      "answer": 0,
+      "explanation": "- Đúng: cách (1) làm p - 1 phép nhân; cách (2) mỗi bước giảm số mũ một nửa nên chỉ cần khoảng log2(p) bước.\n- Hai cách không thể cùng O(p): cách (2) khác biệt chính ở việc chia đôi bài toán.\n- Phương án đảo ngược hai độ phức tạp là sai.\n- Đệ quy chia đôi chỉ phát sinh một lời gọi con mỗi bước, nên không thể là O(p^2)."
+    },
+    {
+      "id": "cpp-c08-03",
+      "topic": "Sơ đồ Horner",
+      "source": "NMLT C08 - 215.cpp tính đa thức",
+      "question": "Tính P(x) = 1 + 2x + 3x^2 + 4x^3 tại x = 2 bằng sơ đồ Horner. Biến `muls` đếm số phép nhân. Chương trình in ra gì?",
+      "code": "double A[4] = {1, 2, 3, 4};   // A[i] là hệ số của x^i\nint n = 3, muls = 0;\ndouble x = 2, s = A[n];\nfor (int i = n - 1; i >= 0; i--) {\n    s = s * x + A[i];\n    muls++;\n}\ncout << s << \" \" << muls;",
+      "codeLang": "cpp",
+      "options": [
+        "49 6",
+        "49 10",
+        "24 3",
+        "49 3"
+      ],
+      "answer": 3,
+      "explanation": "- Horner: s = 4; s = 4*2 + 3 = 11; s = 11*2 + 2 = 24; s = 24*2 + 1 = 49. Có 3 phép nhân (n phép nhân cho bậc n).\n- \"49 6\" là số phép nhân của cách tính x^i bằng tích lũy thông thường (khoảng 2n - 1), không phải Horner.\n- \"49 10\" là số phép nhân của cách tính lại từng lũy thừa từ đầu cho mỗi số hạng.\n- \"24 3\" sai giá trị vì quên cộng hệ số A[0] cuối cùng (24 là kết quả trước bước cuối)."
+    },
+    {
+      "id": "cpp-c08-04",
+      "topic": "Đưa biểu thức ra ngoài vòng lặp",
+      "source": "NMLT C08 - tối ưu vòng lặp (tránh gọi lại hàm bất biến)",
+      "question": "Hàm `len` bọc `strlen` và đếm số lần được gọi. So sánh hai cách viết vòng lặp duyệt chuỗi \"hello\". Chương trình in \"số lần gọi của cách A\", rồi \"số lần gọi của cách B\". Kết quả?",
+      "code": "// Cách A: gọi len(s) trong điều kiện vòng lặp\nfor (int i = 0; i < (int)len(s); i++) { }\n// Cách B: tính một lần ngoài vòng lặp\nint n = len(s);\nfor (int i = 0; i < n; i++) { }",
+      "codeLang": "cpp",
+      "options": [
+        "5 1",
+        "6 6",
+        "6 1",
+        "5 5"
+      ],
+      "answer": 2,
+      "explanation": "- Cách A gọi `len` mỗi lần kiểm tra điều kiện: 5 lần lặp thì kiểm tra 6 lần (kể cả lần cuối làm dừng), tức 6 lần gọi, và mỗi lần `strlen` tốn O(n).\n- Cách B gọi đúng 1 lần, nên cả vòng lặp chỉ còn O(n) thay vì O(n^2).\n- \"5 1\" đếm thiếu lần kiểm tra điều kiện cuối cùng của cách A.\n- \"6 6\" cho rằng cách B vẫn gọi mỗi vòng, sai vì `n` đã được tính trước.\n- \"5 5\" sai cả hai: cách A là 6 lần và cách B là 1 lần."
+    },
+    {
+      "id": "cpp-c08-05",
+      "topic": "Mảng cộng dồn",
+      "source": "NMLT C08 - mảng cộng dồn (prefix sum)",
+      "question": "Mảng cộng dồn P (đánh chỉ số từ 1) có P[i] = A[1] + ... + A[i], P[0] = 0. Chọn biểu thức tính nhanh tổng A[l] + ... + A[r] trong O(1). Với l = 2, r = 5 và A[1..8] = {3,1,4,1,5,9,2,6}, kết quả đúng là 11.",
+      "options": [
+        "```cpp\nP[r] - P[l - 1]\n```",
+        "```cpp\nP[r] - P[l]\n```",
+        "```cpp\nP[r - 1] - P[l - 1]\n```",
+        "```cpp\nP[r] + P[l - 1]\n```"
+      ],
+      "code": "#include <iostream>\nusing namespace std;\nint main() {\n    int A[9] = {0, 3, 1, 4, 1, 5, 9, 2, 6};\n    int P[9] = {0};\n    for (int i = 1; i <= 8; i++) P[i] = P[i - 1] + A[i];\n    int l = 2, r = 5;\n    int q = // ... đoạn cần chọn ...;\n    cout << q << endl;\n}",
+      "codeLang": "cpp",
+      "answer": 0,
+      "explanation": "- Đúng: P[r] là tổng 1..r, P[l - 1] là tổng 1..l-1; hiệu của chúng là tổng l..r: 14 - 3 = 11.\n- `P[r] - P[l]` bỏ mất A[l]: kết quả 10.\n- `P[r - 1] - P[l - 1]` bỏ mất A[r] (tính l..r-1): kết quả 6.\n- `P[r] + P[l - 1]` cộng thay vì trừ nên đếm đoạn 1..l-1 hai lần: kết quả 17."
+    },
+    {
+      "id": "cpp-c08-06",
+      "topic": "Xây mảng cộng dồn",
+      "source": "NMLT C08 - mảng cộng dồn (prefix sum)",
+      "question": "Mảng A = {2, 4, 1, 3}. Mảng cộng dồn P có P[0] = 0 và P[i] = P[i-1] + A[i-1]. Chương trình in toàn bộ P. Kết quả?",
+      "code": "int A[4] = {2, 4, 1, 3}, P[5];\nP[0] = 0;\nfor (int i = 1; i <= 4; i++) P[i] = P[i - 1] + A[i - 1];\nfor (int i = 0; i <= 4; i++) cout << P[i] << \" \";",
+      "codeLang": "cpp",
+      "options": [
+        "2 6 7 10",
+        "0 2 4 1 3",
+        "0 2 6 7 10",
+        "0 2 6 7 9"
+      ],
+      "answer": 2,
+      "explanation": "- P[0] = 0, P[1] = 2, P[2] = 6, P[3] = 7, P[4] = 10.\n- \"2 6 7 10\" thiếu phần tử P[0] = 0 mà chương trình in từ chỉ số 0.\n- \"0 2 4 1 3\" chỉ là mảng A có thêm số 0, không có phép cộng dồn.\n- \"0 2 6 7 9\" sai ở phần tử cuối: 7 + 3 = 10 chứ không phải 9."
+    },
+    {
+      "id": "cpp-c08-07",
+      "topic": "Đếm số phép toán vòng lặp lồng",
+      "source": "NMLT C08 - đánh giá độ phức tạp",
+      "question": "Biến `dem` đếm số lần chạy thân vòng lặp lồng dưới đây với n = 10. Chương trình in ra giá trị nào?",
+      "code": "int n = 10, dem = 0;\nfor (int i = 0; i < n; i++)\n    for (int j = i; j < n; j++)\n        dem++;\ncout << dem;",
+      "codeLang": "cpp",
+      "options": [
+        "100",
+        "55",
+        "45",
+        "50"
+      ],
+      "answer": 1,
+      "explanation": "- Vòng trong chạy n - i lần: 10 + 9 + ... + 1 = n(n + 1) / 2 = 55.\n- 100 = n * n là khi vòng trong luôn chạy từ 0 (tổng bình phương đủ), không phải chạy từ i.\n- 45 = n(n - 1) / 2 là khi vòng trong bắt đầu từ i + 1 (bỏ phần tử i).\n- 50 không ứng với công thức nào của đoạn code này.\n- Độ phức tạp vẫn là O(n^2) vì n(n + 1) / 2 tăng theo bình phương của n."
+    },
+    {
+      "id": "cpp-c08-08",
+      "topic": "Vòng lặp nhân đôi",
+      "source": "NMLT C08 - đánh giá độ phức tạp",
+      "question": "Biến `dem` đếm số lần chạy vòng lặp mà `i` được nhân đôi sau mỗi bước. Với n = 1000, chương trình in giá trị nào?",
+      "code": "int n = 1000, dem = 0;\nfor (int i = 1; i < n; i *= 2)\n    dem++;\ncout << dem;",
+      "codeLang": "cpp",
+      "options": [
+        "500",
+        "9",
+        "11",
+        "10"
+      ],
+      "answer": 3,
+      "explanation": "- i nhận các giá trị 1, 2, 4, 8, 16, 32, 64, 128, 256, 512 (10 giá trị nhỏ hơn 1000), sau đó i = 1024 làm dừng. Số bước là 10, khoảng ceil(log2(n)), tức độ phức tạp O(log n).\n- 500 là sai khi cho rằng i tăng thêm 2 mỗi bước (n / 2 bước).\n- 9 sai vì quên giá trị i = 512 vẫn nhỏ hơn 1000.\n- 11 sai vì khi i = 1024 điều kiện `i < n` đã sai, vòng lặp không chạy thêm lần nào."
+    },
+    {
+      "id": "cpp-c08-09",
+      "topic": "So sánh độ phức tạp",
+      "source": "NMLT C08 - độ phức tạp thuật toán",
+      "question": "Sắp xếp các độ phức tạp sau theo thứ tự tăng dần của tốc độ tăng khi n lớn.",
+      "options": [
+        "O(n), O(1), O(log n), O(n log n), O(n^2)",
+        "O(1), O(n), O(log n), O(n^2), O(n log n)",
+        "O(1), O(log n), O(n), O(n log n), O(n^2)",
+        "O(log n), O(1), O(n log n), O(n), O(n^2)"
+      ],
+      "answer": 2,
+      "explanation": "- Đúng: hằng số < logarit < tuyến tính < n log n < bình phương.\n- Phương án 1 đặt O(1) sau O(n), sai.\n- Phương án 2 đặt O(n) trước O(log n) và O(n^2) trước O(n log n), sai.\n- Phương án 4 đặt O(log n) trước O(1) và O(n log n) trước O(n), sai.\n- Thực tế: với n = 10^6 thì log n khoảng 20, n log n khoảng 2*10^7, còn n^2 là 10^12."
+    },
+    {
+      "id": "cpp-c08-10",
+      "topic": "Sàng nguyên tố",
+      "source": "NMLT C08 - sàng Eratosthenes",
+      "question": "Sàng Eratosthenes đánh dấu hợp số cho các số đến 30. Chương trình in số lượng số nguyên tố và số nguyên tố lớn nhất tìm được. Kết quả?",
+      "code": "const int N = 30;\nbool hop[N + 1] = {};\nfor (int i = 2; i * i <= N; i++)\n    if (!hop[i])\n        for (int j = i * i; j <= N; j += i) hop[j] = true;\nint dem = 0, last = 0;\nfor (int i = 2; i <= N; i++) if (!hop[i]) { dem++; last = i; }\ncout << dem << \" \" << last;",
+      "codeLang": "cpp",
+      "options": [
+        "10 29",
+        "9 29",
+        "10 30",
+        "11 29"
+      ],
+      "answer": 0,
+      "explanation": "- Các số nguyên tố không vượt quá 30: 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, tổng 10 số, lớn nhất là 29.\n- \"9 29\" thiếu một số (ví dụ quên 2 hoặc 3).\n- \"10 30\" sai vì 30 chia hết cho 2, 3, 5 nên bị đánh dấu hợp số.\n- \"11 29\" thừa một số: 11 số nguyên tố đầu tiên đến 31 chứ không phải đến 30.\n- Vòng ngoài chỉ cần chạy tới `i * i <= N` (căn bậc hai của N) và vòng trong bắt đầu từ `i * i`."
+    },
+    {
+      "id": "cpp-c08-11",
+      "topic": "Kiểm tra số nguyên tố đúng",
+      "source": "NMLT C08 - kiểm tra nguyên tố tối ưu đến căn n",
+      "question": "Chọn hàm `isPrime` đúng, kiểm tra tối ưu đến căn n. Chương trình thử các số 1, 2, 4, 9, 17 và kỳ vọng in \"0 1 0 0 1\".",
+      "options": [
+        "```cpp\nbool isPrime(int n) {\n    for (int i = 2; i * i <= n; i++)\n        if (n % i == 0) return false;\n    return true;\n}\n```",
+        "```cpp\nbool isPrime(int n) {\n    if (n < 2) return false;\n    for (int i = 2; i * i < n; i++)\n        if (n % i == 0) return false;\n    return true;\n}\n```",
+        "```cpp\nbool isPrime(int n) {\n    if (n < 2) return false;\n    for (int i = 3; i * i <= n; i += 2)\n        if (n % i == 0) return false;\n    return true;\n}\n```",
+        "```cpp\nbool isPrime(int n) {\n    if (n < 2) return false;\n    for (int i = 2; i * i <= n; i++)\n        if (n % i == 0) return false;\n    return true;\n}\n```"
+      ],
+      "code": "#include <iostream>\nusing namespace std;\n// ... đoạn cần chọn ...\nint main() {\n    int T[5] = {1, 2, 4, 9, 17};\n    for (int i = 0; i < 5; i++) cout << isPrime(T[i]) << \" \";\n    cout << endl;\n}",
+      "codeLang": "cpp",
+      "answer": 3,
+      "explanation": "- Đúng: loại n < 2 trước, rồi thử ước từ 2 đến `i * i <= n` (có dấu bằng).\n- Thiếu `if (n < 2)`: số 1 không có vòng lặp nào chạy nên bị coi là nguyên tố.\n- `i * i < n` (thiếu dấu bằng) bỏ sót ước bằng căn bậc hai: 4 = 2*2 và 9 = 3*3 bị coi là nguyên tố.\n- Bắt đầu từ `i = 3` bước 2 bỏ qua ước 2 nên số chẵn như 4 bị coi là nguyên tố."
+    },
+    {
+      "id": "cpp-c08-12",
+      "topic": "Độ phức tạp của sàng",
+      "source": "NMLT C08 - sàng Eratosthenes",
+      "question": "Để liệt kê mọi số nguyên tố không vượt quá n, so sánh hai cách: (a) với mỗi số kiểm tra chia thử đến căn n, (b) sàng Eratosthenes. Phát biểu nào đúng?",
+      "options": [
+        "Cả hai cách đều O(n log n)",
+        "(a) là O(n * căn n), (b) khoảng O(n log log n) nên nhanh hơn nhiều với n lớn",
+        "(a) là O(n), (b) là O(n^2)",
+        "(a) là O(log n), (b) là O(n)"
+      ],
+      "answer": 1,
+      "explanation": "- Đúng: cách (a) kiểm tra n số, mỗi số tốn tối đa căn n phép chia: O(n căn n). Sàng chỉ đánh dấu bội của các số nguyên tố nên tổng là khoảng n * (1/2 + 1/3 + 1/5 + ...) = O(n log log n).\n- \"Cả hai O(n log n)\" sai vì chia thử tốn nhiều hơn rất nhiều.\n- (a) là O(n) hay (b) là O(n^2) đều đảo ngược thực tế: sàng mới là cách nhanh hơn.\n- O(log n) không thể đạt được vì ít nhất phải xuất ra các số nguyên tố.\n- Đổi lại sàng tốn thêm O(n) bộ nhớ cho mảng đánh dấu."
+    },
+    {
+      "id": "cpp-c08-13",
+      "topic": "Tràn số không dấu",
+      "source": "NMLT C08 - tránh tràn số",
+      "question": "Chương trình sau in ra gì? (`unsigned int` 32 bit, `long long` 64 bit)",
+      "code": "unsigned int a = 4000000000u;\na += 500000000u;\nlong long y = 100000LL * 100000;\ncout << a << \" \" << y;",
+      "codeLang": "cpp",
+      "options": [
+        "4500000000 10000000000",
+        "205032704 1410065408",
+        "205032704 10000000000",
+        "4500000000 1410065408"
+      ],
+      "answer": 2,
+      "explanation": "- `unsigned int` tràn có định nghĩa rõ ràng (lấy dư theo 2^32): 4500000000 - 4294967296 = 205032704.\n- `100000LL` làm phép nhân thực hiện ở 64 bit, nên kết quả đúng là 10000000000.\n- \"4500000000 ...\" sai vì `a` chỉ có 32 bit và không chứa được 4,5 tỷ.\n- \"... 1410065408\" là kết quả nếu cả phép nhân bị cắt về 32 bit (khi thiếu `LL`): 10^10 mod 2^32.\n- Bài học: ép kiểu hoặc dùng hằng `LL` TRƯỚC khi nhân, không phải sau."
+    },
+    {
+      "id": "cpp-c08-14",
+      "topic": "Giai thừa lớn nhất trong long long",
+      "source": "NMLT C08 - tránh tràn số (giai thừa)",
+      "question": "Chương trình tính 20! bằng `long long`. Kết quả in ra là gì? (Biết 19! = 121645100408832000 và 21! vượt quá phạm vi `long long`.)",
+      "code": "long long f = 1;\nfor (int i = 1; i <= 20; i++) f *= i;\ncout << f;",
+      "codeLang": "cpp",
+      "options": [
+        "121645100408832000",
+        "2432902008176640000",
+        "51090942171709440000",
+        "-2102132736"
+      ],
+      "answer": 1,
+      "explanation": "- 20! = 2432902008176640000, nhỏ hơn giá trị lớn nhất của `long long` (khoảng 9,22 * 10^18), nên không tràn.\n- 121645100408832000 là 19!, tức thiếu một lần nhân với 20.\n- 51090942171709440000 là 21!, lớn hơn 9,22 * 10^18 nên không thể lưu trong `long long`.\n- -2102132736 là giá trị của 13! khi bị tràn `int` 32 bit, không liên quan đến `long long` 64 bit.\n- Nếu cần n lớn hơn, phải dùng số lớn (chuỗi) hoặc chỉ tính phần cần (ví dụ số chữ số 0 cuối)."
+    },
+    {
+      "id": "cpp-c08-15",
+      "topic": "Số chữ số 0 cuối của n!",
+      "source": "NMLT C08 - 217.cpp số chữ số 0 cuối của n!",
+      "question": "Số chữ số 0 ở cuối của n! bằng số thừa số 5 trong n!. Chương trình sau tính cho n = 100 và n = 25. In ra gì?",
+      "code": "int lastZero(int n) {\n    int count = 0;\n    while (n >= 5) {\n        n /= 5;\n        count += n;\n    }\n    return count;\n}\n// cout << lastZero(100) << \" \" << lastZero(25);",
+      "codeLang": "cpp",
+      "options": [
+        "20 4",
+        "24 5",
+        "25 6",
+        "24 6"
+      ],
+      "answer": 3,
+      "explanation": "- 100: 100/5 = 20, 20/5 = 4, 4 < 5 dừng: 20 + 4 = 24. 25: 25/5 = 5, 5/5 = 1: 5 + 1 = 6.\n- Kết quả \"24 6\" nhờ cộng cả thừa số của bội của 25 (mỗi bội 25 có hai thừa số 5).\n- \"20 4\" chỉ đếm số bội của 5 (hoặc quên một nửa các bội của 25).\n- \"24 5\" đúng cho 100 nhưng sai cho 25: 25! có 6 chữ số 0 vì 25 = 5*5 đóng góp hai thừa số.\n- \"25 6\" sai cho 100: có 20 bội của 5 và 4 bội của 25, tổng 24 chứ không phải 25.\n- Độ phức tạp chỉ O(log n), thay vì tính n! rồi đếm số 0."
+    },
+    {
+      "id": "cpp-c08-16",
+      "topic": "Tổng giai thừa tránh tính lặp",
+      "source": "NMLT C08 - 206.cpp tổng 1! + 2! + ... + n!",
+      "question": "Tính S = 1! + 2! + 3! + 4! + 5! bằng một vòng lặp, tận dụng i! = (i-1)! * i. Biến `muls` đếm số phép nhân. Chương trình in ra gì?",
+      "code": "double s = 0, tmp = 1;\nint muls = 0;\nfor (int i = 1; i <= 5; i++) {\n    tmp *= i;\n    muls++;\n    s += tmp;\n}\ncout << s << \" \" << muls;",
+      "codeLang": "cpp",
+      "options": [
+        "153 5",
+        "120 5",
+        "153 10",
+        "153 15"
+      ],
+      "answer": 0,
+      "explanation": "- tmp lần lượt là 1, 2, 6, 24, 120; tổng 1 + 2 + 6 + 24 + 120 = 153, với 5 phép nhân (O(n)).\n- \"120 5\" chỉ là 5!, thiếu phép cộng dồn các giai thừa trước.\n- \"153 10\" là số phép nhân nếu tính lại từng i! từ đầu (0 + 1 + 2 + 3 + 4), tức O(n^2).\n- \"153 15\" là số phép nhân nếu mỗi i! được tính bằng i phép nhân (1 + 2 + 3 + 4 + 5), cũng thuộc O(n^2).\n- Tránh tính lặp: dùng kết quả của bước trước thay vì tính lại từ đầu."
+    },
+    {
+      "id": "cpp-c08-17",
+      "topic": "Xấp xỉ số e",
+      "source": "NMLT C08 - 207.cpp tổng 1/i!",
+      "question": "Chương trình xấp xỉ e = 1 + 1/1! + 1/2! + ... + 1/10! bằng cách tận dụng i! = (i-1)! * i. Kết quả in với 6 chữ số thập phân?",
+      "code": "double s = 1, tmp = 1;\nfor (int i = 1; i <= 10; i++) {\n    tmp *= i;\n    s += 1 / tmp;\n}\nprintf(\"%.6f\", s);",
+      "codeLang": "cpp",
+      "options": [
+        "1.718282",
+        "2.718282",
+        "2.718000",
+        "2.000000"
+      ],
+      "answer": 1,
+      "explanation": "- Khởi tạo s = 1 (số hạng 1/0!), cộng thêm 1/1! đến 1/10! cho khoảng 2.7182818, in thành 2.718282.\n- \"1.718282\" thiếu số hạng đầu 1/0! = 1 (là e - 1).\n- \"2.718000\" là kết quả làm tròn xuống ba chữ số, không phải kết quả của `%.6f`.\n- \"2.000000\" ứng với chỉ cộng 1 + 1/1! (hoặc 1/tmp luôn bằng 1/1).\n- `tmp` kiểu `double` để không tràn số khi n lớn; `1 / tmp` chia thực vì tmp là `double`."
+    },
+    {
+      "id": "cpp-c08-18",
+      "topic": "Fibonacci đệ quy và số lần gọi",
+      "source": "NMLT C08 - 209.cpp Fibonacci",
+      "question": "Fibonacci đệ quy thuần túy tính lại các bài toán con. Biến `calls` đếm số lần gọi hàm. Với n = 10, chương trình in ra gì (giá trị rồi số lần gọi)?",
+      "code": "int calls = 0;\nint fib(int n) {\n    calls++;\n    if (n <= 2) return 1;\n    return fib(n - 1) + fib(n - 2);\n}\n// cout << fib(10) << \" \" << calls;",
+      "codeLang": "cpp",
+      "options": [
+        "55 10",
+        "55 89",
+        "55 109",
+        "55 55"
+      ],
+      "answer": 2,
+      "explanation": "- fib(10) = 55 nhưng số lần gọi là 109 (hơn 2 lần giá trị), vì các giá trị con như fib(5) bị tính lặp rất nhiều lần.\n- \"55 10\" là số bước của cách lặp (iterative) với vòng for, không phải đệ quy.\n- \"55 89\" nhầm với số Fibonacci thứ 11.\n- \"55 55\" nhầm với việc mỗi giá trị chỉ được tính một lần.\n- Số lần gọi tăng theo hàm mũ O(2^n); cách lặp hoặc ghi nhớ (memoization) chỉ O(n)."
+    },
+    {
+      "id": "cpp-c08-19",
+      "topic": "Đếm loại ký tự",
+      "source": "NMLT C08 - 216.cpp phân loại ký tự",
+      "question": "Chương trình đếm chữ thường, chữ hoa, chữ số và ký tự khác trong chuỗi \"Hello World 2024!\" bằng một lần duyệt. Kết quả in ra là gì?",
+      "code": "string s = \"Hello World 2024!\";\nint c[4] = {0};\nfor (char ch : s) {\n    if (islower(ch)) c[0]++;\n    else if (isupper(ch)) c[1]++;\n    else if (isdigit(ch)) c[2]++;\n    else c[3]++;\n}\ncout << c[0] << \" \" << c[1] << \" \" << c[2] << \" \" << c[3];",
+      "codeLang": "cpp",
+      "options": [
+        "8 2 4 3",
+        "8 2 4 2",
+        "10 2 4 3",
+        "7 2 4 3"
+      ],
+      "answer": 0,
+      "explanation": "- Chữ thường: e, l, l, o, o, r, l, d = 8; chữ hoa: H, W = 2; chữ số: 2, 0, 2, 4 = 4; khác: hai dấu cách và dấu '!' = 3.\n- \"8 2 4 2\" quên đếm một trong hai dấu cách hoặc dấu '!'.\n- \"10 2 4 3\" đếm thừa chữ thường (chuỗi chỉ có 8 chữ thường, vì H và W là chữ hoa).\n- \"7 2 4 3\" thiếu một chữ thường.\n- Một lần duyệt O(n) cho cả bốn bộ đếm tốt hơn bốn lần duyệt riêng."
+    },
+    {
+      "id": "cpp-c08-20",
+      "topic": "Đo thời gian chạy",
+      "source": "NMLT C08 - đánh giá thời gian chạy chương trình",
+      "question": "Muốn đo thời gian chạy của một đoạn code bằng thư viện chuẩn C/C++, cách làm nào đúng?",
+      "options": [
+        "Đọc `clock()` trước đoạn code, rồi chia kết quả cho số dòng lệnh",
+        "Cộng `clock()` trước và sau đoạn code rồi chia cho 2",
+        "Chỉ cần đọc `clock()` sau đoạn code: giá trị đó chính là thời gian chạy tính bằng giây",
+        "Đọc `clock()` trước và sau đoạn code, lấy hiệu rồi chia cho `CLOCKS_PER_SEC` để ra giây"
+      ],
+      "answer": 3,
+      "explanation": "- Đúng: `clock()` trả về số tick của bộ xử lý kể từ lúc chương trình bắt đầu; hiệu hai lần đọc chia cho `CLOCKS_PER_SEC` là số giây đoạn code chạy.\n- Chia cho số dòng lệnh không có ý nghĩa vật lý.\n- Cộng hai mốc rồi chia 2 chỉ cho ra trung bình của hai mốc thời gian, không phải khoảng thời gian.\n- Giá trị `clock()` sau đoạn code là thời gian từ khi bắt đầu chương trình, và đơn vị là tick chứ chưa phải giây.\n- Nên đo nhiều lần và dùng dữ liệu đủ lớn, vì đoạn code chạy rất ngắn cho kết quả không ổn định."
+    },
+    {
+      "id": "cpp-c08-21",
+      "topic": "Lũy thừa số mũ âm",
+      "source": "NMLT C08 - 201.cpp lũy thừa x^p",
+      "question": "Hàm `power` xử lý cả số mũ âm bằng x^(-p) = 1 / x^p. Chương trình in với 4 chữ số thập phân. Kết quả?",
+      "code": "double power(double x, int p) {\n    if (p < 0) return 1 / power(x, -p);\n    if (p == 0) return 1;\n    if (p == 1) return x;\n    double t = power(x, p / 2);\n    return p % 2 ? x * t * t : t * t;\n}\n// printf(\"%.4f %.4f\", power(2, -3), power(2, 0));",
+      "codeLang": "cpp",
+      "options": [
+        "8.0000 1.0000",
+        "0.1250 1.0000",
+        "0.1250 0.0000",
+        "-8.0000 1.0000"
+      ],
+      "answer": 1,
+      "explanation": "- power(2, -3) = 1 / power(2, 3) = 1 / 8 = 0.1250; power(2, 0) = 1 (quy ước x^0 = 1).\n- \"8.0000 ...\" bỏ qua dấu âm của số mũ.\n- \"... 0.0000\" sai vì x^0 bằng 1, không bằng 0.\n- \"-8.0000 ...\" nhầm số mũ âm với đổi dấu kết quả; số mũ âm cho nghịch đảo (dương).\n- Phải xử lý p < 0 trước các trường hợp cơ sở để không đệ quy vô hạn với p âm."
+    },
+    {
+      "id": "cpp-c08-22",
+      "topic": "Chuỗi điều hòa",
+      "source": "NMLT C08 - 210.cpp tìm n nhỏ nhất",
+      "question": "Tìm n nhỏ nhất sao cho 1 + 1/2 + ... + 1/n >= 3. Chương trình sau in ra giá trị nào?",
+      "code": "double s = 0, i = 0;\nwhile (s < 3) {\n    i++;\n    s += 1 / i;\n}\nprintf(\"%.0f\", i);",
+      "codeLang": "cpp",
+      "options": [
+        "10",
+        "12",
+        "11",
+        "31"
+      ],
+      "answer": 2,
+      "explanation": "- Tổng riêng H(10) xấp xỉ 2.929 chưa đạt 3; H(11) xấp xỉ 3.020 đạt, nên vòng lặp dừng ở i = 11.\n- \"10\" sai vì H(10) vẫn nhỏ hơn 3.\n- \"12\" quá lớn: H(11) đã vượt 3 nên vòng lặp không chạy tiếp.\n- \"31\" là giá trị khi ngưỡng là 4 chứ không phải 3 (H(31) xấp xỉ 4.027).\n- `i` khai báo `double` nên `1 / i` là phép chia thực."
+    },
+    {
+      "id": "cpp-c08-23",
+      "topic": "Lỗi chia nguyên trong chuỗi",
+      "source": "NMLT C08 - 204.cpp tổng 1/(1+2+...+i)",
+      "question": "Hai vòng lặp tính tổng 1/1 + 1/2 + ... + 1/5, một dùng `int i` (cách A) và một dùng `double` (cách B). Chương trình in hai kết quả với 2 chữ số thập phân. Kết quả?",
+      "code": "double a = 0, b = 0;\nfor (int i = 1; i <= 5; i++) a += 1 / i;      // cách A\nfor (int i = 1; i <= 5; i++) b += 1.0 / i;    // cách B\nprintf(\"%.2f %.2f\", a, b);",
+      "codeLang": "cpp",
+      "options": [
+        "1.00 2.28",
+        "2.28 2.28",
+        "1.00 1.00",
+        "2.28 1.00"
+      ],
+      "answer": 0,
+      "explanation": "- Cách A: `1 / i` là chia nguyên, chỉ i = 1 cho 1, các i còn lại cho 0, tổng a = 1.00.\n- Cách B: `1.0 / i` là chia thực: 1 + 0.5 + 0.3333 + 0.25 + 0.2 = 2.2833, in ra 2.28.\n- \"2.28 2.28\" nhầm rằng cách A cũng chia thực.\n- \"1.00 1.00\" nhầm rằng cách B cũng bị chia nguyên.\n- \"2.28 1.00\" đảo kết quả của hai cách.\n- Sửa lỗi bằng cách ép kiểu một toán hạng sang `double` (1.0 hoặc `(double)i`)."
+    }
+  ]
+}

@@ -1,0 +1,389 @@
+{
+  "id": "cpp-c06",
+  "title": "Chương 6: Kiểu dữ liệu có cấu trúc và tập tin",
+  "description": "Struct và mảng struct, truyền struct vào hàm, các bài toán phân số và ngày tháng, nhập xuất tập tin bằng ifstream/ofstream và fopen/fscanf.",
+  "questions": [
+    {
+      "id": "cpp-c06-01",
+      "topic": "Khái niệm struct",
+      "source": "KTLT C0 - bài 1 Kiểu dữ liệu có cấu trúc",
+      "question": "Điểm khác biệt cơ bản giữa mảng (array) và cấu trúc (struct) trong C/C++ là gì?",
+      "options": [
+        "Mảng chỉ chứa số, còn struct chỉ chứa chuỗi",
+        "Mảng gồm các phần tử cùng kiểu, còn struct gom nhiều thành phần có thể khác kiểu thành một đối tượng",
+        "Struct luôn nằm trên heap, còn mảng luôn nằm trên stack",
+        "Các thành phần của struct không thể truy cập bằng toán tử chấm"
+      ],
+      "answer": 1,
+      "explanation": "- Mảng là dãy phần tử cùng kiểu, truy cập bằng chỉ số. Struct gom các trường (field) có thể khác kiểu như int, double, char[], struct khác (ví dụ HOCSINH gồm chuỗi, ngày sinh, điểm).\n- Mảng có thể chứa bất kỳ kiểu nào (không chỉ số); struct không bị giới hạn ở chuỗi.\n- Vị trí lưu trữ (stack hay heap) do cách khai báo quyết định, không do struct hay mảng.\n- Thành phần struct truy cập bằng `.` (hoặc `->` qua con trỏ)."
+    },
+    {
+      "id": "cpp-c06-02",
+      "topic": "Kích thước struct",
+      "source": "KTLT C0 - bài 1.8 Điểm trong mặt phẳng Oxy",
+      "question": "Struct Diem gồm hai số nguyên. Đoạn code in ra gì? (sizeof(int) = 4)",
+      "code": "struct Diem { int x, y; };\nDiem d[3];\ncout << sizeof(Diem) << \" \" << sizeof(d);",
+      "codeLang": "cpp",
+      "options": [
+        "8 8",
+        "4 12",
+        "8 12",
+        "8 24"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả `8 24`: mỗi Diem có hai int nên 8 byte; mảng 3 phần tử chiếm 3 * 8 = 24 byte.\n- `8 8` quên nhân với số phần tử; `4 12` nhầm kích thước struct bằng kích thước một trường; `8 12` tính sai tổng của mảng.\n- sizeof(mảng) là tổng kích thước tất cả phần tử, không chỉ một phần tử."
+    },
+    {
+      "id": "cpp-c06-03",
+      "topic": "Truy cập qua con trỏ",
+      "source": "KTLT C0 - bài 1.4 NGAY - con trỏ cấu trúc",
+      "question": "Truy cập thành phần struct qua con trỏ dùng toán tử `->` hoặc `(*p).`. Đoạn code in ra gì?",
+      "code": "struct Diem { int x, y; };\nint main() {\n    Diem d = {3, 4};\n    Diem* p = &d;\n    p->x += 10;\n    (*p).y *= 2;\n    cout << d.x << \" \" << d.y;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "13 8",
+        "3 4",
+        "13 4",
+        "10 8"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `13 8`: p trỏ đến d, nên p->x += 10 sửa d.x từ 3 thành 13, và (*p).y *= 2 sửa d.y từ 4 thành 8.\n- `p->x` tương đương `(*p).x`; dấu ngoặc là bắt buộc vì toán tử `.` có độ ưu tiên cao hơn `*`.\n- `3 4` là giá trị ban đầu, `13 4` và `10 8` chỉ áp dụng một trong hai lệnh."
+    },
+    {
+      "id": "cpp-c06-04",
+      "topic": "Truyền struct vào hàm",
+      "source": "KTLT C0 - bài 1.6 PHANSO - truyền tham số",
+      "question": "Hàm a nhận struct theo giá trị, hàm b nhận theo tham chiếu. Đoạn code in ra gì?",
+      "code": "struct PS { int tu, mau; };\nvoid a(PS p) { p.tu = 99; }\nvoid b(PS &p) { p.mau = 77; }\nint main() {\n    PS x = {1, 2};\n    a(x);\n    b(x);\n    cout << x.tu << \"/\" << x.mau;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "99/77",
+        "1/2",
+        "1/77",
+        "99/2"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả `1/77`: truyền theo giá trị sao chép toàn bộ struct, nên a chỉ sửa bản sao và x.tu vẫn là 1.\n- Truyền theo tham chiếu (`&`) cho b làm việc trực tiếp trên x, nên x.mau trở thành 77.\n- `99/77` sai vì a không ảnh hưởng đến x; `1/2` sai vì b có ảnh hưởng; `99/2` sai vì đảo vai trò hai hàm."
+    },
+    {
+      "id": "cpp-c06-05",
+      "topic": "Mảng struct",
+      "source": "KTLT C0 - bài 1.1 HOCSINH - danh sách học sinh",
+      "question": "Tìm học sinh có điểm trung bình cao nhất trong mảng struct. Khi có hai học sinh cùng điểm cao nhất, đoạn code dưới chọn ai? Kết quả in ra là gì?",
+      "code": "struct HS { string ten; double dtb; };\nint main() {\n    HS ds[3] = {{\"An\", 7.5}, {\"Binh\", 9.0}, {\"Chi\", 9.0}};\n    int best = 0;\n    for (int i = 1; i < 3; i++)\n        if (ds[i].dtb > ds[best].dtb) best = i;\n    cout << ds[best].ten << \" \" << fixed << setprecision(1) << ds[best].dtb;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "Chi 9.0",
+        "An 7.5",
+        "Binh 9",
+        "Binh 9.0"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả `Binh 9.0`: với điều kiện `>` nghiêm ngặt, Chi (cùng 9.0) không thay thế Binh được chọn trước, nên giữ lại học sinh đầu tiên đạt điểm cao nhất.\n- Dùng `>=` thì Chi sẽ thắng.\n- `An 7.5` là giá trị khởi tạo, không phải cực đại; `Binh 9` sai vì setprecision(1) với fixed in \"9.0\"."
+    },
+    {
+      "id": "cpp-c06-06",
+      "topic": "So sánh phân số",
+      "source": "KTLT C0 - bài 1.6 PHANSO - so sánh hai phân số",
+      "question": "So sánh hai phân số bằng tích chéo (mẫu dương): hàm trả về -1, 0 hoặc 1. Đoạn code in ra gì?",
+      "code": "struct PS { int tu, mau; };\nint soSanh(PS a, PS b) {\n    int l = a.tu * b.mau, r = b.tu * a.mau;\n    return l < r ? -1 : (l > r ? 1 : 0);\n}\nint main() {\n    cout << soSanh({3,4},{5,7}) << \" \"\n         << soSanh({1,2},{2,4}) << \" \"\n         << soSanh({1,3},{1,2});\n}",
+      "codeLang": "cpp",
+      "options": [
+        "-1 0 1",
+        "1 0 -1",
+        "1 1 -1",
+        "0 0 0"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả `1 0 -1`: 3/4 so với 5/7 có 3*7 = 21 > 5*4 = 20 nên được 1; 1/2 và 2/4 có 1*4 = 2*2 nên bằng nhau (0); 1/3 so với 1/2 có 1*2 = 2 < 1*3 = 3 nên được -1.\n- So sánh bằng tích chéo tránh phép chia nguyên và sai số số thực.\n- `-1 0 1` đảo kết quả của hai phép so sánh khác 0; `1 1 -1` coi hai phân số bằng nhau là lớn hơn; `0 0 0` coi mọi cặp là bằng nhau."
+    },
+    {
+      "id": "cpp-c06-07",
+      "topic": "So sánh phân số",
+      "source": "KTLT C0 - bài 1.6 PHANSO - chuẩn hoá mẫu âm",
+      "question": "Hàm soSanh bên dưới dùng tích chéo nhưng không chuẩn hoá mẫu số về dương. Với a = 1/2 và b = 1/(-2) (tức -1/2), đoạn code in ra gì?",
+      "code": "struct PS { int tu, mau; };\nint soSanh(PS a, PS b) {\n    int l = a.tu * b.mau, r = b.tu * a.mau;\n    return l < r ? -1 : (l > r ? 1 : 0);\n}\nint main() {\n    PS a = {1, 2}, b = {1, -2};\n    cout << soSanh(a, b);\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1",
+        "0",
+        "-1",
+        "-2"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả `-1`: l = 1 * (-2) = -2, r = 1 * 2 = 2, nên l < r và hàm báo a < b. Về toán học 1/2 lớn hơn -1/2, nên kết quả này sai.\n- Tích chéo chỉ giữ nguyên chiều bất đẳng thức khi hai mẫu cùng dương; phải chuẩn hoá (đổi dấu cả tử và mẫu khi mẫu âm) trước khi so sánh.\n- `1` là kết quả đúng về mặt toán học nhưng không phải điều đoạn code này in ra; `0` và `-2` không phải giá trị mà hàm có thể trả về cho trường hợp này."
+    },
+    {
+      "id": "cpp-c06-08",
+      "topic": "Rút gọn phân số",
+      "source": "KTLT C0 - bài 1.6 PHANSO - rút gọn",
+      "question": "Rút gọn phân số 12/(-18) bằng UCLN của giá trị tuyệt đối, sau đó chuyển dấu về tử số. Đoạn code in ra gì?",
+      "code": "struct PS { int tu, mau; };\nint ucln(int a, int b) {\n    a = abs(a); b = abs(b);\n    while (b) { int r = a % b; a = b; b = r; }\n    return a;\n}\nint main() {\n    PS p = {12, -18};\n    int g = ucln(p.tu, p.mau);\n    p.tu /= g; p.mau /= g;\n    if (p.mau < 0) { p.tu = -p.tu; p.mau = -p.mau; }\n    cout << p.tu << \"/\" << p.mau;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "-2/3",
+        "2/-3",
+        "-6/9",
+        "2/3"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `-2/3`: UCLN(12, 18) = 6 nên phân số thành 2/(-3); mẫu âm nên đổi dấu cả hai, được -2/3.\n- `2/-3` thiếu bước chuẩn hoá dấu; `-6/9` chia cho 2 thay vì UCLN; `2/3` làm mất dấu âm.\n- Lấy abs trước khi tính UCLN để tránh kết quả âm."
+    },
+    {
+      "id": "cpp-c06-09",
+      "topic": "Phép toán phân số",
+      "source": "KTLT C0 - bài 1.6 PHANSO - cộng hai phân số",
+      "question": "Cộng hai phân số a/b + c/d = (a*d + c*b) / (b*d). Một bạn lại cộng tử với tử và mẫu với mẫu. Đoạn code in cả hai kết quả. Đầu ra là gì?",
+      "code": "struct PS { int tu, mau; };\nPS cong(PS a, PS b) {\n    return { a.tu * b.mau + b.tu * a.mau, a.mau * b.mau };\n}\nint main() {\n    PS a = {1, 2}, b = {1, 3};\n    PS x = cong(a, b);\n    cout << x.tu << \"/\" << x.mau << \" \";\n    cout << a.tu + b.tu << \"/\" << a.mau + b.mau;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "2/5 5/6",
+        "5/6 2/5",
+        "5/6 5/6",
+        "5/5 2/5"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả `5/6 2/5`: 1/2 + 1/3 = (1*3 + 1*2) / (2*3) = 5/6. Cộng tử với tử và mẫu với mẫu cho 2/5, không phải tổng hai phân số.\n- Công thức cộng phân số cần quy đồng mẫu số trước.\n- Các phương án khác đảo thứ tự hai kết quả, lặp lại một kết quả hoặc tính sai tử số."
+    },
+    {
+      "id": "cpp-c06-10",
+      "topic": "Ngày tháng",
+      "source": "KTLT C0 - bài 1.4 NGAY - so sánh hai ngày",
+      "question": "So sánh hai ngày phải xét năm trước, rồi tháng, rồi ngày. Hàm cmp trả về -1, 0 hoặc 1. Đoạn code in ra gì?",
+      "code": "struct Ngay { int d, m, y; };\nint cmp(Ngay a, Ngay b) {\n    if (a.y != b.y) return a.y < b.y ? -1 : 1;\n    if (a.m != b.m) return a.m < b.m ? -1 : 1;\n    if (a.d != b.d) return a.d < b.d ? -1 : 1;\n    return 0;\n}\nint main() {\n    cout << cmp({10,2,2024}, {31,12,2023}) << \" \"\n         << cmp({5,3,2024}, {20,3,2024}) << \" \"\n         << cmp({1,1,2000}, {1,1,2000});\n}",
+      "codeLang": "cpp",
+      "options": [
+        "-1 -1 0",
+        "1 1 0",
+        "-1 1 0",
+        "1 -1 0"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả `1 -1 0`: 10/2/2024 sau 31/12/2023 vì năm lớn hơn (1); 5/3/2024 trước 20/3/2024 vì cùng năm, cùng tháng và ngày nhỏ hơn (-1); hai ngày giống hệt nhau cho 0.\n- Nếu so sánh ngày trước, 10 < 31 sẽ cho kết quả sai ở phép so sánh đầu tiên.\n- Các phương án khác sai ở phép so sánh đầu hoặc phép so sánh thứ hai."
+    },
+    {
+      "id": "cpp-c06-11",
+      "topic": "Ngày tháng",
+      "source": "KTLT C0 - bài 1.4 NGAY - số ngày trong tháng",
+      "question": "Hàm ngayTrongThang cần xử lý năm nhuận (chia hết cho 4 nhưng không chia hết cho 100, hoặc chia hết cho 400). Đoạn code in ra gì?",
+      "code": "bool nhuan(int y) { return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0; }\nint ngayTrongThang(int m, int y) {\n    switch (m) {\n        case 2: return nhuan(y) ? 29 : 28;\n        case 4: case 6: case 9: case 11: return 30;\n        default: return 31;\n    }\n}\nint main() {\n    cout << ngayTrongThang(2, 2024) << \" \" << ngayTrongThang(2, 1900) << \" \"\n         << ngayTrongThang(2, 2000) << \" \" << ngayTrongThang(4, 2023);\n}",
+      "codeLang": "cpp",
+      "options": [
+        "29 28 29 30",
+        "29 29 29 30",
+        "29 28 28 30",
+        "28 28 29 30"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `29 28 29 30`: 2024 chia hết cho 4 và không chia hết cho 100 nên nhuận (29); 1900 chia hết cho 100 mà không chia hết cho 400 nên không nhuận (28); 2000 chia hết cho 400 nên nhuận (29); tháng 4 có 30 ngày.\n- `29 29 29 30` coi 1900 là nhuận; `29 28 28 30` coi 2000 không nhuận; `28 28 29 30` coi 2024 không nhuận.\n- Quy tắc chỉ kiểm tra chia hết cho 4 sẽ sai ở các năm 1900, 2100."
+    },
+    {
+      "id": "cpp-c06-12",
+      "topic": "Ngày tháng",
+      "source": "KTLT C0 - bài 1.4 NGAY - ngày kế tiếp",
+      "question": "Tính ngày kế tiếp của một ngày cho trước, có xử lý qua tháng và qua năm. Đoạn code in ra gì?",
+      "code": "struct Ngay { int d, m, y; };\nbool nhuan(int y) { return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0; }\nint soNgay(int m, int y) {\n    if (m == 2) return nhuan(y) ? 29 : 28;\n    return (m == 4 || m == 6 || m == 9 || m == 11) ? 30 : 31;\n}\nNgay ngayMai(Ngay a) {\n    a.d++;\n    if (a.d > soNgay(a.m, a.y)) {\n        a.d = 1; a.m++;\n        if (a.m > 12) { a.m = 1; a.y++; }\n    }\n    return a;\n}\nint main() {\n    Ngay x = ngayMai({28, 2, 2024}), y = ngayMai({31, 12, 2023});\n    cout << x.d << \"/\" << x.m << \"/\" << x.y << \" \" << y.d << \"/\" << y.m << \"/\" << y.y;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1/3/2024 1/1/2024",
+        "29/2/2024 32/12/2023",
+        "29/2/2024 1/1/2024",
+        "1/3/2024 1/13/2023"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả `29/2/2024 1/1/2024`: 2024 nhuận nên sau 28/2 là 29/2; sau 31/12/2023 ngày tăng thành 32, vượt số ngày của tháng 12 nên đặt lại ngày 1, tháng 1 và năm tăng lên 2024.\n- `1/3/2024 ...` bỏ qua năm nhuận; `32/12/2023` quên xử lý tràn ngày; `1/13/2023` quên xử lý tràn tháng.\n- Hàm nhận a theo giá trị nên sửa a không ảnh hưởng đến đối số truyền vào."
+    },
+    {
+      "id": "cpp-c06-13",
+      "topic": "Hình học Oxy",
+      "source": "KTLT C0 - bài 1.8 Oxy - tam giác",
+      "question": "Struct Diem biểu diễn điểm trên mặt phẳng Oxy. Tính chu vi và diện tích tam giác ABC với A(0,0), B(3,0), C(0,4) (diện tích bằng nửa trị tuyệt đối của tích có hướng). Đoạn code in ra gì?",
+      "code": "struct Diem { double x, y; };\ndouble kc(Diem a, Diem b) {\n    return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));\n}\nint main() {\n    Diem A = {0, 0}, B = {3, 0}, C = {0, 4};\n    double cv = kc(A, B) + kc(B, C) + kc(C, A);\n    double dt = fabs((B.x - A.x) * (C.y - A.y) - (C.x - A.x) * (B.y - A.y)) / 2;\n    cout << fixed << setprecision(2) << cv << \" \" << dt;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "12.00 12.00",
+        "7.00 6.00",
+        "12.00 6.00",
+        "12.00 3.00"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả `12.00 6.00`: AB = 3, BC = 5, CA = 4 nên chu vi 12; diện tích = |3*4 - 0*0| / 2 = 6.\n- `12.00 12.00` quên chia 2; `7.00 6.00` chỉ cộng hai cạnh góc vuông; `12.00 3.00` chia thêm một lần nữa.\n- Dùng `fixed` cùng `setprecision(2)` để in đúng hai chữ số thập phân."
+    },
+    {
+      "id": "cpp-c06-14",
+      "topic": "Ghi và đọc file",
+      "source": "KTLT C0 - bài 1.1 HOCSINH - nhập xuất tập tin",
+      "question": "Chương trình tự ghi các số vào file so.txt rồi đọc lại bằng ifstream. Đoạn code in ra gì?",
+      "code": "ofstream out(\"so.txt\");\nout << 10 << \" \" << 20 << \"\\n\" << 30;\nout.close();\nifstream in(\"so.txt\");\nint x, sum = 0;\nwhile (in >> x) sum += x;\ncout << sum;",
+      "codeLang": "cpp",
+      "options": [
+        "60",
+        "30",
+        "10",
+        "0"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `60`: file chứa ba số 10, 20, 30 (ngăn cách bằng khoảng trắng và xuống dòng); vòng lặp `while (in >> x)` đọc đến hết và cộng lại.\n- Toán tử `>>` bỏ qua cả khoảng trắng lẫn ký tự xuống dòng nên không cần xử lý riêng.\n- `30` và `10` chỉ đọc một phần dữ liệu; `0` chỉ xảy ra nếu file không mở được hoặc bạn quên gọi close trước khi đọc."
+    },
+    {
+      "id": "cpp-c06-15",
+      "topic": "Đọc sai kiểu dữ liệu",
+      "source": "KTLT C0 - bài 1.1 HOCSINH - đọc dữ liệu từ file",
+      "question": "File v.txt chứa \"12 abc\". Chương trình đọc hai số nguyên liên tiếp, biến y được gán sẵn 7. Đoạn code in ra gì?",
+      "code": "ofstream o(\"v.txt\");\no << \"12 abc\";\no.close();\nifstream f(\"v.txt\");\nint x = 7, y = 7;\nf >> x;\nf >> y;\ncout << x << \" \" << y;",
+      "codeLang": "cpp",
+      "options": [
+        "12 7",
+        "12 abc",
+        "7 7",
+        "12 0"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả `12 0`: số 12 đọc thành công. Lần đọc thứ hai gặp chữ 'a' không phải số nên thất bại: luồng chuyển sang trạng thái lỗi và từ C++11 giá trị đích bị gán 0 (không giữ nguyên 7).\n- Khi luồng đã lỗi, mọi thao tác đọc tiếp theo bị bỏ qua cho đến khi gọi `f.clear()`.\n- `12 7` sai vì y bị ghi 0 chứ không giữ 7; `12 abc` sai vì y là int nên không thể chứa \"abc\"; `7 7` sai vì lần đọc đầu tiên thành công nên x = 12.\n- Đây là lý do nên kiểm tra kết quả đọc (ví dụ `while (f >> x)`) thay vì giả định dữ liệu luôn đúng định dạng."
+    },
+    {
+      "id": "cpp-c06-16",
+      "topic": "Đọc đến EOF",
+      "source": "KTLT C0 - bài 1.1 HOCSINH - đọc đến cuối file",
+      "question": "File n.txt chứa ba số \"4 5 6\" và dấu xuống dòng. Vòng lặp nào tính đúng tổng 15?",
+      "code": "ifstream f(\"n.txt\");\nint x, sum = 0;\n___\ncout << sum;",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nif (f >> x) sum += x;\n```",
+        "```cpp\nwhile (f >> x) sum += x;\n```",
+        "```cpp\nwhile (f >> x); sum += x;\n```",
+        "```cpp\nfor (int i = 0; i < 2; i++) { f >> x; sum += x; }\n```"
+      ],
+      "answer": 1,
+      "explanation": "- `while (f >> x) sum += x;` đúng: điều kiện là chính phép đọc, nên vòng lặp dừng ngay khi đọc thất bại (hết file) và không xử lý giá trị rác. Đây là mẫu chuẩn để đọc đến EOF.\n- `if (f >> x)` chỉ đọc một số (tổng 4).\n- `while (f >> x);` có dấu chấm phẩy kết thúc, vòng lặp rỗng, rồi chỉ cộng một lần.\n- `for (i < 2)` cố định số lần đọc theo ý đoán của lập trình viên (tổng 9), không theo dữ liệu thực có trong file.\n- Tránh `while (!f.eof())`: cờ eof chỉ bật sau khi đã đọc hụt, dễ xử lý dư hoặc lặp vô hạn."
+    },
+    {
+      "id": "cpp-c06-17",
+      "topic": "File kiểu C",
+      "source": "KTLT C0 - bài 1.1 HOCSINH - fopen/fscanf",
+      "question": "Dùng API kiểu C: fopen ghi file, fscanf đọc lại. fscanf trả về số thành phần đọc được. Đoạn code in ra gì?",
+      "code": "FILE* fp = fopen(\"c.txt\", \"w\");\nfprintf(fp, \"%d %d %d\\n\", 7, 8, 9);\nfclose(fp);\nfp = fopen(\"c.txt\", \"r\");\nint x, sum = 0;\nwhile (fscanf(fp, \"%d\", &x) == 1) sum += x;\nfclose(fp);\ncout << sum;",
+      "codeLang": "cpp",
+      "options": [
+        "7",
+        "27",
+        "24",
+        "9"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả `24`: file chứa 7 8 9; vòng lặp `fscanf(...) == 1` cộng từng số đến khi fscanf trả về EOF hoặc 0, tổng 7 + 8 + 9.\n- Cách viết `while (!feof(fp))` mắc cùng lỗi như eof() của C++ (đọc dư một lần).\n- `7` và `9` chỉ đọc một số; `27` không phải tổng nào của ba số này."
+    },
+    {
+      "id": "cpp-c06-18",
+      "topic": "Mở file thất bại",
+      "source": "KTLT C0 - bài 1.1 HOCSINH - kiểm tra mở file",
+      "question": "Mở một file không tồn tại ở chế độ đọc. Đoạn code in ra gì?",
+      "code": "FILE* fp = fopen(\"khong_ton_tai.txt\", \"r\");\nif (fp == NULL) cout << \"loi mo file\";\nelse { cout << \"mo duoc\"; fclose(fp); }",
+      "codeLang": "cpp",
+      "options": [
+        "loi mo file",
+        "mo duoc",
+        "0",
+        "(không in gì, chương trình bị crash)"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `loi mo file`: ở chế độ \"r\" file phải tồn tại, nếu không fopen trả về NULL.\n- Luôn kiểm tra con trỏ file khác NULL trước khi đọc, nếu không thao tác với NULL gây crash.\n- Chế độ \"w\" mới tạo file mới khi chưa có; ở chế độ \"r\" không có file thì không tạo.\n- `mo duoc` sai vì file không có; `0` không phải thứ code in ra; chương trình không crash vì đã kiểm tra NULL."
+    },
+    {
+      "id": "cpp-c06-19",
+      "topic": "Chế độ mở file",
+      "source": "KTLT C0 - bài 1.1 HOCSINH - ghi tập tin",
+      "question": "Mặc định ofstream mở file ở chế độ ghi đè (xoá nội dung cũ); thêm `ios::app` để ghi nối vào cuối. Đoạn code in ra gì?",
+      "code": "{ ofstream o(\"t.txt\"); o << \"A\"; }\n{ ofstream o(\"t.txt\", ios::app); o << \"B\"; }\n{ ofstream o(\"t.txt\"); o << \"C\"; }\nifstream f(\"t.txt\");\nstring s;\nf >> s;\ncout << s;",
+      "codeLang": "cpp",
+      "options": [
+        "ABC",
+        "C",
+        "AB",
+        "BC"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả `C`: lần mở thứ ba không có ios::app nên file bị cắt về rỗng trước khi ghi \"C\".\n- Hai lần mở đầu cho \"AB\", nhưng nội dung đó bị xoá ở lần mở cuối.\n- `ABC` sẽ đúng nếu cả ba lần đều dùng ios::app; `AB` bỏ qua lần ghi cuối; `BC` sai vì lần ghi cuối đã xoá nội dung cũ."
+    },
+    {
+      "id": "cpp-c06-20",
+      "topic": "Đọc danh sách từ file",
+      "source": "KTLT C0 - bài 1.1 HOCSINH - đếm học sinh lên lớp",
+      "question": "Mỗi dòng file hs.txt gồm tên và điểm trung bình. Đếm số học sinh được lên lớp (dtb >= 5.0) và tổng số học sinh. Đoạn code in ra gì?",
+      "code": "{ ofstream o(\"hs.txt\"); o << \"An 8.5\\nBinh 4.0\\nChi 5.0\\n\"; }\nifstream f(\"hs.txt\");\nstring ten; double d; int dau = 0, n = 0;\nwhile (f >> ten >> d) {\n    n++;\n    if (d >= 5.0) dau++;\n}\ncout << dau << \"/\" << n;",
+      "codeLang": "cpp",
+      "options": [
+        "1/3",
+        "3/3",
+        "2/4",
+        "2/3"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả `2/3`: có 3 dòng; An 8.5 và Chi 5.0 đạt điều kiện `>= 5.0` (Chi bằng đúng 5.0), Binh 4.0 không đạt.\n- Điều kiện đọc `f >> ten >> d` thất bại sau dòng cuối nên không đếm dư.\n- `1/3` dùng `>` thay cho `>=`; `3/3` cho cả Binh qua; `2/4` đếm dư một dòng do đọc theo eof()."
+    },
+    {
+      "id": "cpp-c06-21",
+      "topic": "Trộn >> và getline",
+      "source": "KTLT C0 - bài 1.1 HOCSINH - fgetline đọc dòng",
+      "question": "File m.txt có nội dung \"2\", xuống dòng, \"An\", xuống dòng, \"Binh\". Đoạn code đọc số n rồi gọi getline ngay. Chuỗi s thu được là gì? (dấu ngoặc vuông chỉ để dễ nhìn)",
+      "code": "{ ofstream o(\"m.txt\"); o << \"2\\nAn\\nBinh\\n\"; }\nifstream f(\"m.txt\");\nint n; string s;\nf >> n;\ngetline(f, s);\ncout << \"[\" << s << \"]\";",
+      "codeLang": "cpp",
+      "options": [
+        "[An]",
+        "[2]",
+        "[]",
+        "[Binh]"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả `[]`: sau `f >> n`, ký tự xuống dòng ngay sau số 2 vẫn nằm trong luồng, nên getline đọc đến ký tự đó và trả về chuỗi rỗng.\n- Cần `f.ignore()` (hoặc đọc bỏ phần còn lại của dòng) trước khi gọi getline để bỏ ký tự xuống dòng thừa.\n- `[An]` là kết quả mong muốn nhưng cần ignore; `[2]` sai vì số 2 đã được >> lấy; `[Binh]` sai vì còn dòng An ở giữa."
+    },
+    {
+      "id": "cpp-c06-22",
+      "topic": "Khởi tạo struct",
+      "source": "KTLT C0 - bài 1.1 HOCSINH - khởi tạo",
+      "question": "Khi khởi tạo struct bằng dấu ngoặc nhọn mà thiếu giá trị, các thành phần còn lại được đặt về 0. Đoạn code in ra gì?",
+      "code": "struct P { int x, y, z; };\nP a = {1, 2};\nP b[2] = {{5}, {6, 7}};\ncout << a.z << \" \" << b[0].y << \" \" << b[1].z << \" \" << b[1].y;",
+      "codeLang": "cpp",
+      "options": [
+        "0 0 0 7",
+        "0 0 0 6",
+        "2 5 6 7",
+        "1 5 6 6"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả `0 0 0 7`: a.z không được cung cấp nên bằng 0; b[0] = {5, 0, 0} nên y = 0; b[1] = {6, 7, 0} nên z = 0 và y = 7.\n- Quy tắc: thành phần thiếu trong danh sách khởi tạo được khởi tạo giá trị 0, không phải giá trị rác.\n- Các phương án khác nhầm thứ tự thành phần hoặc coi thành phần thiếu mang giá trị của thành phần khác."
+    },
+    {
+      "id": "cpp-c06-23",
+      "topic": "Sắp xếp mảng struct",
+      "source": "KTLT C0 - bài 1.2 ARR_PHANSO - mảng struct và hàm",
+      "question": "Sắp xếp giảm dần theo điểm trung bình bằng bubble sort trên mảng struct truyền vào hàm. Đoạn code in ra gì?",
+      "code": "struct HS { string ten; double dtb; };\nvoid sapXep(HS a[], int n) {\n    for (int i = 0; i < n - 1; i++)\n        for (int j = 0; j < n - 1 - i; j++)\n            if (a[j].dtb < a[j + 1].dtb) swap(a[j], a[j + 1]);\n}\nint main() {\n    HS ds[4] = {{\"An\", 6.5}, {\"Binh\", 8}, {\"Chi\", 7}, {\"Dung\", 9}};\n    sapXep(ds, 4);\n    for (int i = 0; i < 4; i++) cout << ds[i].ten << \" \";\n}",
+      "codeLang": "cpp",
+      "options": [
+        "An Chi Binh Dung",
+        "Dung Binh Chi An",
+        "Binh Dung Chi An",
+        "Dung Chi Binh An"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả `Dung Binh Chi An`: điểm giảm dần là 9 (Dung), 8 (Binh), 7 (Chi), 6.5 (An).\n- Mảng được truyền vào hàm theo địa chỉ nên các thay đổi trong hàm áp dụng trực tiếp lên mảng gốc.\n- swap hoán đổi cả struct (cả tên và điểm), không chỉ một trường, nên dữ liệu của từng học sinh vẫn đi cùng nhau.\n- `An Chi Binh Dung` là thứ tự tăng dần; hai phương án còn lại sai thứ tự giữa các điểm."
+    },
+    {
+      "id": "cpp-c06-24",
+      "topic": "Hằng và tham chiếu",
+      "source": "KTLT C0 - bài 1.6 PHANSO - tham số const",
+      "question": "Kết quả của đoạn code dưới đây khi biên dịch và chạy là gì?",
+      "code": "struct PS { int tu, mau; };\nvoid doi(const PS& p) { p.tu = 5; }\nint main() {\n    PS a = {1, 2};\n    doi(a);\n    cout << a.tu;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "In ra 5",
+        "In ra 1",
+        "Biên dịch được nhưng crash khi chạy",
+        "Lỗi biên dịch vì gán vào tham số const"
+      ],
+      "answer": 3,
+      "explanation": "- Tham số `const PS&` cam kết hàm không sửa đối tượng, nên lệnh `p.tu = 5` bị trình biên dịch từ chối (lỗi: assignment of member in read-only object).\n- Nếu bỏ `const` thì code in ra 5 vì tham chiếu sửa trực tiếp biến a.\n- `In ra 1` là kết quả khi truyền theo giá trị (bản sao); ở đây không biên dịch được nên chương trình không chạy.\n- Đây là lỗi lúc biên dịch, không phải crash lúc chạy."
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+[
+  {
+    "id": "cpp-c09-03",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    cout << (1 << 10) << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-05",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint x[5], cnt = 0;\nbool used[6] = {false};\nvoid gen(int i)\n{\n    if (i == 5) { cnt++; return; }\n    for (int v = 1; v <= 5; v++)\n        if (!used[v]) { used[v] = true; x[i] = v; gen(i + 1); used[v] = false; }\n}\nint main()\n{\n    gen(0);\n    cout << cnt << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-08",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint mn(int A[], int n)\n{\n    if (n == 1) return A[0];\n    int m = mn(A, n - 1);\n    cout << n << \":\" << m << \" \";\n    return A[n - 1] < m ? A[n - 1] : m;\n}\nint main()\n{\n    int A[] = {4, 2, 7, 1, 5};\n    cout << mn(A, 5) << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-09",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint x[3];\nvoid gen(int i)\n{\n    if (i == 3) {\n        for (int j = 0; j < 3; j++) cout << x[j];\n        cout << endl;\n        return;\n    }\n    for (int v = 0; v <= 1; v++) {\n        if (i > 0 && x[i - 1] == 1 && v == 1) continue;\n        x[i] = v;\n        gen(i + 1);\n    }\n}\nint main()\n{\n    gen(0);\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-10",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint x[3];\nbool used[4] = {false};\nvoid gen(int i)\n{\n    if (i == 3) {\n        if (x[0] < x[2]) {\n            for (int j = 0; j < 3; j++) cout << x[j];\n            cout << endl;\n        }\n        return;\n    }\n    for (int v = 1; v <= 3; v++)\n        if (!used[v]) { used[v] = true; x[i] = v; gen(i + 1); used[v] = false; }\n}\nint main()\n{\n    gen(0);\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-11",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint x[2];\nvoid gen(int i, int start)\n{\n    if (i == 2) {\n        if ((x[0] + x[1]) % 2 == 0) cout << x[0] << x[1] << endl;\n        return;\n    }\n    for (int v = start; v <= 4; v++) { x[i] = v; gen(i + 1, v + 1); }\n}\nint main()\n{\n    gen(0, 1);\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-12",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint n, col[10], cnt;\nbool ok(int r, int c)\n{\n    for (int i = 0; i < r; i++)\n        if (col[i] == c || abs(col[i] - c) == r - i) return false;\n    return true;\n}\nvoid go(int r)\n{\n    if (r == n) { cnt++; return; }\n    for (int c = 0; c < n; c++)\n        if (ok(r, c)) { col[r] = c; go(r + 1); }\n}\nint main()\n{\n    for (n = 4; n <= 6; n++) {\n        cnt = 0;\n        go(0);\n        cout << cnt << \" \";\n    }\n    cout << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-13",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint a[] = {3, 5, 2, 7}, n = 4, calls = 0;\nint cnt(int i, int s)\n{\n    calls++;\n    if (s == 10) return 1;\n    if (i == n || s > 10) return 0;\n    return cnt(i + 1, s + a[i]) + cnt(i + 1, s);\n}\nint main()\n{\n    int r = cnt(0, 0);\n    cout << r << \" \" << calls << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-14",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint calls = 0;\nint fib(int n)\n{\n    calls++;\n    if (n <= 1) return n;\n    return fib(n - 1) + fib(n - 2);\n}\nint main()\n{\n    int r = fib(5);\n    cout << r << \" \" << calls << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-15",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int A[3] = {3, 5, 2}, B[3] = {4, 1, 6};\n    int best = 1000000, ways = 0;\n    for (int mask = 0; mask < 8; mask++) {\n        int t1 = 0, t2 = 0;\n        for (int i = 0; i < 3; i++)\n            if ((mask >> i) & 1) t1 += A[i]; else t2 += B[i];\n        int cost = t1 > t2 ? t1 : t2;\n        if (cost < best) { best = cost; ways = 1; }\n        else if (cost == best) ways++;\n    }\n    cout << best << \" \" << ways << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-16",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nvoid hanoi(int n, char from, char to, char via)\n{\n    if (n == 0) return;\n    hanoi(n - 1, from, via, to);\n    cout << from << \" \" << to << endl;\n    hanoi(n - 1, via, to, from);\n}\nint main()\n{\n    hanoi(2, 'A', 'C', 'B');\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-17",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint x[4], cnt = 0;\nbool used[5] = {false};\nvoid gen(int i)\n{\n    if (i == 4) { cnt++; return; }\n    for (int v = 1; v <= 4; v++)\n        if (!used[v] && v != i + 1) { used[v] = true; x[i] = v; gen(i + 1); used[v] = false; }\n}\nint main()\n{\n    gen(0);\n    cout << cnt << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-18",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint cnt = 0;\nvoid go(int remain, int maxPart)\n{\n    if (remain == 0) { cnt++; return; }\n    for (int p = (remain < maxPart ? remain : maxPart); p >= 1; p--)\n        go(remain - p, p);\n}\nint main()\n{\n    go(5, 5);\n    cout << cnt << endl;\n    return 0;\n}\n"
+  },
+  {
+    "id": "cpp-c09-19",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint tong(int n)\n{\n    {{X}}\n    return n + tong(n - 1);\n}\nint main()\n{\n    cout << tong(4) << endl;\n    return 0;\n}\n",
+    "options": [
+      "if (n == 1) return 0;",
+      "if (n == 0) return 1;",
+      "if (n == 2) return 0;",
+      "if (n == 0) return 0;"
+    ],
+    "expectOutput": "10"
+  },
+  {
+    "id": "cpp-c09-20",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint n = 3, x[3], cnt = 0;\nbool used[4] = {false};\nvoid gen(int i)\n{\n    if (i == n) { cnt++; return; }\n    for (int v = 1; v <= n; v++)\n        if (!used[v]) {\n            used[v] = true;\n            x[i] = v;\n            gen(i + 1);\n            {{X}}\n        }\n}\nint main()\n{\n    gen(0);\n    cout << cnt << endl;\n    return 0;\n}\n",
+    "options": [
+      "x[i] = 0;",
+      "used[v] = true;",
+      "used[v] = false;",
+      "used[i] = false;"
+    ],
+    "expectOutput": "6"
+  },
+  {
+    "id": "cpp-c09-21",
+    "kind": "cpp-find-error",
+    "template": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\n{{X}}\nint main()\n{\n    cout << f(4) << endl;\n    return 0;\n}\n",
+    "options": [
+      "int f(int n) { return n == 0 ? 1 : n * f(n - 1); }",
+      "int f(int n) { if (n <= 1) return 1; else return n * f(n - 1); }",
+      "int f(int n) { if (n == 0) return 1; return n * g(n - 1); }",
+      "int f(int n) { if (n == 0) return 1; return n * f(n - 1); }"
+    ],
+    "errorKind": "compile"
+  },
+  {
+    "id": "cpp-c09-22",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint n = 6, col[6], cnt = 0;\nbool ok(int r, int c)\n{\n    for (int i = 0; i < r; i++) {\n        {{X}}\n    }\n    return true;\n}\nvoid go(int r)\n{\n    if (r == n) { cnt++; return; }\n    for (int c = 0; c < n; c++)\n        if (ok(r, c)) { col[r] = c; go(r + 1); }\n}\nint main()\n{\n    go(0);\n    cout << cnt << endl;\n    return 0;\n}\n",
+    "options": [
+      "if (col[i] == c) return false;",
+      "if (abs(col[i] - c) == r - i) return false;",
+      "if (col[i] == c || col[i] - c == r - i) return false;",
+      "if (col[i] == c || abs(col[i] - c) == r - i) return false;"
+    ],
+    "expectOutput": "4"
+  }
+]

@@ -1,0 +1,379 @@
+{
+  "id": "cpp-c11",
+  "title": "Chương 11: Quy hoạch động",
+  "description": "Bài toán con gối nhau, công thức truy hồi, bảng QHD, truy vết, cái túi, LCS, đổi tiền và Fibonacci có nhớ.",
+  "questions": [
+    {
+      "id": "cpp-c11-01",
+      "topic": "Điều kiện áp dụng QHD",
+      "source": "KTLT C5 - Quy hoạch động - Lý thuyết",
+      "question": "Điều kiện nào cho thấy một bài toán tối ưu phù hợp để giải bằng quy hoạch động?",
+      "options": [
+        "Các bài toán con hoàn toàn độc lập, không bao giờ trùng nhau",
+        "Dữ liệu đầu vào bắt buộc đã được sắp xếp tăng dần",
+        "Bài toán chia được thành các bài toán con gối nhau (cùng một bài toán con xuất hiện lại nhiều lần) và nghiệm tối ưu của bài toán lớn được xây từ nghiệm tối ưu của các bài toán con",
+        "Tại mỗi bước chỉ cần chọn phương án tốt nhất trước mắt là ra nghiệm tối ưu toàn cục"
+      ],
+      "answer": 2,
+      "explanation": "Quy hoạch động cần hai tính chất: bài toán con gối nhau và cấu trúc con tối ưu.\n- Đáp án đúng: nhờ bài toán con lặp lại nên lưu kết quả vào bảng để không tính lại; nhờ cấu trúc con tối ưu nên ghép được nghiệm lớn từ nghiệm con.\n- Bài toán con độc lập thì chia để trị là đủ, không có gì để ghi nhớ.\n- QHD không đòi hỏi dữ liệu đã sắp xếp (một số bài như thuê máy chỉ sắp theo thời điểm kết thúc để dựng công thức).\n- Chọn tốt nhất trước mắt là thuật toán tham lam; nhiều bài (như đổi tiền với mệnh giá 1, 3, 4) tham lam cho kết quả sai nên mới cần QHD."
+    },
+    {
+      "id": "cpp-c11-02",
+      "topic": "Memoization và bottom-up",
+      "source": "KTLT C5 - Quy hoạch động - Lý thuyết",
+      "question": "Sự khác nhau giữa quy hoạch động kiểu memoization (top-down) và kiểu bottom-up là gì?",
+      "options": [
+        "Memoization là đệ quy từ bài toán lớn kèm bảng nhớ, chỉ tính các bài toán con thực sự cần, còn bottom-up dùng vòng lặp điền bảng từ bài toán nhỏ nhất đi lên",
+        "Memoization điền bảng bằng vòng lặp từ nhỏ đến lớn, còn bottom-up dùng đệ quy",
+        "Memoization luôn có độ phức tạp O(2^n) vì vẫn đệ quy, bottom-up luôn là O(n)",
+        "Bottom-up không cần bảng lưu kết quả, chỉ memoization mới cần mảng"
+      ],
+      "answer": 0,
+      "explanation": "Hai cách cùng ý tưởng: mỗi bài toán con chỉ tính một lần rồi lưu lại.\n- Đáp án đúng: top-down đi từ bài toán cần giải xuống và ghi nhớ kết quả; bottom-up đi từ trường hợp cơ sở lên theo thứ tự phụ thuộc.\n- Phương án \"đảo vai\" nói ngược định nghĩa của hai kiểu.\n- Có bảng nhớ thì số bài toán con khác nhau là hữu hạn, mỗi cái tính một lần nên memoization không còn O(2^n); hai cách thường cùng bậc độ phức tạp.\n- Bottom-up vẫn phải có bảng (hoặc vài biến lưu giá trị gần nhất) để chứa kết quả các bài toán con."
+    },
+    {
+      "id": "cpp-c11-03",
+      "topic": "Độ phức tạp bài cái túi",
+      "source": "KTLT C5 - Quy hoạch động - CaiTui1",
+      "question": "Bài cái túi 0/1 có n vật và sức chứa W. Với bảng QHD L[i][j], độ phức tạp thời gian của thuật toán là gì?",
+      "options": [
+        "O(2^n) vì phải xét mọi tập con các vật",
+        "O(n + W) vì mỗi vật và mỗi mức sức chứa chỉ xét một lần riêng",
+        "O(n log W) vì có thể chia đôi sức chứa",
+        "O(n*W) thời gian, chỉ cần giá trị tối ưu thì bộ nhớ giảm được còn O(W), còn khi cần truy vết thường giữ cả bảng O(n*W)"
+      ],
+      "answer": 3,
+      "explanation": "Bảng có (n+1)*(W+1) ô, mỗi ô tính trong thời gian hằng số từ hai ô đã có.\n- Đáp án đúng: O(n*W) thời gian; vì dòng i chỉ phụ thuộc dòng i-1 nên dùng một mảng dp[0..W] duyệt j giảm dần là đủ khi không cần truy vết.\n- O(2^n) là vét cạn mọi tập con, đúng là thứ QHD tránh được.\n- O(n + W) bỏ qua việc mỗi vật phải xét với mọi mức sức chứa.\n- O(n log W) không có phép chia đôi nào trong công thức truy hồi.\n- Lưu ý n*W là \"giả đa thức\": W lớn đến 10^9 thì bảng không còn khả thi."
+    },
+    {
+      "id": "cpp-c11-04",
+      "topic": "Fibonacci đệ quy thuần",
+      "source": "KTLT C5 - Quy hoạch động - Fibonacci",
+      "question": "Hàm fib(n) = fib(n-1) + fib(n-2) viết đệ quy thuần, không có bảng nhớ. Số lời gọi hàm tăng như thế nào theo n?",
+      "options": [
+        "Tăng tuyến tính O(n) vì mỗi giá trị chỉ được tính một lần",
+        "Tăng theo hàm mũ (xấp xỉ 1.618^n) vì rất nhiều bài toán con như fib(n-2), fib(n-3) bị tính lặp lại",
+        "Tăng bậc hai O(n^2) vì có hai lời gọi con",
+        "Tăng theo log n vì n giảm dần sau mỗi lời gọi"
+      ],
+      "answer": 1,
+      "explanation": "Cây lời gọi của fib(n) phân nhánh đôi và hai nhánh chồng lấn nhau rất nhiều.\n- Đáp án đúng: số lời gọi xấp xỉ 2*fib(n+1)-1, tức bậc mũ khoảng 1.618^n (fib(10) tốn 177 lời gọi, fib(40) hơn 300 triệu).\n- O(n) chỉ đúng khi đã thêm memoization hoặc dùng vòng lặp bottom-up.\n- O(n^2) nhầm: hai nhánh lặp lại ở mọi tầng của cây chứ không chỉ một lần, nên số lời gọi không chỉ là bậc hai.\n- O(log n) sai vì n chỉ giảm 1 hoặc 2 mỗi lần, không giảm một nửa."
+    },
+    {
+      "id": "cpp-c11-05",
+      "topic": "Khởi tạo bảng LCS",
+      "source": "KTLT C5 - Quy hoạch động - Dãy con chung dài nhất",
+      "question": "Trong bài dãy con chung dài nhất (LCS), vì sao phải khởi tạo L[0][j] = 0 và L[i][0] = 0?",
+      "options": [
+        "Để L[i][j] không bị tràn số khi cộng dồn",
+        "Chuỗi rỗng không có ký tự chung với chuỗi nào nên LCS bằng 0, đó là trường hợp cơ sở để công thức dùng L[i-1][j-1] hợp lệ khi i hoặc j bằng 1",
+        "Vì ký tự đầu tiên của hai chuỗi luôn khác nhau",
+        "Để bảng đối xứng qua đường chéo chính"
+      ],
+      "answer": 1,
+      "explanation": "Hàng 0 và cột 0 biểu diễn việc so sánh với chuỗi rỗng.\n- Đáp án đúng: LCS(rỗng, bất kỳ) = 0 nên các ô này là trường hợp cơ sở; công thức L[i][j] = L[i-1][j-1] + 1 hay max(L[i-1][j], L[i][j-1]) cần chúng khi i = 1 hoặc j = 1.\n- Giá trị 0 không liên quan đến tràn số; bảng LCS chỉ tăng tối đa bằng độ dài chuỗi ngắn hơn.\n- Ký tự đầu của hai chuỗi hoàn toàn có thể giống nhau; khi đó L[1][1] = 1.\n- Bảng LCS nói chung không đối xứng vì hai chuỗi khác nhau."
+    },
+    {
+      "id": "cpp-c11-06",
+      "topic": "Truy vết nghiệm",
+      "source": "KTLT C5 - Quy hoạch động - Truy vết (ChoThueMay)",
+      "question": "Thuật toán QHD đã cho ra giá trị tối ưu. Muốn in cả phương án tối ưu (truy vết) thì làm thế nào?",
+      "options": [
+        "Chạy lại thuật toán với dữ liệu đảo ngược thứ tự",
+        "Chỉ cần in giá trị lớn nhất trong bảng, phương án tự suy ra được",
+        "Bắt buộc phải thay bằng đệ quy không nhớ để liệt kê mọi phương án",
+        "Lưu lại lựa chọn đã dùng ở mỗi trạng thái (mảng prev/P) hoặc dựa vào bảng dp, rồi đi ngược từ trạng thái cuối về trạng thái đầu để dựng lại phương án"
+      ],
+      "answer": 3,
+      "explanation": "Bảng dp chỉ chứa giá trị tối ưu của từng bài toán con, muốn có phương án phải biết lựa chọn nào đã sinh ra giá trị đó.\n- Đáp án đúng: lưu lựa chọn (như prev[i] trong dãy con tăng, hay P[i] trong bài thuê máy) hoặc so sánh lại các ô bảng, rồi đi ngược từ đích về gốc, có thể cần đảo chiều khi in.\n- Chạy lại với dữ liệu đảo ngược không đảm bảo ra cùng một phương án.\n- Giá trị lớn nhất không cho biết các phần tử nào được chọn.\n- Đệ quy không nhớ liệt kê mọi phương án sẽ bùng nổ tổ hợp, trái với mục tiêu của QHD."
+    },
+    {
+      "id": "cpp-c11-07",
+      "topic": "Fibonacci có nhớ",
+      "source": "KTLT C5 - Quy hoạch động - Fibonacci memoization",
+      "question": "Chương trình sau dùng memoization để tính Fibonacci và đếm số lời gọi hàm. Nó in ra gì?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nlong long memo[50];\nint calls = 0;\n\nlong long fib(int n) {\n    calls++;\n    if (n < 2) return n;\n    if (memo[n] != -1) return memo[n];\n    return memo[n] = fib(n - 1) + fib(n - 2);\n}\n\nint main() {\n    for (int i = 0; i < 50; i++) memo[i] = -1;\n    cout << fib(10) << \"\\n\" << calls << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "55\n19",
+        "55\n177",
+        "55\n11",
+        "55\n10"
+      ],
+      "answer": 0,
+      "explanation": "Với bảng nhớ, mỗi fib(k) chỉ thực sự đệ quy một lần, các lời gọi còn lại đọc kết quả từ memo.\n- Đáp án đúng: nhánh trái đi xuống từ fib(10) tới fib(2), rồi fib(1) và fib(0): 11 lời gọi; sau đó mỗi fib(k) với k = 3..10 gọi thêm fib(k-2) đã có trong memo: 8 lời gọi. Tổng 19 (tức 2n-1).\n- Phương án có 177 lời gọi là của phiên bản không có bảng nhớ.\n- Các phương án 11 và 10 bỏ sót những lời gọi đọc lại từ memo.\n- fib(10) = 55 ở mọi phương án, chỗ khác biệt là số lời gọi."
+    },
+    {
+      "id": "cpp-c11-08",
+      "topic": "Dãy con tăng dài nhất",
+      "source": "KTLT C5 - Quy hoạch động - 502 Dãy con tăng dài nhất",
+      "question": "Chương trình tính độ dài dãy con tăng dài nhất kết thúc tại mỗi vị trí. Output là gì?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int A[] = {5, 2, 8, 6, 3, 6, 9, 7};\n    int n = 8, L[8], best = 0;\n    for (int i = 0; i < n; i++) {\n        L[i] = 1;\n        for (int j = 0; j < i; j++)\n            if (A[j] < A[i] && L[j] + 1 > L[i]) L[i] = L[j] + 1;\n        if (L[i] > best) best = L[i];\n    }\n    for (int i = 0; i < n; i++) cout << L[i] << (i + 1 < n ? \" \" : \"\\n\");\n    cout << best << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1 1 2 2 2 3 4 4\n8",
+        "1 1 2 3 3 4 5 5\n5",
+        "1 1 2 2 2 3 4 4\n4",
+        "1 1 2 2 2 3 4 3\n4"
+      ],
+      "answer": 2,
+      "explanation": "L[i] là độ dài dãy con tăng dài nhất kết thúc tại A[i], tính từ L[j] của các j < i có A[j] < A[i].\n- Đáp án đúng: A = 5 2 8 6 3 6 9 7 cho L = 1 1 2 2 2 3 4 4 (ví dụ dãy 2, 3, 6, 9 dài 4), và best = max L = 4.\n- Phương án kết thúc bằng 8 lấy n làm kết quả, không phải giá trị lớn nhất của L.\n- Phương án L = 1 1 2 3 3 4 5 5 cho rằng 5 và 2 nối được với nhau, nhưng 2 đứng sau 5 và nhỏ hơn nên không nối.\n- Phương án có L[7] = 3 sai ở phần tử 7: 7 nối được sau dãy 2, 3, 6 nên L[7] = 4."
+    },
+    {
+      "id": "cpp-c11-09",
+      "topic": "Cái túi 0/1",
+      "source": "KTLT C5 - Quy hoạch động - CaiTui1",
+      "question": "Bài cái túi 0/1 với bảng dp[i][j]. Chương trình in ra giá trị tối đa nào (n = 4 vật, sức chứa 8)?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int w[] = {1, 3, 4, 5}, v[] = {1, 4, 5, 7};\n    int n = 4, W = 8;\n    int dp[5][9] = {};\n    for (int i = 1; i <= n; i++)\n        for (int j = 0; j <= W; j++) {\n            dp[i][j] = dp[i - 1][j];\n            if (j >= w[i - 1])\n                dp[i][j] = max(dp[i][j], dp[i - 1][j - w[i - 1]] + v[i - 1]);\n        }\n    cout << dp[n][W] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "10",
+        "12",
+        "9",
+        "11"
+      ],
+      "answer": 3,
+      "explanation": "dp[i][j] là giá trị lớn nhất khi chỉ xét i vật đầu và sức chứa j; mỗi vật hoặc bỏ qua, hoặc lấy một lần.\n- Đáp án đúng: chọn vật 2 (khối lượng 3, giá trị 4) và vật 4 (khối lượng 5, giá trị 7): tổng khối lượng 8, giá trị 11.\n- 10: chọn vật 1, 2, 3 (khối lượng 8, giá trị 10), kém hơn phương án trên.\n- 12: không có tập vật nào khối lượng không quá 8 mà giá trị đạt 12.\n- 9: chỉ là một phương án thấp hơn, chưa phải giá trị lớn nhất mà bảng dp tìm ra."
+    },
+    {
+      "id": "cpp-c11-10",
+      "topic": "Cái túi: thứ tự duyệt j",
+      "source": "KTLT C5 - Quy hoạch động - CaiTui1 (tối ưu bộ nhớ)",
+      "question": "Hai vòng lặp dùng mảng một chiều, vòng đầu duyệt j giảm dần, vòng sau duyệt j tăng dần. Output là gì?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int w[] = {2, 3}, v[] = {3, 5};\n    int n = 2, W = 7;\n    int a[8] = {}, b[8] = {};\n    for (int i = 0; i < n; i++)\n        for (int j = W; j >= w[i]; j--)\n            a[j] = max(a[j], a[j - w[i]] + v[i]);\n    for (int i = 0; i < n; i++)\n        for (int j = w[i]; j <= W; j++)\n            b[j] = max(b[j], b[j - w[i]] + v[i]);\n    cout << a[W] << \"\\n\" << b[W] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "11\n8",
+        "8\n11",
+        "8\n8",
+        "11\n11"
+      ],
+      "answer": 1,
+      "explanation": "Duyệt j giảm dần khiến dp[j - w] vẫn là giá trị của vòng i trước, nên mỗi vật chỉ dùng một lần (cái túi 0/1).\n- Đáp án đúng: a (j giảm) = 8, lấy cả hai vật khối lượng 2 + 3 = 5, giá trị 3 + 5 = 8; b (j tăng) cho phép lấy một vật nhiều lần: 5 + 3 + 3 = 11 với khối lượng 3 + 2 + 2 = 7.\n- Phương án 11 rồi 8 đảo vai hai vòng lặp.\n- Phương án 8 rồi 8 cho rằng duyệt tăng vẫn là 0/1; thực ra dp[j - w] đã bị cập nhật trong cùng vòng nên vật được dùng lại.\n- Phương án 11 rồi 11 cho rằng duyệt giảm cũng cho phép lặp vật."
+    },
+    {
+      "id": "cpp-c11-11",
+      "topic": "Dãy con chung dài nhất",
+      "source": "KTLT C5 - Quy hoạch động - LCS",
+      "question": "Chương trình tính độ dài LCS của \"ABCBDAB\" và \"BDCABA\". Output là gì?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    string a = \"ABCBDAB\", b = \"BDCABA\";\n    int n = a.size(), m = b.size();\n    int L[8][7] = {};\n    for (int i = 1; i <= n; i++)\n        for (int j = 1; j <= m; j++)\n            if (a[i - 1] == b[j - 1]) L[i][j] = L[i - 1][j - 1] + 1;\n            else L[i][j] = max(L[i - 1][j], L[i][j - 1]);\n    cout << L[n][m] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "3",
+        "5",
+        "4",
+        "6"
+      ],
+      "answer": 2,
+      "explanation": "Nếu hai ký tự bằng nhau thì L[i][j] = L[i-1][j-1] + 1, ngược lại lấy max của ô phía trên và ô bên trái.\n- Đáp án đúng: 4 (ví dụ dãy chung BCBA, BDAB hoặc BCAB).\n- 3 thấp hơn thực tế: ta tìm được dãy chung dài 4 nên 3 không thể là tối ưu.\n- 5 và 6 vượt khả năng: không có dãy con chung dài 5 giữa hai chuỗi này.\n- Cần phân biệt dãy con (không cần liên tiếp) với xâu con (liên tiếp); LCS tính dãy con."
+    },
+    {
+      "id": "cpp-c11-12",
+      "topic": "Đổi tiền: tham lam và QHD",
+      "source": "KTLT C5 - Quy hoạch động - Đổi tiền",
+      "question": "Đổi 6 đồng bằng các mệnh giá 4, 3, 1. Chương trình in số đồng theo tham lam rồi số đồng tối thiểu theo QHD. Output là gì?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int coins[] = {4, 3, 1};\n    int n = 6;\n    int greedy = 0, rest = n;\n    for (int c : coins) {\n        greedy += rest / c;\n        rest %= c;\n    }\n    const int INF = 1000000;\n    int dp[7];\n    dp[0] = 0;\n    for (int i = 1; i <= n; i++) {\n        dp[i] = INF;\n        for (int c : coins)\n            if (i >= c && dp[i - c] + 1 < dp[i]) dp[i] = dp[i - c] + 1;\n    }\n    cout << greedy << \"\\n\" << dp[n] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "3\n2",
+        "2\n2",
+        "3\n3",
+        "2\n3"
+      ],
+      "answer": 0,
+      "explanation": "Tham lam luôn lấy mệnh giá lớn nhất còn lấy được; QHD dp[i] = min(dp[i - c] + 1) xét mọi mệnh giá.\n- Đáp án đúng: tham lam lấy 4 rồi còn 2 nên lấy 1 + 1, tổng 3 đồng; QHD tìm ra 3 + 3 chỉ 2 đồng.\n- Phương án 2 và 2 cho rằng tham lam cũng tối ưu, sai với hệ mệnh giá 4, 3, 1.\n- Phương án 3 và 3 cho rằng QHD cũng không cải thiện được.\n- Phương án 2 rồi 3 đảo hai giá trị: số đồng của tham lam luôn không nhỏ hơn QHD."
+    },
+    {
+      "id": "cpp-c11-13",
+      "topic": "Đổi tiền: đếm số cách",
+      "source": "KTLT C5 - Quy hoạch động - Đổi tiền",
+      "question": "Đếm số cách đổi tổng 5 và tổng 11 bằng các mệnh giá 1, 2, 5 (dùng không giới hạn, không phân biệt thứ tự). Output là gì?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int coins[] = {1, 2, 5};\n    long long ways[12] = {};\n    ways[0] = 1;\n    for (int c : coins)\n        for (int s = c; s <= 11; s++)\n            ways[s] += ways[s - c];\n    cout << ways[5] << \" \" << ways[11] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "4 11",
+        "3 11",
+        "4 12",
+        "5 10"
+      ],
+      "answer": 0,
+      "explanation": "ways[s] += ways[s - c] với vòng ngoài là mệnh giá, nên mỗi tổ hợp chỉ được đếm một lần theo thứ tự mệnh giá.\n- Đáp án đúng: tổng 5 có 4 cách (5; 2+2+1; 2+1+1+1; 1*5), tổng 11 có 11 cách.\n- Phương án 3 11 thiếu một cách ở tổng 5 (thường quên 2+2+1 hoặc 2+1+1+1).\n- Phương án 4 12 và 5 10 lệch ở tổng 11 hoặc tổng 5: số đếm thật của chương trình là 4 và 11.\n- Phép cộng dồn này tăng nhanh theo tổng nên dùng long long."
+    },
+    {
+      "id": "cpp-c11-14",
+      "topic": "Truy vết dãy con tăng",
+      "source": "KTLT C5 - Quy hoạch động - 502 Dãy con tăng (truy vết)",
+      "question": "Chương trình tính dãy con tăng dài nhất rồi truy vết bằng mảng prev. Với A = {10, 9, 2, 5, 3, 7, 101, 18}, nó in ra gì?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int A[] = {10, 9, 2, 5, 3, 7, 101, 18};\n    int n = 8, L[8], prev[8], best = 0;\n    for (int i = 0; i < n; i++) {\n        L[i] = 1;\n        prev[i] = -1;\n        for (int j = 0; j < i; j++)\n            if (A[j] < A[i] && L[j] + 1 > L[i]) {\n                L[i] = L[j] + 1;\n                prev[i] = j;\n            }\n        if (L[i] > L[best]) best = i;\n    }\n    int res[8], k = 0;\n    for (int i = best; i != -1; i = prev[i]) res[k++] = A[i];\n    for (int i = k - 1; i >= 0; i--) cout << res[i] << (i ? \" \" : \"\\n\");\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "2 3 7 101",
+        "2 5 7 18",
+        "2 5 7 101",
+        "10 9 2 5"
+      ],
+      "answer": 2,
+      "explanation": "prev[i] ghi chỉ số j đứng ngay trước i trong dãy tốt nhất, truy vết đi từ vị trí best về prev = -1 rồi in đảo ngược.\n- Đáp án đúng: L = 1 1 1 2 2 3 4 4; vị trí best đầu tiên đạt L = 4 là 101; prev của 101 là 7, của 7 là 5 (gặp trước và cho L = 3), của 5 là 2. In ngược được 2 5 7 101.\n- Dãy 2 3 7 101 dùng 3 làm cầu nối, nhưng điều kiện L[j] + 1 > L[i] là so sánh nghiêm ngặt nên chỉ ghi nhận 5 (đến trước).\n- Dãy 2 5 7 18 kết thúc ở 18; vì best chỉ đổi khi L lớn hơn, vị trí 101 được giữ.\n- Dãy 10 9 2 5 là bốn phần tử đầu, không phải dãy tăng."
+    },
+    {
+      "id": "cpp-c11-15",
+      "topic": "Fibonacci bottom-up",
+      "source": "KTLT C5 - Quy hoạch động - Fibonacci",
+      "question": "Chương trình tính Fibonacci bằng bảng long long. Output của f[50] rồi f[90] là gì?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    long long f[91];\n    f[0] = 0; f[1] = 1;\n    for (int i = 2; i <= 90; i++) f[i] = f[i - 1] + f[i - 2];\n    cout << f[50] << \"\\n\" << f[90] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "12586269025\n-1323752223",
+        "12586269025\n2880067194370816120",
+        "7778742049\n1100087778366101931",
+        "12586269025\n2880067194370816121"
+      ],
+      "answer": 1,
+      "explanation": "f[i] = f[i-1] + f[i-2] điền từ nhỏ lên, mỗi giá trị tính một lần: O(n) thời gian.\n- Đáp án đúng: F(50) = 12586269025 (vượt int) và F(90) = 2880067194370816120 vẫn nhỏ hơn giới hạn long long (khoảng 9.22*10^18).\n- Số âm ở phương án đầu giống kết quả khi tính bằng int bị tràn, không xảy ra với long long.\n- Phương án 7778742049 và 1100087778366101931 là F(49) và F(88): lệch chỉ số.\n- Phương án cuối chỉ sai chữ số cuối của F(90): kết quả phải chính xác từng chữ số."
+    },
+    {
+      "id": "cpp-c11-16",
+      "topic": "Cho thuê máy",
+      "source": "KTLT C5 - Quy hoạch động - ChoThueMay",
+      "question": "Bài cho thuê máy: các công việc (bắt đầu, kết thúc, lợi nhuận) đã sắp theo thời điểm kết thúc; công việc sau bắt đầu đúng lúc công việc trước kết thúc thì vẫn được. Chương trình in lợi nhuận tối đa là bao nhiêu?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nstruct Job { int s, e, p; };\n\nint main() {\n    Job J[] = {{1, 3, 5}, {2, 5, 6}, {4, 6, 5}, {6, 7, 4}, {5, 8, 11}, {7, 9, 2}};\n    int n = 6;   // đã sắp theo thời điểm kết thúc tăng dần\n    int dp[7] = {};\n    for (int i = 1; i <= n; i++) {\n        int k = 0;   // số công việc cuối cùng kết thúc không muộn hơn s của i\n        for (int j = i - 1; j >= 1; j--)\n            if (J[j - 1].e <= J[i - 1].s) { k = j; break; }\n        dp[i] = max(dp[i - 1], dp[k] + J[i - 1].p);\n    }\n    cout << dp[n] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "16",
+        "18",
+        "11",
+        "17"
+      ],
+      "answer": 3,
+      "explanation": "dp[i] = max(dp[i-1], dp[k] + p[i]) với k là công việc cuối cùng kết thúc không muộn hơn lúc i bắt đầu.\n- Đáp án đúng: 17 bằng công việc (2, 5, 6) cộng (5, 8, 11) (kết thúc 5 và bắt đầu 5 vẫn ghép được), tổng 6 + 11.\n- 16 là một phương án hợp lệ (5 + 5 + 4 + 2) nhưng chưa tối ưu.\n- 18 vượt quá lợi nhuận tối đa có thể đạt.\n- 11 chỉ là công việc lợi nhuận lớn nhất lấy riêng, chưa tận dụng ghép thêm công việc trước.\n- Nếu dùng điều kiện < thay vì <= thì hai công việc (2, 5, 6) và (5, 8, 11) không ghép được và kết quả thay đổi."
+    },
+    {
+      "id": "cpp-c11-17",
+      "topic": "Bố trí phòng họp",
+      "source": "KTLT C5 - Quy hoạch động - BoTriPhongHop",
+      "question": "Bố trí phòng họp: có 11 cuộc họp (đã sắp theo giờ kết thúc), tìm số cuộc họp nhiều nhất không giao nhau (kết thúc <= bắt đầu thì không giao). Chương trình in ra gì?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int S[] = {1, 3, 0, 5, 3, 5, 6, 8, 8, 2, 12};\n    int E[] = {4, 5, 6, 7, 9, 9, 10, 11, 12, 14, 16};\n    int n = 11;\n    int dp[12] = {};\n    for (int i = 1; i <= n; i++) {\n        int k = 0;\n        for (int j = i - 1; j >= 1; j--)\n            if (E[j - 1] <= S[i - 1]) { k = j; break; }\n        dp[i] = max(dp[i - 1], dp[k] + 1);\n    }\n    cout << dp[n] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "answer": 1,
+      "explanation": "Đây là bài chọn hoạt động: dp[i] = max(dp[i-1], dp[k] + 1) với k tìm như bài thuê máy nhưng mỗi cuộc họp có giá trị 1.\n- Đáp án đúng: 4, chẳng hạn các cuộc họp (1,4), (5,7), (8,11), (12,16).\n- 3 thấp hơn thực tế: ta ghép được 4 cuộc.\n- 5 và 6 quá cao: không chọn nổi 5 cuộc đôi một không giao với dữ liệu này.\n- Cách tham lam (luôn chọn cuộc kết thúc sớm nhất) cũng ra 4; QHD thích hợp khi mỗi cuộc có trọng số khác nhau."
+    },
+    {
+      "id": "cpp-c11-18",
+      "topic": "Đếm cách leo cầu thang",
+      "source": "KTLT C5 - Quy hoạch động - Quy hoạch động cơ bản",
+      "question": "Đếm số cách leo 10 bậc thang, mỗi lần bước 1 hoặc 2 bậc, theo công thức f[i] = f[i-1] + f[i-2] với f[0] = f[1] = 1. Chương trình in ra gì?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int n = 10;\n    int f[11];\n    f[0] = 1; f[1] = 1;\n    for (int i = 2; i <= n; i++) f[i] = f[i - 1] + f[i - 2];\n    cout << f[n] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "89",
+        "55",
+        "144",
+        "10"
+      ],
+      "answer": 0,
+      "explanation": "Bậc i đến được từ bậc i-1 hoặc i-2 nên số cách là tổng hai giá trị trước.\n- Đáp án đúng: dãy 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 cho f[10] = 89.\n- 55 là f[9]: lệch một vị trí.\n- 144 là f[11]: lệch một vị trí về phía bên kia.\n- 10 chỉ là số bậc, không phải số cách."
+    },
+    {
+      "id": "cpp-c11-19",
+      "topic": "Cái túi 0/1 một chiều",
+      "source": "KTLT C5 - Quy hoạch động - CaiTui1 (tối ưu bộ nhớ)",
+      "question": "Chọn đoạn code điền vào chỗ trống để cái túi 0/1 dùng mảng một chiều cho kết quả đúng (mỗi vật dùng một lần).",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int w[] = {2, 4, 3}, v[] = {3, 5, 4};\n    int n = 3, W = 6;\n    int dp[7] = {};\n    for (int i = 0; i < n; i++)\n        /* ... điền vào đây ... */\n    cout << dp[W] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nfor (int j = w[i]; j <= W; j++)\n            dp[j] = max(dp[j], dp[j - w[i]] + v[i]);\n```",
+        "```cpp\nfor (int j = W; j > w[i]; j--)\n            dp[j] = max(dp[j], dp[j - w[i]] + v[i]);\n```",
+        "```cpp\nfor (int j = W; j >= w[i]; j--)\n            dp[j] = dp[j - w[i]] + v[i];\n```",
+        "```cpp\nfor (int j = W; j >= w[i]; j--)\n            dp[j] = max(dp[j], dp[j - w[i]] + v[i]);\n```"
+      ],
+      "answer": 3,
+      "explanation": "Phải duyệt j từ W xuống w[i] để dp[j - w[i]] chưa bị vật i cập nhật, và phải lấy max với phương án không chọn vật i.\n- Đáp án đúng: duyệt giảm, có max, điều kiện j >= w[i]; cho kết quả 8 (vật khối lượng 2 và 4).\n- Duyệt j tăng dần cho phép dùng một vật nhiều lần (cái túi không giới hạn), nên kết quả vượt 8.\n- Điều kiện j > w[i] bỏ sót trường hợp vật lấp vừa đủ sức chứa (j = w[i]), nên kết quả thấp hơn.\n- Bỏ max, gán thẳng dp[j] = dp[j - w[i]] + v[i], làm mất phương án không chọn vật, nên kết quả sai."
+    },
+    {
+      "id": "cpp-c11-20",
+      "topic": "Công thức truy hồi LCS",
+      "source": "KTLT C5 - Quy hoạch động - LCS",
+      "question": "Chọn đoạn code điền vào nhánh else để bảng L tính đúng độ dài dãy con chung dài nhất của \"AGGTAB\" và \"GXTXAYB\" (kết quả đúng là 4).",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    string a = \"AGGTAB\", b = \"GXTXAYB\";\n    int n = a.size(), m = b.size();\n    int L[7][8] = {};\n    for (int i = 1; i <= n; i++)\n        for (int j = 1; j <= m; j++)\n            if (a[i - 1] == b[j - 1]) L[i][j] = L[i - 1][j - 1] + 1;\n            else /* ... điền vào đây ... */\n    cout << L[n][m] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nL[i][j] = L[i - 1][j - 1];\n```",
+        "```cpp\nL[i][j] = L[i - 1][j] + L[i][j - 1];\n```",
+        "```cpp\nL[i][j] = max(L[i - 1][j], L[i][j - 1]);\n```",
+        "```cpp\nL[i][j] = min(L[i - 1][j], L[i][j - 1]);\n```"
+      ],
+      "answer": 2,
+      "explanation": "Khi hai ký tự khác nhau, LCS của hai tiền tố là tốt hơn trong hai trường hợp bỏ ký tự cuối của một trong hai chuỗi: max(L[i-1][j], L[i][j-1]).\n- Đáp án đúng cho kết quả 4 (dãy GTAB).\n- Chỉ lấy L[i-1][j-1] bỏ qua việc ký tự cuối của một chuỗi có thể vẫn khớp với ký tự trước đó của chuỗi kia, nên bị thiếu.\n- Cộng hai ô đếm trùng một dãy con hai lần và làm giá trị phình quá độ dài chuỗi.\n- Dùng min thường chỉ cho ra các giá trị nhỏ, thấp hơn đáp án đúng."
+    },
+    {
+      "id": "cpp-c11-21",
+      "topic": "Khởi tạo bảng đổi tiền",
+      "source": "KTLT C5 - Quy hoạch động - Đổi tiền",
+      "question": "Tính số đồng tối thiểu để đổi 11 từ các mệnh giá 2 và 5. Chọn đoạn khởi tạo dp đúng để chương trình in 4 (5 + 2 + 2 + 2).",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    const int INF = 1000000;\n    int coins[] = {2, 5};\n    int n = 11, dp[12];\n    /* ... điền vào đây ... */\n    for (int i = 1; i <= n; i++)\n        for (int c : coins)\n            if (i >= c && dp[i - c] != INF) dp[i] = min(dp[i], dp[i - c] + 1);\n    cout << dp[n] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nfor (int i = 0; i <= n; i++) dp[i] = 0;\n```",
+        "```cpp\ndp[0] = 1;\n    for (int i = 1; i <= n; i++) dp[i] = INF;\n```",
+        "```cpp\ndp[0] = 0;\n    for (int i = 1; i <= n; i++) dp[i] = INF;\n```",
+        "```cpp\nfor (int i = 0; i <= n; i++) dp[i] = INF;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Đổi tiền tối thiểu cần dp[0] = 0 (đổi 0 đồng tốn 0 đồng) và các tổng còn lại bắt đầu bằng INF (chưa đạt được).\n- Đáp án đúng: dp[0] = 0 và các ô khác INF cho kết quả 4.\n- Khởi tạo toàn bộ bằng 0 khiến min(0, ...) luôn giữ 0, chương trình in 0.\n- dp[0] = 1 cộng thừa một đồng vào mọi giá trị, kết quả thành 5.\n- Đặt cả dp[0] bằng INF thì điều kiện dp[i - c] != INF không bao giờ thỏa, kết quả giữ nguyên INF."
+    },
+    {
+      "id": "cpp-c11-22",
+      "topic": "Kiểm tra memo",
+      "source": "KTLT C5 - Quy hoạch động - Fibonacci memoization",
+      "question": "Chọn đoạn code đặt ở đầu hàm fib (sau lời gọi calls++) để hàm vừa đúng vừa tận dụng bảng nhớ memo (khởi tạo toàn -1).",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nlong long memo[50];\nint calls = 0;\n\nlong long fib(int n) {\n    calls++;\n    /* ... điền vào đây ... */\n    return memo[n] = fib(n - 1) + fib(n - 2);\n}\n\nint main() {\n    for (int i = 0; i < 50; i++) memo[i] = -1;\n    cout << fib(20) << \" \" << calls << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nif (n < 2) return n;\n```",
+        "```cpp\nif (n < 2) return n;\n    if (memo[n] != 0) return memo[n];\n```",
+        "```cpp\nif (n < 2) return n;\n    if (memo[n] != -1) return memo[n] + 1;\n```",
+        "```cpp\nif (n < 2) return n;\n    if (memo[n] != -1) return memo[n];\n```"
+      ],
+      "answer": 3,
+      "explanation": "Hàm memoization cần hai thứ: trường hợp cơ sở (n < 2) và kiểm tra ô đã tính (khác giá trị đánh dấu -1) rồi trả về đúng giá trị đó.\n- Đáp án đúng: có cả hai, fib(20) = 6765 với chỉ 39 lời gọi.\n- Chỉ có trường hợp cơ sở thì vẫn đúng giá trị nhưng không dùng memo, số lời gọi lên tới 21891.\n- So sánh với 0 trong khi ô chưa tính là -1 khiến hàm trả về -1 ở lần gọi đầu, nên giá trị tính ra sai.\n- Trả về memo[n] + 1 làm sai giá trị tại mọi ô đã có trong bảng."
+    },
+    {
+      "id": "cpp-c11-23",
+      "topic": "Kết quả dãy con tăng dài nhất",
+      "source": "KTLT C5 - Quy hoạch động - 502 Dãy con tăng dài nhất",
+      "question": "Mảng L[i] là độ dài dãy con tăng dài nhất kết thúc tại A[i] (A = {1, 2, 3, 0}). Chọn đoạn code in ra độ dài dãy con tăng dài nhất của cả mảng.",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int A[] = {1, 2, 3, 0};\n    int n = 4, L[4];\n    for (int i = 0; i < n; i++) {\n        L[i] = 1;\n        for (int j = 0; j < i; j++)\n            if (A[j] < A[i] && L[j] + 1 > L[i]) L[i] = L[j] + 1;\n    }\n    /* ... điền vào đây ... */\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nint best = 0;\n    for (int i = 0; i < n; i++) best = max(best, L[i]);\n    cout << best << \"\\n\";\n```",
+        "```cpp\ncout << L[n - 1] << \"\\n\";\n```",
+        "```cpp\ncout << n << \"\\n\";\n```",
+        "```cpp\nint s = 0;\n    for (int i = 0; i < n; i++) s += L[i];\n    cout << s << \"\\n\";\n```"
+      ],
+      "answer": 0,
+      "explanation": "L[i] chỉ là độ dài dãy kết thúc tại i, nên đáp án là giá trị lớn nhất trong toàn bộ mảng L (ở đây 1 2 3 1, lớn nhất là 3).\n- Đáp án đúng: duyệt toàn bộ L lấy max, in 3.\n- In L[n - 1] chỉ cho dãy kết thúc ở phần tử cuối (0), được 1.\n- In n coi cả mảng là dãy tăng, được 4.\n- Tổng các L[i] không có ý nghĩa về độ dài dãy, được 7."
+    },
+    {
+      "id": "cpp-c11-24",
+      "topic": "Thứ tự vòng lặp trong đếm cách",
+      "source": "KTLT C5 - Quy hoạch động - Đổi tiền (tổ hợp và hoán vị)",
+      "question": "Đếm số cách tạo tổng 4 từ mệnh giá 1 và 2. Vòng đầu đặt mệnh giá ở vòng ngoài, vòng sau đặt tổng ở vòng ngoài. Output là gì?",
+      "code": "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    int coins[] = {1, 2};\n    int n = 4;\n    int a[5] = {}, b[5] = {};\n    a[0] = b[0] = 1;\n    for (int c : coins)\n        for (int s = c; s <= n; s++)\n            a[s] += a[s - c];\n    for (int s = 1; s <= n; s++)\n        for (int c : coins)\n            if (s >= c) b[s] += b[s - c];\n    cout << a[n] << \"\\n\" << b[n] << \"\\n\";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "5\n3",
+        "3\n5",
+        "3\n3",
+        "5\n5"
+      ],
+      "answer": 1,
+      "explanation": "Mệnh giá ở vòng ngoài đếm tổ hợp (không tính thứ tự); tổng ở vòng ngoài đếm các dãy có thứ tự.\n- Đáp án đúng: vòng đầu cho 3 cách (1+1+1+1, 1+1+2, 2+2); vòng sau cho 5 (1111, 112, 121, 211, 22).\n- Phương án 5 rồi 3 đảo thứ tự hai vòng lặp.\n- Phương án 3 rồi 3 và 5 rồi 5 coi hai cách duyệt cho cùng kết quả; thực tế thứ tự vòng lặp quyết định có phân biệt hoán vị hay không."
+    }
+  ]
+}

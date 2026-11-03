@@ -51,3 +51,14 @@ Nguồn: khóa .NET Backend Zero → Senior (repo dotnet-course), 20 module (0 �
 - `npm run dotnet:subject`: dựng lại `content/dotnet/subject.json` từ các file chương.
 
 CI chỉ chạy lint cho .NET (verify chạy cục bộ vì chậm và cần SDK).
+
+## Bộ câu hỏi C/C++
+
+Nguồn: hai repo bài tập Nhập môn lập trình (NMLT, chương 1-5) và Kỹ thuật lập trình (KTLT, chương 0-5), 11 chương, 259 câu trắc nghiệm (226 mục kiểm chứng ở `content/cpp/verify/`). Đáp án được kiểm chứng bằng cách biên dịch và chạy thật bằng g++ (`-std=c++17`).
+
+- `npm run cpp:run -- --file x.cpp [--stdin "1 2"] [--std c++20] [--c] [--warn]`: biên dịch và chạy thử một chương trình C/C++.
+- `npm run cpp:lint`: kiểm tra định dạng câu hỏi.
+- `npm run cpp:verify`: biên dịch và chạy thật mọi mục kiểm chứng (`content/cpp/verify/*.json`). Cần g++ trong PATH (Windows: `winget install BrechtSanders.WinLibs.POSIX.UCRT`).
+- `npm run cpp:subject`: dựng lại `content/cpp/subject.json` từ các file chương.
+
+CI chỉ chạy lint cho C/C++ (verify chạy cục bộ).

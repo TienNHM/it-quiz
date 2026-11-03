@@ -1,0 +1,385 @@
+{
+  "id": "cpp-c07",
+  "title": "Chương 7: Kỹ thuật tổ chức và xử lý dữ liệu trên mảng",
+  "description": "Các kỹ thuật xử lý mảng 1 chiều, 2 chiều: lính canh, tìm nhị phân, đếm phân phối, số lớn, ma phương, dò mìn, mảng đánh dấu và chia để trị.",
+  "questions": [
+    {
+      "id": "cpp-c07-01",
+      "topic": "Tìm kiếm bằng lính canh",
+      "source": "NMLT C07 - 1.1 SEARCH_flag.cpp",
+      "question": "Hàm tìm tuyến tính dùng lính canh (flag) như dưới đây được gọi với mảng có 5 phần tử thật và dư 1 ô. Chương trình in ra gì?",
+      "code": "int find(int A[], int n, int key) {\n    A[n] = key;              // lính canh\n    int i = 0;\n    while (A[i] != key) i++;\n    return i < n ? i : -1;\n}\n// A = {4, 8, 15, 16, 23}, n = 5\n// cout << find(A, 5, 16) << \" \" << find(A, 5, 42);",
+      "codeLang": "cpp",
+      "options": [
+        "3 5",
+        "4 -1",
+        "3 -1",
+        "3 0"
+      ],
+      "answer": 2,
+      "explanation": "- Với key = 16: vòng lặp dừng ở i = 3 (A[3] = 16), 3 < 5 nên trả về 3.\n- Với key = 42: không có phần tử thật nào bằng 42, vòng lặp chạy đến lính canh A[5] = 42 rồi dừng, i = 5 không nhỏ hơn n nên trả về -1.\n- \"3 5\" sai vì hàm đổi trường hợp i = n thành -1 chứ không trả về n.\n- \"4 -1\" sai vì chỉ số mảng tính từ 0, 16 nằm ở vị trí 3 chứ không phải 4.\n- \"3 0\" sai vì trường hợp không tìm thấy trả về -1, không phải 0 (0 là chỉ số hợp lệ)."
+    },
+    {
+      "id": "cpp-c07-02",
+      "topic": "Lính canh",
+      "source": "NMLT C07 - 1.1 SEARCH_flag.cpp",
+      "question": "Trong thuật toán tìm tuyến tính dùng lính canh, ta gán `A[n] = key` trước khi duyệt. Lợi ích chính của kỹ thuật này là gì?",
+      "options": [
+        "Bỏ được phép kiểm tra `i < n` trong mỗi vòng lặp nên mỗi lần lặp chỉ còn một phép so sánh",
+        "Đưa độ phức tạp từ O(n) xuống O(log n)",
+        "Làm mảng tự động được sắp xếp tăng dần",
+        "Không cần chừa thêm ô nhớ nào ở cuối mảng"
+      ],
+      "answer": 0,
+      "explanation": "- Đúng: nhờ lính canh vòng lặp chắc chắn dừng nên chỉ cần `while (A[i] != key)`, bớt một phép so sánh mỗi vòng.\n- Độ phức tạp vẫn là O(n), chỉ giảm hằng số; O(log n) là của tìm nhị phân trên mảng đã sắp xếp.\n- Lính canh không hề thay đổi thứ tự các phần tử thật.\n- Sai: ngược lại, mảng phải dư ít nhất một ô tại chỉ số n để chứa lính canh."
+    },
+    {
+      "id": "cpp-c07-03",
+      "topic": "Tìm nhị phân",
+      "source": "NMLT C07 - 1.2 BinarySEARCH.cpp",
+      "question": "Đoạn code tìm nhị phân sau in ra những gì?",
+      "code": "int A[8] = {1, 3, 5, 7, 9, 11, 13, 15};\nint L = 0, R = 7, key = 11;\nwhile (L <= R) {\n    int mid = L + (R - L) / 2;\n    cout << mid << \" \";\n    if (A[mid] == key) { cout << \"found \" << mid << endl; break; }\n    if (A[mid] < key) L = mid + 1; else R = mid - 1;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "3 4 5 found 5",
+        "3 5 found 5",
+        "4 5 found 5",
+        "3 5 found 11"
+      ],
+      "answer": 1,
+      "explanation": "- Vòng 1: L = 0, R = 7, mid = 3, A[3] = 7 < 11 nên L = 4.\n- Vòng 2: mid = 4 + (7 - 4) / 2 = 5, A[5] = 11 bằng key, in \"found 5\" và thoát.\n- \"3 4 5 found 5\" sai vì sau khi L = 4, mid không thể là 4 (mid = 4 + 3/2 = 5 do chia nguyên).\n- \"4 5 found 5\" sai vì mid đầu tiên là 0 + (7 - 0) / 2 = 3, không phải 4.\n- \"3 5 found 11\" sai vì chương trình in chỉ số vị trí (5) chứ không in giá trị phần tử."
+    },
+    {
+      "id": "cpp-c07-04",
+      "topic": "Độ phức tạp tìm nhị phân",
+      "source": "NMLT C07 - 1.2 BinarySEARCH.cpp",
+      "question": "Mảng gồm 1000 số 0, 1, ..., 999 được tìm nhị phân với key = 1000 (lớn hơn mọi phần tử, trường hợp xấu nhất). Biến `dem` đếm số lần chạy thân vòng lặp `while`. Chương trình in giá trị nào?",
+      "code": "int n = 1000, L = 0, R = n - 1, dem = 0;\nwhile (L <= R) {\n    dem++;\n    int mid = L + (R - L) / 2;\n    if (A[mid] < 1000) L = mid + 1; else R = mid - 1;\n}\ncout << dem;",
+      "codeLang": "cpp",
+      "options": [
+        "1000",
+        "500",
+        "11",
+        "10"
+      ],
+      "answer": 3,
+      "explanation": "- Mỗi vòng lặp loại bỏ khoảng một nửa đoạn tìm kiếm: 1000 -> 500 -> 250 -> 125 -> 62 -> 31 -> 15 -> 7 -> 3 -> 1 -> 0 phần tử, tổng cộng 10 vòng.\n- Số vòng khoảng floor(log2(n)) + 1 = 9 + 1 = 10, thể hiện độ phức tạp O(log n).\n- 1000 là số lần của tìm tuyến tính (O(n)), không phải tìm nhị phân.\n- 500 sai vì mỗi vòng chia đôi đoạn chứ không phải chạy một nửa số phần tử.\n- 11 sai vì log2(1000) xấp xỉ 9,97 nên floor + 1 = 10, không phải 11."
+    },
+    {
+      "id": "cpp-c07-05",
+      "topic": "Tìm nhị phân đúng",
+      "source": "NMLT C07 - 1.2 BinarySEARCH.cpp",
+      "question": "Chọn cài đặt hàm `bs` (tìm nhị phân, trả về chỉ số hoặc -1) cho kết quả đúng với mảng {1,3,5,7,9} và các key 9, 1, 4 (kỳ vọng in \"4 0 -1\").",
+      "options": [
+        "```cpp\nint bs(const int A[], int n, int key) {\n    int L = 0, R = n - 1;\n    while (L < R) {\n        int mid = L + (R - L) / 2;\n        if (A[mid] == key) return mid;\n        if (A[mid] < key) L = mid + 1; else R = mid - 1;\n    }\n    return -1;\n}\n```",
+        "```cpp\nint bs(const int A[], int n, int key) {\n    int L = 0, R = n - 1;\n    while (L <= R) {\n        int mid = L + (R - L) / 2;\n        if (A[mid] == key) return mid;\n        if (A[mid] < key) L = mid + 1; else R = mid - 1;\n    }\n    return -1;\n}\n```",
+        "```cpp\nint bs(const int A[], int n, int key) {\n    int L = 0, R = n - 1;\n    while (L <= R) {\n        int mid = L + (R - L) / 2;\n        if (A[mid] == key) return mid;\n        if (A[mid] < key) R = mid - 1; else L = mid + 1;\n    }\n    return -1;\n}\n```",
+        "```cpp\nint bs(const int A[], int n, int key) {\n    int L = 0, R = n - 1;\n    while (L <= R) {\n        int mid = L + (R - L) / 2;\n        if (A[mid] == key) return key;\n        if (A[mid] < key) L = mid + 1; else R = mid - 1;\n    }\n    return -1;\n}\n```"
+      ],
+      "code": "#include <iostream>\nusing namespace std;\n// ... đoạn cần chọn ...\nint main() {\n    int A[5] = {1, 3, 5, 7, 9};\n    cout << bs(A, 5, 9) << \" \" << bs(A, 5, 1) << \" \" << bs(A, 5, 4) << endl;\n}",
+      "codeLang": "cpp",
+      "answer": 1,
+      "explanation": "- Phương án đúng dùng `while (L <= R)` để còn xét đoạn chỉ có 1 phần tử, `L = mid + 1` khi A[mid] < key, `R = mid - 1` khi lớn hơn, và trả về chỉ số `mid`.\n- Dùng `while (L < R)` bỏ sót đoạn một phần tử: tìm 9 (ở cuối mảng) sẽ trả về -1.\n- Đảo chiều `R = mid - 1` khi A[mid] < key làm tìm sai nửa: tìm 9 trả về -1 vì nửa chứa 9 bị loại.\n- `return key` trả về giá trị chứ không phải chỉ số: tìm 9 cho 9 thay vì 4."
+    },
+    {
+      "id": "cpp-c07-06",
+      "topic": "Đếm phân phối",
+      "source": "NMLT C07 - sort_demPhanPhoi.cpp",
+      "question": "Mảng chỉ chứa các giá trị 1, 2, 3 được sắp xếp bằng đếm phân phối. Chương trình in ra gì?",
+      "code": "int A[7] = {3, 1, 2, 3, 1, 1, 2}, B[4] = {0}, nA = 0;\nfor (int i = 0; i < 7; i++) B[A[i]]++;\nfor (int v = 1; v <= 3; v++)\n    for (int j = 0; j < B[v]; j++)\n        A[nA++] = v;\nfor (int i = 0; i < 7; i++) cout << A[i] << \" \";",
+      "codeLang": "cpp",
+      "options": [
+        "1 1 1 2 2 3 3",
+        "1 1 2 2 3 3 3",
+        "3 3 2 2 1 1 1",
+        "1 1 1 2 2 3"
+      ],
+      "answer": 0,
+      "explanation": "- Đếm: B[1] = 3, B[2] = 2, B[3] = 2. Ghi lại theo thứ tự giá trị tăng dần được 1 1 1 2 2 3 3.\n- \"1 1 2 2 3 3 3\" sai vì số lần xuất hiện của 1 là 3 và của 3 là 2, không phải ngược lại.\n- \"3 3 2 2 1 1 1\" là thứ tự giảm dần, trong khi vòng lặp `v` chạy từ 1 lên 3.\n- \"1 1 1 2 2 3\" thiếu một phần tử; mảng ghi lại đủ 7 phần tử vì tổng B bằng 7."
+    },
+    {
+      "id": "cpp-c07-07",
+      "topic": "Đếm phân phối",
+      "source": "NMLT C07 - sort_demPhanPhoi.cpp",
+      "question": "Sắp xếp đếm phân phối mảng n phần tử có giá trị nguyên trong khoảng 0..k có độ phức tạp thời gian là bao nhiêu?",
+      "options": [
+        "O(n log n) vì phải so sánh các cặp phần tử",
+        "O(n * k) vì mỗi phần tử duyệt qua mảng đếm",
+        "O(n + k): duyệt mảng một lần để đếm rồi duyệt mảng đếm để ghi lại",
+        "O(log n) vì mảng đếm có k phần tử"
+      ],
+      "answer": 2,
+      "explanation": "- Đúng: bước đếm tốn O(n), bước ghi lại tốn O(n + k) (duyệt k giá trị và ghi tổng cộng n phần tử).\n- Đếm phân phối không so sánh các cặp phần tử nên không bị giới hạn O(n log n) của sắp xếp so sánh.\n- O(n * k) quá lớn, thuật toán không duyệt lại mảng đếm cho từng phần tử.\n- O(log n) sai vì ít nhất phải đọc n phần tử đầu vào.\n- Nhược điểm: chỉ phù hợp khi k nhỏ so với n."
+    },
+    {
+      "id": "cpp-c07-08",
+      "topic": "Thêm và xóa phần tử",
+      "source": "NMLT C07 - 1.3 AddDeleteReplaceSearch-Array.cpp",
+      "question": "Mảng ban đầu {1,2,3,4,5} (n = 5, còn chỗ trống). Chèn 9 vào vị trí 2 rồi xóa phần tử ở vị trí 0. Chương trình in ra gì (mỗi dòng sau mỗi thao tác)?",
+      "code": "int A[10] = {1, 2, 3, 4, 5}, n = 5;\n// chèn 9 vào vị trí 2\nfor (int i = n; i > 2; i--) A[i] = A[i - 1];\nA[2] = 9; n++;\nprint(A, n);\n// xóa phần tử vị trí 0\nfor (int i = 0; i < n - 1; i++) A[i] = A[i + 1];\nn--;\nprint(A, n);",
+      "codeLang": "cpp",
+      "options": [
+        "1 9 2 3 4 5\n9 2 3 4 5",
+        "1 2 9 3 4 5\n1 2 9 3 4",
+        "1 2 9 4 5\n2 9 4 5",
+        "1 2 9 3 4 5\n2 9 3 4 5"
+      ],
+      "answer": 3,
+      "explanation": "- Chèn: dời các phần tử từ vị trí 2 trở đi sang phải một ô (duyệt từ cuối về), rồi ghi 9 vào A[2]: 1 2 9 3 4 5.\n- Xóa vị trí 0: dời mọi phần tử sang trái một ô, giảm n: 2 9 3 4 5.\n- \"1 9 2 3 4 5 ...\" sai vì 9 chèn vào vị trí 2 (sau số 2), không phải vị trí 1.\n- \"... 1 2 9 3 4\" sai vì xóa phần tử đầu thì phải mất số 1 chứ không phải số 5.\n- \"1 2 9 4 5 ...\" sai vì thao tác chèn không ghi đè lên 3 mà đẩy 3 sang phải."
+    },
+    {
+      "id": "cpp-c07-09",
+      "topic": "Xóa phần tử giữ thứ tự",
+      "source": "NMLT C07 - 1.3 AddDeleteReplaceSearch-Array.cpp",
+      "question": "Cần xóa phần tử tại vị trí `pos` của mảng sao cho các phần tử còn lại GIỮ NGUYÊN thứ tự. Mảng {10,20,30,40,50}, pos = 1, kết quả mong muốn là \"10 30 40 50\". Chọn đoạn code đúng để thay vào chỗ trống.",
+      "options": [
+        "```cpp\nfor (int i = pos; i < n - 1; i++) A[i] = A[i + 1];\nn--;\n```",
+        "```cpp\nfor (int i = pos; i < n - 1; i++) A[i] = A[i + 1];\n```",
+        "```cpp\nfor (int i = pos; i < n; i++) A[i + 1] = A[i];\nn--;\n```",
+        "```cpp\nA[pos] = A[n - 1];\nn--;\n```"
+      ],
+      "code": "#include <iostream>\nusing namespace std;\nint main() {\n    int A[10] = {10, 20, 30, 40, 50};\n    int n = 5, pos = 1;\n    // ... đoạn cần chọn ...\n    for (int i = 0; i < n; i++) cout << A[i] << \" \";\n    cout << endl;\n}",
+      "codeLang": "cpp",
+      "answer": 0,
+      "explanation": "- Đúng: dời từng phần tử sau `pos` sang trái một ô rồi giảm `n` đi 1.\n- Thiếu `n--`: mảng vẫn in n = 5 phần tử, thấy thêm số 50 lặp ở cuối (\"10 30 40 50 50\").\n- `A[i + 1] = A[i]` dời sang phải (thao tác của chèn), làm ghi đè và in ra \"10 20 20 20\".\n- `A[pos] = A[n - 1]` chỉ lấy phần tử cuối lấp vào chỗ trống, nhanh (O(1)) nhưng làm đổi thứ tự: \"10 50 30 40\"."
+    },
+    {
+      "id": "cpp-c07-10",
+      "topic": "Chuyển 1 chiều sang 2 chiều",
+      "source": "NMLT C07 - 1.4/1.5 chuyển mảng 1 chiều <-> 2 chiều",
+      "question": "Mảng 2 chiều có M = 3 dòng, N = 4 cột được lưu theo từng dòng vào mảng 1 chiều B (a[i][j] nằm ở B[i*N + j]). Phần tử B[9] ứng với a[i][j]; chương trình in \"i j\". Kết quả?",
+      "code": "int M = 3, N = 4, k = 9;\ncout << k / N << \" \" << k % N;",
+      "codeLang": "cpp",
+      "options": [
+        "3 0",
+        "2 1",
+        "1 2",
+        "2 3"
+      ],
+      "answer": 1,
+      "explanation": "- Lưu theo dòng: chỉ số 1 chiều k = i*N + j nên i = k / N và j = k % N.\n- k = 9, N = 4: i = 9 / 4 = 2, j = 9 % 4 = 1. Đó là dòng thứ 3, cột thứ 2.\n- \"3 0\" sai vì dùng nhầm M = 3 làm số chia, cho dòng 3 (ngoài biên vì chỉ có dòng 0..2).\n- \"1 2\" đảo vai trò: 9 / 4 mới là chỉ số dòng.\n- \"2 3\" sai vì 9 % 4 = 1 chứ không phải 3."
+    },
+    {
+      "id": "cpp-c07-11",
+      "topic": "Ghép xen kẽ hai mảng",
+      "source": "NMLT C07 - 1.6 ghép xen kẽ A, B",
+      "question": "Ghép mảng A = {1,3,5} và B = {2,4,6,8,10} thành mảng C theo nguyên tắc xen kẽ từng phần tử của A và B; phần dư của mảng dài hơn nối vào cuối. Đoạn code sau cho kết quả gì?",
+      "code": "int i = 0, j = 0, k = 0;\nwhile (i < na && j < nb) {\n    C[k++] = A[i++];\n    C[k++] = B[j++];\n}\nwhile (i < na) C[k++] = A[i++];\nwhile (j < nb) C[k++] = B[j++];",
+      "codeLang": "cpp",
+      "options": [
+        "1 2 3 4 5 6",
+        "1 3 5 2 4 6 8 10",
+        "1 2 3 4 5 6 8 10",
+        "2 1 4 3 6 5 8 10"
+      ],
+      "answer": 2,
+      "explanation": "- Vòng xen kẽ chạy 3 lần cho 1 2 3 4 5 6; B còn dư 8 và 10 được nối vào cuối: 1 2 3 4 5 6 8 10.\n- \"1 2 3 4 5 6\" bỏ mất phần dư 8 10 của B (thiếu hai vòng `while` cuối).\n- \"1 3 5 2 4 6 8 10\" là nối A rồi B, không xen kẽ.\n- \"2 1 4 3 ...\" sai thứ tự: phần tử của A phải đứng trước phần tử của B ở mỗi cặp."
+    },
+    {
+      "id": "cpp-c07-12",
+      "topic": "Chuẩn hóa chuỗi",
+      "source": "NMLT C07 - 1.7 chuanHoa.cpp",
+      "question": "Hàm `chuanHoa` xóa khoảng trắng thừa và viết hoa chữ cái đầu mỗi từ. Chương trình in ra gì (dấu [ ] chỉ để đánh dấu đầu và cuối chuỗi)?",
+      "code": "string chuanHoa(string s) {\n    istringstream in(s);\n    string w, kq;\n    while (in >> w) {\n        w[0] = toupper(w[0]);\n        for (size_t i = 1; i < w.size(); i++) w[i] = tolower(w[i]);\n        if (!kq.empty()) kq += \" \";\n        kq += w;\n    }\n    return kq;\n}\n// cout << \"[\" << chuanHoa(\"  nGuYen   van  an  \") << \"]\";",
+      "codeLang": "cpp",
+      "options": [
+        "[ Nguyen   Van  An ]",
+        "[NGUYEN VAN AN]",
+        "[Nguyen van an]",
+        "[Nguyen Van An]"
+      ],
+      "answer": 3,
+      "explanation": "- `in >> w` tự bỏ qua mọi khoảng trắng, nên các từ được tách sạch; mỗi từ viết hoa chữ đầu, hạ chữ thường phần còn lại; nối bằng đúng một dấu cách.\n- Kết quả: [Nguyen Van An].\n- \"[ Nguyen   Van  An ]\" giữ khoảng trắng thừa, trong khi hàm đã loại chúng.\n- \"[NGUYEN VAN AN]\" sai vì các chữ sau chữ đầu bị `tolower`.\n- \"[Nguyen van an]\" sai vì chữ đầu của MỖI từ đều được `toupper`, không chỉ từ đầu tiên."
+    },
+    {
+      "id": "cpp-c07-13",
+      "topic": "Chuyển cơ số",
+      "source": "NMLT C07 - 1.9 decimal.cpp",
+      "question": "Hàm `doiCoSo` đổi số nguyên dương sang cơ số b bằng cách chia liên tiếp lấy dư. Chương trình in ra gì?",
+      "code": "string doiCoSo(int n, int b) {\n    string d = \"0123456789ABCDEF\", kq;\n    while (n > 0) { kq = d[n % b] + kq; n /= b; }\n    return kq;\n}\n// cout << doiCoSo(37, 2) << \" \" << doiCoSo(100, 8) << \" \" << doiCoSo(255, 16);",
+      "codeLang": "cpp",
+      "options": [
+        "100101 144 FF",
+        "101001 144 FF",
+        "100101 441 FF",
+        "100101 144 255"
+      ],
+      "answer": 0,
+      "explanation": "- 37 = 100101 (nhị phân), 100 = 144 (bát phân: 1*64 + 4*8 + 4), 255 = FF (thập lục phân).\n- Chữ số tìm được SAU là chữ số có trọng số CAO hơn, nên phải chèn vào ĐẦU chuỗi (`d[n % b] + kq`).\n- \"101001 144 FF\" và \"100101 441 FF\" là kết quả khi ghi các chữ số theo thứ tự ngược (quên đảo).\n- \"... 255\" sai vì hàm đổi 255 sang cơ số 16 chứ không giữ nguyên dạng thập phân."
+    },
+    {
+      "id": "cpp-c07-14",
+      "topic": "Ngày kế tiếp",
+      "source": "NMLT C07 - 1.10 DMY.cpp",
+      "question": "Hàm `nextDay` tìm ngày kế tiếp của (d, m, y). Chương trình in ra gì với ba ngày 28/2/2024, 28/2/2023, 31/12/2023?",
+      "code": "int daysIn(int m, int y) {\n    if (m == 2) return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0 ? 29 : 28;\n    if (m == 4 || m == 6 || m == 9 || m == 11) return 30;\n    return 31;\n}\nvoid nextDay(int& d, int& m, int& y) {\n    if (++d > daysIn(m, y)) { d = 1; if (++m > 12) { m = 1; y++; } }\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1/3/2024 1/3/2023 1/1/2024",
+        "29/2/2024 1/3/2023 1/1/2024",
+        "29/2/2024 29/2/2023 1/1/2024",
+        "29/2/2024 1/3/2023 32/12/2023"
+      ],
+      "answer": 1,
+      "explanation": "- 2024 là năm nhuận (chia hết cho 4, không chia hết cho 100) nên tháng 2 có 29 ngày: sau 28/2/2024 là 29/2/2024.\n- 2023 không nhuận: sau 28/2/2023 là 1/3/2023.\n- Sau 31/12/2023 d vượt số ngày của tháng 12 nên d = 1, m = 13 > 12 đưa về m = 1 và tăng năm: 1/1/2024.\n- \"1/3/2024 ...\" quên 2024 là năm nhuận.\n- \"... 29/2/2023\" coi 2023 là năm nhuận.\n- \"... 32/12/2023\" quên chuyển sang tháng mới khi d vượt quá số ngày trong tháng."
+    },
+    {
+      "id": "cpp-c07-15",
+      "topic": "Số nguyên lớn: cộng",
+      "source": "NMLT C07 - 1.11 BigNum.cpp",
+      "question": "Hàm `add` cộng hai số nguyên lớn lưu dưới dạng chuỗi chữ số. Chương trình in ra gì?",
+      "code": "string add(string a, string b) {\n    string r; int i = a.size() - 1, j = b.size() - 1, c = 0;\n    while (i >= 0 || j >= 0) {\n        int s = c;\n        if (i >= 0) s += a[i--] - '0';\n        if (j >= 0) s += b[j--] - '0';\n        r += char('0' + s % 10);\n        c = s / 10;\n    }\n    if (c) r += char('0' + c);\n    reverse(r.begin(), r.end());\n    return r;\n}\n// cout << add(\"999\", \"99\") << \" \" << add(\"5\", \"5\");",
+      "codeLang": "cpp",
+      "options": [
+        "098 10",
+        "1088 10",
+        "8901 01",
+        "1098 10"
+      ],
+      "answer": 3,
+      "explanation": "- Cộng từ chữ số hàng đơn vị (cuối chuỗi), ghi chữ số `s % 10` và nhớ `s / 10`. 999 + 99 = 1098; 5 + 5 = 10 (ghi 0 nhớ 1, cuối còn nhớ nên thêm '1').\n- \"098 10\" mất chữ số nhớ cuối cùng (thiếu `if (c)`).\n- \"1088 10\" sai ở hàng chục: 9 + 9 + 1 = 19 ghi 9 (không phải 8).\n- \"8901 01\" là chuỗi chưa `reverse`: các chữ số vẫn đang ở thứ tự ngược."
+    },
+    {
+      "id": "cpp-c07-16",
+      "topic": "Số lớn: xử lý nhớ cuối",
+      "source": "NMLT C07 - 1.11 BigNum.cpp",
+      "question": "Hàm `add` cộng hai số lớn dạng chuỗi: sau vòng lặp vẫn có thể còn biến nhớ `c` (0 hoặc 1). Chọn dòng xử lý đúng ở chỗ trống sao cho in \"1000 46\" khi tính 999 + 1 và 12 + 34.",
+      "options": [
+        "```cpp\nr += char('0' + c);\n```",
+        "```cpp\nif (c) r = char('0' + c) + r;\n```",
+        "```cpp\nif (c) r += char('0' + c);\n```",
+        "```cpp\nif (c > 1) r += char('0' + c);\n```"
+      ],
+      "code": "#include <iostream>\n#include <algorithm>\nusing namespace std;\nstring add(string a, string b) {\n    string r; int i = a.size() - 1, j = b.size() - 1, c = 0;\n    while (i >= 0 || j >= 0) {\n        int s = c;\n        if (i >= 0) s += a[i--] - '0';\n        if (j >= 0) s += b[j--] - '0';\n        r += char('0' + s % 10);\n        c = s / 10;\n    }\n    // ... đoạn cần chọn ...\n    reverse(r.begin(), r.end());\n    return r;\n}\nint main() { cout << add(\"999\", \"1\") << \" \" << add(\"12\", \"34\") << endl; }",
+      "codeLang": "cpp",
+      "answer": 2,
+      "explanation": "- Đúng: r đang lưu chữ số theo thứ tự ngược (hàng đơn vị trước), nên chữ số nhớ cuối cùng được thêm vào CUỐI r, và chỉ khi c khác 0.\n- Thêm vô điều kiện `r += char('0' + c)` sinh số 0 thừa ở đầu: 12 + 34 thành \"046\".\n- `r = char('0' + c) + r` chèn vào đầu r, nhưng sau `reverse` chữ số nhớ lại nằm ở cuối: 999 + 1 thành \"0001\".\n- `if (c > 1)` không bao giờ đúng vì nhớ khi cộng chỉ là 0 hoặc 1, nên mất chữ số 1 đầu: \"000 46\"."
+    },
+    {
+      "id": "cpp-c07-17",
+      "topic": "Số lớn: phép trừ",
+      "source": "NMLT C07 - 1.11 BigNum.cpp",
+      "question": "Khi cài đặt phép trừ a - b cho hai số nguyên lớn lưu dạng chuỗi (không âm), cách xử lý nào là hợp lý nhất?",
+      "options": [
+        "Trừ từng chữ số từ trái sang phải rồi lấy giá trị tuyệt đối",
+        "So sánh a với b (độ dài trước, rồi từng chữ số) và nếu a < b thì đổi chỗ và thêm dấu \"-\", sau đó trừ từ phải sang trái và có nhớ mượn",
+        "Chuyển cả hai chuỗi sang số nguyên 64 bit rồi trừ, vì chuỗi dài nhất vẫn nằm trong phạm vi",
+        "Cộng a với phần bù hai của b ở dạng chuỗi ký tự ASCII"
+      ],
+      "answer": 1,
+      "explanation": "- Đúng: số lớn có thể dài hàng trăm chữ số, nên phải biết số nào lớn hơn để biết dấu và để phép trừ không bị \"mượn\" ở chữ số cao nhất.\n- Trừ từ trái sang phải sai vì phép mượn lan từ hàng thấp lên hàng cao, phải đi từ phải sang trái.\n- `long long` chỉ chứa được khoảng 18-19 chữ số, đúng lý do ta phải dùng chuỗi.\n- Phần bù hai là cách của số nhị phân có độ rộng cố định, không áp dụng cho chuỗi chữ số thập phân."
+    },
+    {
+      "id": "cpp-c07-18",
+      "topic": "Ma phương",
+      "source": "NMLT C07 - 1.14 MaPhuong.cpp",
+      "question": "Chương trình điền ma phương cấp 3 theo cách bắt đầu ở ô giữa dòng trên cùng, mỗi bước đi lên-phải (vòng quanh biên); nếu ô đó đã có số thì xuống một ô ngay dưới ô hiện tại. In ra gì?",
+      "code": "int n = 3, a[3][3] = {}, r = 0, c = n / 2;\nfor (int k = 1; k <= n * n; k++) {\n    a[r][c] = k;\n    int nr = (r - 1 + n) % n, nc = (c + 1) % n;\n    if (a[nr][nc]) { nr = (r + 1) % n; nc = c; }\n    r = nr; c = nc;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "8 1 6\n3 5 7\n4 9 2",
+        "1 2 3\n4 5 6\n7 8 9",
+        "6 1 8\n3 5 7\n4 9 2",
+        "8 1 6\n3 5 7\n4 2 9"
+      ],
+      "answer": 0,
+      "explanation": "- Các số lần lượt nằm ở: 1 (0,1); 2 (2,2); 3 (1,0); 4 (2,0) vì (0,1) đã có số nên đi xuống; 5 (1,1); 6 (0,2); 7 (1,2); 8 (0,0); 9 (2,1).\n- Kết quả 8 1 6 / 3 5 7 / 4 9 2: mọi dòng, cột và hai đường chéo đều có tổng 15.\n- \"1 2 3 / 4 5 6 / 7 8 9\" chỉ là điền tuần tự, tổng các dòng không bằng nhau.\n- \"6 1 8 / 3 5 7 / 4 9 2\" đảo 8 và 6 ở dòng đầu, làm tổng cột không đều.\n- \"8 1 6 / 3 5 7 / 4 2 9\" đảo 9 và 2 ở dòng cuối, 9 phải ở giữa (cột 1)."
+    },
+    {
+      "id": "cpp-c07-19",
+      "topic": "Dò mìn",
+      "source": "NMLT C07 - 1.13 Minesweepers.cpp",
+      "question": "Bãi mìn 3 x 4 có hai quả mìn (ký hiệu *). Mỗi ô không có mìn ghi số mìn ở 8 ô lân cận. Chương trình in ra bảng gì?",
+      "code": "string g[3] = {\"*...\", \"....\", \"..*.\"};\nfor (int i = 0; i < 3; i++) {\n    for (int j = 0; j < 4; j++) {\n        if (g[i][j] == '*') { cout << '*'; continue; }\n        int c = 0;\n        for (int di = -1; di <= 1; di++)\n            for (int dj = -1; dj <= 1; dj++) {\n                int x = i + di, y = j + dj;\n                if (x >= 0 && x < 3 && y >= 0 && y < 4 && g[x][y] == '*') c++;\n            }\n        cout << c;\n    }\n    cout << endl;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "*100\n1111\n01*1",
+        "*100\n1211\n01*1",
+        "*100\n1211\n11*1",
+        "*100\n2211\n01*1"
+      ],
+      "answer": 1,
+      "explanation": "- Ô (1,1) nằm chéo với cả hai mìn (0,0) và (2,2) nên bằng 2; các ô còn lại kề tối đa một mìn.\n- Kết quả: \"*100\", \"1211\", \"01*1\". Phải kiểm tra biên (`x >= 0`, `x < 3`...) trước khi đọc `g[x][y]` để tránh truy cập ngoài mảng.\n- \"*100 / 1111 / 01*1\" chỉ đếm 4 hướng ngang dọc nên bỏ sót ô chéo (1,1) phải bằng 2.\n- \"*100 / 1211 / 11*1\" sai ở ô (2,0): nó không kề mìn nào (mìn (2,2) cách 2 cột), phải bằng 0.\n- \"*100 / 2211 / 01*1\" sai ở ô (1,0): chỉ kề mìn (0,0) nên bằng 1, không phải 2."
+    },
+    {
+      "id": "cpp-c07-20",
+      "topic": "Mảng đánh dấu",
+      "source": "NMLT C07 - DanhDau(check).cpp",
+      "question": "Dùng mảng đánh dấu `daThay` (kích thước 10) để tìm giá trị đầu tiên bị lặp lại và đếm số giá trị phân biệt. Chương trình in ra gì?",
+      "code": "int A[10] = {3, 1, 4, 1, 5, 9, 2, 6, 5, 3};\nbool daThay[10] = {};\nint lap = -1, khac = 0;\nfor (int i = 0; i < 10; i++) {\n    if (daThay[A[i]]) { if (lap == -1) lap = A[i]; }\n    else { daThay[A[i]] = true; khac++; }\n}\ncout << lap << \" \" << khac;",
+      "codeLang": "cpp",
+      "options": [
+        "3 7",
+        "1 10",
+        "1 7",
+        "5 6"
+      ],
+      "answer": 2,
+      "explanation": "- Duyệt từ trái sang phải: số 1 ở vị trí 3 là giá trị đầu tiên gặp lại lần hai, nên lap = 1.\n- Các giá trị phân biệt: 3, 1, 4, 5, 9, 2, 6, tức 7 giá trị.\n- \"3 7\" chọn 3 vì xuất hiện sớm nhất trong mảng, nhưng 3 chỉ bị lặp lại ở cuối mảng.\n- \"1 10\" sai vì `khac` chỉ tăng khi chưa thấy, nên không thể bằng 10.\n- \"5 6\" sai: 5 lặp sau 1; và có 7 giá trị phân biệt chứ không phải 6.\n- Mảng đánh dấu cho phép kiểm tra \"đã thấy chưa\" trong O(1), tổng O(n)."
+    },
+    {
+      "id": "cpp-c07-21",
+      "topic": "Chia để trị",
+      "source": "NMLT C07 - chiadetri.cpp",
+      "question": "Tìm phần tử lớn nhất bằng chia để trị: chia đôi mảng, tìm max từng nửa rồi so sánh. Biến `goi` đếm số lần hàm được gọi. Chương trình in ra gì (max và số lần gọi)?",
+      "code": "int goi = 0;\nint maxRec(int A[], int l, int r) {\n    goi++;\n    if (l == r) return A[l];\n    int m = (l + r) / 2;\n    return max(maxRec(A, l, m), maxRec(A, m + 1, r));\n}\n// A = {3, 9, 2, 7, 5, 1, 8, 4};\n// cout << maxRec(A, 0, 7) << \" \" << goi;",
+      "codeLang": "cpp",
+      "options": [
+        "9 8",
+        "9 7",
+        "9 14",
+        "9 15"
+      ],
+      "answer": 3,
+      "explanation": "- Cây gọi đệ quy là cây nhị phân đầy đủ với 8 lá và 7 nút trong, tổng 2n - 1 = 15 lần gọi.\n- Max là 9.\n- \"9 8\" chỉ đếm số lá, bỏ qua các lần gọi ở các nút trong.\n- \"9 7\" chỉ đếm số nút trong (số phép so sánh), bỏ qua các lần gọi đến lá.\n- \"9 14\" lệch một lần: lần gọi gốc ban đầu cũng được tính.\n- Cũng là O(n) như duyệt tuyến tính, chia để trị ở đây không nhanh hơn mà chỉ minh họa cấu trúc."
+    },
+    {
+      "id": "cpp-c07-22",
+      "topic": "Truyền mảng 2 chiều vào hàm",
+      "source": "NMLT C07 - 1.4 2Dim_to_1Dim.cpp",
+      "question": "Đoạn code dưới đây có biên dịch được không? Hàm nhận mảng 2 chiều được khai báo là `void in(int a[][], int m, int n)`.",
+      "code": "void in(int a[][], int m, int n) {\n    for (int i = 0; i < m; i++)\n        for (int j = 0; j < n; j++) cout << a[i][j] << \" \";\n}",
+      "codeLang": "cpp",
+      "options": [
+        "Biên dịch được vì `m` và `n` đã cho biết kích thước",
+        "Lỗi biên dịch: tham số mảng nhiều chiều phải cho biết kích thước của mọi chiều trừ chiều đầu",
+        "Biên dịch được nhưng lỗi lúc chạy vì thiếu kích thước",
+        "Biên dịch được, chỉ cảnh báo (warning)"
+      ],
+      "answer": 1,
+      "explanation": "- Để tính địa chỉ a[i][j] trình biên dịch cần biết số cột, nên chiều thứ hai (và các chiều sau) bắt buộc phải có kích thước hằng, ví dụ `int a[][100]` hoặc `int a[][2]`.\n- Tham số `n` là biến lúc chạy nên không thay thế được kích thước kiểu mảng.\n- Đây là lỗi ở giai đoạn biên dịch, không phải runtime hay warning.\n- Cách khác: dùng `int* a` rồi tự tính `a[i * n + j]` (đúng tinh thần chuyển 2 chiều sang 1 chiều)."
+    },
+    {
+      "id": "cpp-c07-23",
+      "topic": "Chuyển vị tại chỗ",
+      "source": "NMLT C07 - ma trận 2 chiều (chuyển vị)",
+      "question": "Một bạn viết đoạn code chuyển vị ma trận vuông 3 x 3 tại chỗ như dưới. Chương trình in ra gì?",
+      "code": "int a[3][3] = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};\nfor (int i = 0; i < 3; i++)\n    for (int j = 0; j < 3; j++)\n        swap(a[i][j], a[j][i]);\n// in ma trận",
+      "codeLang": "cpp",
+      "options": [
+        "1 2 3\n4 5 6\n7 8 9",
+        "1 4 7\n2 5 8\n3 6 9",
+        "9 8 7\n6 5 4\n3 2 1",
+        "1 2 3\n2 5 6\n3 6 9"
+      ],
+      "answer": 0,
+      "explanation": "- Mỗi cặp (i, j) với i khác j bị đổi chỗ HAI lần: lần (i, j) và lần (j, i). Hai lần đổi triệt tiêu nhau, ma trận trở về nguyên bản.\n- Để chuyển vị đúng phải chỉ duyệt nửa tam giác trên, ví dụ `for (int j = i + 1; j < 3; j++)`.\n- \"1 4 7 ...\" là ma trận chuyển vị đúng, chỉ có khi vòng lặp trong bắt đầu từ i + 1.\n- \"9 8 7 ...\" là ma trận đảo ngược hoàn toàn, không liên quan đến phép đổi chỗ này.\n- \"1 2 3 / 2 5 6 / 3 6 9\" là kết quả khi chép nửa tam giác trên sang tam giác dưới, không phải hoán đổi."
+    },
+    {
+      "id": "cpp-c07-24",
+      "topic": "Mảng 2 chiều trong bộ nhớ",
+      "source": "NMLT C07 - mảng 2 chiều",
+      "question": "Với `int a[3][4]`, chương trình sau in ra giá trị nào? (`sizeof(int)` = 4)",
+      "code": "int a[3][4];\ncout << sizeof(a) << \" \" << sizeof(a[0]) << \" \"\n     << sizeof(a[0][0]) << \" \" << sizeof(a) / sizeof(a[0]);",
+      "codeLang": "cpp",
+      "options": [
+        "12 4 4 3",
+        "48 4 4 12",
+        "48 16 4 4",
+        "48 16 4 3"
+      ],
+      "answer": 3,
+      "explanation": "- `a` có 3 * 4 = 12 phần tử int, tức 48 byte.\n- `a[0]` là một dòng gồm 4 int, tức 16 byte; `a[0][0]` là một int, 4 byte.\n- `sizeof(a) / sizeof(a[0])` = 48 / 16 = 3 là số dòng (cách tính số dòng của mảng).\n- \"12 4 4 3\" nhầm `sizeof` với số phần tử.\n- \"48 4 4 12\" nhầm `a[0]` là một phần tử int và chia ra 12.\n- \"48 16 4 4\" sai ở phần cuối: số dòng là 3, không phải 4 (4 là số cột)."
+    }
+  ]
+}

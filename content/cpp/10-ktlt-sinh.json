@@ -1,0 +1,397 @@
+{
+  "id": "cpp-c10",
+  "title": "Chương 10: Giải thuật sinh",
+  "description": "Giải thuật sinh cấu hình kế tiếp: xâu nhị phân, tập con, tổ hợp, hoán vị, thao tác bit và đối chiếu với next_permutation.",
+  "questions": [
+    {
+      "id": "cpp-c10-01",
+      "topic": "Cấu hình đầu và cuối",
+      "source": "KTLT C4 (Giải thuật sinh)",
+      "question": "Theo thứ tự từ điển, cấu hình đầu tiên và cấu hình cuối cùng của các xâu nhị phân độ dài n là gì?",
+      "options": [
+        "Đầu: 11...1, cuối: 00...0",
+        "Đầu: 00...0 (toàn bit 0), cuối: 11...1 (toàn bit 1)",
+        "Đầu: 10...0, cuối: 01...1",
+        "Đầu: 00...01, cuối: 11...10"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: xâu nhỏ nhất theo từ điển là toàn 0, lớn nhất là toàn 1.\n- `Đầu: 11...1, cuối: 00...0`: đảo ngược: đó là thứ tự giảm dần.\n- `Đầu: 10...0, cuối: 01...1`: 10...0 không phải xâu nhỏ nhất.\n- `Đầu: 00...01, cuối: 11...10`: hai xâu này không phải đầu và cuối của thứ tự từ điển."
+    },
+    {
+      "id": "cpp-c10-02",
+      "topic": "Khung giải thuật sinh",
+      "source": "KTLT C4 (Giải thuật sinh)",
+      "question": "Khung tổng quát của giải thuật sinh gồm các bước nào?",
+      "options": [
+        "Tạo ngẫu nhiên các cấu hình rồi loại bỏ cấu hình trùng",
+        "Sắp xếp toàn bộ cấu hình trước khi xuất",
+        "Chia đôi tập cấu hình đệ quy rồi trộn kết quả",
+        "Tạo cấu hình đầu tiên, lặp: xuất cấu hình hiện tại rồi sinh cấu hình kế tiếp, dừng khi không còn cấu hình kế tiếp"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: giải thuật sinh đi từ cấu hình đầu đến cấu hình cuối, mỗi bước sinh cấu hình kế tiếp theo thứ tự từ điển.\n- `Tạo ngẫu nhiên các cấu hình rồi loại bỏ cấu hình trùng`: sinh không dùng ngẫu nhiên, cấu hình được tạo có thứ tự.\n- `Sắp xếp toàn bộ cấu hình trước khi xuất`: giải thuật sinh không cần lưu và sắp xếp mọi cấu hình, chỉ cần cấu hình hiện tại.\n- `Chia đôi tập cấu hình đệ quy rồi trộn kết quả`: đó là chia để trị, không phải giải thuật sinh."
+    },
+    {
+      "id": "cpp-c10-03",
+      "topic": "Cấu hình cuối của hoán vị",
+      "source": "KTLT C4 (Giải thuật sinh)",
+      "question": "Với hoán vị của 1, 2, 3, 4 theo thứ tự từ điển, cấu hình cuối cùng là gì?",
+      "options": [
+        "4 3 2 1",
+        "1 2 3 4",
+        "4 1 2 3",
+        "1 4 3 2"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: hoán vị lớn nhất theo từ điển là dãy giảm dần.\n- `1 2 3 4`: đây là cấu hình đầu tiên (dãy tăng dần).\n- `4 1 2 3`: không phải hoán vị lớn nhất.\n- `1 4 3 2`: đây là hoán vị ở giữa, chưa phải cuối."
+    },
+    {
+      "id": "cpp-c10-04",
+      "topic": "Số tổ hợp",
+      "source": "KTLT C4 (Giải thuật sinh) - bài tổ hợp chập k",
+      "question": "Chương trình đếm số tập con có đúng 3 phần tử của tập 6 phần tử bằng cách duyệt mặt nạ bit. Kết quả in ra là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int cnt = 0;\n    for (int mask = 0; mask < 64; mask++)\n        if (bitset<6>(mask).count() == 3) cnt++;\n    cout << cnt << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "15",
+        "18",
+        "20",
+        "120"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: C(6,3) = 20.\n- `15`: đó là C(6,2) hoặc C(6,4).\n- `18`: không phải giá trị của tổ hợp nào ở đây.\n- `120`: đó là 6!/3! = 120 chỉnh hợp chập 3, chưa chia cho 3!."
+    },
+    {
+      "id": "cpp-c10-05",
+      "topic": "Độ phức tạp sinh kế tiếp",
+      "source": "KTLT C4 (Giải thuật sinh)",
+      "question": "Mỗi lần sinh xâu nhị phân kế tiếp bằng cách tìm bit 0 phải nhất rồi lật các bit 1 phía sau thành 0, thời gian xấu nhất của một lần sinh là bao nhiêu?",
+      "options": [
+        "O(1) trong mọi trường hợp",
+        "O(2^n)",
+        "O(n)",
+        "O(n^2)"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: trường hợp xấu nhất phải duyệt qua tối đa n bit để tìm bit 0.\n- `O(1) trong mọi trường hợp`: chỉ đúng khi xét trung bình (khấu hao), không phải xấu nhất.\n- `O(2^n)`: 2^n là tổng số cấu hình, không phải chi phí một lần sinh.\n- `O(n^2)`: vòng lặp chỉ đi qua mỗi bit tối đa một lần."
+    },
+    {
+      "id": "cpp-c10-06",
+      "topic": "Điều kiện dừng",
+      "source": "KTLT C4 (Giải thuật sinh)",
+      "question": "Trong thuật toán sinh tổ hợp chập k của n, khi nào biết đã ở cấu hình cuối?",
+      "options": [
+        "Khi không tìm được vị trí i nào để tăng (mọi a[i] đều đã đạt giá trị lớn nhất n-k+i+1)",
+        "Khi a[0] bằng 1",
+        "Khi tổng các phần tử bằng n",
+        "Khi số cấu hình đã sinh bằng k"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: cấu hình cuối có dạng n-k+1, n-k+2, ..., n nên không còn phần tử nào tăng được.\n- `Khi a[0] bằng 1`: a[0] = 1 là dấu hiệu của rất nhiều cấu hình, không phải cuối.\n- `Khi tổng các phần tử bằng n`: tổng không dùng để xác định cấu hình cuối.\n- `Khi số cấu hình đã sinh bằng k`: số cấu hình là C(n,k), không phải k."
+    },
+    {
+      "id": "cpp-c10-07",
+      "topic": "Thao tác bit",
+      "source": "KTLT C4 (Giải thuật sinh) - bài getbit/onbit/offbit",
+      "question": "Chương trình sau in ra gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint getbit(int n, int k) { return (n >> k) & 1; }\nvoid onbit(int &n, int k) { n = n | (1 << k); }\nvoid offbit(int &n, int k) { n = n & ~(1 << k); }\nint main()\n{\n    int n = 10;\n    cout << getbit(n, 1) << getbit(n, 2) << \" \";\n    onbit(n, 0);\n    offbit(n, 3);\n    cout << n << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "01 3",
+        "10 11",
+        "10 2",
+        "10 3"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: 10 = 1010: bit 1 là 1, bit 2 là 0; bật bit 0 được 1011, tắt bit 3 được 0011 = 3.\n- `01 3`: đảo kết quả getbit: bit 1 là 1 và bit 2 là 0.\n- `10 11`: 11 là sau onbit, chưa tính offbit(n, 3).\n- `10 2`: bật bit 0 làm n lẻ nên không thể bằng 2."
+    },
+    {
+      "id": "cpp-c10-08",
+      "topic": "Đếm bit 1",
+      "source": "KTLT C4 (Giải thuật sinh) - bài đếm bit",
+      "question": "Hàm đếm số bit 1 của n = 0x2A5 bằng cách duyệt 32 bit. Kết quả in ra là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int n = 0x2A5, sum = 0;\n    for (int i = 31; i >= 0; i--)\n        if ((n >> i) & 1) sum++;\n    cout << sum << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "4",
+        "5",
+        "6",
+        "677"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: 0x2A5 = 0010 1010 0101 nên có 1 + 2 + 2 = 5 bit 1.\n- `4`: thiếu một bit 1.\n- `6`: dư một bit 1.\n- `677`: đó là giá trị thập phân của 0x2A5, không phải số bit 1."
+    },
+    {
+      "id": "cpp-c10-09",
+      "topic": "Xóa bit 1 phải nhất",
+      "source": "KTLT C4 (Giải thuật sinh) - bài đếm bit",
+      "question": "Vòng lặp n &= n - 1 xóa bit 1 thấp nhất mỗi lần. Với n = 1000, chương trình in ra gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int n = 1000, c = 0;\n    while (n) { n &= n - 1; c++; }\n    cout << c << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "10",
+        "3",
+        "1000",
+        "6"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: 1000 = 1111101000 có 6 bit 1, mỗi vòng lặp xóa đúng một bit.\n- `10`: đó là độ dài biểu diễn nhị phân, không phải số bit 1.\n- `3`: 1000 có nhiều hơn 3 bit 1.\n- `1000`: vòng lặp đếm số lần xóa bit chứ không đếm giá trị n."
+    },
+    {
+      "id": "cpp-c10-10",
+      "topic": "Sinh xâu nhị phân kế tiếp",
+      "source": "KTLT C4 (Giải thuật sinh) - bài sinh nhị phân",
+      "question": "Bắt đầu từ xâu 0110, chương trình sinh xâu nhị phân kế tiếp 3 lần. Kết quả in ra là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int a[4] = {0, 1, 1, 0};\n    for (int t = 0; t < 3; t++) {\n        int i = 3;\n        while (i >= 0 && a[i] == 1) { a[i] = 0; i--; }\n        if (i >= 0) a[i] = 1;\n    }\n    for (int i = 0; i < 4; i++) cout << a[i];\n    cout << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "1000",
+        "1001",
+        "0111",
+        "1010"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: 0110 sang 0111, rồi sang 1000, rồi sang 1001.\n- `1000`: chỉ mới sinh 2 lần.\n- `0111`: chỉ mới sinh 1 lần.\n- `1010`: sinh 4 lần mới tới 1010."
+    },
+    {
+      "id": "cpp-c10-11",
+      "topic": "Đếm xâu nhị phân",
+      "source": "KTLT C4 (Giải thuật sinh) - bài sinh nhị phân",
+      "question": "Chương trình duyệt các xâu nhị phân 5 bit (biểu diễn bởi k = 0..31) và đếm các xâu không có hai bit 1 liền nhau. Kết quả là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int cnt = 0;\n    for (int k = 0; k < 32; k++)\n        if ((k & (k >> 1)) == 0) cnt++;\n    cout << cnt << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "8",
+        "16",
+        "13",
+        "21"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: số xâu không có hai bit 1 liên tiếp độ dài 5 là số Fibonacci F7 = 13.\n- `8`: đó là F6, đếm cho độ dài 4.\n- `16`: đó là 2^4, không đúng với ràng buộc.\n- `21`: đó là F8, đếm cho độ dài 6."
+    },
+    {
+      "id": "cpp-c10-12",
+      "topic": "Tổ hợp kế tiếp",
+      "source": "KTLT C4 (Giải thuật sinh) - bài sinh tổ hợp",
+      "question": "Hàm nextComb sinh tổ hợp chập 3 của {1..5} kế tiếp. Bắt đầu từ 1 2 3 và gọi 6 lần, chương trình in ra gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint nextComb(int a[], int n, int k)\n{\n    int i = k - 1;\n    while (i >= 0 && a[i] == n - k + i + 1) i--;\n    if (i < 0) return 0;\n    a[i]++;\n    for (int j = i + 1; j < k; j++) a[j] = a[j - 1] + 1;\n    return 1;\n}\nint main()\n{\n    int a[3] = {1, 2, 3};\n    for (int t = 0; t < 6; t++) nextComb(a, 5, 3);\n    for (int i = 0; i < 3; i++) cout << a[i];\n    cout << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "234",
+        "145",
+        "235",
+        "345"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: chuỗi: 123, 124, 125, 134, 135, 145, 234; sau 6 lần là 234.\n- `145`: đó là cấu hình sau 5 lần.\n- `235`: đó là cấu hình sau 7 lần.\n- `345`: đó là cấu hình cuối, sau 9 lần."
+    },
+    {
+      "id": "cpp-c10-13",
+      "topic": "Đếm tổ hợp có điều kiện",
+      "source": "KTLT C4 (Giải thuật sinh) - bài sinh tổ hợp",
+      "question": "Chương trình sinh mọi tổ hợp chập 3 của {1..5} và đếm số tổ hợp có tổng bằng 9. Kết quả là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint nextComb(int a[], int n, int k)\n{\n    int i = k - 1;\n    while (i >= 0 && a[i] == n - k + i + 1) i--;\n    if (i < 0) return 0;\n    a[i]++;\n    for (int j = i + 1; j < k; j++) a[j] = a[j - 1] + 1;\n    return 1;\n}\nint main()\n{\n    int a[3] = {1, 2, 3}, cnt = 0;\n    do {\n        if (a[0] + a[1] + a[2] == 9) cnt++;\n    } while (nextComb(a, 5, 3));\n    cout << cnt << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "2",
+        "1",
+        "3",
+        "10"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: chỉ có 1+3+5 và 2+3+4.\n- `1`: thiếu một tổ hợp.\n- `3`: không có tổ hợp thứ ba (ví dụ 1+4+5 = 10, 2+... đều khác 9).\n- `10`: 10 là tổng số tổ hợp, không phải số tổ hợp có tổng 9."
+    },
+    {
+      "id": "cpp-c10-14",
+      "topic": "Hoán vị kế tiếp",
+      "source": "KTLT C4 (Giải thuật sinh) - bài hoán vị kế tiếp",
+      "question": "Chương trình sau in ra gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int a[3] = {1, 3, 2};\n    next_permutation(a, a + 3);\n    for (int i = 0; i < 3; i++) cout << a[i];\n    cout << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "231",
+        "312",
+        "213",
+        "123"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: sau 132 theo thứ tự từ điển là 213.\n- `231`: 231 đứng sau 213.\n- `312`: 312 xa hơn nhiều bước.\n- `123`: đó là hoán vị đứng trước, không phải kế tiếp."
+    },
+    {
+      "id": "cpp-c10-15",
+      "topic": "Hoán vị cuối",
+      "source": "KTLT C4 (Giải thuật sinh) - bài hoán vị kế tiếp",
+      "question": "Chương trình sau in ra gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int a[3] = {3, 2, 1};\n    bool r = next_permutation(a, a + 3);\n    cout << r << \" \" << a[0] << a[1] << a[2] << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "0 321",
+        "0 123",
+        "1 123",
+        "1 321"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: không còn hoán vị kế tiếp nên hàm trả về false và mảng trở về thứ tự tăng dần.\n- `0 321`: khi hết hoán vị, mảng được đưa về trạng thái nhỏ nhất, không giữ nguyên.\n- `1 123`: giá trị trả về là false (0) vì đã ở cấu hình cuối.\n- `1 321`: sai cả giá trị trả về lẫn trạng thái mảng."
+    },
+    {
+      "id": "cpp-c10-16",
+      "topic": "Hoán vị có phần tử lặp",
+      "source": "KTLT C4 (Giải thuật sinh) - bài hoán vị kế tiếp",
+      "question": "Chương trình đếm số hoán vị phân biệt của xâu \"aabb\" bằng next_permutation. Kết quả là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    string s = \"aabb\";\n    int cnt = 0;\n    do { cnt++; } while (next_permutation(s.begin(), s.end()));\n    cout << cnt << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "24",
+        "4",
+        "12",
+        "6"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: 4!/(2! * 2!) = 6 hoán vị phân biệt; next_permutation bỏ qua trùng lặp.\n- `24`: đó là 4!, tính cả hoán vị trùng nhau.\n- `4`: thiếu hai hoán vị.\n- `12`: đó là 4!/2!, chia thiếu cho 2! của chữ b."
+    },
+    {
+      "id": "cpp-c10-17",
+      "topic": "Hoán vị thứ k",
+      "source": "KTLT C4 (Giải thuật sinh) - bài hoán vị kế tiếp",
+      "question": "Bắt đầu từ 1 2 3 4, gọi next_permutation 10 lần. Mảng cuối cùng là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int a[4] = {1, 2, 3, 4};\n    for (int t = 0; t < 10; t++) next_permutation(a, a + 4);\n    for (int i = 0; i < 4; i++) cout << a[i];\n    cout << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "2341",
+        "2413",
+        "2431",
+        "2314"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: danh sách: 1234, 1243, 1324, 1342, 1423, 1432, 2134, 2143, 2314, 2341, 2413 (hoán vị thứ 11).\n- `2341`: đó là hoán vị thứ 10, sau 9 lần gọi.\n- `2431`: 2431 là hoán vị thứ 12.\n- `2314`: đó là hoán vị thứ 9."
+    },
+    {
+      "id": "cpp-c10-18",
+      "topic": "Xoay bit",
+      "source": "KTLT C4 (Giải thuật sinh) - bài L-shift",
+      "question": "Chương trình xoay trái vòng 3 bit giá trị 8 bit 0x96 (10010110). Kết quả in ra là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    unsigned x = 0x96;\n    unsigned r = ((x << 3) | (x >> 5)) & 0xFF;\n    cout << bitset<8>(r) << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "10110100",
+        "11010010",
+        "10110000",
+        "00110100"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: 3 bit cao 100 chuyển xuống cuối: 10110 + 100 = 10110100.\n- `11010010`: đó là xoay phải 3 bit.\n- `10110000`: chỉ dịch trái, chưa đưa 3 bit cao xuống cuối.\n- `00110100`: mất bit cao thay vì xoay vòng."
+    },
+    {
+      "id": "cpp-c10-19",
+      "topic": "Độ ưu tiên toán tử",
+      "source": "KTLT C4 (Giải thuật sinh) - bài thao tác bit",
+      "question": "Chương trình kiểm tra tính chẵn lẻ của n = 4 bằng toán tử bit. Kết quả in ra là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int n = 4;\n    if (n & 1 == 0) cout << \"even\";\n    else cout << \"odd\";\n    cout << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "even",
+        "0",
+        "1",
+        "odd"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: == có độ ưu tiên cao hơn &, nên biểu thức là n & (1 == 0) = 4 & 0 = 0 (sai), do đó in odd.\n- `even`: đây sẽ là kết quả nếu viết (n & 1) == 0.\n- `0`: chương trình in chữ, không in số.\n- `1`: chương trình in chữ, không in số."
+    },
+    {
+      "id": "cpp-c10-20",
+      "topic": "Liệt kê hoán vị",
+      "source": "KTLT C4 (Giải thuật sinh) - bài hoán vị kế tiếp",
+      "question": "Chương trình liệt kê hoán vị của xâu \"abc\" bằng vòng lặp do-while. Kết quả in ra là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    string s = \"abc\";\n    do { cout << s << \" \"; } while (next_permutation(s.begin(), s.end()));\n    cout << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "abc acb bac bca cba cab",
+        "abc bac cab acb bca cba",
+        "abc acb bac bca cab cba",
+        "cba cab bca bac acb abc"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: đúng thứ tự từ điển của 6 hoán vị.\n- `abc acb bac bca cba cab`: cab đứng trước cba theo thứ tự từ điển.\n- `abc bac cab acb bca cba`: thứ tự không theo từ điển.\n- `cba cab bca bac acb abc`: đây là thứ tự giảm dần."
+    },
+    {
+      "id": "cpp-c10-21",
+      "topic": "Tập con theo số phần tử",
+      "source": "KTLT C4 (Giải thuật sinh) - bài sinh nhị phân",
+      "question": "Chương trình duyệt các xâu 3 bit từ 0 đến 7 và in các xâu có đúng 2 bit 1. Kết quả là gì?",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    for (int k = 0; k < 8; k++)\n        if (bitset<3>(k).count() == 2) cout << bitset<3>(k) << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "001\n010\n100",
+        "011\n110\n101",
+        "011\n101\n110",
+        "011\n101\n110\n111"
+      ],
+      "answer": 2,
+      "explanation": "Đáp án đúng: các giá trị 3, 5, 6 có đúng hai bit 1, in theo thứ tự tăng dần.\n- `001 / 010 / 100`: đây là các xâu có đúng một bit 1.\n- `011 / 110 / 101`: sai thứ tự: 101 (5) đứng trước 110 (6).\n- `011 / 101 / 110 / 111`: 111 có 3 bit 1, không thỏa."
+    },
+    {
+      "id": "cpp-c10-22",
+      "topic": "Vòng lặp sinh nhị phân kế tiếp",
+      "source": "KTLT C4 (Giải thuật sinh) - bài sinh nhị phân",
+      "question": "Chọn vòng lặp tìm vị trí i của bit 0 phải nhất và đặt các bit 1 phía sau thành 0 để chương trình in 1000 khi đầu vào là 0111.",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int n = 4, a[4] = {0, 1, 1, 1};\n    int i = n - 1;\n    {{X}}\n    if (i >= 0) a[i] = 1;\n    for (int j = 0; j < n; j++) cout << a[j];\n    cout << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nwhile (i >= 0 && a[i] == 0) { a[i] = 1; i--; }\n```",
+        "```cpp\nwhile (i >= 0 && a[i] == 1) i--;\n```",
+        "```cpp\nwhile (i >= 0 && a[i] == 1) { a[i] = 0; i -= 2; }\n```",
+        "```cpp\nwhile (i >= 0 && a[i] == 1) { a[i] = 0; i--; }\n```"
+      ],
+      "answer": 3,
+      "explanation": "Đáp án đúng: đặt bit 1 thành 0 và lùi tới khi gặp bit 0 (hoặc hết mảng) rồi bật bit tại i.\n- `while (i >= 0 && a[i] == 0) { a[i] = 1; i--; }`: điều kiện ngược, vòng lặp không chạy và chỉ đổi 0111 thành 0111.\n- `while (i >= 0 && a[i] == 1) i--;`: không đặt các bit 1 phía sau về 0 nên ra 1111.\n- `while (i >= 0 && a[i] == 1) { a[i] = 0; i -= 2; }`: bước lùi 2 bỏ qua bit nên ra 0010."
+    },
+    {
+      "id": "cpp-c10-23",
+      "topic": "Điều kiện tìm vị trí tăng của tổ hợp",
+      "source": "KTLT C4 (Giải thuật sinh) - bài sinh tổ hợp",
+      "question": "Chọn điều kiện đúng để tìm vị trí i cần tăng khi sinh tổ hợp chập 3 của {1..5} kế tiếp tổ hợp 1 4 5 (kết quả đúng là 2 3 4).",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int n = 5, k = 3, a[3] = {1, 4, 5};\n    int i = k - 1;\n    {{X}}\n    if (i >= 0) {\n        a[i]++;\n        for (int j = i + 1; j < k; j++) a[j] = a[j - 1] + 1;\n    }\n    for (int j = 0; j < k; j++) cout << a[j];\n    cout << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nwhile (i >= 0 && a[i] == n - k + i + 1) i--;\n```",
+        "```cpp\nwhile (i >= 0 && a[i] == n) i--;\n```",
+        "```cpp\nwhile (i >= 0 && a[i] == n - k + i) i--;\n```",
+        "```cpp\nwhile (i >= 0 && a[i] != n - k + i + 1) i--;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Đáp án đúng: a[i] đạt giá trị lớn nhất n-k+i+1 thì không tăng được, lùi tiếp.\n- `while (i >= 0 && a[i] == n) i--;`: chỉ phần tử cuối có thể bằng n, các phần tử trước đã đạt tối đa nhỏ hơn n nên dừng nhầm.\n- `while (i >= 0 && a[i] == n - k + i) i--;`: sai lệch 1 đơn vị, dừng ngay tại i = 2 và ra 146.\n- `while (i >= 0 && a[i] != n - k + i + 1) i--;`: điều kiện đảo ngược, dừng ngay tại i = 2 và ra 146."
+    },
+    {
+      "id": "cpp-c10-24",
+      "topic": "Xoay trái bit",
+      "source": "KTLT C4 (Giải thuật sinh) - bài L-shift",
+      "question": "Chọn biểu thức xoay trái vòng 3 bit giá trị 8 bit x = 0x96 để in ra 180 (10110100).",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    unsigned x = 0x96;\n    unsigned r = {{X}};\n    cout << r << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\n(x << 3) | (x >> 5)\n```",
+        "```cpp\n((x << 3) | (x >> 5)) & 0xFF\n```",
+        "```cpp\n(x << 3) & (x >> 5)\n```",
+        "```cpp\n((x >> 3) | (x << 5)) & 0xFF\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: dịch trái 3 bit, đưa 3 bit cao xuống thấp bằng x >> 5, rồi cắt về 8 bit bằng & 0xFF.\n- `(x << 3) | (x >> 5)`: không cắt về 8 bit nên còn bit tràn lên, ra 1204.\n- `(x << 3) & (x >> 5)`: dùng & thay cho | nên ra 0.\n- `((x >> 3) | (x << 5)) & 0xFF`: đây là xoay phải 3 bit, ra 210."
+    },
+    {
+      "id": "cpp-c10-25",
+      "topic": "do-while và next_permutation",
+      "source": "KTLT C4 (Giải thuật sinh) - bài hoán vị kế tiếp",
+      "question": "Chọn vòng lặp để đếm đủ 6 hoán vị của {1,2,3}, bắt đầu từ cấu hình đầu tiên.",
+      "code": "#include <iostream>\n#include <algorithm>\n#include <cstdlib>\n#include <bitset>\nusing namespace std;\nint main()\n{\n    int a[3] = {1, 2, 3}, cnt = 0;\n    {{X}}\n    cout << cnt << endl;\n    return 0;\n}\n",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nwhile (next_permutation(a, a + 3)) cnt++;\n```",
+        "```cpp\ndo { cnt++; } while (next_permutation(a, a + 3));\n```",
+        "```cpp\ndo { cnt++; } while (prev_permutation(a, a + 3));\n```",
+        "```cpp\nfor (int i = 0; i < 3; i++) { next_permutation(a, a + 3); cnt++; }\n```"
+      ],
+      "answer": 1,
+      "explanation": "Đáp án đúng: do-while đếm cấu hình đầu trước rồi mới sinh tiếp, đủ 6 cấu hình.\n- `while (next_permutation(a, a + 3)) cnt++;`: bỏ sót cấu hình đầu nên chỉ đếm được 5.\n- `do { cnt++; } while (prev_permutation(a, a + 3));`: 1 2 3 là cấu hình nhỏ nhất, prev_permutation trả về false ngay nên đếm 1.\n- `for (int i = 0; i < 3; i++) { next_permutation(a, a + 3); cnt++; }`: lặp theo số phần tử chứ không theo số hoán vị, đếm 3."
+    }
+  ]
+}

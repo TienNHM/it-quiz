@@ -1,0 +1,123 @@
+[
+  {
+    "id": "cpp-c04-01",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[10] = {1, 2, 3, 4};\n    int n = 4, i = 1, x = 9;\n    for (int j = i + 1; j < n; j++) a[j + 1] = a[j];\n    a[i + 1] = x;\n    n++;\n    for (int j = 0; j < n; j++) cout << a[j] << ' ';\n    cout << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-02",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {2, 4, 6, 1, 8};\n    int n = 5;\n    for (int i = 0; i < n; i++) {\n        if (a[i] % 2 == 0) {\n            for (int j = i; j < n - 1; j++) a[j] = a[j + 1];\n            n--;\n        }\n    }\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-03",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[3] = {9, 9, 5};\n    int n = 3, imax = 0, i2 = 1;\n    for (int i = 1; i < n; i++) {\n        if (a[i] > a[imax]) { i2 = imax; imax = i; }\n        else if (a[i] > a[i2] && a[i] < a[imax]) i2 = i;\n    }\n    cout << a[i2] << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-04",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[3] = {1, 4, 7}, b[4] = {2, 3, 9, 10};\n    int na = 3, nb = 4, c[10];\n    {{X}}\n    for (int t = 0; t < k; t++) cout << c[t] << ' ';\n    cout << endl;\n    return 0;\n}",
+    "options": [
+      "int i = 0, j = 0, k = 0;\nwhile (i < na && j < nb) {\n    if (a[i] <= b[j]) c[k++] = a[i++];\n    else c[k++] = b[j++];\n}\nwhile (i < na) c[k++] = a[i++];\nwhile (j < nb) c[k++] = b[j++];",
+      "int i = 0, j = 0, k = 0;\nwhile (i < na && j < nb) {\n    if (a[i] <= b[j]) c[k++] = a[i++];\n    else c[k++] = b[j++];\n}",
+      "int i = 0, j = 0, k = 0;\nwhile (i < na) c[k++] = a[i++];\nwhile (j < nb) c[k++] = b[j++];",
+      "int i = 0, j = 0, k = 0;\nwhile (i < na && j < nb) {\n    if (a[i] <= b[j]) c[k++] = a[i++];\n    else c[k++] = b[j++];\n}\nif (i < na) c[k++] = a[i++];\nif (j < nb) c[k++] = b[j++];"
+    ],
+    "expectOutput": "1 2 3 4 7 9 10"
+  },
+  {
+    "id": "cpp-c04-05",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {3, -1, 0, -5, 8};\n    int b[5], c[5], nb = 0, nc = 0;\n    for (int i = 0; i < 5; i++) {\n        if (a[i] >= 0) b[nb++] = a[i];\n        else c[nc++] = a[i];\n    }\n    cout << \"B:\";\n    for (int i = 0; i < nb; i++) cout << ' ' << b[i];\n    cout << endl << \"C:\";\n    for (int i = 0; i < nc; i++) cout << ' ' << c[i];\n    cout << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-06",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[4] = {4, 3, 2, 1};\n    int n = 4;\n    for (int i = 1; i < n; i++) {\n        int x = a[i], j = i - 1;\n        while (j >= 0 && a[j] > x) { a[j + 1] = a[j]; j--; }\n        a[j + 1] = x;\n        for (int k = 0; k < n; k++) cout << a[k] << ' ';\n        cout << endl;\n    }\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-07",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int a[5] = {5, 4, 3, 2, 1}, b[5] = {5, 4, 3, 2, 1};\n    int n = 5, sw1 = 0, sw2 = 0;\n    for (int i = 0; i < n - 1; i++)\n        for (int j = 0; j < n - 1 - i; j++)\n            if (a[j] > a[j + 1]) { swap(a[j], a[j + 1]); sw1++; }\n    for (int i = 0; i < n - 1; i++) {\n        int m = i;\n        for (int j = i + 1; j < n; j++) if (b[j] < b[m]) m = j;\n        if (m != i) { swap(b[i], b[m]); sw2++; }\n    }\n    cout << sw1 << ' ' << sw2 << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-08",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int a[4] = {4, 9, 1, 7};\n    int n = 4;\n    for (int i = 0; i < n - 1; i++)\n        for (int j = 0; j < n - 1 - i; j++)\n            if ({{X}}) swap(a[j], a[j + 1]);\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}",
+    "options": [
+      "a[j] < a[j + 1]",
+      "a[j] > a[j + 1]",
+      "a[j] > a[0]",
+      "a[j] == a[j + 1]"
+    ],
+    "expectOutput": "9 7 4 1"
+  },
+  {
+    "id": "cpp-c04-09",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[6] = {1, 3, 5, 7, 9, 11};\n    int lo = 0, hi = 5, x = 7, pos = -1, buoc = 0;\n    while (lo <= hi) {\n        int mid = (lo + hi) / 2;\n        buoc++;\n        if (a[mid] == x) { pos = mid; break; }\n        if (a[mid] < x) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    cout << pos << ' ' << buoc << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-11",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[6] = {2, 3, 2, 5, 3, 2};\n    int n = 6;\n    for (int i = 0; i < n; i++) {\n        bool daDem = false;\n        for (int j = 0; j < i; j++)\n            if (a[j] == a[i]) daDem = true;\n        if (daDem) continue;\n        int dem = 0;\n        for (int j = 0; j < n; j++)\n            if (a[j] == a[i]) dem++;\n        cout << a[i] << ':' << dem << ' ';\n    }\n    cout << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-12",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint ucln(int a, int b) {\n    while (b != 0) { int r = a % b; a = b; b = r; }\n    return a;\n}\n\nint bcnn(int a, int b) {\n    return a / ucln(a, b) * b;\n}\n\nint main() {\n    int a[3] = {4, 6, 10};\n    int kq = a[0];\n    for (int i = 1; i < 3; i++) {\n        kq = bcnn(kq, a[i]);\n        cout << kq << ' ';\n    }\n    cout << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-13",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[7] = {3, 0, -4, 7, 0, 2, -5};\n    int n = 7, b[7], nb = 0;\n    for (int i = 0; i < n; i++)\n        if (a[i] % 2 == 0 && a[i] != 0) b[nb++] = a[i];\n    for (int i = 0; i < n; i++)\n        if (a[i] == 0) b[nb++] = 0;\n    for (int i = 0; i < n; i++)\n        if (a[i] % 2 != 0) b[nb++] = a[i];\n    for (int i = 0; i < nb; i++) cout << b[i] << ' ';\n    cout << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-14",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int a[5] = {1, 2, 3, 4, 5};\n    int n = 5;\n    for (int i = 0; i < n; i++) swap(a[i], a[n - 1 - i]);\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-15",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {1, 2, 3, 4, 5};\n    int n = 5, k = 2;\n    for (int t = 0; t < k; t++) {\n        int last = a[n - 1];\n        for (int i = n - 1; i > 0; i--) a[i] = a[i - 1];\n        a[0] = last;\n    }\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-16",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nvoid f(int a[], int n) {\n    a[0] = 99;\n    n = 0;\n}\n\nint main() {\n    int a[3] = {1, 2, 3};\n    int n = 5;\n    f(a, n);\n    cout << a[0] << ' ' << n << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-17",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nvoid swapVal(int a, int b) { int t = a; a = b; b = t; }\nvoid swapRef(int &a, int &b) { int t = a; a = b; b = t; }\nvoid swapPtr(int *a, int *b) { int t = *a; *a = *b; *b = t; }\n\nint main() {\n    int x = 1, y = 2;\n    swapVal(x, y);\n    cout << x << ' ' << y << endl;\n    swapRef(x, y);\n    cout << x << ' ' << y << endl;\n    swapPtr(&x, &y);\n    cout << x << ' ' << y << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-18",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\nusing namespace std;\n\nvoid hoan(int *p, int *q) {\n    {{X}}\n}\n\nint main() {\n    int x = 1, y = 2;\n    hoan(&x, &y);\n    cout << x << ' ' << y << endl;\n    return 0;\n}",
+    "options": [
+      "int t = *p; *p = *q; *q = t;",
+      "int *t = p; p = q; q = t;",
+      "*p = *q; *q = *p;",
+      "int t = p; p = q; q = t;"
+    ],
+    "expectOutput": "2 1"
+  },
+  {
+    "id": "cpp-c04-19",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {10, 20, 30, 40, 50};\n    int *p = a;\n    p += 2;\n    cout << *p << ' ' << *(p - 1) << ' ' << p[1] << ' ' << a[p - a] << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-20",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[8] = {1, 2, 3, 2, 5, 6, 6, 7};\n    int n = 8, dem = 0, len = 1;\n    for (int i = 1; i < n; i++) {\n        if (a[i] > a[i - 1]) len++;\n        else {\n            if (len > 1) dem++;\n            len = 1;\n        }\n    }\n    if (len > 1) dem++;\n    cout << dem << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c04-21",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    double a[8] = {1.5, 2, -1, 3, 4, 5, 0, 2};\n    int n = 8, best = 0, start = 0, len = 0;\n    for (int i = 0; i < n; i++) {\n        if (a[i] > 0) {\n            len++;\n            if (len > best) { best = len; start = i - len + 1; }\n        } else len = 0;\n    }\n    cout << best << ' ' << start << endl;\n    return 0;\n}"
+  }
+]

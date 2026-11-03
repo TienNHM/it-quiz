@@ -1,0 +1,369 @@
+{
+  "id": "cpp-c04",
+  "title": "Chương 4: Mảng một chiều (nâng cao)",
+  "description": "Chèn/xóa phần tử, trộn và tách mảng, sắp xếp, tìm kiếm, tần suất, BCNN, đảo và xoay mảng, mảng con, truyền mảng vào hàm cùng tham chiếu và con trỏ.",
+  "questions": [
+    {
+      "id": "cpp-c04-01",
+      "topic": "Chèn phần tử",
+      "source": "NMLT C04 - bài 1 Chèn phần tử vào mảng",
+      "question": "Chèn x = 9 vào sau phần tử thứ i = 1, nhưng dịch phần tử theo chiều tăng của `j`. Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[10] = {1, 2, 3, 4};\n    int n = 4, i = 1, x = 9;\n    for (int j = i + 1; j < n; j++) a[j + 1] = a[j];\n    a[i + 1] = x;\n    n++;\n    for (int j = 0; j < n; j++) cout << a[j] << ' ';\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1 2 9 3 4",
+        "1 2 9 3 3",
+        "1 2 3 9 4",
+        "1 9 2 3 4"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả thật: `1 2 9 3 3`.\n- Dịch sang phải theo chiều tăng thì `a[3] = a[2]` ghi đè 4 trước khi nó kịp được chuyển, rồi `a[4] = a[3]` lại chép 3: phần tử 3 bị nhân đôi và 4 bị mất.\n- Phải dịch theo chiều GIẢM: `for (j = n; j > i + 1; j--) a[j] = a[j - 1];` thì mới ra \"1 2 9 3 4\".\n- \"1 2 9 3 4\" chính là kết quả của cách dịch đúng, không phải của code lỗi này.\n- \"1 2 3 9 4\" và \"1 9 2 3 4\" sai vị trí chèn: x phải nằm ngay sau phần tử chỉ số 1."
+    },
+    {
+      "id": "cpp-c04-02",
+      "topic": "Xóa phần tử",
+      "source": "NMLT C04 - bài 26 Xóa các phần tử thỏa điều kiện",
+      "question": "Xóa mọi số chẵn khỏi mảng bằng cách dịch trái rồi giảm `n`, nhưng `i` luôn tăng. Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {2, 4, 6, 1, 8};\n    int n = 5;\n    for (int i = 0; i < n; i++) {\n        if (a[i] % 2 == 0) {\n            for (int j = i; j < n - 1; j++) a[j] = a[j + 1];\n            n--;\n        }\n    }\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1",
+        "4 1 8",
+        "4 1",
+        "2 4 6 1 8"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả thật: `4 1`.\n- Sau khi xóa a[i], phần tử kế tiếp dồn vào vị trí i nhưng `i++` lại nhảy qua nó, nên 4 (sau khi xóa 2) bị bỏ sót.\n- Cách đúng: chỉ tăng `i` khi KHÔNG xóa, hoặc duyệt ngược từ cuối về đầu.\n- \"1\" là đáp án đúng của bài toán nhưng không phải output của code lỗi này.\n- \"4 1 8\" sai: 8 cũng bị xóa ở bước `i = 2`.\n- \"2 4 6 1 8\" sai: mảng đã bị thay đổi."
+    },
+    {
+      "id": "cpp-c04-03",
+      "topic": "Số lớn thứ hai",
+      "source": "NMLT C04 - bài 3 Số lớn thứ hai",
+      "question": "Tìm số lớn thứ hai bằng một vòng lặp, khởi tạo `i2 = 1` (chỉ số). Chương trình in ra gì với mảng có hai giá trị lớn nhất bằng nhau?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[3] = {9, 9, 5};\n    int n = 3, imax = 0, i2 = 1;\n    for (int i = 1; i < n; i++) {\n        if (a[i] > a[imax]) { i2 = imax; imax = i; }\n        else if (a[i] > a[i2] && a[i] < a[imax]) i2 = i;\n    }\n    cout << a[i2] << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "5",
+        "0",
+        "18",
+        "9"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả thật: `9`.\n- Khởi tạo `i2 = 1` làm \"ứng viên thứ hai\" ngay từ đầu là a[1] = 9, cùng giá trị với max; điều kiện `a[i] > a[i2]` không bao giờ thỏa với 5.\n- Nếu đề yêu cầu số lớn thứ hai PHÂN BIỆT (5), phải khởi tạo `i2` là \"chưa có\" (ví dụ -1) hoặc `INT_MIN` và xử lý riêng.\n- \"5\" là kết quả mong muốn nhưng code này không cho ra.\n- \"0\" và \"18\" sai: không có phép tính nào tạo ra các giá trị đó."
+    },
+    {
+      "id": "cpp-c04-04",
+      "topic": "Trộn hai mảng có thứ tự",
+      "source": "NMLT C04 - bài 2 Trộn hai mảng tăng dần",
+      "question": "Chọn đoạn lệnh trộn hai mảng đã sắp tăng dần `a` và `b` thành mảng `c` cũng tăng dần, và `k` là số phần tử của `c`.",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[3] = {1, 4, 7}, b[4] = {2, 3, 9, 10};\n    int na = 3, nb = 4, c[10];\n    /* ... CHỖ TRỐNG ... */\n    for (int t = 0; t < k; t++) cout << c[t] << ' ';\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nint i = 0, j = 0, k = 0;\nwhile (i < na && j < nb) {\n    if (a[i] <= b[j]) c[k++] = a[i++];\n    else c[k++] = b[j++];\n}\nwhile (i < na) c[k++] = a[i++];\nwhile (j < nb) c[k++] = b[j++];\n```",
+        "```cpp\nint i = 0, j = 0, k = 0;\nwhile (i < na && j < nb) {\n    if (a[i] <= b[j]) c[k++] = a[i++];\n    else c[k++] = b[j++];\n}\n```",
+        "```cpp\nint i = 0, j = 0, k = 0;\nwhile (i < na) c[k++] = a[i++];\nwhile (j < nb) c[k++] = b[j++];\n```",
+        "```cpp\nint i = 0, j = 0, k = 0;\nwhile (i < na && j < nb) {\n    if (a[i] <= b[j]) c[k++] = a[i++];\n    else c[k++] = b[j++];\n}\nif (i < na) c[k++] = a[i++];\nif (j < nb) c[k++] = b[j++];\n```"
+      ],
+      "answer": 0,
+      "explanation": "- Đúng: so sánh hai đầu để lấy phần tử nhỏ hơn, rồi chép nốt phần dư của mảng còn lại. Kết quả: `1 2 3 4 7 9 10`.\n- Thiếu hai vòng `while` chép phần dư sai: mất các phần tử 9 và 10 của `b` (chỉ ra \"1 2 3 4 7\").\n- Nối `a` rồi `b` không so sánh sai: kết quả \"1 4 7 2 3 9 10\" không có thứ tự.\n- Dùng `if` thay cho `while` khi chép phần dư sai: chỉ chép được một phần tử (thiếu 10)."
+    },
+    {
+      "id": "cpp-c04-05",
+      "topic": "Tách mảng",
+      "source": "NMLT C04 - bài 4 Tách mảng thành hai mảng",
+      "question": "Tách mảng A thành B (phần tử dương hoặc bằng 0) và C (phần tử âm). Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {3, -1, 0, -5, 8};\n    int b[5], c[5], nb = 0, nc = 0;\n    for (int i = 0; i < 5; i++) {\n        if (a[i] >= 0) b[nb++] = a[i];\n        else c[nc++] = a[i];\n    }\n    cout << \"B:\";\n    for (int i = 0; i < nb; i++) cout << ' ' << b[i];\n    cout << endl << \"C:\";\n    for (int i = 0; i < nc; i++) cout << ' ' << c[i];\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "B: 3 8\nC: -1 -5",
+        "B: 3 0 8\nC: -1 -5",
+        "B: 3 0 8\nC: -5 -1",
+        "B: 3 8\nC: -1 0 -5"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả thật: `B: 3 0 8 / C: -1 -5`.\n- Điều kiện `a[i] >= 0` đưa cả số 0 vào B, và hai mảng giữ nguyên thứ tự xuất hiện trong A.\n- \"B: 3 8 / C: -1 -5\" sai: bỏ sót số 0 (nếu dùng `> 0` thì 0 cũng không vào C vì C chỉ nhận số âm).\n- \"C: -5 -1\" sai: thứ tự bị đảo, trong khi `nc++` ghi theo thứ tự duyệt.\n- \"C: -1 0 -5\" sai: 0 không phải số âm."
+    },
+    {
+      "id": "cpp-c04-06",
+      "topic": "Sắp xếp chèn",
+      "source": "NMLT C04 - bài 5 Nhập mảng có thứ tự",
+      "question": "Chương trình dùng sắp xếp chèn (insertion sort) và in mảng sau mỗi lượt. Output là gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[4] = {4, 3, 2, 1};\n    int n = 4;\n    for (int i = 1; i < n; i++) {\n        int x = a[i], j = i - 1;\n        while (j >= 0 && a[j] > x) { a[j + 1] = a[j]; j--; }\n        a[j + 1] = x;\n        for (int k = 0; k < n; k++) cout << a[k] << ' ';\n        cout << endl;\n    }\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "3 2 1 4\n2 1 3 4\n1 2 3 4",
+        "1 3 2 4\n1 2 3 4\n1 2 3 4",
+        "3 4 2 1\n2 3 4 1\n1 2 4 3",
+        "3 4 2 1\n2 3 4 1\n1 2 3 4"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả thật: `3 4 2 1 / 2 3 4 1 / 1 2 3 4`.\n- Mỗi lượt lấy a[i] chèn vào đúng chỗ trong phần đã sắp phía trước (phần tử lớn hơn x dịch sang phải).\n- \"3 2 1 4 / 2 1 3 4 / 1 2 3 4\" là output của sắp xếp nổi bọt (bubble sort), mỗi lượt đẩy phần tử lớn nhất về cuối.\n- \"1 3 2 4 / 1 2 3 4 / 1 2 3 4\" là output của sắp xếp chọn (selection sort), mỗi lượt hoán đổi phần tử nhỏ nhất lên đầu.\n- Dãy còn lại sai ở lượt cuối: x = 1 phải chèn về đầu mảng."
+    },
+    {
+      "id": "cpp-c04-07",
+      "topic": "So sánh số lần hoán đổi",
+      "source": "NMLT C04 - bài 40 Sắp xếp mảng",
+      "question": "Sắp xếp mảng đảo ngược {5, 4, 3, 2, 1} bằng nổi bọt và chọn, đếm số lần `swap` của mỗi cách. Chương trình in ra gì?",
+      "code": "#include <iostream>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int a[5] = {5, 4, 3, 2, 1}, b[5] = {5, 4, 3, 2, 1};\n    int n = 5, sw1 = 0, sw2 = 0;\n    for (int i = 0; i < n - 1; i++)\n        for (int j = 0; j < n - 1 - i; j++)\n            if (a[j] > a[j + 1]) { swap(a[j], a[j + 1]); sw1++; }\n    for (int i = 0; i < n - 1; i++) {\n        int m = i;\n        for (int j = i + 1; j < n; j++) if (b[j] < b[m]) m = j;\n        if (m != i) { swap(b[i], b[m]); sw2++; }\n    }\n    cout << sw1 << ' ' << sw2 << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "10 10",
+        "4 2",
+        "2 10",
+        "10 2"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả thật: `10 2` (nổi bọt, sắp chọn).\n- Nổi bọt chỉ hoán đổi cặp liền kề nên số lần hoán đổi bằng số cặp nghịch thế: 4 + 3 + 2 + 1 = 10.\n- Sắp chọn mỗi lượt chỉ hoán đổi tối đa một lần, ở đây chỉ cần 2 lần (5 <-> 1 rồi 4 <-> 2).\n- \"10 10\" sai: sắp chọn không hoán đổi nhiều như vậy.\n- \"4 2\" sai: nổi bọt phải hoán đổi cả 10 cặp nghịch thế.\n- \"2 10\" sai: hai giá trị bị đảo vị trí."
+    },
+    {
+      "id": "cpp-c04-08",
+      "topic": "Sắp giảm dần",
+      "source": "NMLT C04 - bài 40 Sắp xếp giảm dần",
+      "question": "Chọn điều kiện để thuật toán nổi bọt dưới đây sắp mảng theo thứ tự GIẢM dần.",
+      "code": "#include <iostream>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int a[4] = {4, 9, 1, 7};\n    int n = 4;\n    for (int i = 0; i < n - 1; i++)\n        for (int j = 0; j < n - 1 - i; j++)\n            if (/* ... CHỖ TRỐNG ... */) swap(a[j], a[j + 1]);\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\na[j] < a[j + 1]\n```",
+        "```cpp\na[j] > a[j + 1]\n```",
+        "```cpp\na[j] > a[0]\n```",
+        "```cpp\na[j] == a[j + 1]\n```"
+      ],
+      "answer": 0,
+      "explanation": "- Đúng: hoán đổi khi phần tử đứng trước NHỎ hơn phần tử đứng sau, nên phần tử lớn dần được đẩy lên đầu. Kết quả: `9 7 4 1`.\n- `a[j] > a[j + 1]` sai: đây là điều kiện của sắp tăng dần, cho \"1 4 7 9\".\n- `a[j] > a[0]` sai: so sánh với phần tử đầu cố định, không phải so cặp liền kề, mảng không được sắp.\n- `a[j] == a[j + 1]` sai: chỉ hoán đổi hai phần tử bằng nhau, mảng giữ nguyên."
+    },
+    {
+      "id": "cpp-c04-09",
+      "topic": "Tìm kiếm nhị phân",
+      "source": "NMLT C04 - Tìm kiếm trên mảng",
+      "question": "Tìm x = 7 trong mảng đã sắp xếp bằng tìm kiếm nhị phân. Chương trình in ra vị trí tìm được và số bước lặp. Output là gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[6] = {1, 3, 5, 7, 9, 11};\n    int lo = 0, hi = 5, x = 7, pos = -1, buoc = 0;\n    while (lo <= hi) {\n        int mid = (lo + hi) / 2;\n        buoc++;\n        if (a[mid] == x) { pos = mid; break; }\n        if (a[mid] < x) lo = mid + 1;\n        else hi = mid - 1;\n    }\n    cout << pos << ' ' << buoc << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "3 2",
+        "4 3",
+        "3 3",
+        "3 6"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả thật: `3 3`.\n- Bước 1: mid = 2, a[2] = 5 < 7 nên lo = 3. Bước 2: mid = 4, a[4] = 9 > 7 nên hi = 3. Bước 3: mid = 3, a[3] = 7: tìm thấy.\n- \"3 2\" sai: cần 3 lần so sánh, không phải 2.\n- \"4 3\" sai: vị trí của 7 là 3 (chỉ số tính từ 0).\n- \"3 6\" sai: tìm kiếm tuần tự mới cần đến 4 bước, nhị phân luôn ít hơn."
+    },
+    {
+      "id": "cpp-c04-10",
+      "topic": "Độ phức tạp",
+      "source": "NMLT C04 - Tìm kiếm trên mảng",
+      "question": "Tìm kiếm nhị phân trên mảng n phần tử có độ phức tạp thời gian ở trường hợp xấu nhất và điều kiện áp dụng là",
+      "options": [
+        "O(n), mảng phải đã được sắp xếp",
+        "O(log n), mảng phải đã được sắp xếp",
+        "O(log n), không cần sắp xếp",
+        "O(n log n), mảng phải đã được sắp xếp"
+      ],
+      "answer": 1,
+      "explanation": "- Mỗi bước loại bỏ một nửa khoảng tìm kiếm, nên số bước tối đa khoảng log2(n); điều kiện bắt buộc là mảng đã có thứ tự.\n- O(n) là độ phức tạp của tìm kiếm tuần tự, không phải nhị phân.\n- \"Không cần sắp xếp\" sai: nếu mảng không có thứ tự, việc bỏ một nửa khoảng không có cơ sở.\n- O(n log n) là chi phí của một thuật toán sắp xếp hiệu quả, không phải của một lần tìm kiếm."
+    },
+    {
+      "id": "cpp-c04-11",
+      "topic": "Tần suất xuất hiện",
+      "source": "NMLT C04 - bài 14 Tần suất xuất hiện",
+      "question": "Liệt kê tần suất của mỗi giá trị, mỗi giá trị chỉ một lần. Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[6] = {2, 3, 2, 5, 3, 2};\n    int n = 6;\n    for (int i = 0; i < n; i++) {\n        bool daDem = false;\n        for (int j = 0; j < i; j++)\n            if (a[j] == a[i]) daDem = true;\n        if (daDem) continue;\n        int dem = 0;\n        for (int j = 0; j < n; j++)\n            if (a[j] == a[i]) dem++;\n        cout << a[i] << ':' << dem << ' ';\n    }\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "2:3 3:2 2:3 5:1 3:2 2:3",
+        "2:1 3:1 5:1",
+        "2:3 3:2",
+        "2:3 3:2 5:1"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả thật: `2:3 3:2 5:1`.\n- Vòng lặp trong kiểm tra xem a[i] đã xuất hiện ở các vị trí trước đó chưa; nếu rồi thì bỏ qua để không in lặp.\n- Giá trị 5 xuất hiện một lần nên in \"5:1\".\n- Chuỗi dài \"2:3 3:2 2:3 5:1 3:2 2:3\" là output nếu bỏ đoạn kiểm tra `daDem`.\n- \"2:1 3:1 5:1\" sai: đếm số lần xuất hiện phải duyệt toàn bộ mảng, không chỉ tính lần đầu.\n- \"2:3 3:2\" sai: thiếu giá trị 5."
+    },
+    {
+      "id": "cpp-c04-12",
+      "topic": "Bội chung nhỏ nhất của mảng",
+      "source": "NMLT C04 - BCNN của mảng",
+      "question": "Tính BCNN của mảng bằng cách gộp dần, in kết quả sau mỗi phần tử từ phần tử thứ hai. Output là gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint ucln(int a, int b) {\n    while (b != 0) { int r = a % b; a = b; b = r; }\n    return a;\n}\n\nint bcnn(int a, int b) {\n    return a / ucln(a, b) * b;\n}\n\nint main() {\n    int a[3] = {4, 6, 10};\n    int kq = a[0];\n    for (int i = 1; i < 3; i++) {\n        kq = bcnn(kq, a[i]);\n        cout << kq << ' ';\n    }\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "12 120",
+        "24 60",
+        "10 60",
+        "12 60"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả thật: `12 60`.\n- BCNN(4, 6) = 4 / 2 * 6 = 12; BCNN(12, 10) = 12 / 2 * 10 = 60.\n- BCNN của cả mảng có được bằng cách gộp từng cặp: `kq = bcnn(kq, a[i])`.\n- \"12 120\" sai: 120 là tích 12 x 10 chưa chia cho UCLN.\n- \"24 60\" sai: 24 là tích 4 x 6, chưa chia cho UCLN.\n- \"10 60\" sai: BCNN(4, 6) là 12, không phải 10."
+    },
+    {
+      "id": "cpp-c04-13",
+      "topic": "Đưa chẵn lên đầu",
+      "source": "NMLT C04 - bài 29 Chẵn đầu, 0 giữa, lẻ cuối",
+      "question": "Sắp xếp lại mảng: số chẵn khác 0 lên đầu, số 0 ở giữa, số lẻ cuối (giữ thứ tự tương đối). Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[7] = {3, 0, -4, 7, 0, 2, -5};\n    int n = 7, b[7], nb = 0;\n    for (int i = 0; i < n; i++)\n        if (a[i] % 2 == 0 && a[i] != 0) b[nb++] = a[i];\n    for (int i = 0; i < n; i++)\n        if (a[i] == 0) b[nb++] = 0;\n    for (int i = 0; i < n; i++)\n        if (a[i] % 2 != 0) b[nb++] = a[i];\n    for (int i = 0; i < nb; i++) cout << b[i] << ' ';\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "-4 2 0 0 -5 3 7",
+        "-4 2 0 0 3 7 -5",
+        "0 0 -4 2 3 7 -5",
+        "2 -4 0 0 3 7 -5"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả thật: `-4 2 0 0 3 7 -5`.\n- Ba lượt duyệt: chẵn khác 0 (-4, 2), rồi các số 0, rồi số lẻ (3, 7, -5), mỗi nhóm giữ thứ tự xuất hiện ban đầu.\n- Điều kiện lẻ dùng `% 2 != 0` nên -5 (dư -1) vẫn được tính là lẻ.\n- \"-4 2 0 0 -5 3 7\" sai: thứ tự các số lẻ phải là 3, 7, -5 như trong mảng gốc.\n- \"0 0 -4 2 3 7 -5\" sai: số 0 phải nằm giữa, không phải đầu.\n- \"2 -4 0 0 3 7 -5\" sai: -4 xuất hiện trước 2 trong mảng gốc."
+    },
+    {
+      "id": "cpp-c04-14",
+      "topic": "Đảo ngược mảng",
+      "source": "NMLT C04 - bài 30 Đảo ngược mảng",
+      "question": "Đảo ngược mảng bằng cách hoán đổi `a[i]` với `a[n - 1 - i]`, nhưng vòng lặp chạy hết `i < n`. Chương trình in ra gì?",
+      "code": "#include <iostream>\n#include <algorithm>\nusing namespace std;\n\nint main() {\n    int a[5] = {1, 2, 3, 4, 5};\n    int n = 5;\n    for (int i = 0; i < n; i++) swap(a[i], a[n - 1 - i]);\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "5 4 3 2 1",
+        "5 2 3 4 1",
+        "1 4 3 2 5",
+        "1 2 3 4 5"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả thật: `1 2 3 4 5`.\n- Mỗi cặp (i, n-1-i) bị hoán đổi hai lần: lần đầu ở nửa trước, lần hai ở nửa sau, nên mảng trở về nguyên trạng.\n- Đúng ra chỉ lặp `i < n / 2` thì mới được \"5 4 3 2 1\".\n- \"5 4 3 2 1\" là kết quả của vòng lặp đúng, không phải của code này.\n- \"5 2 3 4 1\" và \"1 4 3 2 5\" sai: chỉ phản ánh trạng thái dở dang sau một nửa số lần hoán đổi."
+    },
+    {
+      "id": "cpp-c04-15",
+      "topic": "Dịch phải xoay vòng",
+      "source": "NMLT C04 - bài 32 Dịch phải xoay vòng k lần",
+      "question": "Dịch phải xoay vòng mảng k = 2 lần. Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {1, 2, 3, 4, 5};\n    int n = 5, k = 2;\n    for (int t = 0; t < k; t++) {\n        int last = a[n - 1];\n        for (int i = n - 1; i > 0; i--) a[i] = a[i - 1];\n        a[0] = last;\n    }\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "4 5 1 2 3",
+        "3 4 5 1 2",
+        "5 1 2 3 4",
+        "2 3 4 5 1"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả thật: `4 5 1 2 3`.\n- Mỗi lần dịch phải: lưu phần tử cuối, dồn các phần tử sang phải một vị trí, đặt phần tử đã lưu lên đầu. Hai lần cho \"4 5 1 2 3\".\n- \"3 4 5 1 2\" là kết quả dịch TRÁI hai lần.\n- \"5 1 2 3 4\" chỉ ứng với dịch phải một lần.\n- \"2 3 4 5 1\" là dịch trái một lần."
+    },
+    {
+      "id": "cpp-c04-16",
+      "topic": "Truyền mảng vào hàm",
+      "source": "NMLT C04 - Truyền mảng vào hàm",
+      "question": "Hàm `f` nhận mảng và một số nguyên, rồi sửa cả hai. Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nvoid f(int a[], int n) {\n    a[0] = 99;\n    n = 0;\n}\n\nint main() {\n    int a[3] = {1, 2, 3};\n    int n = 5;\n    f(a, n);\n    cout << a[0] << ' ' << n << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1 5",
+        "99 0",
+        "1 0",
+        "99 5"
+      ],
+      "answer": 3,
+      "explanation": "- Kết quả thật: `99 5`.\n- Tham số mảng thực chất là con trỏ tới phần tử đầu, nên `a[0] = 99` sửa trực tiếp mảng gốc ở `main`.\n- `n` được truyền theo giá trị: hàm chỉ sửa bản sao, `n` ở `main` vẫn là 5.\n- \"1 5\" sai: nghĩ rằng mảng cũng bị sao chép.\n- \"99 0\" sai: nghĩ rằng `n` bị thay đổi.\n- \"1 0\" sai: nhầm lẫn cả hai tham số."
+    },
+    {
+      "id": "cpp-c04-17",
+      "topic": "Tham trị, tham chiếu, con trỏ",
+      "source": "NMLT C04 - Hoán vị hai biến (swap.cpp)",
+      "question": "Ba hàm hoán đổi dưới đây gọi liên tiếp trên cùng hai biến. Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nvoid swapVal(int a, int b) { int t = a; a = b; b = t; }\nvoid swapRef(int &a, int &b) { int t = a; a = b; b = t; }\nvoid swapPtr(int *a, int *b) { int t = *a; *a = *b; *b = t; }\n\nint main() {\n    int x = 1, y = 2;\n    swapVal(x, y);\n    cout << x << ' ' << y << endl;\n    swapRef(x, y);\n    cout << x << ' ' << y << endl;\n    swapPtr(&x, &y);\n    cout << x << ' ' << y << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "2 1\n1 2\n2 1",
+        "1 2\n2 1\n2 1",
+        "1 2\n2 1\n1 2",
+        "2 1\n2 1\n1 2"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả thật: `1 2 / 2 1 / 1 2`.\n- `swapVal` nhận bản sao nên không ảnh hưởng `x`, `y`: vẫn \"1 2\".\n- `swapRef` dùng tham chiếu nên đổi thật: \"2 1\". `swapPtr` đổi qua con trỏ nên đổi lại: \"1 2\".\n- Các phương án khác sai vì cho rằng `swapVal` có tác dụng hoặc `swapPtr` không đổi lại."
+    },
+    {
+      "id": "cpp-c04-18",
+      "topic": "Hoán đổi qua con trỏ",
+      "source": "NMLT C04 - Hoán vị hai biến (swap.cpp)",
+      "question": "Chọn thân hàm `hoan` để hoán đổi giá trị của hai biến mà con trỏ `p` và `q` trỏ tới.",
+      "code": "#include <iostream>\nusing namespace std;\n\nvoid hoan(int *p, int *q) {\n    /* ... CHỖ TRỐNG ... */\n}\n\nint main() {\n    int x = 1, y = 2;\n    hoan(&x, &y);\n    cout << x << ' ' << y << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nint t = *p; *p = *q; *q = t;\n```",
+        "```cpp\nint *t = p; p = q; q = t;\n```",
+        "```cpp\n*p = *q; *q = *p;\n```",
+        "```cpp\nint t = p; p = q; q = t;\n```"
+      ],
+      "answer": 0,
+      "explanation": "- Đúng: lưu giá trị mà `p` trỏ tới vào biến tạm, rồi gán chéo qua dấu `*`. Kết quả: `2 1`.\n- `int *t = p; p = q; q = t;` biên dịch được nhưng chỉ hoán đổi hai con trỏ cục bộ, `x` và `y` không đổi.\n- `*p = *q; *q = *p;` sai: sau dòng đầu cả hai đã bằng `y` (2), thiếu biến tạm nên mất giá trị cũ.\n- `int t = p;` sai: lỗi biên dịch vì gán con trỏ cho `int`."
+    },
+    {
+      "id": "cpp-c04-19",
+      "topic": "Con trỏ và mảng",
+      "source": "NMLT C04 - Tham chiếu và con trỏ",
+      "question": "Con trỏ `p` trỏ vào mảng rồi được dịch chuyển. Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {10, 20, 30, 40, 50};\n    int *p = a;\n    p += 2;\n    cout << *p << ' ' << *(p - 1) << ' ' << p[1] << ' ' << a[p - a] << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "20 10 30 20",
+        "30 20 40 30",
+        "30 20 40 40",
+        "30 40 50 30"
+      ],
+      "answer": 1,
+      "explanation": "- Kết quả thật: `30 20 40 30`.\n- `p += 2` làm `p` trỏ tới `a[2]` (30), mỗi bước dịch bằng kích thước một `int`.\n- `*(p - 1)` là `a[1]` = 20; `p[1]` là `a[3]` = 40; `p - a` là 2 nên `a[p - a]` là `a[2]` = 30.\n- \"20 10 30 20\" sai: dịch `p` chỉ một bước thay vì hai.\n- \"30 20 40 40\" sai: `a[p - a]` là 30, không phải 40.\n- \"30 40 50 30\" sai: `*(p - 1)` là phần tử đứng TRƯỚC."
+    },
+    {
+      "id": "cpp-c04-20",
+      "topic": "Mảng con tăng",
+      "source": "NMLT C04 - bài 36 Đếm mảng con tăng",
+      "question": "Đếm số mảng con tăng (liên tiếp, tăng ngặt) có độ dài lớn hơn 1. Chương trình in ra gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[8] = {1, 2, 3, 2, 5, 6, 6, 7};\n    int n = 8, dem = 0, len = 1;\n    for (int i = 1; i < n; i++) {\n        if (a[i] > a[i - 1]) len++;\n        else {\n            if (len > 1) dem++;\n            len = 1;\n        }\n    }\n    if (len > 1) dem++;\n    cout << dem << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "2",
+        "4",
+        "3",
+        "5"
+      ],
+      "answer": 2,
+      "explanation": "- Kết quả thật: `3`.\n- Các mảng con tăng cực đại: [1, 2, 3], [2, 5, 6] và [6, 7]; nên đếm được 3.\n- Dòng `if (len > 1) dem++;` sau vòng lặp bắt buộc có để tính đoạn cuối [6, 7].\n- \"2\" sai: là kết quả khi quên đoạn cuối.\n- \"4\" sai: không có thêm đoạn tăng nào.\n- \"5\" sai: là số cặp liền kề tăng (1<2, 2<3, 2<5, 5<6, 6<7), không phải số đoạn."
+    },
+    {
+      "id": "cpp-c04-21",
+      "topic": "Dãy con dương dài nhất",
+      "source": "NMLT C04 - bài 39 Dãy con toàn dương dài nhất",
+      "question": "Tìm dãy con toàn dương liên tiếp dài nhất; in độ dài và chỉ số bắt đầu. Output là gì?",
+      "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    double a[8] = {1.5, 2, -1, 3, 4, 5, 0, 2};\n    int n = 8, best = 0, start = 0, len = 0;\n    for (int i = 0; i < n; i++) {\n        if (a[i] > 0) {\n            len++;\n            if (len > best) { best = len; start = i - len + 1; }\n        } else len = 0;\n    }\n    cout << best << ' ' << start << endl;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "3 3",
+        "3 4",
+        "5 3",
+        "2 0"
+      ],
+      "answer": 0,
+      "explanation": "- Kết quả thật: `3 3`.\n- Các đoạn dương: [1.5, 2] (dài 2), [3, 4, 5] (dài 3 bắt đầu ở chỉ số 3), [2] (dài 1); số 0 không dương nên cắt đoạn.\n- \"3 4\" sai: chỉ số bắt đầu là `i - len + 1 = 5 - 3 + 1 = 3`, không phải 4.\n- \"5 3\" sai: là kết quả nếu coi 0 là dương (đoạn [3, 4, 5, 0, 2]).\n- \"2 0\" sai: đoạn đầu chỉ dài 2, không phải đoạn dài nhất."
+    },
+    {
+      "id": "cpp-c04-22",
+      "topic": "Mảng làm tham số",
+      "source": "NMLT C04 - Truyền mảng vào hàm",
+      "question": "Với khai báo hàm `void xuly(int a[], int n)`, tham số `a` thực chất là gì?",
+      "options": [
+        "Một con trỏ `int*` trỏ tới phần tử đầu của mảng gốc, nên sửa `a[i]` trong hàm sẽ sửa mảng gốc",
+        "Một bản sao toàn bộ mảng, hàm chỉ sửa bản sao đó",
+        "Một tham chiếu tới mảng, kích thước `n` được truyền kèm tự động",
+        "Một mảng hằng (const), hàm không thể sửa phần tử"
+      ],
+      "answer": 0,
+      "explanation": "- Mảng \"phân rã\" (decay) thành con trỏ tới phần tử đầu khi truyền vào hàm; không có phép sao chép nào, nên thay đổi trong hàm ảnh hưởng mảng gốc.\n- \"Bản sao toàn bộ mảng\" sai: chỉ truyền địa chỉ, nên cũng không biết kích thước mảng.\n- \"Tham chiếu có kích thước kèm theo\" sai: `n` là tham số riêng do người gọi truyền vào.\n- \"Mảng hằng\" sai: phải khai báo `const int a[]` rõ ràng mới cấm sửa."
+    },
+    {
+      "id": "cpp-c04-23",
+      "topic": "Tràn số khi tính BCNN",
+      "source": "NMLT C04 - BCNN của mảng",
+      "question": "Khi tính BCNN của hai số nguyên, vì sao nên viết `a / ucln(a, b) * b` thay vì `a * b / ucln(a, b)`?",
+      "options": [
+        "Hai cách luôn cho kết quả khác nhau vì phép chia nguyên làm mất phần dư",
+        "`a * b / ucln(a, b)` sai về mặt toán học nên không dùng được",
+        "Chia trước rồi nhân giúp giảm nguy cơ tràn số `int` ở bước tính trung gian `a * b`",
+        "Chia trước giúp tránh chia cho 0 khi UCLN bằng 0"
+      ],
+      "answer": 2,
+      "explanation": "- `ucln(a, b)` chia hết cho `a`, nên `a / ucln` là số nguyên chính xác, rồi nhân với `b` cho đúng BCNN mà không cần tới tích `a * b` lớn gấp UCLN lần.\n- Hai cách cho cùng kết quả toán học, chỉ khác nhau ở khả năng tràn số trung gian.\n- \"Sai về mặt toán học\" sai: công thức BCNN = a * b / UCLN hoàn toàn đúng.\n- \"Tránh chia cho 0\" sai: UCLN của hai số khác 0 không bao giờ bằng 0, thứ tự phép tính không ảnh hưởng điều đó."
+    }
+  ]
+}

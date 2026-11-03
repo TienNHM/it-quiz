@@ -1,0 +1,125 @@
+[
+  {
+    "id": "cpp-c03-02",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {1, 2};\n    int n = 5;\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-03",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    double a[3] = {1.5, 2.25, 3.1};\n    int tong = 0;\n    for (int i = 0; i < 3; i++) tong += a[i];\n    cout << tong << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-04",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[4] = {1, 2, 2, 2};\n    int n = 4, sum = 0;\n    for (int i = 0; i < n; i++) sum += a[i];\n    int tb1 = sum / n;\n    double tb2 = sum / n;\n    double tb3 = (double)sum / n;\n    cout << tb1 << ' ' << tb2 << ' ' << tb3 << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-05",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[3] = {-2, -9, -5};\n    int n = 3;\n    {{X}}\n    for (int i = 1; i < n; i++)\n        if (a[i] > mx) mx = a[i];\n    cout << mx << endl;\n    return 0;\n}",
+    "options": [
+      "int mx = 0;",
+      "int mx = a[1];",
+      "int mx = -1;",
+      "int mx = a[0];"
+    ],
+    "expectOutput": "-2"
+  },
+  {
+    "id": "cpp-c03-06",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nbool isPrime(int x) {\n    for (int i = 2; i * i <= x; i++)\n        if (x % i == 0) return false;\n    return true;\n}\n\nint main() {\n    int a[9] = {0, 1, 2, 3, 4, 5, -7, 9, 11};\n    int dem = 0;\n    for (int i = 0; i < 9; i++)\n        if (isPrime(a[i])) dem++;\n    cout << dem << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-07",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nbool isPerfect(int x) {\n    int s = 0;\n    for (int i = 1; i <= x / 2; i++)\n        if (x % i == 0) s += i;\n    return s == x;\n}\n\nint main() {\n    int a[7] = {6, 28, 12, 496, 1, 0, 8128};\n    int dem = 0;\n    for (int i = 0; i < 7; i++)\n        if (isPerfect(a[i])) dem++;\n    cout << dem << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-08",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\n#include <iomanip>\nusing namespace std;\n\nint main() {\n    int a[6] = {5, 12, 10, 7, 15, 0};\n    int tong = 0, dem = 0;\n    for (int i = 0; i < 6; i++)\n        if (a[i] % 5 == 0) { tong += a[i]; dem++; }\n    cout << fixed << setprecision(2) << (double)tong / dem << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-09",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {-3, -2, 5, 7, -1};\n    int dem = 0;\n    for (int i = 0; i < 5; i++)\n        if (a[i] % 2 == 1) dem++;\n    cout << dem << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-10",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\nusing namespace std;\n\nbool isPrime(int x) {\n    if (x < 2) return false;\n    for (int i = 2; i * i <= x; i++)\n        if (x % i == 0) return false;\n    return true;\n}\n\n{{X}}\n\nint main() {\n    int a[4] = {4, 9, 7, 11};\n    cout << firstPrime(a, 4) << endl;\n    return 0;\n}",
+    "options": [
+      "int firstPrime(int a[], int n) {\n    for (int i = 0; i < n; i++)\n        if (isPrime(a[i])) return a[i];\n    return -1;\n}",
+      "int firstPrime(int a[], int n) {\n    for (int i = 0; i < n; i++) {\n        if (isPrime(a[i])) return a[i];\n        else return -1;\n    }\n    return -1;\n}",
+      "int firstPrime(int a[], int n) {\n    for (int i = 0; i < n; i++)\n        if (isPrime(a[i])) return i;\n    return -1;\n}",
+      "int firstPrime(int a[], int n) {\n    for (int i = n - 1; i >= 0; i--)\n        if (isPrime(a[i])) return a[i];\n    return -1;\n}"
+    ],
+    "expectOutput": "7"
+  },
+  {
+    "id": "cpp-c03-11",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\ndouble lastPositive(double a[], int n) {\n    for (int i = n - 1; i >= 0; i--)\n        if (a[i] >= 0) return a[i];\n    return -1;\n}\n\nint main() {\n    double a[5] = {2.5, -1, 4, -3.5, 0};\n    cout << lastPositive(a, 5) << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-12",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint ucln(int a, int b) {\n    while (b != 0) { int r = a % b; a = b; b = r; }\n    return a;\n}\n\nint main() {\n    int a[4] = {48, 18, 27, 9};\n    int g = a[0];\n    cout << g;\n    for (int i = 1; i < 4; i++) {\n        g = ucln(g, a[i]);\n        cout << ' ' << g;\n    }\n    cout << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-13",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    long long f[51];\n    f[0] = 0; f[1] = 1;\n    for (int i = 2; i <= 50; i++) f[i] = f[i - 1] + f[i - 2];\n    cout << f[10] << ' ' << f[50] << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-14",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[4] = {3, 9, 1, 7};\n    int n = 4, imax = 0, imin = 0;\n    for (int i = 1; i < n; i++) {\n        if (a[i] > a[imax]) imax = i;\n        if (a[i] < a[imin]) imin = i;\n    }\n    {{X}}\n    for (int i = 0; i < n; i++) cout << a[i] << ' ';\n    cout << endl;\n    return 0;\n}",
+    "options": [
+      "swap(imax, imin);",
+      "swap(a[imax], a[imin]);",
+      "a[imax] = a[imin];\na[imin] = a[imax];",
+      "swap(a[imax], a[imin]);\nswap(a[imax], a[imin]);"
+    ],
+    "expectOutput": "3 1 9 7"
+  },
+  {
+    "id": "cpp-c03-15",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[5] = {1, 2, 3, 5, 4};\n    int n = 5, kq = 1, dem = 0;\n    for (int i = 0; i < n - 2; i++) {\n        dem++;\n        if (a[i] > a[i + 1]) { kq = 0; break; }\n    }\n    cout << \"ket qua: \" << kq << endl;\n    cout << \"so cap: \" << dem << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-16",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nbool palin(int x) {\n    int t = x, r = 0;\n    while (t > 0) { r = r * 10 + t % 10; t /= 10; }\n    return r == x;\n}\n\nint main() {\n    int a[4] = {-33, 10, 0, 121};\n    int kq = -1;\n    for (int i = 0; i < 4; i++)\n        if (palin(a[i])) { kq = a[i]; break; }\n    cout << kq << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-17",
+    "kind": "cpp-choose",
+    "template": "#include <iostream>\nusing namespace std;\n\nbool dauLe(int x) {\n    int t = x;\n    {{X}}\n    return t % 2 == 1;\n}\n\nint main() {\n    int a[4] = {24, 83, 123, 57};\n    for (int i = 0; i < 4; i++)\n        if (dauLe(a[i])) { cout << a[i] << endl; return 0; }\n    cout << 0 << endl;\n    return 0;\n}",
+    "options": [
+      "t %= 10;",
+      "t /= 10;",
+      "while (t >= 10) t /= 10;",
+      "while (t % 10 != 0) t /= 10;"
+    ],
+    "expectOutput": "123"
+  },
+  {
+    "id": "cpp-c03-18",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    double a[4] = {3.5, 2.0, 8.25, 4.5};\n    double lo = 0, hi = 0;\n    for (int i = 0; i < 4; i++) {\n        if (a[i] < lo) lo = a[i];\n        if (a[i] > hi) hi = a[i];\n    }\n    cout << '[' << lo << \", \" << hi << ']' << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-19",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\ndouble timCuoi(double a[], int n, double x) {\n    for (int i = n - 1; i >= 0; i--)\n        if (a[i] < 0 && a[i] > x) return a[i];\n    return 0;\n}\n\nint main() {\n    double a[5] = {-5, -1, 3, -2, -8};\n    cout << timCuoi(a, 5, -4) << endl;\n    return 0;\n}"
+  },
+  {
+    "id": "cpp-c03-21",
+    "kind": "cpp-predict",
+    "program": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a[10];\n    cout << sizeof(a) / sizeof(a[0]) << ' ' << sizeof(a) << endl;\n    return 0;\n}"
+  }
+]

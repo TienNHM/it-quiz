@@ -1,0 +1,389 @@
+{
+  "id": "cpp-c02",
+  "title": "Chương 2: Các thuật toán xử lý thông dụng",
+  "description": "Vòng lặp và các thuật toán thường gặp: tổng, giai thừa, số nguyên tố, số hoàn hảo, đảo số, đối xứng, UCLN, Fibonacci, tổ hợp, đổi tiền và ngày tháng.",
+  "questions": [
+    {
+      "id": "cpp-c02-01",
+      "topic": "Tính tổng 1..n",
+      "source": "NMLT C02 - B01 Tổng S = 1 + 2 + ... + n",
+      "question": "Bạn viết vòng lặp để tính S = 1 + 2 + ... + n với n = 5. Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nint n = 5, s = 0;\nfor (int i = 1; i < n; i++)\n    s += i;\ncout << s;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "15",
+        "9",
+        "10",
+        "6"
+      ],
+      "answer": 2,
+      "explanation": "Điều kiện `i < n` làm vòng lặp dừng trước khi `i = 5`, nên chỉ cộng 1 + 2 + 3 + 4 = 10 (lỗi lệch một đơn vị, off-by-one). Muốn đủ n số hạng phải viết `i <= n` để được 15.\n- \"15\" là kết quả đúng của bài toán nhưng không phải của code này.\n- \"9\" và \"6\" không ứng với tổng nào của vòng lặp: 9 = 1+2+... không khớp, 6 = 1+2+3 là thiếu thêm một số hạng nữa."
+    },
+    {
+      "id": "cpp-c02-02",
+      "topic": "Chia nguyên trong tổng phân số",
+      "source": "NMLT C02 - B03 Tổng S = 1 + 1/2 + ... + 1/n",
+      "question": "Tính S = 1/1 + 1/2 + 1/3 với n = 3. Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nint n = 3;\nfloat s = 0;\nfor (int i = 1; i <= n; i++)\n    s += 1 / i;\ncout << s;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1",
+        "1.83333",
+        "1.5",
+        "0"
+      ],
+      "answer": 0,
+      "explanation": "`1 / i` có hai toán hạng `int` nên là chia nguyên: 1/1 = 1, 1/2 = 0, 1/3 = 0. Tổng chỉ còn 1 dù `s` là `float`. Muốn đúng phải viết `1.0 / i` hoặc `(float)1 / i` để được 1.83333.\n- \"1.83333\" là đáp án đúng của bài toán, không phải của code đã cho.\n- \"1.5\" chỉ đúng nếu tính tới n = 2 với chia thực.\n- \"0\" sai vì số hạng đầu tiên 1/1 vẫn bằng 1."
+    },
+    {
+      "id": "cpp-c02-03",
+      "topic": "Giai thừa và tràn số int",
+      "source": "NMLT C02 - B04 Giai thừa n!",
+      "question": "`int` 32 bit chỉ chứa tối đa 2147483647. Đoạn code dưới (dùng `long long` nên không tràn) in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nlong long f = 1;\nfor (int i = 1; i <= 13; i++)\n    f *= i;\ncout << f << \" \" << (f > INT_MAX);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1932053504 0",
+        "6227020800 0",
+        "479001600 1",
+        "6227020800 1"
+      ],
+      "answer": 3,
+      "explanation": "13! = 6227020800 lớn hơn `INT_MAX` (2147483647), nên biểu thức `f > INT_MAX` là 1. Vì vậy với `int`, 12! = 479001600 là giai thừa lớn nhất còn chứa được; từ 13! trở đi `int` bị tràn.\n- \"1932053504 0\" là giá trị bị cắt 32 bit (mất thông tin), không phải giá trị thật.\n- \"6227020800 0\" sai ở vế sau vì 6227020800 > 2147483647.\n- \"479001600 1\" nhầm 12! với 13!."
+    },
+    {
+      "id": "cpp-c02-04",
+      "topic": "Giai thừa của 0",
+      "source": "NMLT C02 - B04 Giai thừa n!",
+      "question": "Hàm giai thừa dưới đây khởi tạo kết quả bằng 1. Đoạn code in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint fact(int n) {\n    int r = 1;\n    for (int i = 1; i <= n; i++)\n        r *= i;\n    return r;\n}\nint main() {\ncout << fact(0) << \" \" << fact(1) << \" \" << fact(5);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "0 1 120",
+        "1 1 120",
+        "1 1 24",
+        "0 0 120"
+      ],
+      "answer": 1,
+      "explanation": "Với `n = 0` vòng lặp không chạy lần nào, `r` giữ giá trị khởi tạo 1, trùng với quy ước 0! = 1. `fact(1)` = 1 và `fact(5)` = 120.\n- \"0 1 120\" sai vì `r` khởi tạo 1 chứ không phải 0.\n- \"1 1 24\" sai vì 5! = 120, còn 24 = 4!.\n- \"0 0 120\" sai vì `r` khởi tạo 1 nên không thể ra 0.\nNếu khởi tạo `r = 0` thì mọi kết quả đều là 0."
+    },
+    {
+      "id": "cpp-c02-05",
+      "topic": "Tổng các giai thừa",
+      "source": "NMLT C02 - B05 Tổng S = 1! + 2! + ... + n!",
+      "question": "Bản gốc của bài này quên khởi tạo biến tổng (`int kq;`), gây hành vi không xác định. Chọn thân hàm `tong` đúng để tính S = 1! + 2! + ... + n! (với n = 4 phải ra 33).",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint giaithua(int n) {\n    int r = 1;\n    for (int i = 1; i <= n; i++) r *= i;\n    return r;\n}\nint tong(int n) {\n    /* ... */\n}\nint main() { cout << tong(4); }",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nint kq = 0;\n    for (int i = 1; i <= n; i++) kq += giaithua(i);\n    return kq;\n```",
+        "```cpp\nint kq = 1;\n    for (int i = 1; i <= n; i++) kq += giaithua(i);\n    return kq;\n```",
+        "```cpp\nint kq = 0;\n    for (int i = 1; i < n; i++) kq += giaithua(i);\n    return kq;\n```",
+        "```cpp\nint kq = 0;\n    for (int i = 1; i <= n; i++) kq = giaithua(i);\n    return kq;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Cần ba điều: khởi tạo tổng bằng 0, lặp i từ 1 đến n (gồm cả n), và dùng `+=` để cộng dồn. Với n = 4 được 1 + 2 + 6 + 24 = 33.\n- Khởi tạo `kq = 1` làm tổng dư thêm 1 (ra 34).\n- Dùng `i < n` bỏ mất số hạng cuối 4! (ra 9).\n- Dùng `=` thay cho `+=` chỉ giữ lại số hạng cuối (ra 24)."
+    },
+    {
+      "id": "cpp-c02-06",
+      "topic": "Số chính phương",
+      "source": "NMLT C02 - B06 Kiểm tra số chính phương",
+      "question": "Hàm kiểm tra số chính phương bằng căn bậc hai nguyên. Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nbool csp(int n) {\n    int r = sqrt(n);\n    return r * r == n;\n}\nint main() {\nint t[] = {0, 1, 2, 4, 15, 16, 25, 26};\nfor (int x : t)\n    cout << csp(x) << \" \";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1 1 0 1 0 1 1 1",
+        "0 1 0 1 0 1 1 0",
+        "1 1 0 1 0 0 1 0",
+        "1 1 0 1 0 1 1 0"
+      ],
+      "answer": 3,
+      "explanation": "`int r = sqrt(n)` lấy phần nguyên của căn; `r * r == n` chỉ đúng khi căn là số nguyên. Các số chính phương trong dãy là 0, 1, 4, 16, 25 (không tính 2, 15, 26) nên in `1 1 0 1 0 1 1 0`.\n- Đáp án có số 1 ở vị trí 26 sai vì 5*5 = 25 khác 26.\n- Đáp án mở đầu bằng 0 sai vì 0 = 0*0 là số chính phương.\n- Đáp án có 0 ở vị trí 16 sai vì 4*4 = 16."
+    },
+    {
+      "id": "cpp-c02-07",
+      "topic": "Kiểm tra số nguyên tố (bản có lỗi)",
+      "source": "NMLT C02 - B07 Kiểm tra số nguyên tố",
+      "question": "Hàm `isPrime` dưới đây lấy từ lời giải có một lỗi ở các trường hợp biên. Đoạn code in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nbool isPrime(int n) {\n    if (n == 0 || n == 2 || n == 3) return true;\n    if (n == 1 || n % 2 == 0) return false;\n    for (int i = 3; i <= int(sqrt(n)); i += 2)\n        if (n % i == 0) return false;\n    return true;\n}\nint main() {\nint t[] = {0, 1, 2, 3, 4, 9, 25};\nfor (int x : t)\n    cout << isPrime(x) << \" \";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "0 0 1 1 0 0 0",
+        "1 0 1 1 0 1 0",
+        "1 0 1 1 0 0 0",
+        "0 0 1 1 0 0 1"
+      ],
+      "answer": 2,
+      "explanation": "Hàm trả về `true` ngay cho `n == 0`, sai vì 0 không phải số nguyên tố. Các giá trị còn lại: 1 -> 0, 2 và 3 -> 1, 4 chẵn -> 0, 9 chia hết cho 3 -> 0, 25 chia hết cho 5 -> 0. Kết quả `1 0 1 1 0 0 0`.\nBản đúng phải viết `if (n < 2) return false;` trước tiên.\n- Đáp án bắt đầu bằng 0 là kết quả mà hàm ĐÚNG cho n = 0, không phải của code này.\n- Đáp án có 1 ở vị trí 9 hay 25 sai vì cả hai đều bị phát hiện chia hết cho 3 hoặc 5."
+    },
+    {
+      "id": "cpp-c02-08",
+      "topic": "Chọn cách kiểm tra số nguyên tố đúng",
+      "source": "NMLT C02 - B07, B19 Số nguyên tố",
+      "question": "Chọn thân hàm `isPrime` đúng cho mọi n (n = 1, 2, 3, 4, 9, 15, 17 phải cho 0 1 1 0 0 0 1).",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nbool isPrime(int n) {\n    /* ... */\n}\nint main() {\n    int t[] = {1, 2, 3, 4, 9, 15, 17};\n    for (int x : t) cout << isPrime(x) << \" \";\n}",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nfor (int i = 2; i * i < n; i++)\n        if (n % i == 0) return false;\n    return n > 1;\n```",
+        "```cpp\nif (n < 2) return false;\n    for (int i = 2; i * i <= n; i++)\n        if (n % i == 0) return false;\n    return true;\n```",
+        "```cpp\nfor (int i = 2; i * i <= n; i++)\n        if (n % i == 0) return false;\n    return true;\n```",
+        "```cpp\nif (n < 2) return false;\n    for (int i = 3; i * i <= n; i += 2)\n        if (n % i == 0) return false;\n    return true;\n```"
+      ],
+      "answer": 1,
+      "explanation": "Cần loại n < 2 trước, rồi thử chia i = 2, 3, ... đến hết `i * i <= n` (dấu `<=` quan trọng).\n- `i * i < n` bỏ sót trường hợp n là bình phương của số nguyên tố (4 = 2*2 bị coi là số nguyên tố).\n- Thiếu kiểm tra `n < 2` làm 1 bị coi là số nguyên tố.\n- Bắt đầu từ `i = 3` và bước 2 bỏ qua ước 2, nên số chẵn như 4 bị coi là số nguyên tố (muốn dùng cách này phải xử lý số chẵn riêng)."
+    },
+    {
+      "id": "cpp-c02-09",
+      "topic": "Số hoàn hảo",
+      "source": "NMLT C02 - B08 Kiểm tra số hoàn hảo",
+      "question": "Số hoàn hảo bằng tổng các ước thực sự (không kể chính nó). Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nbool hoanHao(int n) {\n    int s = 0;\n    for (int i = 1; i < n; i++)\n        if (n % i == 0) s += i;\n    return s == n;\n}\nint main() {\nfor (int n = 1; n <= 30; n++)\n    if (hoanHao(n)) cout << n << \" \";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "6 28",
+        "6",
+        "1 6 28",
+        "6 12 28"
+      ],
+      "answer": 0,
+      "explanation": "6 = 1 + 2 + 3 và 28 = 1 + 2 + 4 + 7 + 14 là hai số hoàn hảo đầu tiên. Với n = 1, tổng ước thực sự là 0 nên khác 1, không phải số hoàn hảo.\n- \"6\" thiếu số 28.\n- \"1 6 28\" sai vì n = 1 không có ước thực sự nào (s = 0).\n- \"6 12 28\" sai vì ước của 12 cộng lại là 16, không bằng 12 (đây là số \"dư\")."
+    },
+    {
+      "id": "cpp-c02-10",
+      "topic": "Độ phức tạp kiểm tra nguyên tố",
+      "source": "NMLT C02 - B07, B17 Số nguyên tố",
+      "question": "Kiểm tra n có phải số nguyên tố bằng cách thử chia cho i = 2, 3, ... cho tới khi `i * i > n`. Độ phức tạp thời gian là bao nhiêu?",
+      "options": [
+        "O(1)",
+        "O(log n)",
+        "O(sqrt(n))",
+        "O(n)"
+      ],
+      "answer": 2,
+      "explanation": "Vòng lặp chỉ chạy khi `i * i <= n`, tức i <= sqrt(n), nên số lần lặp tối đa khoảng sqrt(n): độ phức tạp O(sqrt(n)).\n- O(1) sai vì số lần lặp tăng theo n.\n- O(log n) sai vì i tăng đều từng đơn vị chứ không nhân đôi.\n- O(n) là của cách thử mọi i từ 2 đến n - 1, chậm hơn nhiều với n lớn."
+    },
+    {
+      "id": "cpp-c02-11",
+      "topic": "Đảo ngược số",
+      "source": "NMLT C02 - B10 Đảo ngược số",
+      "question": "Hàm đảo ngược số bằng cách lấy từng chữ số cuối. Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint dao(int n) {\n    int x = 0;\n    while (n > 0) {\n        x = x * 10 + n % 10;\n        n /= 10;\n    }\n    return x;\n}\nint main() {\ncout << dao(1200) << \" \" << dao(120);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "0021 021",
+        "21 21",
+        "21 021",
+        "0021 21"
+      ],
+      "answer": 1,
+      "explanation": "Kết quả là một số nguyên nên số 0 đầu bị mất: các chữ số 0 ở cuối của 1200 chỉ làm `x` nhân với 10 khi `x` còn bằng 0, tức vẫn 0. Cả hai trường hợp cho `21`.\n- Các đáp án có \"0021\" hoặc \"021\" sai vì `int` không lưu chữ số 0 ở đầu.\n- Đảo ngược kiểu chuỗi mới giữ được số 0, nhưng hàm này tính bằng số học."
+    },
+    {
+      "id": "cpp-c02-12",
+      "topic": "Đảo ngược số âm",
+      "source": "NMLT C02 - B10 Đảo ngược số",
+      "question": "Với hàm `dao` dùng vòng lặp `while (n > 0)`, đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint dao(int n) {\n    int x = 0;\n    while (n > 0) {\n        x = x * 10 + n % 10;\n        n /= 10;\n    }\n    return x;\n}\nint main() {\ncout << dao(-123) << \" \" << dao(0);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "-321 0",
+        "321 0",
+        "0 -321",
+        "0 0"
+      ],
+      "answer": 3,
+      "explanation": "Với `n = -123` hay `n = 0`, điều kiện `n > 0` sai ngay từ đầu nên thân vòng lặp không chạy và hàm trả về `0` (giá trị khởi tạo của `x`). Muốn xử lý số âm phải lấy giá trị tuyệt đối trước rồi gắn lại dấu.\n- \"-321 0\" và \"321 0\" giả định hàm xử lý được số âm, điều mà vòng lặp này không làm.\n- \"0 -321\" đảo ngược thứ tự và cũng không xuất hiện."
+    },
+    {
+      "id": "cpp-c02-13",
+      "topic": "Số đối xứng",
+      "source": "NMLT C02 - B11 Kiểm tra số đối xứng (palindrome)",
+      "question": "Số đối xứng là số bằng chính số đảo ngược của nó. Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint dao(int n) {\n    int x = 0;\n    while (n > 0) {\n        x = x * 10 + n % 10;\n        n /= 10;\n    }\n    return x;\n}\nbool doiXung(int n) {\n    return n == dao(n);\n}\nint main() {\nint t[] = {121, 123, 1001, 10, 7};\nfor (int x : t)\n    cout << doiXung(x) << \" \";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1 0 1 0 1",
+        "1 0 1 1 1",
+        "1 1 1 0 1",
+        "0 0 1 0 1"
+      ],
+      "answer": 0,
+      "explanation": "121 và 1001 đọc xuôi ngược giống nhau; 7 (một chữ số) cũng đối xứng. 123 đảo thành 321 nên không đối xứng. 10 đảo thành 1 (mất số 0 cuối) khác 10 nên không đối xứng. Kết quả `1 0 1 0 1`.\n- Đáp án coi 10 là đối xứng sai vì 10 != 1.\n- Đáp án coi 123 là đối xứng sai vì 123 != 321.\n- Đáp án bắt đầu bằng 0 sai vì 121 đối xứng."
+    },
+    {
+      "id": "cpp-c02-14",
+      "topic": "Chữ số lớn nhất của số",
+      "source": "NMLT C02 - B12 Chữ số lớn nhất",
+      "question": "Hàm dưới đây (rút từ lời giải) tìm chữ số lớn nhất. Đoạn code in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint result(int n) {\n    int mx = n % 10;\n    while (n > 0) {\n        n = n / 10;\n        if (mx < n % 10)\n            mx = n % 10;\n    }\n    return mx;\n}\nint main() {\ncout << result(4731) << \" \" << result(0) << \" \" << result(9100);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "4 0 9",
+        "7 0 1",
+        "7 0 9",
+        "7 0 0"
+      ],
+      "answer": 2,
+      "explanation": "Hàm bắt đầu bằng chữ số cuối rồi lần lượt bỏ chữ số cuối và so sánh với chữ số mới. 4731 có chữ số lớn nhất là 7. 0 chỉ có chữ số 0. 9100 bắt đầu mx = 0, sau đó gặp 0, 1, rồi 9 nên được 9.\n- \"4 0 9\" nhầm chữ số đầu với chữ số lớn nhất.\n- \"7 0 1\" sai ở số 9100: chữ số 9 ở đầu lớn hơn 1.\n- \"7 0 0\" sai vì hàm chỉ trả 0 khi mọi chữ số đều là 0."
+    },
+    {
+      "id": "cpp-c02-15",
+      "topic": "Đếm chữ số nguyên tố (bản có lỗi)",
+      "source": "NMLT C02 - B13 Đếm chữ số nguyên tố",
+      "question": "Lời giải dùng lại hàm `isPrime` có lỗi ở n = 0 để đếm chữ số nguyên tố của số. Đoạn code in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nbool isPrime(int n) {\n    if (n == 0 || n == 2 || n == 3) return true;\n    if (n == 1 || n % 2 == 0) return false;\n    for (int i = 3; i <= int(sqrt(n)); i += 2)\n        if (n % i == 0) return false;\n    return true;\n}\nint dem(int n) {\n    int c = 0;\n    while (n > 0) {\n        if (isPrime(n % 10)) c++;\n        n /= 10;\n    }\n    return c;\n}\nint main() {\ncout << dem(2357) << \" \" << dem(2030);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "4 2",
+        "4 4",
+        "3 4",
+        "3 2"
+      ],
+      "answer": 1,
+      "explanation": "2357 có bốn chữ số 2, 3, 5, 7 đều nguyên tố nên đếm được 4. Với 2030 các chữ số là 0, 3, 0, 2; vì `isPrime(0)` sai trả về `true` nên cả hai chữ số 0 cũng bị đếm: 4 chữ số. Kết quả `4 4` (đúng phải là 4 2).\n- \"4 2\" là kết quả mà một hàm nguyên tố đúng cho ra.\n- \"3 4\" và \"3 2\" sai ở vế đầu vì 7 và 5 đều là số nguyên tố."
+    },
+    {
+      "id": "cpp-c02-16",
+      "topic": "Toàn chữ số chẵn",
+      "source": "NMLT C02 - B14 Số gồm toàn chữ số chẵn",
+      "question": "Hàm kiểm tra mọi chữ số đều chẵn. Đoạn code dưới in ra gì? (chú ý các trường hợp biên 0 và số âm)",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nbool toanChan(int n) {\n    while (n > 0) {\n        if ((n % 10) % 2 != 0) return false;\n        n /= 10;\n    }\n    return true;\n}\nint main() {\nint t[] = {2468, 2460, 2461, 0, -2};\nfor (int x : t)\n    cout << toanChan(x) << \" \";\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1 1 0 0 0",
+        "1 0 0 1 1",
+        "1 1 0 1 0",
+        "1 1 0 1 1"
+      ],
+      "answer": 3,
+      "explanation": "2468 và 2460 toàn chữ số chẵn; 2461 có chữ số 1 lẻ nên sai. Với n = 0 và n = -2, điều kiện `n > 0` sai ngay, vòng lặp không chạy, hàm trả về `true` (đúng với 0, nhưng -2 chỉ đúng do tình cờ và hàm không thực sự xử lý số âm). Kết quả `1 1 0 1 1`.\n- Các đáp án coi 0 hoặc -2 là sai (0) đều không khớp vì vòng lặp không chạy.\n- \"1 0 0 1 1\" sai ở 2460: chữ số 0 là chẵn."
+    },
+    {
+      "id": "cpp-c02-17",
+      "topic": "Tổng các số chia hết cho a nhưng không chia hết cho b",
+      "source": "NMLT C02 - B09 Tổng các số chia hết cho a nhưng không chia hết cho b",
+      "question": "Hàm `sum(a, b, n)` cộng các số i trong 1..n thỏa i chia hết cho a và không chia hết cho b. Với `sum(2, 3, 10)` in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint sum(int a, int b, int n) {\n    int t = 0;\n    for (int i = 1; i <= n; i++)\n        if (i % a == 0 && i % b != 0) t += i;\n    return t;\n}\nint main() {\ncout << sum(2, 3, 10);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "24",
+        "30",
+        "18",
+        "6"
+      ],
+      "answer": 0,
+      "explanation": "Các số chẵn trong 1..10 là 2, 4, 6, 8, 10; loại 6 vì chia hết cho 3. Còn lại 2 + 4 + 8 + 10 = 24.\n- \"30\" là tổng cả 5 số chẵn, quên loại số 6.\n- \"18\" và \"6\" không phải tổng nào hợp lệ: bỏ sót số 10 hoặc số 8 thì tổng sẽ thấp hơn 24, còn 6 chính là số bị loại."
+    },
+    {
+      "id": "cpp-c02-18",
+      "topic": "Ước chung lớn nhất (Euclid)",
+      "source": "NMLT C02 - B16 Ước chung lớn nhất",
+      "question": "Thuật toán Euclid trong hàm `gcd` dưới đây cho kết quả gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint gcd(int a, int b) {\n    while (b != 0) {\n        int r = a % b;\n        a = b;\n        b = r;\n    }\n    return a;\n}\nint main() {\ncout << gcd(48, 18) << \" \" << gcd(7, 0) << \" \" << gcd(0, 5);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "3 0 0",
+        "6 0 5",
+        "6 7 5",
+        "6 7 0"
+      ],
+      "answer": 2,
+      "explanation": "gcd(48, 18): 48 % 18 = 12, 18 % 12 = 6, 12 % 6 = 0 nên kết quả 6. gcd(7, 0): `b == 0` ngay nên trả về 7. gcd(0, 5): 0 % 5 = 0, đổi chỗ thành (5, 0) và trả về 5. Kết quả `6 7 5`.\n- \"3 0 0\" sai vì UCLN của 48 và 18 là 6, không phải 3.\n- \"6 0 5\" sai vì gcd(7, 0) = 7 (mọi số chia hết 0).\n- \"6 7 0\" sai vì gcd(0, 5) = 5."
+    },
+    {
+      "id": "cpp-c02-19",
+      "topic": "Bội chung nhỏ nhất",
+      "source": "NMLT C02 - B16 UCLN, BCNN",
+      "question": "BCNN(a, b) = a / UCLN * b (chia trước khi nhân để tránh tràn). Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint gcd(int a, int b) {\n    while (b != 0) {\n        int r = a % b;\n        a = b;\n        b = r;\n    }\n    return a;\n}\nint main() {\nint a = 12, b = 18;\nint g = gcd(a, b);\ncout << g << \" \" << a / g * b;\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "6 216",
+        "6 36",
+        "3 36",
+        "6 18"
+      ],
+      "answer": 1,
+      "explanation": "UCLN(12, 18) = 6, BCNN = 12 / 6 * 18 = 36 (đúng vì 12 * 18 / 6 = 36).\n- \"6 216\" là tích a * b = 216 chưa chia cho UCLN.\n- \"3 36\" sai ở UCLN: 12 và 18 chia hết cho 6, không phải 3.\n- \"6 18\" bỏ nhân hết b: 12 / 6 = 2 rồi nhân 18 ra 36, không phải 18."
+    },
+    {
+      "id": "cpp-c02-20",
+      "topic": "Dãy Fibonacci",
+      "source": "NMLT C02 - B26 Số Fibonacci thứ n",
+      "question": "Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nint a = 0, b = 1;\nfor (int i = 0; i < 10; i++) {\n    cout << a << \" \";\n    int c = a + b;\n    a = b;\n    b = c;\n}\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "1 1 2 3 5 8 13 21 34 55",
+        "0 1 2 3 5 8 13 21 34 55",
+        "0 1 1 2 3 5 8 13 21",
+        "0 1 1 2 3 5 8 13 21 34"
+      ],
+      "answer": 3,
+      "explanation": "Mỗi lần in `a` rồi dịch cửa sổ (a, b) thành (b, a + b). Mười số đầu của dãy bắt đầu từ F0 = 0 là 0 1 1 2 3 5 8 13 21 34.\n- Dãy bắt đầu từ 1 1 là dãy lệch một vị trí (bắt đầu từ F1).\n- \"0 1 2 3 5 ...\" thiếu số 1 thứ hai.\n- Dãy kết thúc ở 21 chỉ có 9 số, trong khi vòng lặp in đủ 10 số."
+    },
+    {
+      "id": "cpp-c02-21",
+      "topic": "Tổ hợp chập k của n",
+      "source": "NMLT C02 - B34 Tổ hợp C(n, k)",
+      "question": "Tính C(n, k) bằng vòng lặp để tránh tràn số của n!. Chọn câu lệnh đúng trong vòng lặp (C(10,3) = 120, C(7,3) = 35, C(5,0) = 1).",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nlong long tohop(int n, int k) {\n    long long r = 1;\n    for (int i = 1; i <= k; i++)\n        /* ... */\n    return r;\n}\nint main() { cout << tohop(10, 3) << \" \" << tohop(7, 3) << \" \" << tohop(5, 0); }",
+      "codeLang": "cpp",
+      "options": [
+        "```cpp\nr = r * (n - k + i) / i;\n```",
+        "```cpp\nr = r / i * (n - k + i);\n```",
+        "```cpp\nr *= (n - k + i) / i;\n```",
+        "```cpp\nr = r * (n - i) / i;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Công thức đúng: C(n, k) = tích của (n - k + i) / i với i = 1..k. Phải NHÂN trước rồi CHIA sau thì mỗi bước kết quả luôn chia hết (r luôn là C(n - k + i, i)).\n- `r / i * (n - k + i)` chia trước nên mất phần dư ở bước chia nguyên (ví dụ C(7,3) cho 28 thay vì 35).\n- `r *= (n - k + i) / i` chia nguyên trước khi nhân nên cắt mất phần lẻ.\n- `(n - i)` là công thức sai, không ra tổ hợp."
+    },
+    {
+      "id": "cpp-c02-22",
+      "topic": "Đổi tiền (tham lam)",
+      "source": "NMLT C02 - B29 Đổi tiền",
+      "question": "Đổi 1290 (nghìn) thành số tờ ít nhất theo các mệnh giá 500, 200, 100, 50, 20, 10 bằng thuật toán tham lam. Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nint den[] = {500, 200, 100, 50, 20, 10};\nint n = 1290;\nfor (int d : den) {\n    cout << n / d << \" \";\n    n %= d;\n}\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "2 1 0 1 2 1",
+        "2 2 0 0 2 0",
+        "2 1 0 1 2 0",
+        "2 1 0 0 4 0"
+      ],
+      "answer": 2,
+      "explanation": "Mỗi bước lấy số tờ `n / d` rồi giữ phần dư `n %= d`. 1290: 2 tờ 500 (dư 290), 1 tờ 200 (dư 90), 0 tờ 100, 1 tờ 50 (dư 40), 2 tờ 20 (dư 0), 0 tờ 10. Kết quả `2 1 0 1 2 0`.\n- Đáp án có 1 tờ 10 ở cuối sai vì số dư đã về 0.\n- Đáp án có 2 tờ 200 sai vì 2 x 200 = 400 > 290.\n- Đáp án có 4 tờ 20 sai vì bỏ sót tờ 50 làm số tờ không ít nhất."
+    },
+    {
+      "id": "cpp-c02-23",
+      "topic": "Liệt kê số thỏa ab = 2(a + b)",
+      "source": "NMLT C02 - B30 Số có hai chữ số thỏa a*b = 2(a+b)",
+      "question": "Liệt kê các số hai chữ số `ab` mà tích hai chữ số bằng 2 lần tổng hai chữ số. Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nint main() {\nfor (int i = 10; i < 100; i++) {\n    int a = i / 10, b = i % 10;\n    if (a * b == 2 * (a + b))\n        cout << i << \" \";\n}\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "36 63",
+        "36 44 63",
+        "33 44 66",
+        "36 44 55 63"
+      ],
+      "answer": 1,
+      "explanation": "Biến đổi a*b = 2(a + b) thành (a - 2)(b - 2) = 4, nên (a, b) là (3, 6), (4, 4) hoặc (6, 3), tức các số 36, 44, 63. Kiểm tra: 3*6 = 18 = 2*(3+6); 4*4 = 16 = 2*(4+4).\n- \"36 63\" thiếu số 44.\n- \"33 44 66\" sai ở 33 (9 khác 12) và 66 (36 khác 24).\n- \"36 44 55 63\" thừa 55: 25 khác 2*10 = 20."
+    },
+    {
+      "id": "cpp-c02-24",
+      "topic": "Số thứ tự ngày trong năm",
+      "source": "NMLT C02 - B32 Số thứ tự của ngày trong năm",
+      "question": "Hàm `stt` tính ngày d/m/y là ngày thứ mấy trong năm. Đoạn code dưới in ra gì?",
+      "code": "// Giả sử đã #include các thư viện cần thiết và using namespace std;\nbool nhuan(int y) {\n    return (y % 4 == 0 && y % 100 != 0) || y % 400 == 0;\n}\nint soNgay(int m, int y) {\n    switch (m) {\n        case 4: case 6: case 9: case 11: return 30;\n        case 2: return nhuan(y) ? 29 : 28;\n        default: return 31;\n    }\n}\nint stt(int d, int m, int y) {\n    int s = d;\n    for (int i = 1; i < m; i++) s += soNgay(i, y);\n    return s;\n}\nint main() {\ncout << stt(1, 3, 2024) << \" \" << stt(1, 3, 1900) << \" \" << stt(31, 12, 2023);\n    return 0;\n}",
+      "codeLang": "cpp",
+      "options": [
+        "60 60 365",
+        "61 61 365",
+        "61 60 366",
+        "61 60 365"
+      ],
+      "answer": 3,
+      "explanation": "Ngày 1/3/2024 = 31 (tháng 1) + 29 (tháng 2, 2024 là năm nhuận) + 1 = 61. Năm 1900 chia hết cho 100 mà không chia hết cho 400 nên không nhuận: 31 + 28 + 1 = 60. Ngày 31/12/2023 là ngày cuối của năm thường nên là 365. Kết quả `61 60 365`.\n- \"60 60 365\" xem 2024 như năm thường.\n- \"61 61 365\" xem 1900 như năm nhuận.\n- \"61 60 366\" xem 2023 như năm nhuận."
+    }
+  ]
+}
