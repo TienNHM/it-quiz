@@ -158,6 +158,9 @@
     {
       "id": "sql-d16-11",
       "source": "Ngày 16 - Transaction và ACID",
+      "tables": [
+        "orders"
+      ],
       "topic": "REPEATABLE READ",
       "question": "Dữ liệu có 1 đơn `pending`. Phiên A mở `BEGIN ISOLATION LEVEL REPEATABLE READ` và đếm đơn pending (ra 1). Sau đó phiên B (autocommit) thêm một đơn pending mới. Phiên A đếm lại lần nữa trong cùng transaction. Kết quả lần đếm thứ hai?",
       "options": [
@@ -202,6 +205,9 @@
     {
       "id": "sql-d16-14",
       "source": "Ngày 16 - Transaction và ACID",
+      "tables": [
+        "products"
+      ],
       "topic": "Dirty read",
       "question": "Phiên A đã UPDATE giá sản phẩm 5 lên 23990000 nhưng chưa COMMIT (giá đã COMMIT là 24990000). Phiên B mở `BEGIN ISOLATION LEVEL READ UNCOMMITTED` rồi SELECT giá. Trong PostgreSQL 16, B thấy gì?",
       "options": [

@@ -10,6 +10,7 @@ export interface Question {
   question: string; // markdown tối giản: **đậm**, `code`, "- " bullet, ``` fence
   code?: string; // khối <pre> kèm đề
   codeLang?: string; // 'sql' -> tô màu cú pháp
+  tables?: string[]; // bảng DSC Shop cần hiển thị dữ liệu mẫu dù đề không nhắc tên bảng
   diagram?: string; // mermaid
   options: string[];
   answer: Answer;

@@ -97,6 +97,9 @@
       "id": "sql-d05-07",
       "topic": "COALESCE và NULL",
       "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
+      "tables": [
+        "products"
+      ],
       "question": "Một số sản phẩm (như HP Pavilion 15) chưa có `cost_price` (NULL). Khi làm báo cáo lợi nhuận `price - cost_price`, cách xử lý nào hợp lý nhất?",
       "options": [
         "dùng `COALESCE(cost_price, 0)` để dòng nào cũng có lợi nhuận và báo cáo không còn ô trống",

@@ -7,6 +7,9 @@
       "id": "sql-d22-01",
       "topic": "Toán tử ->",
       "source": "Ngày 22 - Làm việc với JSON và JSONB",
+      "tables": [
+        "products"
+      ],
       "question": "Kiểu dữ liệu của biểu thức `attributes -> 'brand'` (toán tử một mũi tên) trên cột `attributes` kiểu JSONB là gì?",
       "options": [
         "text",

@@ -179,6 +179,9 @@
       "id": "sql-d27-13",
       "topic": "NULL và giá trị giả",
       "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",
+      "tables": [
+        "customers"
+      ],
       "question": "Khách chưa cho biết ngày sinh. Cách lưu `birth_date` nào đúng thiết kế nhất?",
       "options": [
         "lưu `1900-01-01` để dễ lọc",

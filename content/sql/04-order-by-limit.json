@@ -155,6 +155,9 @@
       "id": "sql-d04-11",
       "topic": "Phân trang ổn định",
       "source": "Ngày 4 - ORDER BY và LIMIT",
+      "tables": [
+        "customers"
+      ],
       "question": "Phân trang khách hàng bằng `ORDER BY city LIMIT 4 OFFSET ...`. Vì sao có khách xuất hiện ở cả hai trang liên tiếp, còn khách khác không xuất hiện ở trang nào?",
       "options": [
         "Công thức OFFSET sai, phải dùng `OFFSET = trang * cỡ_trang`",

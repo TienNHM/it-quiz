@@ -209,6 +209,10 @@
       "id": "sql-d09-15",
       "topic": "Nhóm theo khóa",
       "source": "Ngày 9 - GROUP BY và HAVING",
+      "tables": [
+        "customers",
+        "orders"
+      ],
       "question": "Hai khách khác nhau cùng tên `Nguyễn Văn An` (id 1 và 15). Vì sao nên `GROUP BY customer_id` thay vì `GROUP BY full_name` khi thống kê đơn của từng khách?",
       "options": [
         "`GROUP BY` theo cột chữ luôn báo lỗi",
