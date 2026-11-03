@@ -1,6 +1,7 @@
 import {useEffect, useRef} from 'react';
 import {correctDisplayIndices, type PlayQuestion} from '../../lib';
 import CodeBlock from '../CodeBlock';
+import DataPanel from './DataPanel';
 import {Icon} from '../Icon';
 import Mermaid from '../Mermaid';
 import RichText from '../RichText';
@@ -31,6 +32,7 @@ export default function QuestionCard(props: {
       </div>
       <RichText text={q.question} />
       {q.code && <CodeBlock code={q.code} lang={q.codeLang} />}
+      <DataPanel q={q} />
       {q.diagram && <Mermaid chart={q.diagram} />}
       <div className="q-opts" role={multi ? 'group' : 'radiogroup'} aria-label="Các phương án">
         {item.order.map((orig, d) => {

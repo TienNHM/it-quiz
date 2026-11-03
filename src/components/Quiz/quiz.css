@@ -172,3 +172,15 @@ details.acc[open] > div { animation: rise 0.45s var(--ease) backwards; }
 .chapters > .card > p { margin-bottom: 14px; }
 .chap-foot { margin-top: auto; display: grid; gap: 8px; }
 .chap-foot .btn { width: 100%; }
+
+/* ---------- Dữ liệu mẫu DSC Shop cạnh câu hỏi SQL ---------- */
+.data-panel { margin: 12px 0 0; padding: 10px 14px; border: var(--bw) solid var(--ink); border-radius: var(--radius-sm); background: var(--surface-2); }
+.data-panel > summary { cursor: pointer; font-weight: 600; font-size: 0.88rem; }
+.data-table { margin-top: 12px; }
+.data-caption { font-size: 0.82rem; margin-bottom: 4px; }
+.data-scroll { max-height: 260px; overflow: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-solid); }
+.data-scroll table { border-collapse: collapse; width: max-content; min-width: 100%; font-family: var(--mono); font-size: 0.74rem; }
+.data-scroll th, .data-scroll td { padding: 4px 8px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--border); max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.data-scroll th { position: sticky; top: 0; background: var(--surface-solid); font-weight: 700; z-index: 1; box-shadow: 0 1px 0 var(--border); }
+.data-scroll td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.data-scroll td.null { color: var(--muted); font-style: italic; }
