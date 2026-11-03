@@ -354,7 +354,7 @@
       "id": "os-ps-19",
       "topic": "Multilevel Queue",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Trong **Multilevel Queue Scheduling**, loại tiến trình nào có độ ưu tiên **cao nhất**?",
+      "question": "Trong **Multilevel Queue Scheduling**, loại tiến trình nào có độ ưu tiên **cao nhất** (theo giáo trình Silberschatz bản mới)?",
       "options": [
         "Interactive processes",
         "System processes",

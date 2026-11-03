@@ -96,7 +96,7 @@
       "id": "sql-d26-02",
       "topic": "Wide-column",
       "source": "Ngày 26 - SQL và NoSQL",
-      "question": "Một hệ thống IoT ghi nhiệt độ từ 10.000 cảm biến mỗi giây, hầu như chỉ truy vấn theo cảm biến và khoảng thời gian. Họ NoSQL nào thường được chọn?",
+      "question": "Một hệ thống IoT ghi nhiệt độ từ 10.000 cảm biến mỗi giây, hầu như chỉ truy vấn theo cảm biến và khoảng thời gian. Trong các họ NoSQL dưới đây, họ nào phù hợp nhất?",
       "kind": "concept",
       "options": [
         "document (MongoDB)",

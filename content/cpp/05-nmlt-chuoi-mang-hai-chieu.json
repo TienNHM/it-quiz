@@ -14,7 +14,7 @@
         "```cpp\n' '\n```",
         "```cpp\n';'\n```"
       ],
-      "answer": 2,
+      "answer": 0,
       "explanation": "Chuỗi kiểu C luôn kết thúc bằng ký tự null `'\\0'` để các hàm biết chuỗi dừng ở đâu. `'\\n'` chỉ là xuống dòng, khoảng trắng là ký tự thường nằm trong chuỗi, còn dấu `;` chỉ là một ký tự thông thường."
     },
     {

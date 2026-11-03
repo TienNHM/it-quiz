@@ -59,7 +59,7 @@
         "hai hàm tổng hợp",
         "hai điều kiện lọc"
       ],
-      "answer": 2,
+      "answer": 1,
       "explanation": "`c` và `o` là **bí danh** của `customers` và `orders`, dùng để viết ngắn và phân biệt cột trùng tên như `c.customer_id` với `o.customer_id`.\n- Chúng không thêm cột nào vào bảng.\n- Hàm tổng hợp phải có dạng như `COUNT(...)`.\n- Điều kiện lọc nằm ở `ON` hoặc `WHERE`, không phải ở tên bí danh.",
       "kind": "concept"
     },

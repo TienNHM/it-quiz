@@ -355,7 +355,7 @@
       "id": "dotnet-m18-19",
       "topic": "Chữa distributed monolith",
       "source": "Module 18 - Anti-pattern: distributed monolith",
-      "question": "Màn hình danh sách của Sales gọi đồng bộ `CheckCreditAsync` sang Billing cho mỗi khách hàng; khi Billing chậm, Sales chậm theo. Theo thứ tự các cách chữa từ rẻ tới đắt, bước đầu tiên nên thử là gì?",
+      "question": "Màn hình danh sách của Sales gọi đồng bộ `CheckCreditAsync` sang Billing cho mỗi khách hàng; khi Billing chậm, Sales chậm theo. Trong các cách chữa thực sự gỡ được phụ thuộc đồng bộ này, xếp từ rẻ tới đắt, bước đầu tiên nên thử là gì?",
       "options": [
         "Gộp Sales và Billing thành một service ngay lập tức",
         "Cài service mesh để Billing tự retry thay cho Sales",

@@ -56,7 +56,7 @@
         "Lưu trữ dữ liệu của file xuống đĩa cứng",
         "Phát hiện lỗi phần cứng khi máy khởi động"
       ],
-      "answer": 2,
+      "answer": 1,
       "explanation": "**Shell** là chương trình thông dịch lệnh: đọc lệnh người dùng gõ, phân tích rồi gọi các system call để kernel thực hiện. `bash` và `cmd` là ví dụ quen thuộc.\n\nQuản lý bảng trang là việc của kernel; lưu dữ liệu xuống đĩa là việc của hệ thống file; phát hiện lỗi phần cứng lúc khởi động (POST) là việc của BIOS/firmware."
     },
     {

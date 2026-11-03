@@ -28,7 +28,7 @@
         "```cpp\nsv[tuoi]\n```",
         "```cpp\ntuoi(sv)\n```"
       ],
-      "answer": 2,
+      "answer": 0,
       "explanation": "Với biến struct thông thường dùng toán tử chấm `sv.tuoi`. Toán tử `->` dành cho con trỏ tới struct, `sv[tuoi]` là cú pháp mảng, và `tuoi(sv)` giống lời gọi hàm, struct không có cách dùng đó."
     },
     {

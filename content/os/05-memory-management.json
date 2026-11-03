@@ -277,7 +277,7 @@
       "id": "os-mm-14",
       "topic": "Phân vùng động",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Hiện trạng bộ nhớ như hình (mỗi ô là 1 đơn vị). Dùng **Next-Fit**, hãy cho biết record quản lý bộ nhớ của tiến trình **E** sau khi cấp 3 đơn vị cho D và 2 đơn vị cho E.",
+      "question": "Hiện trạng bộ nhớ như hình (mỗi ô là 1 đơn vị). Dùng **Next-Fit** (con trỏ Next-Fit ban đầu nằm ở đầu bộ nhớ, trước ô 0), hãy cho biết record quản lý bộ nhớ của tiến trình **E** sau khi cấp 3 đơn vị cho D và 2 đơn vị cho E.",
       "code": "Ô:   0   1   2 | 3   4 | 5   6   7   8 | 9  10  11 | 12  13  14 | 15 ...\n     [--- A ---] [trống] [---- B ----] [-- trống --] [--- C ---] [--- trống ---]\n\nVùng    Ô bắt đầu   Kích thước   Trạng thái\nA       0           3            đang dùng\n-       3           2            TRỐNG\nB       5           4            đang dùng\n-       9           3            TRỐNG\nC       12          3            đang dùng\n-       15          rất lớn      TRỐNG",
       "options": [
         "E(15,2)",
