@@ -4,6 +4,76 @@
   "description": "Struct và mảng struct, truyền struct vào hàm, các bài toán phân số và ngày tháng, nhập xuất tập tin bằng ifstream/ofstream và fopen/fscanf.",
   "questions": [
     {
+      "id": "cpp-c06-25",
+      "topic": "Struct là gì",
+      "source": "KTLT C06 - struct và tập tin (cơ bản)",
+      "question": "`struct` trong C++ dùng để làm gì?",
+      "options": [
+        "Lặp lại một đoạn lệnh nhiều lần",
+        "Gom nhiều biến (có thể khác kiểu) thành một kiểu dữ liệu do người dùng tự định nghĩa",
+        "Chỉ để lưu các số nguyên cùng kiểu",
+        "Mở và đóng file"
+      ],
+      "answer": 1,
+      "explanation": "`struct` cho phép gom các trường như tên (string), tuổi (int), điểm (double) vào một kiểu mới. Lặp lệnh là việc của vòng lặp, mảng mới yêu cầu cùng kiểu, và mở/đóng file thuộc về `fstream`."
+    },
+    {
+      "id": "cpp-c06-26",
+      "topic": "Toán tử chấm",
+      "source": "KTLT C06 - struct và tập tin (cơ bản)",
+      "question": "Cho `struct SinhVien { int tuoi; }; SinhVien sv;`. Muốn truy cập trường `tuoi` của `sv` ta viết gì?",
+      "options": [
+        "```cpp\nsv.tuoi\n```",
+        "```cpp\nsv->tuoi\n```",
+        "```cpp\nsv[tuoi]\n```",
+        "```cpp\ntuoi(sv)\n```"
+      ],
+      "answer": 2,
+      "explanation": "Với biến struct thông thường dùng toán tử chấm `sv.tuoi`. Toán tử `->` dành cho con trỏ tới struct, `sv[tuoi]` là cú pháp mảng, và `tuoi(sv)` giống lời gọi hàm, struct không có cách dùng đó."
+    },
+    {
+      "id": "cpp-c06-27",
+      "topic": "ifstream và ofstream",
+      "source": "KTLT C06 - struct và tập tin (cơ bản)",
+      "question": "Trong C++, để GHI dữ liệu ra file text và để ĐỌC dữ liệu từ file text, ta dùng lần lượt các lớp nào?",
+      "options": [
+        "`ofstream` để ghi, `ifstream` để đọc",
+        "`ifstream` để ghi, `ofstream` để đọc",
+        "Cả hai đều chỉ dùng `cout`",
+        "`ifstream` để ghi, `cin` để đọc"
+      ],
+      "answer": 0,
+      "explanation": "Hãy nhớ: `o` là output (ghi ra), `i` là input (đọc vào). Phương án đảo ngược là sai; `cout`/`cin` thao tác với màn hình và bàn phím chứ không phải file, nên không thay được `ofstream`/`ifstream`."
+    },
+    {
+      "id": "cpp-c06-28",
+      "topic": "Phân số hợp lệ",
+      "source": "KTLT C06 - struct và tập tin (cơ bản)",
+      "question": "Khi biểu diễn phân số bằng struct có `tu` và `mau`, ràng buộc quan trọng nhất của `mau` là gì?",
+      "options": [
+        "`mau` phải nhỏ hơn `tu`",
+        "`mau` phải là số nguyên tố",
+        "`mau` phải khác 0",
+        "`mau` phải luôn bằng 1"
+      ],
+      "answer": 2,
+      "explanation": "Phân số có mẫu bằng 0 không xác định, nên `mau != 0` là điều kiện bắt buộc. Mẫu có thể lớn hơn tử (phân số nhỏ hơn 1), không bắt buộc là số nguyên tố và càng không thể luôn bằng 1."
+    },
+    {
+      "id": "cpp-c06-29",
+      "topic": "Thư viện file",
+      "source": "KTLT C06 - struct và tập tin (cơ bản)",
+      "question": "Muốn dùng `ifstream`/`ofstream` để thao tác file thì cần `#include` thư viện nào?",
+      "options": [
+        "`<cmath>`",
+        "`<fstream>`",
+        "`<string>`",
+        "`<cstdlib>`"
+      ],
+      "answer": 1,
+      "explanation": "`<fstream>` chứa các lớp thao tác file (`ifstream`, `ofstream`, `fstream`). `<cmath>` chứa hàm toán học như `sqrt`, `<string>` chứa kiểu `string`, còn `<cstdlib>` chứa các hàm tiện ích như `rand`, `exit`."
+    },
+    {
       "id": "cpp-c06-01",
       "topic": "Khái niệm struct",
       "source": "KTLT C0 - bài 1 Kiểu dữ liệu có cấu trúc",

@@ -4,19 +4,103 @@
   "description": "fork(), PCB, trạng thái tiến trình, thread, IPC và các thuật toán lập lịch FCFS, SJF, SRTF, Round Robin, Priority.",
   "questions": [
     {
+      "id": "os-ps-55",
+      "topic": "Tiến trình là gì",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Tiến trình (process)** là gì?",
+      "options": [
+        "Một file chương trình nằm trên đĩa cứng",
+        "Một thiết bị phần cứng của máy tính",
+        "Một chương trình đang được thực thi",
+        "Một loại ngôn ngữ lập trình"
+      ],
+      "answer": 2,
+      "explanation": "**Tiến trình** là một chương trình **đang chạy**: gồm mã lệnh, dữ liệu, ngăn xếp và trạng thái thực thi (program counter, thanh ghi). Cùng một chương trình có thể sinh ra nhiều tiến trình.\n\nFile chương trình nằm trên đĩa chỉ là thực thể **thụ động** (chương trình), chưa phải tiến trình; thiết bị phần cứng và ngôn ngữ lập trình hoàn toàn là khái niệm khác."
+    },
+    {
+      "id": "os-ps-56",
+      "topic": "Thread là gì",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Luồng (thread)** là gì?",
+      "options": [
+        "Một tiến trình hoàn toàn độc lập, có không gian địa chỉ riêng",
+        "Một loại bộ nhớ đệm của CPU",
+        "Một file được hệ điều hành sinh ra khi chạy chương trình",
+        "Đơn vị thực thi nhỏ nhất bên trong một tiến trình, các luồng dùng chung bộ nhớ của tiến trình"
+      ],
+      "answer": 3,
+      "explanation": "**Thread** là đơn vị thực thi (đơn vị được lập lịch) nằm bên trong một tiến trình. Các thread của cùng một tiến trình **dùng chung** code, dữ liệu, heap và file đang mở, nhưng mỗi thread có stack, thanh ghi và program counter riêng.\n\nNó không phải tiến trình độc lập (tiến trình mới có không gian địa chỉ riêng), không liên quan tới cache của CPU và không phải một loại file."
+    },
+    {
+      "id": "os-ps-57",
+      "topic": "FCFS",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Thuật toán lập lịch **FCFS (First-Come, First-Served)** hoạt động theo nguyên tắc nào?",
+      "options": [
+        "Tiến trình đến trước được cấp CPU trước, theo đúng thứ tự đến",
+        "Tiến trình có thời gian chạy ngắn nhất được chạy trước",
+        "Mỗi tiến trình được chạy một lát thời gian cố định rồi luân phiên",
+        "Tiến trình có độ ưu tiên cao nhất được chạy trước"
+      ],
+      "answer": 0,
+      "explanation": "**FCFS** phục vụ theo thứ tự đến, giống xếp hàng mua vé: ai vào hàng đợi sẵn sàng trước thì được CPU trước, và chạy cho tới khi xong hoặc chờ I/O (non-preemptive).\n\nCác phương án khác mô tả thuật toán khác: chọn job ngắn nhất là SJF, chia lát thời gian luân phiên là Round Robin, chọn theo độ ưu tiên là Priority scheduling."
+    },
+    {
+      "id": "os-ps-58",
+      "topic": "Round Robin",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Trong thuật toán **Round Robin**, **time quantum** (lát thời gian) là gì?",
+      "options": [
+        "Thời gian tối đa mà hệ điều hành cần để khởi động",
+        "Khoảng thời gian tối đa mỗi tiến trình được dùng CPU liên tục trong một lượt",
+        "Thời gian một tiến trình chờ I/O",
+        "Tổng thời gian chạy của tất cả tiến trình"
+      ],
+      "answer": 1,
+      "explanation": "**Time quantum** là lát thời gian CPU cấp cho mỗi tiến trình trong một lượt. Hết quantum mà chưa xong thì tiến trình bị tước CPU và xếp xuống cuối hàng đợi sẵn sàng, nhường người kế tiếp.\n\nNó không liên quan thời gian khởi động hệ thống, không phải thời gian chờ I/O, và cũng không phải tổng thời gian chạy của cả hệ thống."
+    },
+    {
+      "id": "os-ps-59",
+      "topic": "Context switch",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Chuyển ngữ cảnh (context switch)** là gì?",
+      "options": [
+        "Việc đổi người dùng đăng nhập vào máy",
+        "Việc chuyển dữ liệu từ RAM xuống đĩa cứng",
+        "Việc đổi ngôn ngữ hiển thị của hệ điều hành",
+        "Việc CPU lưu trạng thái tiến trình đang chạy và nạp trạng thái của tiến trình khác để chạy tiếp"
+      ],
+      "answer": 3,
+      "explanation": "**Context switch** là khi CPU chuyển từ tiến trình này sang tiến trình khác: hệ điều hành lưu trạng thái (PC, thanh ghi...) của tiến trình cũ vào PCB rồi nạp trạng thái của tiến trình mới từ PCB của nó.\n\nĐổi người dùng, chép dữ liệu RAM xuống đĩa (swap) hay đổi ngôn ngữ giao diện đều là việc khác. Context switch là chi phí thuần tuý vì lúc đó không có công việc hữu ích nào được thực hiện."
+    },
+    {
+      "id": "os-ps-60",
+      "topic": "PCB",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**PCB** trong hệ điều hành là viết tắt của cụm từ nào?",
+      "options": [
+        "Personal Computer Board",
+        "Process Control Block",
+        "Program Counter Buffer",
+        "Peripheral Control Bus"
+      ],
+      "answer": 1,
+      "explanation": "**PCB = Process Control Block**: khối dữ liệu mà hệ điều hành lưu cho mỗi tiến trình, chứa PID, trạng thái, program counter, thanh ghi, thông tin lập lịch, bộ nhớ và file đang mở. Nhờ PCB mà hệ điều hành dừng rồi chạy tiếp tiến trình được.\n\nCác cụm còn lại là chữ nghe giống nhưng không phải thuật ngữ chuẩn của hệ điều hành."
+    },
+    {
       "id": "os-ps-01",
       "topic": "fork()",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Kết quả của chương trình sau là gì?",
+      "question": "Chương trình sau chạy thành công. Xét cả hai tiến trình (cha và con), tập các giá trị được in ra là gì (bỏ qua thứ tự in)?",
       "code": "main( )\n{\n    int a = 10;\n    if ((fork( ) == 0))\n        a++;\n    printf (\"%d\\n\", a );\n}",
       "options": [
         "11",
         "10",
-        "11 và 10",
+        "11 và 11",
         "10 và 11"
       ],
       "answer": 3,
-      "explanation": "`fork()` nhân đôi tiến trình. Giá trị trả về khác nhau ở hai bên:\n- tiến trình **con** nhận **0**\n- tiến trình **cha** nhận **PID của con** (> 0)\n\nNên điều kiện `fork() == 0` chỉ đúng ở con: con tăng `a` thành **11**, cha giữ nguyên **10**. Hai tiến trình có không gian nhớ riêng (copy-on-write), sửa `a` bên này không ảnh hưởng bên kia.\n\nCả hai đều chạy tiếp `printf` nên màn hình in ra **cả 10 và 11**. Thứ tự do bộ lập lịch quyết định, không đảm bảo trước — đáp án của đề ghi theo thứ tự \"10 và 11\"."
+      "explanation": "`fork()` nhân đôi tiến trình. Giá trị trả về khác nhau ở hai bên:\n- tiến trình **con** nhận **0**\n- tiến trình **cha** nhận **PID của con** (> 0)\n\nNên điều kiện `fork() == 0` chỉ đúng ở con: con tăng `a` thành **11**, cha giữ nguyên **10**. Hai tiến trình có không gian nhớ riêng (copy-on-write), sửa `a` bên này không ảnh hưởng bên kia.\n\nCả hai đều chạy tiếp `printf` nên màn hình in ra **cả 10 và 11**, mỗi giá trị một lần; thứ tự hai dòng do bộ lập lịch quyết định nên đề hỏi theo tập giá trị. Vì vậy phương án chỉ có 11 hoặc chỉ có 10 đều thiếu một tiến trình, còn phương án 11 và 11 sai vì cha không tăng `a`."
     },
     {
       "id": "os-ps-02",
@@ -264,7 +348,7 @@
         "Turnaround time: Min, CPU utilization: Max"
       ],
       "answer": 3,
-      "explanation": "Nhớ theo hai nhóm, không bao giờ lẫn:\n```\nTỐI ĐA (càng lớn càng tốt):  CPU utilization, Throughput\nTỐI THIỂU (càng nhỏ càng tốt): Turnaround time, Waiting time, Response time\n```\n\nPhương án **d** khớp đúng: turnaround time tối thiểu, CPU utilization tối đa.\n\nVì sao các phương án khác sai:\n- **a** — throughput càng cao càng tốt, không phải Min.\n- **b** — CPU rảnh là lãng phí, phải Max.\n- **c** — turnaround time phải Min, không phải Max.\n\nMẹo nhớ: hai đại lượng đo **công suất hệ thống** thì tối đa, ba đại lượng đo **thời gian chờ đợi** thì tối thiểu."
+      "explanation": "Nhớ theo hai nhóm, không bao giờ lẫn:\n```\nTỐI ĐA (càng lớn càng tốt):  CPU utilization, Throughput\nTỐI THIỂU (càng nhỏ càng tốt): Turnaround time, Waiting time, Response time\n```\n\nPhương án thứ tư khớp đúng: turnaround time tối thiểu, CPU utilization tối đa.\n\nVì sao các phương án khác sai:\n- phương án đầu: throughput càng cao càng tốt, không phải Min.\n- phương án thứ hai: CPU rảnh là lãng phí, phải Max.\n- phương án thứ ba: turnaround time phải Min, không phải Max.\n\nMẹo nhớ: hai đại lượng đo **công suất hệ thống** thì tối đa, ba đại lượng đo **thời gian chờ đợi** thì tối thiểu."
     },
     {
       "id": "os-ps-19",
@@ -488,27 +572,27 @@
       "source": "Cuối kỳ HĐH – SPKT",
       "question": "Khi tiến trình phát ra một **yêu cầu I/O** thì điều gì xảy ra?",
       "options": [
-        "It is placed in a waiting queue",
+        "It is terminated immediately",
         "It is placed in an I/O queue",
         "It is placed in the ready queue",
         "It is placed in the Job queue"
       ],
       "answer": 1,
-      "explanation": "Tiến trình được đưa vào **I/O queue (device queue)** của đúng thiết bị mà nó yêu cầu, và chuyển sang trạng thái **waiting**. Mỗi thiết bị có hàng đợi riêng vì mỗi thiết bị phục vụ với tốc độ khác nhau.\n\nVòng đời một yêu cầu I/O:\n```\nrunning → phát yêu cầu I/O → vào device queue, trạng thái waiting\n        → thiết bị phục vụ xong, phát ngắt\n        → trở lại READY queue, chờ CPU\n        → running\n```\n\nLưu ý tiến trình **không** quay thẳng về running sau khi I/O xong: nó phải xếp hàng lại ở ready queue như mọi tiến trình khác."
+      "explanation": "Tiến trình được đưa vào **I/O queue (device queue)** của đúng thiết bị mà nó yêu cầu, và chuyển sang trạng thái **waiting**. Mỗi thiết bị có hàng đợi riêng vì mỗi thiết bị phục vụ với tốc độ khác nhau.\n\nVòng đời một yêu cầu I/O:\n```\nrunning → phát yêu cầu I/O → vào device queue, trạng thái waiting\n        → thiết bị phục vụ xong, phát ngắt\n        → trở lại READY queue, chờ CPU\n        → running\n```\n\nCác phương án khác sai: tiến trình xin I/O không bị kết thúc; ready queue chỉ chứa tiến trình sẵn sàng chạy (không phải đang chờ I/O); job queue chứa mọi tiến trình trong hệ thống chứ không phải hàng đợi thiết bị.\n\nLưu ý tiến trình **không** quay thẳng về running sau khi I/O xong: nó phải xếp hàng lại ở ready queue như mọi tiến trình khác."
     },
     {
       "id": "os-ps-35",
       "topic": "PCB",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Process Control Block (PCB) chứa thứ nào sau đây?",
+      "question": "Process Control Block (PCB) chứa thông tin nào sau đây?",
       "options": [
         "bootstrap program and Program Counter",
         "Code and bootstrap program",
-        "Code and data",
-        "Process State and debug"
+        "Process state and Program Counter",
+        "Code and data"
       ],
       "answer": 2,
-      "explanation": "Đáp án đề là **Code and data**.\n\n**Lưu ý:** theo giáo trình, PCB **không chứa code và data** của tiến trình. PCB chỉ giữ **siêu dữ liệu** để hệ điều hành quản lý:\n```\n- Process state (new/ready/running/waiting/terminated)\n- Program counter, các thanh ghi CPU\n- Thông tin lập lịch (độ ưu tiên, con trỏ hàng đợi)\n- Thông tin quản lý bộ nhớ (thanh ghi base/limit, bảng trang)\n- Thông tin kế toán, danh sách file đang mở\n```\nCode và data nằm trong **không gian địa chỉ** của tiến trình (vùng text và data), PCB chỉ **trỏ tới** chúng qua thông tin quản lý bộ nhớ. Cách hiểu duy nhất cho đáp án của đề là xem PCB theo nghĩa rộng \"process image\" = PCB + code + data + stack.\n\nĐi thi chọn theo đề, nhưng khi bị hỏi \"PCB **không** chứa gì\" thì nhớ rằng câu trả lời kinh điển là **bootstrap program**."
+      "explanation": "PCB là **siêu dữ liệu** để hệ điều hành quản lý tiến trình, gồm:\n```\n- Process state (new/ready/running/waiting/terminated)\n- Program counter, các thanh ghi CPU\n- Thông tin lập lịch (độ ưu tiên, con trỏ hàng đợi)\n- Thông tin quản lý bộ nhớ (thanh ghi base/limit, bảng trang)\n- Thông tin kế toán, danh sách file đang mở\n```\nVậy **Process state and Program Counter** đúng.\n\nCác phương án khác sai: **code và data** của tiến trình nằm trong không gian địa chỉ (vùng text và data), PCB chỉ trỏ tới chúng qua thông tin quản lý bộ nhớ; **bootstrap program** là chương trình khởi động máy, không thuộc về tiến trình nào nên không có trong PCB."
     },
     {
       "id": "os-ps-36",
@@ -617,14 +701,13 @@
       "question": "Thành phần nào của trạng thái chương trình được **chia sẻ giữa các thread** trong một tiến trình đa luồng? (chọn tất cả đáp án đúng)",
       "options": [
         "Stack memory",
-        "Local variables",
         "Register values",
         "Heap memory",
         "Global variables"
       ],
       "answer": [
-        3,
-        4
+        2,
+        3
       ],
       "explanation": "**Heap memory** và **global variables** được chia sẻ, vì cả hai nằm trong **không gian địa chỉ chung** của tiến trình.\n\n```\nDÙNG CHUNG (thuộc tiến trình)      RIÊNG (thuộc từng thread)\n- Heap (malloc/new)                - Stack\n- Biến toàn cục và static          - Biến cục bộ (nằm trên stack)\n- Vùng code                        - Giá trị thanh ghi, program counter\n- File đang mở, tín hiệu           - Thread ID\n```\n\nQuy tắc suy luận nhanh: thứ gì cần cho **luồng thực thi độc lập** thì phải riêng (stack, thanh ghi, PC); thứ gì là **dữ liệu của chương trình** thì dùng chung.\n\nChính vì heap và biến toàn cục dùng chung mà đa luồng vừa mạnh vừa nguy hiểm: trao đổi dữ liệu miễn phí, nhưng phải tự bảo vệ bằng mutex nếu không muốn dính race condition."
     },
@@ -771,10 +854,10 @@
         "14; 14; 12; 9",
         "14; 6; 14; 10",
         "6; 12; 14; 8",
-        "6; 14; 14; 6"
+        "12; 10; 14; 6"
       ],
       "answer": 3,
-      "explanation": "Cơ chế: tiến trình mới vào **hàng 1**; dùng hết quantum mà chưa xong thì bị **đẩy xuống hàng dưới**. Bộ lập lịch luôn phục vụ hàng cao trước, hàng thấp chỉ chạy khi hàng trên rỗng.\n\nDiễn biến theo mô hình chuẩn:\n```\nHàng 1 (q=2):  P1 0→2 (còn 6)   P2 2→4 (còn 2)\n               P3 4→6 (còn 5)   P4 6→8 XONG\nHàng 2 (q=4):  P1 8→12 (còn 2)  P2 12→14 XONG\n               P3 14→18 (còn 1)\nHàng 3 (FCFS): P1 18→20 XONG    P3 20→21 XONG\n```\nThời gian chờ = *hoàn thành − burst*: P1 = 12, P2 = 10, P3 = 14, P4 = 6.\n\n**Lưu ý:** bộ số này **không trùng phương án nào** của đề, trong khi đáp án đề là **6; 14; 14; 6**. Nhiều khả năng đề dùng quy ước khác (thứ tự nạp hàng đợi hoặc cách tính thời gian chờ khác). Đi thi cứ chọn theo đáp án đề, nhưng hãy nắm chắc **cách dựng sơ đồ ở trên** — đó mới là thứ áp dụng được cho mọi bài Multilevel Feedback Queue khác."
+      "explanation": "Cơ chế: tiến trình mới vào **hàng 1**; dùng hết quantum mà chưa xong thì bị **đẩy xuống hàng dưới**. Bộ lập lịch luôn phục vụ hàng cao trước, hàng thấp chỉ chạy khi hàng trên rỗng.\n\nDiễn biến (thứ tự nạp P1, P2, P3, P4):\n```\nHàng 1 (q=2):  P1 0→2 (còn 6)   P2 2→4 (còn 2)\n               P3 4→6 (còn 5)   P4 6→8 XONG\nHàng 2 (q=4):  P1 8→12 (còn 2)  P2 12→14 XONG\n               P3 14→18 (còn 1)\nHàng 3 (FCFS): P1 18→20 XONG    P3 20→21 XONG\n```\nThời gian chờ = *hoàn thành − burst*: P1 = 20 − 8 = 12, P2 = 14 − 4 = 10, P3 = 21 − 7 = 14, P4 = 8 − 2 = 6.\n\nCác phương án còn lại là kết quả của việc tính sai thứ tự xuống hàng hoặc quên cộng thời gian chờ ở hàng dưới."
     },
     {
       "id": "os-ps-54",
@@ -784,12 +867,11 @@
       "options": [
         "heap",
         "Shared memory segments",
-        "BSS segment",
         "Data Segment",
         "stack"
       ],
       "answer": 1,
-      "explanation": "Chỉ **shared memory segments** là dùng chung thật sự.\n\n`fork()` tạo cho con một **bản sao toàn bộ không gian địa chỉ** của cha. Vì vậy **stack, heap, data segment và BSS segment** đều là **bản riêng** của từng tiến trình — sửa bên này không ảnh hưởng bên kia.\n\nVùng nhớ chia sẻ tạo bằng `shmget()`/`mmap(MAP_SHARED)` là ngoại lệ duy nhất: nó được **ánh xạ tới cùng một vùng nhớ vật lý** ở cả hai tiến trình, nên là kênh IPC thật sự.\n\nĐừng để **copy-on-write** đánh lừa: ngay sau `fork()`, các trang nhớ *tạm thời* dùng chung khung vật lý để khỏi sao chép tốn kém, nhưng **chỉ cần một bên ghi** là kernel lập tức nhân bản khung đó ra. Về mặt ngữ nghĩa, chúng luôn là hai bản độc lập.\n\nBằng chứng ngay trong đề: ở câu chương trình in `PARENT: value = %d`, con cộng thêm 15 mà cha vẫn in ra **5** — data segment rõ ràng không hề chia sẻ.\n\n*Ghi chú:* ảnh chụp đáp án của đề bị vỡ nên không đọc được rõ; câu này dùng **đáp án đúng theo lý thuyết**."
+      "explanation": "Chỉ **shared memory segments** là dùng chung thật sự.\n\n`fork()` tạo cho con một **bản sao toàn bộ không gian địa chỉ** của cha. Vì vậy **stack, heap, data segment và BSS segment** đều là **bản riêng** của từng tiến trình — sửa bên này không ảnh hưởng bên kia.\n\nVùng nhớ chia sẻ tạo bằng `shmget()`/`mmap(MAP_SHARED)` là ngoại lệ duy nhất: nó được **ánh xạ tới cùng một vùng nhớ vật lý** ở cả hai tiến trình, nên là kênh IPC thật sự.\n\nĐừng để **copy-on-write** đánh lừa: ngay sau `fork()`, các trang nhớ *tạm thời* dùng chung khung vật lý để khỏi sao chép tốn kém, nhưng **chỉ cần một bên ghi** là kernel lập tức nhân bản khung đó ra. Về mặt ngữ nghĩa, chúng luôn là hai bản độc lập.\n\nBằng chứng ngay trong đề: ở câu chương trình in `PARENT: value = %d`, con cộng thêm 15 mà cha vẫn in ra **5** — data segment rõ ràng không hề chia sẻ."
     }
   ]
 }

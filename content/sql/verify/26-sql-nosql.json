@@ -60,5 +60,7 @@
       "SELECT jsonb_build_object(1, 'a')",
       "SELECT jsonb_build_object('a', jsonb_build_object('b', 1))"
     ]
-  }
+  },
+  {"id":"sql-d26-20","kind":"predict","query":"SELECT '{\"name\": \"An\"}'::jsonb ->> 'name'","format":"scalar"},
+  {"id":"sql-d26-21","kind":"predict","query":"SELECT jsonb_array_length('[\"a\", \"b\", \"c\"]'::jsonb)","format":"scalar"}
 ]

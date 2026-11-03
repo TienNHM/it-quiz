@@ -4,6 +4,76 @@
   "description": "Internet, HTTP, API/JSON, database và xác thực - nền tảng mà mọi backend developer phải nắm.",
   "questions": [
     {
+      "id": "dotnet-m02-21",
+      "topic": "HTTP là gì",
+      "source": "Module 2 - API và JSON (cơ bản)",
+      "question": "HTTP là gì?",
+      "options": [
+        "Giao thức mà trình duyệt và máy chủ dùng để trao đổi yêu cầu và phản hồi trên web",
+        "Một ngôn ngữ lập trình để viết trang web",
+        "Một loại cơ sở dữ liệu",
+        "Một phần mềm diệt virus"
+      ],
+      "answer": 0,
+      "explanation": "HTTP là **giao thức** (bộ quy ước) cho client gửi request và server trả response, nền tảng của web và của Web API.\n- Nó không phải ngôn ngữ lập trình (HTML, C#, JavaScript mới là ngôn ngữ).\n- Không phải cơ sở dữ liệu: nó chỉ vận chuyển dữ liệu.\n- Không liên quan diệt virus."
+    },
+    {
+      "id": "dotnet-m02-22",
+      "topic": "JSON là gì",
+      "source": "Module 2 - API và JSON (cơ bản)",
+      "question": "JSON thường được dùng để làm gì trong lập trình web?",
+      "options": [
+        "Biên dịch C# thành mã máy",
+        "Mã hoá ổ đĩa",
+        "Trao đổi dữ liệu dạng văn bản có cấu trúc giữa client và server",
+        "Vẽ giao diện người dùng"
+      ],
+      "answer": 2,
+      "explanation": "JSON là định dạng văn bản nhẹ, dễ đọc, dùng để mô tả dữ liệu như `{\"name\":\"An\",\"age\":20}` khi client và server trao đổi với nhau.\n- Biên dịch C# là việc của trình biên dịch.\n- Mã hoá ổ đĩa là chuyện bảo mật hệ điều hành.\n- Vẽ giao diện là việc của HTML/CSS hoặc framework UI, JSON chỉ mang dữ liệu."
+    },
+    {
+      "id": "dotnet-m02-23",
+      "topic": "RAM và ổ đĩa",
+      "source": "Module 2 - API và JSON (cơ bản)",
+      "question": "So sánh RAM và ổ đĩa (SSD/HDD), phát biểu nào đúng?",
+      "options": [
+        "RAM giữ dữ liệu lâu dài khi tắt máy, ổ đĩa thì mất",
+        "RAM và ổ đĩa giống hệt nhau về tốc độ",
+        "RAM nhanh nhưng mất dữ liệu khi tắt máy, ổ đĩa chậm hơn nhưng giữ dữ liệu lâu dài",
+        "Ổ đĩa nhanh hơn RAM nhiều lần"
+      ],
+      "answer": 2,
+      "explanation": "RAM là bộ nhớ **tạm thời, rất nhanh**: tắt máy là mất, dùng cho dữ liệu chương trình đang xử lý. Ổ đĩa **chậm hơn nhưng lưu lâu dài**.\n- Phát biểu RAM giữ dữ liệu khi tắt máy bị đảo ngược.\n- Tốc độ hai loại khác nhau rõ rệt.\n- Ổ đĩa không nhanh hơn RAM, nên phát biểu ổ đĩa nhanh hơn cũng sai."
+    },
+    {
+      "id": "dotnet-m02-24",
+      "topic": "Client và server",
+      "source": "Module 2 - API và JSON (cơ bản)",
+      "question": "Khi bạn mở một trang web trên trình duyệt, đâu là vai trò client và server?",
+      "options": [
+        "Trình duyệt là client gửi yêu cầu, máy chủ web là server trả về nội dung",
+        "Trình duyệt là server, máy chủ là client",
+        "Cả hai đều là server",
+        "Cả hai đều là client"
+      ],
+      "answer": 0,
+      "explanation": "Client là bên **gửi yêu cầu** (trình duyệt, app di động), server là bên **nhận và trả lời** (máy chủ web, API).\n- Đảo vai trò là sai vì máy chủ không tự mở trang trên máy bạn.\n- Hai bên có vai trò khác nhau nên không thể cùng là server hay cùng là client trong một lần trao đổi."
+    },
+    {
+      "id": "dotnet-m02-25",
+      "topic": "API là gì",
+      "source": "Module 2 - API và JSON (cơ bản)",
+      "question": "Trong ngữ cảnh web, API (Application Programming Interface) là gì?",
+      "options": [
+        "Một loại màn hình hiển thị",
+        "Tên một ngôn ngữ lập trình",
+        "Một giao diện để chương trình này gọi chức năng hoặc lấy dữ liệu của chương trình khác",
+        "Một công cụ dọn rác bộ nhớ"
+      ],
+      "answer": 2,
+      "explanation": "API là **cửa giao tiếp** do một hệ thống cung cấp để chương trình khác gọi, ví dụ app di động gọi API của server để lấy danh sách đơn hàng.\n- Không liên quan màn hình hiển thị.\n- Không phải ngôn ngữ lập trình: nó có thể được viết bằng C#.\n- Dọn rác bộ nhớ là việc của Garbage Collector."
+    },
+    {
       "id": "dotnet-m02-01",
       "topic": "JSON số nguyên lớn",
       "source": "Module 2 - API và JSON",

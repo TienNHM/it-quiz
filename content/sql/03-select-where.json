@@ -4,6 +4,81 @@
   "description": "Chọn cột, lọc dòng bằng điều kiện, LIKE, BETWEEN và bẫy NULL trong logic ba trị.",
   "questions": [
     {
+      "id": "sql-d03-15",
+      "topic": "SELECT dùng để làm gì",
+      "source": "Ngày 3 - SELECT và WHERE (cơ bản)",
+      "question": "Câu lệnh `SELECT` dùng để làm gì?",
+      "options": [
+        "thêm dòng mới vào bảng",
+        "truy vấn, tức lấy dữ liệu ra từ bảng",
+        "xóa bảng khỏi database",
+        "tạo người dùng mới"
+      ],
+      "answer": 1,
+      "explanation": "`SELECT` **đọc** dữ liệu và không làm thay đổi gì trong bảng.\n- Thêm dòng mới là việc của `INSERT`.\n- Xóa bảng là việc của `DROP TABLE`.\n- Tạo người dùng dùng `CREATE USER` (hoặc `CREATE ROLE`).",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d03-16",
+      "topic": "WHERE là gì",
+      "source": "Ngày 3 - SELECT và WHERE (cơ bản)",
+      "question": "Mệnh đề `WHERE` trong câu `SELECT` có vai trò gì?",
+      "options": [
+        "sắp xếp kết quả tăng dần",
+        "giới hạn số cột được hiển thị",
+        "lọc ra những dòng thỏa điều kiện",
+        "đổi tên bảng"
+      ],
+      "answer": 2,
+      "explanation": "`WHERE` đặt điều kiện để **chỉ giữ các dòng** thỏa điều kiện, ví dụ `WHERE city = 'Hà Nội'`.\n- Sắp xếp là việc của `ORDER BY`.\n- Chọn cột hiển thị do danh sách sau `SELECT` quyết định.\n- Đổi tên bảng (hay cột) hiển thị là việc của bí danh `AS`, hoặc `ALTER TABLE ... RENAME` nếu đổi thật.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d03-17",
+      "topic": "Toán tử khác",
+      "source": "Ngày 3 - SELECT và WHERE (cơ bản)",
+      "question": "Trong SQL chuẩn, toán tử nào nghĩa là **khác** (không bằng)?",
+      "options": [
+        "`<>`",
+        "`=!`",
+        "`=/=`",
+        "`!!`"
+      ],
+      "answer": 0,
+      "explanation": "`<>` là toán tử \"khác\" của chuẩn SQL, ví dụ `status <> 'cancelled'`. PostgreSQL cũng chấp nhận `!=`, nhưng `<>` luôn đúng ở mọi hệ.\n- `=!`, `=/=` và `!!` không phải toán tử so sánh trong SQL nên gây lỗi cú pháp.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d03-18",
+      "topic": "Ký tự % trong LIKE",
+      "source": "Ngày 3 - SELECT và WHERE (cơ bản)",
+      "question": "Điều kiện `name LIKE 'Lap%'` khớp với những tên nào?",
+      "options": [
+        "mọi tên chứa chữ \"Lap\" ở bất kỳ đâu",
+        "mọi tên kết thúc bằng \"Lap\"",
+        "chỉ đúng tên là \"Lap%\"",
+        "mọi tên bắt đầu bằng \"Lap\""
+      ],
+      "answer": 3,
+      "explanation": "Dấu `%` thay cho **chuỗi ký tự bất kỳ** (kể cả rỗng), nên `'Lap%'` khớp mọi tên **bắt đầu** bằng `Lap`, ví dụ `Laptop Dell`.\n- Muốn chứa ở bất kỳ đâu phải viết `'%Lap%'`.\n- Muốn kết thúc bằng \"Lap\" phải viết `'%Lap'`.\n- `%` là ký tự đại diện chứ không phải ký tự thường, nên không khớp riêng chuỗi \"Lap%\". Chú ý `LIKE` còn phân biệt hoa thường trong PostgreSQL.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d03-19",
+      "topic": "Bí danh AS",
+      "source": "Ngày 3 - SELECT và WHERE (cơ bản)",
+      "question": "Trong `SELECT price * 1.1 AS gia_co_vat FROM products;`, từ khóa `AS` dùng để làm gì?",
+      "options": [
+        "nhân giá với 1.1 một lần nữa",
+        "đặt cho cột kết quả một tên gọi (bí danh) dễ đọc",
+        "lọc những sản phẩm có giá lớn hơn 1.1",
+        "chuyển giá thành kiểu chuỗi"
+      ],
+      "answer": 1,
+      "explanation": "`AS` đặt **bí danh** cho cột kết quả: cột tính `price * 1.1` sẽ hiển thị với tên `gia_co_vat`.\n- Phép nhân đã nằm sẵn ở `price * 1.1`, `AS` không tính thêm gì.\n- Lọc dòng là việc của `WHERE`, không phải `AS`.\n- Đổi kiểu dữ liệu dùng `CAST` hoặc `::`, không phải `AS` trong danh sách cột.",
+      "kind": "concept"
+    },
+    {
       "id": "sql-d03-01",
       "topic": "Alias và dấu nháy",
       "source": "Ngày 3 - SELECT và WHERE",

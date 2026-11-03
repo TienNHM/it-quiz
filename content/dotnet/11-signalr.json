@@ -4,6 +4,76 @@
   "description": "SignalR phía server và client: vòng đời Hub, định danh người dùng, nhóm, xác thực và đẩy tin từ ngoài Hub (nửa đầu).",
   "questions": [
     {
+      "id": "dotnet-m11-22",
+      "topic": "SignalR là gì",
+      "source": "Module 11 - SignalR Architecture (cơ bản)",
+      "question": "SignalR của ASP.NET Core thường được dùng để làm gì?",
+      "options": [
+        "Biên dịch mã C# thành WebAssembly.",
+        "Giao tiếp hai chiều theo thời gian thực giữa server và client, ví dụ chat hay thông báo.",
+        "Gửi email hàng loạt qua SMTP.",
+        "Tạo bản sao lưu cho database theo lịch."
+      ],
+      "answer": 1,
+      "explanation": "SignalR giúp server đẩy dữ liệu xuống client ngay khi có sự kiện, không cần client hỏi liên tục. Ví dụ điển hình là chat, thông báo, bảng điều khiển trực tiếp. Phương án biên dịch ra WebAssembly sai vì đó là việc của Blazor WebAssembly. Phương án gửi email sai vì SignalR không dùng SMTP. Phương án sao lưu database sai vì nó không có chức năng nào liên quan đến lưu trữ dữ liệu."
+    },
+    {
+      "id": "dotnet-m11-23",
+      "topic": "Transport của SignalR",
+      "source": "Module 11 - SignalR Architecture (cơ bản)",
+      "question": "Theo thứ tự ưu tiên mặc định, SignalR chọn kiểu vận chuyển nào đầu tiên nếu cả client và server đều hỗ trợ?",
+      "options": [
+        "Long Polling, vì nó chạy được ở mọi nơi nên được chọn trước.",
+        "Server-Sent Events, vì chỉ cần HTTP.",
+        "FTP, vì dùng để truyền dữ liệu liên tục.",
+        "WebSockets"
+      ],
+      "answer": 3,
+      "explanation": "SignalR thử WebSockets trước vì đây là kết nối hai chiều, độ trễ thấp. Nếu không dùng được thì lùi về Server-Sent Events, rồi cuối cùng là Long Polling. Long Polling chỉ là phương án dự phòng cuối cùng nên không được chọn trước. Server-Sent Events chỉ là lựa chọn thứ hai và chỉ truyền một chiều từ server xuống. FTP là giao thức truyền tệp, không nằm trong các kiểu vận chuyển của SignalR."
+    },
+    {
+      "id": "dotnet-m11-24",
+      "topic": "Hub là gì",
+      "source": "Module 11 - Setup SignalR Server (cơ bản)",
+      "question": "Trong SignalR, lớp `Hub` đóng vai trò gì?",
+      "options": [
+        "Là nơi định nghĩa các phương thức client có thể gọi và là cổng để server gửi tin tới client.",
+        "Là bảng trong database lưu danh sách người đang online.",
+        "Là thư viện JavaScript dùng để vẽ giao diện.",
+        "Là công cụ cấu hình tên miền và chứng chỉ HTTPS."
+      ],
+      "answer": 0,
+      "explanation": "Hub là lớp trung tâm của SignalR: client gọi các phương thức công khai của Hub, còn Hub dùng thuộc tính Clients để gửi tin xuống một hoặc nhiều client. Phương án \"bảng database\" sai vì Hub không lưu dữ liệu; danh sách online phải tự quản lý. Phương án thư viện vẽ giao diện sai vì Hub chạy ở server, không liên quan đến UI. Phương án cấu hình tên miền sai vì HTTPS và domain do Kestrel hoặc reverse proxy xử lý."
+    },
+    {
+      "id": "dotnet-m11-25",
+      "topic": "Polling và real-time",
+      "source": "Module 11 - Tại sao cần Real-time (cơ bản)",
+      "question": "Điều nào sau đây là hạn chế dễ thấy của polling (client hỏi server mỗi vài giây) so với real-time?",
+      "options": [
+        "Không thể chạy trên trình duyệt.",
+        "Chỉ hoạt động khi server dùng Redis.",
+        "Phát sinh nhiều request không có dữ liệu mới và tin có thể đến trễ tới một chu kỳ hỏi.",
+        "Luôn làm tin đến sớm hơn so với real-time."
+      ],
+      "answer": 2,
+      "explanation": "Với polling, client phải hỏi lặp lại nên tốn request cho cả những lần chẳng có gì mới, và nếu sự kiện xảy ra ngay sau lần hỏi thì phải chờ đến lần hỏi sau. Phương án \"không chạy trên trình duyệt\" sai vì polling chỉ là request HTTP thông thường nên chạy ở mọi nơi. Phương án cần Redis sai vì polling không đòi hỏi hạ tầng đặc biệt. Phương án \"tin đến sớm hơn\" sai ngược hoàn toàn, real-time mới đẩy tin ngay lập tức."
+    },
+    {
+      "id": "dotnet-m11-26",
+      "topic": "IHubContext",
+      "source": "Module 11 - IHubContext - Server push từ ngoài Hub (cơ bản)",
+      "question": "Khi nào nên dùng `IHubContext<T>`?",
+      "options": [
+        "Khi muốn tạo thêm một Hub mới tự động.",
+        "Khi cần mã hoá dữ liệu trước khi gửi.",
+        "Khi muốn lưu lịch sử chat vào database.",
+        "Khi cần gửi tin tới client từ nơi không phải Hub, như controller hoặc service nền."
+      ],
+      "answer": 3,
+      "explanation": "IHubContext cho phép đẩy tin tới client từ bất kỳ đâu có DI, ví dụ sau khi controller lưu dữ liệu xong hoặc từ BackgroundService. Nó không tạo Hub mới, nên phương án đầu sai. Việc mã hoá không phải nhiệm vụ của nó; mã hoá nằm ở HTTPS hoặc ở tầng ứng dụng, nên phương án hai sai. Lưu lịch sử chat là việc của code truy cập database, IHubContext chỉ phụ trách gửi tin, nên phương án cuối sai."
+    },
+    {
       "id": "dotnet-m11-01",
       "topic": "Vòng đời Hub",
       "source": "Module 11 - SignalR Architecture",

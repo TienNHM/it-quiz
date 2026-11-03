@@ -4,6 +4,76 @@
   "description": "Biến, kiểu dữ liệu, điều kiện, vòng lặp, hàm, collection và tư duy giải bài toán trong C#.",
   "questions": [
     {
+      "id": "dotnet-m01-21",
+      "topic": "Biến là gì",
+      "source": "Module 1 - Biến và kiểu dữ liệu (cơ bản)",
+      "question": "Trong lập trình, \"biến\" (variable) là gì?",
+      "options": [
+        "Một lỗi xảy ra khi chạy chương trình",
+        "Một vùng nhớ có tên dùng để lưu giá trị, giá trị này có thể thay đổi",
+        "Một hàm luôn trả về số",
+        "Một dòng chú thích trong code"
+      ],
+      "answer": 1,
+      "explanation": "Biến là **ô nhớ có tên** để lưu giá trị, ví dụ `int age = 20;`, và sau đó có thể gán lại giá trị khác.\n- Lỗi lúc chạy là exception, không phải biến.\n- Hàm trả về số là một phương thức, khác với biến.\n- Dòng chú thích bắt đầu bằng `//` và bị trình biên dịch bỏ qua."
+    },
+    {
+      "id": "dotnet-m01-22",
+      "topic": "Chỉ số mảng bắt đầu từ đâu",
+      "source": "Module 1 - Biến và kiểu dữ liệu (cơ bản)",
+      "question": "Mảng `int[] a = [5, 6, 7];` thì phần tử đầu tiên được truy cập bằng cách nào?",
+      "options": [
+        "`a[1]`",
+        "`a[0]`",
+        "`a[-1]`",
+        "`a[3]`"
+      ],
+      "answer": 1,
+      "explanation": "Trong C#, chỉ số mảng bắt đầu từ **0**, nên phần tử đầu là `a[0]` (giá trị 5).\n- `a[1]` là phần tử thứ hai (giá trị 6).\n- `a[-1]` không hợp lệ trong C#: chỉ số âm gây lỗi (muốn lấy phần tử cuối phải viết `a[^1]`).\n- `a[3]` nằm ngoài mảng 3 phần tử nên ném `IndexOutOfRangeException`."
+    },
+    {
+      "id": "dotnet-m01-23",
+      "topic": "Khi nào dùng if",
+      "source": "Module 1 - Biến và kiểu dữ liệu (cơ bản)",
+      "question": "Câu lệnh `if` dùng để làm gì?",
+      "options": [
+        "Lặp lại một đoạn code nhiều lần",
+        "Khai báo một biến mới",
+        "Chạy một đoạn code chỉ khi điều kiện đúng",
+        "Kết thúc chương trình ngay lập tức"
+      ],
+      "answer": 2,
+      "explanation": "`if` là **rẽ nhánh**: đoạn code bên trong chỉ chạy khi điều kiện là `true`, có thể kèm `else` cho trường hợp ngược lại.\n- Lặp lại code là việc của vòng lặp như `for` hoặc `while`.\n- Khai báo biến dùng kiểu và tên, không cần `if`.\n- Kết thúc chương trình không phải chức năng của `if` (cần `return` hoặc `Environment.Exit`)."
+    },
+    {
+      "id": "dotnet-m01-24",
+      "topic": "Vòng lặp for",
+      "source": "Module 1 - Biến và kiểu dữ liệu (cơ bản)",
+      "question": "Khi biết trước cần lặp bao nhiêu lần (ví dụ 10 lần), vòng lặp nào thường được chọn?",
+      "options": [
+        "`if`",
+        "`switch`",
+        "`return`",
+        "`for`"
+      ],
+      "answer": 3,
+      "explanation": "`for` hợp với trường hợp biết số lần lặp vì gom khởi tạo, điều kiện và bước tăng trên một dòng: `for (var i = 0; i < 10; i++)`.\n- `if` chỉ rẽ nhánh, không lặp.\n- `switch` chọn một nhánh theo giá trị, không lặp.\n- `return` thoát khỏi hàm chứ không tạo vòng lặp."
+    },
+    {
+      "id": "dotnet-m01-25",
+      "topic": "Phương thức (hàm)",
+      "source": "Module 1 - Biến và kiểu dữ liệu (cơ bản)",
+      "question": "Vì sao ta tách code thành các phương thức (hàm) riêng?",
+      "options": [
+        "Để chương trình luôn chạy nhanh gấp đôi",
+        "Để dùng lại code, đặt tên cho một việc và dễ đọc, dễ sửa hơn",
+        "Vì C# bắt buộc mỗi dòng phải nằm trong một hàm riêng",
+        "Để tránh phải khai báo biến"
+      ],
+      "answer": 1,
+      "explanation": "Phương thức giúp **đặt tên cho một việc**, tái sử dụng ở nhiều nơi và sửa một chỗ là đủ, nên code gọn và dễ hiểu hơn.\n- Tách hàm không làm chương trình nhanh gấp đôi.\n- C# không bắt mỗi dòng nằm trong hàm riêng (top-level statements còn cho phép viết lệnh trực tiếp).\n- Hàm vẫn cần biến để lưu dữ liệu, nên không giúp tránh khai báo biến."
+    },
+    {
       "id": "dotnet-m01-01",
       "topic": "double và decimal",
       "source": "Module 1 - Biến và kiểu dữ liệu",

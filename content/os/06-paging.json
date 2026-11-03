@@ -4,6 +4,90 @@
   "description": "Bảng trang đa cấp, kích thước bảng trang, số bit địa chỉ, thời gian truy cập hiệu quả với TLB.",
   "questions": [
     {
+      "id": "os-pg-23",
+      "topic": "Trang và khung",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Trong phân trang, **trang (page)** và **khung trang (frame)** khác nhau thế nào?",
+      "options": [
+        "Trang nằm trong bộ nhớ vật lý, khung nằm trong không gian địa chỉ logic",
+        "Trang là khối của không gian địa chỉ logic, khung là khối cùng kích thước của bộ nhớ vật lý",
+        "Trang là file trên đĩa, khung là đơn vị của CPU",
+        "Trang và khung là cùng một thứ"
+      ],
+      "answer": 1,
+      "explanation": "Bộ nhớ logic được chia thành các **trang**, bộ nhớ vật lý được chia thành các **khung trang** cùng kích thước. Một trang được nạp vào một khung nào đó và bảng trang ghi lại phép ánh xạ trang → khung.\n\nPhương án đầu đảo ngược khái niệm; trang không phải là file trên đĩa; và chúng là hai thứ khác nhau (một bên logic, một bên vật lý)."
+    },
+    {
+      "id": "os-pg-24",
+      "topic": "Bảng trang",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Bảng trang (page table)** dùng để làm gì?",
+      "options": [
+        "Lưu danh sách các file trong thư mục",
+        "Ghi nhật ký lỗi của hệ điều hành",
+        "Quản lý hàng đợi tiến trình sẵn sàng",
+        "Ánh xạ số hiệu trang logic sang số hiệu khung trang vật lý"
+      ],
+      "answer": 3,
+      "explanation": "Mỗi tiến trình có một **bảng trang**: mục thứ i cho biết trang i đang nằm ở **khung nào** của bộ nhớ vật lý. MMU dùng nó để dịch địa chỉ logic thành địa chỉ vật lý.\n\nDanh sách file thuộc về hệ thống file, nhật ký lỗi là log hệ thống, còn hàng đợi tiến trình sẵn sàng là cấu trúc của bộ lập lịch."
+    },
+    {
+      "id": "os-pg-25",
+      "topic": "TLB",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**TLB** là viết tắt của cụm từ nào, và nó dùng để làm gì?",
+      "options": [
+        "Translation Lookaside Buffer — bộ đệm tốc độ cao lưu các ánh xạ trang → khung gần dùng để dịch địa chỉ nhanh hơn",
+        "Time Limit Bound — giới hạn thời gian của tiến trình",
+        "Total Load Balance — cân bằng tải của các CPU",
+        "Thread Local Block — vùng nhớ riêng của luồng"
+      ],
+      "answer": 0,
+      "explanation": "**TLB (Translation Lookaside Buffer)** là bộ nhớ đệm nhỏ, rất nhanh nằm trong MMU, lưu các phép ánh xạ trang → khung vừa dùng gần đây. Tra TLB trúng thì khỏi phải đọc bảng trang trong RAM.\n\nCác cụm còn lại chỉ nghe giống tên viết tắt chứ không phải thuật ngữ của hệ điều hành."
+    },
+    {
+      "id": "os-pg-26",
+      "topic": "Kích thước trang",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Kích thước trang (page size) **phổ biến** trên các hệ thống máy tính hiện nay là bao nhiêu?",
+      "options": [
+        "1 byte",
+        "10 MB",
+        "4 GB",
+        "4 KB"
+      ],
+      "answer": 3,
+      "explanation": "Kích thước trang là **luỹ thừa của 2**, thường gặp nhất là **4 KB** (x86, ARM, Linux, Windows); nhiều hệ còn hỗ trợ trang lớn như 2 MB hoặc 1 GB cho các tác vụ đặc biệt.\n\nTrang 1 byte thì bảng trang khổng lồ, trang 10 MB (không phải luỹ thừa của 2) hay 4 GB thì phân mảnh trong cực lớn và không dùng làm kích thước mặc định."
+    },
+    {
+      "id": "os-pg-27",
+      "topic": "Page offset",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Trong địa chỉ logic dạng ⟨số hiệu trang | offset⟩, phần **offset** cho biết điều gì?",
+      "options": [
+        "Vị trí của byte cần truy cập bên trong trang",
+        "Số hiệu của trang trong bảng trang",
+        "Số hiệu khung trang vật lý",
+        "Độ ưu tiên của tiến trình"
+      ],
+      "answer": 0,
+      "explanation": "**Offset** là khoảng cách (tính bằng byte) từ đầu trang tới byte cần truy cập. Khi dịch, offset được **giữ nguyên**: địa chỉ vật lý = số khung × kích thước trang + offset.\n\nSố hiệu trang là phần đầu của địa chỉ logic, số khung là kết quả tra bảng trang, còn độ ưu tiên là khái niệm của lập lịch."
+    },
+    {
+      "id": "os-pg-28",
+      "topic": "Phân trang và phân mảnh",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Phát biểu nào đúng về **phân mảnh** khi dùng phân trang?",
+      "options": [
+        "Gây phân mảnh ngoài nặng nề, không có phân mảnh trong",
+        "Không gây phân mảnh ngoài nhưng có thể còn phân mảnh trong ở trang cuối của tiến trình",
+        "Không gây bất kỳ loại phân mảnh nào",
+        "Gây cả hai loại phân mảnh với mức độ như nhau"
+      ],
+      "answer": 1,
+      "explanation": "Vì mọi khung trang đều **cùng kích thước**, bất kỳ khung trống nào cũng đủ chứa một trang nên **không có phân mảnh ngoài**. Tuy nhiên tiến trình hiếm khi vừa khít số trang, nên trang cuối thường thừa chỗ: đó là **phân mảnh trong** (trung bình nửa trang mỗi tiến trình).\n\nVì vậy các phương án nói 'phân mảnh ngoài nặng', 'không phân mảnh gì' hay 'cả hai như nhau' đều sai."
+    },
+    {
       "id": "os-pg-01",
       "topic": "Bảng trang",
       "source": "Cuối kỳ HĐH – SPKT",
@@ -25,11 +109,11 @@
       "options": [
         "Không giải pháp nào",
         "Bảng trang 2 cấp",
-        "Bảng trang lồng nhau",
+        "Bảng trang nằm hoàn toàn trên đĩa cứng",
         "Bảng trang 1 cấp"
       ],
       "answer": 1,
-      "explanation": "**Bảng trang 2 cấp** tiết kiệm bộ nhớ nhờ một mẹo đơn giản: **chỉ tạo bảng cấp 2 cho những vùng địa chỉ thật sự được dùng**.\n\nMột tiến trình điển hình chỉ đụng tới vài vùng nhỏ của không gian địa chỉ (code, heap ở dưới, stack ở trên), phần giữa mênh mông bỏ trống. Với bảng một cấp, toàn bộ mục vẫn phải tồn tại. Với hai cấp, mục nào của bảng ngoài trỏ vào vùng không dùng thì để **null**, khỏi cấp bảng cấp 2 nào cả.\n\nVí dụ cụ thể: thay vì 4 MB bảng trang một cấp, tiến trình nhỏ chỉ cần bảng ngoài 4 KB cộng vài bảng trong 4 KB — vài chục KB thay vì vài MB.\n\nCái giá phải trả: mỗi lần dịch địa chỉ phải tra **hai lần bộ nhớ** thay vì một. Đó chính là lý do TLB trở nên thiết yếu."
+      "explanation": "**Bảng trang 2 cấp** tiết kiệm bộ nhớ nhờ một mẹo đơn giản: **chỉ tạo bảng cấp 2 cho những vùng địa chỉ thật sự được dùng**.\n\nMột tiến trình điển hình chỉ đụng tới vài vùng nhỏ của không gian địa chỉ (code, heap ở dưới, stack ở trên), phần giữa mênh mông bỏ trống. Với bảng một cấp, toàn bộ mục vẫn phải tồn tại. Với hai cấp, mục nào của bảng ngoài trỏ vào vùng không dùng thì để **null**, khỏi cấp bảng cấp 2 nào cả.\n\nVí dụ cụ thể: thay vì 4 MB bảng trang một cấp, tiến trình nhỏ chỉ cần bảng ngoài 4 KB cộng vài bảng trong 4 KB — vài chục KB thay vì vài MB.\n\nCái giá phải trả: mỗi lần dịch địa chỉ phải tra **hai lần bộ nhớ** thay vì một. Đó chính là lý do TLB trở nên thiết yếu.\n\nCác phương án khác sai: bảng trang 1 cấp là loại tốn nhiều bộ nhớ nhất; đặt bảng trang hoàn toàn trên đĩa làm mỗi lần dịch địa chỉ chậm khủng khiếp; và có giải pháp tốt hơn bảng một cấp nên 'không giải pháp nào' cũng sai."
     },
     {
       "id": "os-pg-03",
@@ -115,7 +199,7 @@
         "119"
       ],
       "answer": 0,
-      "explanation": "```\nTLB hit  (60%): tra TLB + đọc dữ liệu      = 10 + 80      = 90 ms\nTLB miss (40%): tra TLB + đọc bảng trang\n                + đọc dữ liệu              = 10 + 80 + 80 = 170 ms\n\nEAT = 0.6 × 90 + 0.4 × 170 = 54 + 68 = 122 ms\n```\n\nĐiểm dễ sai nhất: khi **trượt TLB** vẫn phải cộng thời gian tra TLB (10 ms), vì phần cứng luôn tra TLB trước rồi mới biết là trượt.\n\nThấy ngay giá trị của TLB: hit ratio 0,6 đã cho 122 ms; nâng lên **0,98** thì EAT = 0,98 × 90 + 0,02 × 170 = **91,6 ms**, gần bằng trường hợp lý tưởng. Đó là lý do TLB thật luôn đạt tỷ lệ trúng trên 95%.\n\n*Ghi chú:* đề gốc in nhầm, có hai phương án cùng ghi 122; ở đây phương án thừa được đổi thành 119."
+      "explanation": "```\nTLB hit  (60%): tra TLB + đọc dữ liệu      = 10 + 80      = 90 ms\nTLB miss (40%): tra TLB + đọc bảng trang\n                + đọc dữ liệu              = 10 + 80 + 80 = 170 ms\n\nEAT = 0.6 × 90 + 0.4 × 170 = 54 + 68 = 122 ms\n```\n\nĐiểm dễ sai nhất: khi **trượt TLB** vẫn phải cộng thời gian tra TLB (10 ms), vì phần cứng luôn tra TLB trước rồi mới biết là trượt.\n\nThấy ngay giá trị của TLB: hit ratio 0,6 đã cho 122 ms; nâng lên **0,98** thì EAT = 0,98 × 90 + 0,02 × 170 = **91,6 ms**, gần bằng trường hợp lý tưởng. Đó là lý do TLB thật luôn đạt tỷ lệ trúng trên 95%."
     },
     {
       "id": "os-pg-09",
@@ -200,7 +284,7 @@
         "2048"
       ],
       "answer": 2,
-      "explanation": "```\nSố hiệu trang = 689 / 512 = 1\nOffset        = 689 % 512 = 689 - 512 = 177\n\nBảng trang: trang 1 → khung 6\n\nĐịa chỉ vật lý = 6 × 512 + 177 = 3072 + 177 = 3249\n```\n\nQuy trình ba bước luôn đúng: **chia lấy thương ra số trang → tra bảng lấy khung → nhân lại rồi cộng offset**.\n\nBẫy trong các phương án: **3248** là kết quả nếu tính nhầm offset thành 176, còn **3064** là 5 × 512 + 504, tức tra nhầm sang khung của trang 2."
+      "explanation": "```\nSố hiệu trang = 689 / 512 = 1\nOffset        = 689 % 512 = 689 - 512 = 177\n\nBảng trang: trang 1 → khung 6\n\nĐịa chỉ vật lý = 6 × 512 + 177 = 3072 + 177 = 3249\n```\n\nQuy trình ba bước luôn đúng: **chia lấy thương ra số trang → tra bảng lấy khung → nhân lại rồi cộng offset**.\n\nBẫy trong các phương án: **3248** là kết quả nếu tính nhầm offset thành 176; còn 3064 và 2048 không ứng với phép tính hợp lệ nào cho trang 1 (khung 6)."
     },
     {
       "id": "os-pg-15",
@@ -225,11 +309,11 @@
       "options": [
         "Cả virtual page number và page frame number",
         "Page frame number",
-        "Truy cập thông tin phù hợp",
+        "Chỉ các bit bảo vệ (protection bits)",
         "Virtual page number"
       ],
       "answer": 1,
-      "explanation": "Chỉ cần **page frame number**. Lý do: bảng trang được **đánh chỉ mục bằng chính số hiệu trang ảo** — mục thứ i ứng với trang ảo i — nên lưu lại số hiệu trang là thừa.\n\n```\npage_table[VPN]  →  frame number  (+ các bit điều khiển)\n```\n\nNgoài số khung, mỗi mục thực tế còn vài **bit cờ**: valid-invalid, protection (r/w/x), reference, dirty (modify). Nhưng thành phần *bắt buộc* để dịch địa chỉ vẫn là số khung trang.\n\nĐối chiếu với **bảng trang nghịch đảo** ở câu trên để thấy sự đối xứng: bảng thường đánh chỉ mục bằng số trang nên lưu số khung; bảng nghịch đảo đánh chỉ mục bằng số khung nên phải lưu số trang cùng process-id."
+      "explanation": "Chỉ cần **page frame number**. Lý do: bảng trang được **đánh chỉ mục bằng chính số hiệu trang ảo** — mục thứ i ứng với trang ảo i — nên lưu lại số hiệu trang là thừa.\n\n```\npage_table[VPN]  →  frame number  (+ các bit điều khiển)\n```\n\nNgoài số khung, mỗi mục thực tế còn vài **bit cờ**: valid-invalid, protection (r/w/x), reference, dirty (modify). Nhưng thành phần *bắt buộc* để dịch địa chỉ vẫn là số khung trang.\n\nĐối chiếu với **bảng trang nghịch đảo** ở câu trên để thấy sự đối xứng: bảng thường đánh chỉ mục bằng số trang nên lưu số khung; bảng nghịch đảo đánh chỉ mục bằng số khung nên phải lưu số trang cùng process-id.\n\nCác phương án khác: virtual page number là thừa vì đã là chỉ số mục; chỉ có bit bảo vệ thì không dịch được địa chỉ vì thiếu số khung."
     },
     {
       "id": "os-pg-17",
@@ -310,17 +394,17 @@
       "id": "os-pg-22",
       "topic": "Bảng trang đa cấp",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Windows x86 tổ chức bảng trang **2 cấp** với cấu trúc ⟨PDE | PTE | page offset⟩ trên địa chỉ 32 bit. **Số lần tìm kiếm tối đa** để tìm thấy một trang bất kỳ là bao nhiêu?",
+      "question": "Windows x86 tổ chức bảng trang **2 cấp** với cấu trúc ⟨PDE | PTE | page offset⟩ trên địa chỉ 32 bit (10 | 10 | 12 bit). Khi **TLB trượt**, để dịch một địa chỉ ảo phần cứng cần bao nhiêu lần truy cập bộ nhớ (chưa tính lần đọc dữ liệu thật)?",
       "code": "31                                                    0\n|<--- PDE (10) --->|<--- PTE (10) --->|<- offset (12) ->|",
       "diagram": "flowchart LR\n    VA[\"Địa chỉ ảo 32 bit<br/>PDE 10 · PTE 10 · offset 12\"] -->|\"PDE (10 bit)\"| PD[\"Page Directory<br/>1024 mục\"]\n    PD --> PT[\"Page Table<br/>1024 mục\"]\n    PT -->|\"PTE (10 bit)\"| FR[\"Khung trang 4 KB\"]\n    FR -->|\"cộng offset (12 bit)\"| PA[\"Địa chỉ vật lý\"]",
       "options": [
-        "4096",
-        "1024",
-        "2048",
-        "1000"
+        "1",
+        "4",
+        "2",
+        "1024"
       ],
       "answer": 2,
-      "explanation": "Cấu trúc địa chỉ x86: **PDE 10 bit | PTE 10 bit | offset 12 bit**.\n```\nPage Directory  : 2^10 = 1024 mục\nMỗi Page Table  : 2^10 = 1024 mục\nKích thước trang: 2^12 = 4096 byte = 4 KB\n```\n\nTrường hợp xấu nhất khi **duyệt tuần tự**: quét tối đa 1024 mục của Page Directory, rồi quét tối đa 1024 mục của Page Table tương ứng.\n```\n1024 + 1024 = 2048 lần tìm kiếm\n```\n\nĐáp án **4096** là bẫy: đó là kích thước trang tính bằng byte, hoặc kết quả của phép nhân 1024 × 4 — không liên quan tới số lần tìm.\n\nTrong thực tế, phần cứng **không duyệt tuần tự** mà dùng chỉ số trực tiếp: PDE và PTE là **chỉ số mảng**, nên chỉ mất đúng 2 lần truy cập bộ nhớ — và thường còn bằng 0 nhờ TLB."
+      "explanation": "Cấu trúc địa chỉ x86: **PDE 10 bit | PTE 10 bit | offset 12 bit**.\n\nPDE và PTE là **chỉ số mảng**, nên phần cứng không phải duyệt tuần tự mà truy cập thẳng:\n```\n1. Đọc mục PDE trong Page Directory  → lấy địa chỉ Page Table   (1 lần truy cập)\n2. Đọc mục PTE trong Page Table      → lấy số khung trang        (1 lần truy cập)\n3. Ghép số khung với offset 12 bit     → địa chỉ vật lý, rồi mới đọc dữ liệu\n```\nVậy dịch địa chỉ tốn đúng **2 lần** truy cập bộ nhớ (cộng lần đọc dữ liệu là 3).\n\nCác phương án khác sai: 1 lần là của bảng trang một cấp; 4 hay 1024 (số mục mỗi bảng) không phải số lần truy cập. Khi TLB trúng thì số lần này giảm về 0, đó là lý do TLB quan trọng."
     }
   ]
 }

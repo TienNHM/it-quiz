@@ -4,6 +4,76 @@
   "description": "Truy vấn tham số hóa, placeholder của driver, connection pool, transaction từ code, thử lại lỗi 40001 và bẫy N+1 trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d23-16",
+      "topic": "Driver là gì",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng (cơ bản)",
+      "question": "Driver cơ sở dữ liệu (như `psycopg`, `pg`, JDBC) dùng để làm gì?",
+      "options": [
+        "tăng tốc độ ổ đĩa của máy chủ cơ sở dữ liệu",
+        "thay thế ngôn ngữ SQL bằng ngôn ngữ lập trình",
+        "tự động sao lưu dữ liệu mỗi đêm",
+        "là thư viện giúp ứng dụng kết nối, gửi câu SQL và nhận kết quả từ cơ sở dữ liệu"
+      ],
+      "answer": 3,
+      "explanation": "Driver là cầu nối: ứng dụng gọi hàm của driver, driver nói chuyện với PostgreSQL theo đúng giao thức, gửi câu SQL và trả kết quả về.\n- Driver không liên quan đến tốc độ ổ đĩa.\n- SQL vẫn là ngôn ngữ truy vấn; driver chỉ chuyên chở câu SQL.\n- Sao lưu là việc của công cụ khác như `pg_dump`."
+    },
+    {
+      "id": "sql-d23-17",
+      "topic": "Chuỗi kết nối",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng (cơ bản)",
+      "question": "Một chuỗi kết nối (connection string) tới PostgreSQL thường chứa những thông tin nào?",
+      "options": [
+        "danh sách mọi bảng và cột của database",
+        "địa chỉ máy chủ, cổng, tên database, tên người dùng và mật khẩu",
+        "toàn bộ dữ liệu cần nạp vào bảng",
+        "mã nguồn của ứng dụng đang chạy"
+      ],
+      "answer": 1,
+      "explanation": "Chuỗi kết nối cho driver biết kết nối tới đâu và bằng ai: host, port, database, user, password, ví dụ `postgresql://user:pass@localhost:5432/shop`.\n- Danh sách bảng và cột là thông tin lấy được sau khi đã kết nối.\n- Dữ liệu được gửi bằng câu SQL, không nằm trong chuỗi kết nối.\n- Mã nguồn ứng dụng không liên quan."
+    },
+    {
+      "id": "sql-d23-18",
+      "topic": "Cổng mặc định",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng (cơ bản)",
+      "question": "Cổng (port) mặc định mà PostgreSQL lắng nghe kết nối là bao nhiêu?",
+      "options": [
+        "5432",
+        "3306",
+        "1433",
+        "27017"
+      ],
+      "answer": 0,
+      "explanation": "PostgreSQL mặc định dùng cổng 5432.\n- 3306 là cổng mặc định của MySQL và MariaDB.\n- 1433 là cổng mặc định của SQL Server.\n- 27017 là cổng mặc định của MongoDB."
+    },
+    {
+      "id": "sql-d23-19",
+      "topic": "Giữ bí mật mật khẩu",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng (cơ bản)",
+      "question": "Mật khẩu kết nối cơ sở dữ liệu của ứng dụng nên được xử lý như thế nào?",
+      "options": [
+        "viết thẳng vào mã nguồn rồi đưa lên kho mã chung cho tiện",
+        "gửi cho mọi người trong nhóm qua tin nhắn nhóm",
+        "đặt trong biến môi trường hoặc kho bí mật, không ghi cứng vào mã nguồn",
+        "dùng chung một mật khẩu đơn giản như 123456 cho mọi môi trường"
+      ],
+      "answer": 2,
+      "explanation": "Mật khẩu là bí mật: lưu trong biến môi trường hoặc dịch vụ quản lý bí mật, mỗi môi trường một giá trị riêng.\n- Ghi cứng trong mã nguồn làm lộ mật khẩu cho mọi người xem kho mã và nằm mãi trong lịch sử commit.\n- Gửi qua tin nhắn nhóm cũng làm lộ rộng rãi.\n- Mật khẩu yếu và dùng chung giữa các môi trường rất dễ bị dò."
+    },
+    {
+      "id": "sql-d23-20",
+      "topic": "ORM là gì",
+      "source": "Ngày 23 - Kết nối SQL từ ứng dụng (cơ bản)",
+      "question": "ORM (ví dụ SQLAlchemy, Prisma, Entity Framework) là viết tắt của gì và làm gì?",
+      "options": [
+        "Online Resource Manager: quản lý tài nguyên máy chủ",
+        "Object-Relational Mapping: ánh xạ bảng trong cơ sở dữ liệu thành đối tượng trong code",
+        "Order Result Monitor: theo dõi kết quả đơn hàng",
+        "Optimized Row Memory: bộ nhớ đệm cho các dòng dữ liệu"
+      ],
+      "answer": 1,
+      "explanation": "ORM là Object-Relational Mapping: mỗi bảng ứng với một lớp, mỗi dòng ứng với một đối tượng, nên bạn thao tác dữ liệu bằng code thay vì tự viết mọi câu SQL.\n- Ba cách giải thích còn lại không phải ý nghĩa của ORM.\n- Dù dùng ORM, hiểu SQL vẫn cần thiết để tối ưu và tránh những bẫy như N+1."
+    },
+    {
       "id": "sql-d23-01",
       "topic": "Truy vấn tham số hóa",
       "source": "Ngày 23 - Kết nối SQL từ ứng dụng",
@@ -216,7 +286,7 @@
         "Tạo pool với `max` bằng 10.000 để request nào cũng có kết nối ngay"
       ],
       "answer": 1,
-      "explanation": "Đáp án đúng là phương án 2: mở kết nối tốn thời gian (bắt tay TCP, xác thực, tạo tiến trình phục vụ), pool giữ sẵn một nhóm kết nối và cho các request dùng lại. Trong bài đo 200 truy vấn, pool nhanh hơn hàng chục lần.\n- Phương án 1 tạo pool mới cho mỗi request nên mất lợi ích và còn làm rò kết nối.\n- Phương án 3 là cách chậm và dễ làm cạn kết nối của server.\n- Phương án 4 vượt `max_connections` mặc định 100 của PostgreSQL, các kết nối thừa sẽ bị từ chối.\nPool tạo một lần, mượn rồi trả cho mỗi request.",
+      "explanation": "Đáp án đúng là phương án 2: mở kết nối tốn thời gian (bắt tay TCP, xác thực, tạo tiến trình phục vụ), pool giữ sẵn một nhóm kết nối và cho các request dùng lại. Khi chạy nhiều truy vấn liên tiếp, pool thường nhanh hơn rất nhiều so với mở kết nối mới cho mỗi truy vấn.\n- Phương án 1 tạo pool mới cho mỗi request nên mất lợi ích và còn làm rò kết nối.\n- Phương án 3 là cách chậm và dễ làm cạn kết nối của server.\n- Phương án 4 vượt `max_connections` mặc định 100 của PostgreSQL, các kết nối thừa sẽ bị từ chối.\nPool tạo một lần, mượn rồi trả cho mỗi request.",
       "kind": "theory"
     },
     {

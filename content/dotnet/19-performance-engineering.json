@@ -4,6 +4,76 @@
   "description": "Đo trước sau, BenchmarkDotNet, profiling server, database và caching.",
   "questions": [
     {
+      "id": "dotnet-m19-21",
+      "topic": "Latency và throughput",
+      "source": "Module 19 - Nguyên tắc: đo trước, đo sau (cơ bản)",
+      "question": "Latency và throughput khác nhau thế nào?",
+      "options": [
+        "Latency là số request mỗi giây, throughput là thời gian của một request.",
+        "Latency là thời gian xử lý một yêu cầu, throughput là số yêu cầu xử lý được trong một đơn vị thời gian.",
+        "Cả hai đều chỉ dung lượng RAM đang dùng.",
+        "Latency chỉ tồn tại ở database, throughput chỉ tồn tại ở trình duyệt."
+      ],
+      "answer": 1,
+      "explanation": "Latency (độ trễ) đo một request mất bao lâu, ví dụ 120 ms. Throughput (thông lượng) đo hệ thống làm được bao nhiêu việc mỗi giây, ví dụ 500 request mỗi giây. Phương án đảo vai trò sai. Phương án RAM sai vì cả hai là số đo về tốc độ, không phải bộ nhớ. Phương án về database và trình duyệt sai vì cả hai khái niệm áp dụng cho bất kỳ thành phần nào của hệ thống."
+    },
+    {
+      "id": "dotnet-m19-22",
+      "topic": "Vì sao cần profiling",
+      "source": "Module 19 - Profiling trên .NET server (cơ bản)",
+      "question": "Vì sao nên profiling (đo) trước khi tối ưu hiệu năng?",
+      "options": [
+        "Vì tối ưu luôn làm code chạy chậm hơn nên phải tránh.",
+        "Vì profiling tự động sửa lỗi hiệu năng cho bạn.",
+        "Vì chỉ có CPU mới là nguyên nhân chậm.",
+        "Để biết điểm nghẽn thật sự nằm ở đâu thay vì đoán và tối ưu nhầm chỗ."
+      ],
+      "answer": 3,
+      "explanation": "Khi đã đo, bạn biết đoạn nào chiếm thời gian hay bộ nhớ nhiều nhất và có số liệu để so sánh sau khi sửa. Tối ưu không làm code chậm đi nếu làm đúng chỗ, nên phương án đầu sai. Profiling chỉ cung cấp dữ liệu, không tự sửa. Chậm có thể do database, mạng, khoá hay bộ nhớ, không chỉ CPU."
+    },
+    {
+      "id": "dotnet-m19-23",
+      "topic": "Garbage Collector",
+      "source": "Module 19 - Mở rộng và đào sâu (cơ bản)",
+      "question": "Garbage Collector (GC) trong .NET làm nhiệm vụ gì?",
+      "options": [
+        "Tự động thu hồi bộ nhớ của các đối tượng không còn được tham chiếu.",
+        "Tự động xoá các file log cũ trên đĩa.",
+        "Tăng tốc mạng cho ứng dụng.",
+        "Kiểm tra lỗi cú pháp khi bạn gõ code."
+      ],
+      "answer": 0,
+      "explanation": "GC theo dõi các đối tượng trên heap và giải phóng những đối tượng không còn ai dùng, giúp lập trình viên không phải tự giải phóng bộ nhớ. Dọn file log là việc của chính sách lưu log hay hệ điều hành. Mạng không liên quan đến GC. Kiểm tra cú pháp là việc của compiler và IDE, không phải GC lúc chạy."
+    },
+    {
+      "id": "dotnet-m19-24",
+      "topic": "BenchmarkDotNet là gì",
+      "source": "Module 19 - BenchmarkDotNet (cơ bản)",
+      "question": "BenchmarkDotNet là công cụ dùng để làm gì?",
+      "options": [
+        "Tự động viết unit test cho dự án.",
+        "Triển khai ứng dụng lên Azure.",
+        "Đo và so sánh hiệu năng các đoạn code .NET một cách có thống kê.",
+        "Quản lý các gói NuGet của solution."
+      ],
+      "answer": 2,
+      "explanation": "BenchmarkDotNet chạy đoạn code nhiều lần, khởi động nóng (warm-up), tính trung bình, sai số và lượng bộ nhớ cấp phát, nên kết quả đáng tin hơn so với đo thủ công bằng Stopwatch. Nó không sinh unit test. Triển khai Azure dùng các công cụ khác như azd. Quản lý NuGet là việc của dotnet CLI và Visual Studio."
+    },
+    {
+      "id": "dotnet-m19-25",
+      "topic": "Điểm nghẽn thường gặp",
+      "source": "Module 19 - Database thường là nghẽn đầu tiên (cơ bản)",
+      "question": "Trong một ứng dụng web điển hình, thành phần nào thường là điểm nghẽn hiệu năng đầu tiên cần kiểm tra?",
+      "options": [
+        "Màu sắc của nút bấm trên giao diện.",
+        "Tên của các biến cục bộ trong code.",
+        "Số dòng chú thích trong mã nguồn.",
+        "Các truy vấn database, ví dụ thiếu index hoặc N+1."
+      ],
+      "answer": 3,
+      "explanation": "Phần lớn thời gian của một request web thường nằm ở việc chờ database, nên truy vấn chậm, thiếu index hoặc N+1 là nơi nên xem đầu tiên. Màu nút bấm không ảnh hưởng đến tốc độ xử lý của server. Tên biến cục bộ chỉ giúp code dễ đọc, không ảnh hưởng thời gian chạy. Số dòng chú thích bị compiler bỏ qua, không tác động đến hiệu năng."
+    },
+    {
       "id": "dotnet-m19-01",
       "topic": "IMemoryCache SizeLimit",
       "source": "Module 19 - Caching - ôn tập có hệ thống",

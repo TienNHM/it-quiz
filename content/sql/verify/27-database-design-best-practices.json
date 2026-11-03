@@ -60,5 +60,7 @@
     "kind": "predict",
     "format": "scalar",
     "query": "SELECT count(*) FROM employees AS e JOIN employees AS m ON m.employee_id = e.manager_id"
-  }
+  },
+  {"id":"sql-d27-21","kind":"find-error","options":["INSERT INTO orders (customer_id, order_date, channel) VALUES (1, now(), 'online')","INSERT INTO orders (customer_id, order_date, channel) VALUES (9999, now(), 'online')","INSERT INTO orders (customer_id, order_date, channel) VALUES (2, now(), 'offline')","INSERT INTO orders (customer_id, order_date, channel) VALUES (3, now(), 'online')"]},
+  {"id":"sql-d27-22","kind":"predict","query":"SELECT COUNT(*) FROM categories WHERE parent_id IS NULL","format":"scalar"}
 ]

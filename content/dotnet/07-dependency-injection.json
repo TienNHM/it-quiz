@@ -4,6 +4,76 @@
   "description": "Vấn đề DI giải quyết, container, cách tiêm, lifetime, đăng ký service, Program.cs và Options pattern.",
   "questions": [
     {
+      "id": "dotnet-m07-21",
+      "topic": "Dependency Injection là gì",
+      "source": "Module 7 - IoC Container và DI Container (cơ bản)",
+      "question": "Dependency Injection (DI) mô tả điều gì?",
+      "options": [
+        "Một class tự tạo mọi đối tượng nó cần bằng `new`",
+        "Một class nhận các đối tượng nó phụ thuộc từ bên ngoài (thường qua constructor) thay vì tự tạo",
+        "Kỹ thuật tiêm mã độc vào chương trình",
+        "Cách nén dữ liệu"
+      ],
+      "answer": 1,
+      "explanation": "DI nghĩa là **đưa phụ thuộc vào từ ngoài**, thường qua constructor, để class không cần biết cách tạo chúng, dễ thay thế và dễ test.\n- Tự `new` mọi thứ chính là cách ngược lại với DI.\n- Không liên quan tấn công tiêm mã.\n- Không liên quan nén dữ liệu."
+    },
+    {
+      "id": "dotnet-m07-22",
+      "topic": "Lợi ích của interface trong DI",
+      "source": "Module 7 - IoC Container và DI Container (cơ bản)",
+      "question": "Vì sao thường đăng ký DI theo interface (ví dụ `IEmailSender`) thay vì class cụ thể?",
+      "options": [
+        "Vì class cụ thể không dùng được trong DI",
+        "Để chương trình chạy nhanh hơn",
+        "Vì C# cấm class nhận tham số",
+        "Để dễ thay cài đặt khác, ví dụ dùng bản giả khi test"
+      ],
+      "answer": 3,
+      "explanation": "Phụ thuộc vào interface cho phép **hoán đổi cài đặt** (gửi email thật, bản giả khi test) mà không sửa code dùng nó.\n- Class cụ thể vẫn đăng ký được, chỉ kém linh hoạt.\n- Interface không làm chạy nhanh hơn.\n- C# không cấm class nhận tham số."
+    },
+    {
+      "id": "dotnet-m07-23",
+      "topic": "Lifetime Transient",
+      "source": "Module 7 - IoC Container và DI Container (cơ bản)",
+      "question": "Service đăng ký là `Transient` thì khi nào có đối tượng mới?",
+      "options": [
+        "Mỗi lần được yêu cầu từ container",
+        "Một lần duy nhất cho cả ứng dụng",
+        "Một lần cho mỗi request HTTP",
+        "Chỉ khi ứng dụng khởi động lại"
+      ],
+      "answer": 0,
+      "explanation": "**Transient** tạo một instance **mới mỗi lần** được resolve.\n- Một lần cho cả ứng dụng là Singleton.\n- Một lần cho mỗi request là Scoped.\n- Khởi động lại ứng dụng không phải tiêu chí của Transient."
+    },
+    {
+      "id": "dotnet-m07-24",
+      "topic": "Đăng ký service",
+      "source": "Module 7 - IoC Container và DI Container (cơ bản)",
+      "question": "Trong ASP.NET Core, bạn thường đăng ký service cho DI ở đâu?",
+      "options": [
+        "Trong file .gitignore",
+        "Trong Program.cs, qua `builder.Services` (ví dụ `AddScoped`)",
+        "Trong file README",
+        "Trong thư mục bin"
+      ],
+      "answer": 1,
+      "explanation": "Service được đăng ký trong `Program.cs` qua `builder.Services.AddScoped/AddSingleton/AddTransient` trước khi gọi `builder.Build()`.\n- `.gitignore` chỉ chứa danh sách file Git bỏ qua.\n- README là tài liệu, không phải code chạy.\n- Thư mục `bin` chứa kết quả biên dịch."
+    },
+    {
+      "id": "dotnet-m07-25",
+      "topic": "Singleton",
+      "source": "Module 7 - IoC Container và DI Container (cơ bản)",
+      "question": "Service đăng ký là `Singleton` có đặc điểm gì?",
+      "options": [
+        "Mỗi lần gọi tạo một đối tượng mới",
+        "Mỗi request có một đối tượng riêng",
+        "Chỉ có một instance dùng chung trong suốt vòng đời ứng dụng",
+        "Không bao giờ được tạo"
+      ],
+      "answer": 2,
+      "explanation": "**Singleton** tạo instance **một lần** và dùng chung cho mọi nơi, phù hợp với đối tượng không giữ trạng thái riêng từng người dùng.\n- Mỗi lần một đối tượng mới là Transient.\n- Mỗi request một đối tượng là Scoped.\n- Singleton vẫn được tạo khi có nơi cần dùng."
+    },
+    {
       "id": "dotnet-m07-01",
       "topic": "ServiceCollection",
       "source": "Module 7 - IoC Container và DI Container",

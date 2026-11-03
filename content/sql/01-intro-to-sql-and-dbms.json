@@ -4,6 +4,100 @@
   "description": "SQL và RDBMS là gì, các lệnh psql, câu SELECT đầu tiên và bốn nhóm lệnh DDL, DML, DCL, TCL.",
   "questions": [
     {
+      "id": "sql-d01-16",
+      "topic": "SQL viết tắt của gì",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành (cơ bản)",
+      "question": "SQL là viết tắt của cụm từ nào?",
+      "options": [
+        "Simple Question List",
+        "Standard Quick Language",
+        "Structured Query Language",
+        "System Query Logic"
+      ],
+      "answer": 2,
+      "explanation": "SQL là **Structured Query Language**, nghĩa là \"ngôn ngữ truy vấn có cấu trúc\", dùng để hỏi và thao tác dữ liệu trong cơ sở dữ liệu quan hệ.\n- \"Simple Question List\", \"Standard Quick Language\" và \"System Query Logic\" nghe có vẻ hợp lý nhưng đều là cụm từ tự bịa, không phải tên của SQL.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d01-17",
+      "topic": "RDBMS là gì",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành (cơ bản)",
+      "question": "RDBMS (hệ quản trị cơ sở dữ liệu quan hệ) tổ chức dữ liệu chủ yếu theo cách nào?",
+      "options": [
+        "thành các file văn bản rời, mỗi file một dòng",
+        "thành các bảng gồm dòng và cột, liên kết với nhau bằng khóa",
+        "thành một danh sách dài duy nhất không có cấu trúc",
+        "thành các ảnh chụp màn hình được lưu lại theo ngày"
+      ],
+      "answer": 1,
+      "explanation": "RDBMS lưu dữ liệu thành các **bảng** (dòng và cột) và liên kết các bảng bằng khóa chính, khóa ngoại. PostgreSQL, MySQL, SQL Server đều thuộc loại này.\n- File văn bản rời không có ràng buộc hay liên kết, đó không phải mô hình quan hệ.\n- Một danh sách duy nhất không cấu trúc thì không thể truy vấn theo cột.\n- Ảnh chụp màn hình không liên quan đến cách lưu dữ liệu của CSDL.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d01-18",
+      "topic": "Hàm UPPER",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành (cơ bản)",
+      "question": "Truy vấn dưới đây trả về giá trị nào?",
+      "code": "SELECT UPPER('sql');",
+      "codeLang": "sql",
+      "options": [
+        "sql",
+        "Sql",
+        "UPPER('sql')",
+        "SQL"
+      ],
+      "answer": 3,
+      "explanation": "`UPPER` đổi mọi chữ cái trong chuỗi thành **chữ in hoa**, nên `UPPER('sql')` trả về `SQL`.\n- `sql` là chuỗi gốc, chưa qua hàm nào.\n- `Sql` chỉ viết hoa chữ đầu, đó là việc của `INITCAP`, không phải `UPPER`.\n- SQL tính giá trị của biểu thức chứ không in nguyên văn lời gọi hàm.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d01-19",
+      "topic": "Khóa chính",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành (cơ bản)",
+      "question": "Khóa chính (primary key) của một bảng dùng để làm gì?",
+      "options": [
+        "nhận diện duy nhất từng dòng trong bảng",
+        "mã hóa dữ liệu để người lạ không đọc được",
+        "đặt mật khẩu cho cả database",
+        "sắp xếp các cột theo thứ tự bảng chữ cái"
+      ],
+      "answer": 0,
+      "explanation": "Khóa chính là cột (hoặc nhóm cột) có giá trị **không trùng và không NULL**, nhờ đó mỗi dòng có một \"số căn cước\" riêng, ví dụ `customer_id` của bảng `customers`.\n- Mã hóa dữ liệu là việc khác (như mã hóa đĩa hay cột), không phải vai trò của khóa chính.\n- Mật khẩu của database do hệ thống phân quyền quản lý.\n- Thứ tự cột do câu `CREATE TABLE` hoặc `SELECT` quyết định, khóa chính không sắp xếp gì.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d01-20",
+      "topic": "Đếm số dòng",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành (cơ bản)",
+      "question": "Bảng `categories` của DSC Shop có bao nhiêu dòng? Truy vấn dưới đây trả về giá trị nào?",
+      "code": "SELECT COUNT(*) FROM categories;",
+      "codeLang": "sql",
+      "options": [
+        "3",
+        "12",
+        "13",
+        "14"
+      ],
+      "answer": 2,
+      "explanation": "`COUNT(*)` đếm số dòng của bảng. `categories` có đúng **13** dòng (13 danh mục).\n- `3` là số cột của bảng (`category_id`, `name`, `parent_id`), không phải số dòng.\n- `12` và `14` chỉ lệch một đơn vị so với thực tế, thường gặp khi đếm nhầm hoặc nhớ nhầm.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d01-21",
+      "topic": "Chọn đúng các cột",
+      "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành (cơ bản)",
+      "question": "Cần lấy **họ tên và thành phố** của mọi khách hàng. Truy vấn nào đúng?",
+      "options": [
+        "```sql\nSELECT full_name, city\nFROM customers;\n```",
+        "```sql\nSELECT full_name city\nFROM customers;\n```",
+        "```sql\nSELECT 'full_name', 'city'\nFROM customers;\n```",
+        "```sql\nSELECT * FROM customers\nWHERE city;\n```"
+      ],
+      "answer": 0,
+      "explanation": "Hai cột cách nhau bằng dấu phẩy: `SELECT full_name, city FROM customers;` cho đủ hai cột.\n- Thiếu dấu phẩy thì `city` bị hiểu là bí danh của `full_name`, kết quả chỉ còn một cột.\n- Đặt tên cột trong nháy đơn biến chúng thành chuỗi chữ, mỗi dòng chỉ in lại chữ `full_name` và `city`.\n- `WHERE city` thiếu điều kiện so sánh nên báo lỗi, vì `WHERE` cần biểu thức đúng/sai.",
+      "kind": "choose-query"
+    },
+    {
       "id": "sql-d01-01",
       "topic": "SELECT *",
       "source": "Ngày 1 - Giới thiệu SQL, RDBMS và môi trường thực hành",

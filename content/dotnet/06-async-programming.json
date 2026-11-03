@@ -4,6 +4,76 @@
   "description": "Task, async/await, ConfigureAwait, CancellationToken, TPL và các bẫy phổ biến khi lập trình bất đồng bộ trong .NET 10.",
   "questions": [
     {
+      "id": "dotnet-m06-21",
+      "topic": "async và await",
+      "source": "Module 6 - Async Programming - Task và async/await (cơ bản)",
+      "question": "Từ khoá `async`/`await` trong C# chủ yếu giúp điều gì?",
+      "options": [
+        "Làm CPU chạy nhanh gấp đôi",
+        "Chờ việc chậm (như gọi mạng, đọc file) mà không chặn thread, thread rảnh làm việc khác",
+        "Biến mọi code thành chạy song song trên nhiều lõi",
+        "Tự động sửa lỗi exception"
+      ],
+      "answer": 1,
+      "explanation": "`await` cho phép phương thức **tạm dừng và nhường thread** trong lúc chờ I/O, rồi chạy tiếp khi có kết quả, nên server phục vụ được nhiều request hơn.\n- Không làm CPU nhanh hơn.\n- Không tự biến code thành song song trên nhiều lõi.\n- Không sửa lỗi: exception vẫn xuất hiện khi `await`."
+    },
+    {
+      "id": "dotnet-m06-22",
+      "topic": "Task là gì",
+      "source": "Module 6 - Async Programming - Task và async/await (cơ bản)",
+      "question": "`Task` trong C# đại diện cho điều gì?",
+      "options": [
+        "Một file trên ổ đĩa",
+        "Một kết nối cơ sở dữ liệu",
+        "Một công việc bất đồng bộ có thể chưa xong, sẽ hoàn thành (hoặc lỗi) trong tương lai",
+        "Một biến toàn cục"
+      ],
+      "answer": 2,
+      "explanation": "`Task` là **lời hứa kết quả**: đại diện cho công việc đang chạy hoặc đã xong; `Task<T>` còn mang giá trị trả về kiểu `T`.\n- Không phải file hay kết nối.\n- Biến toàn cục chỉ lưu giá trị, không biểu diễn công việc theo thời gian."
+    },
+    {
+      "id": "dotnet-m06-23",
+      "topic": "Thread là gì",
+      "source": "Module 6 - Async Programming - Task và async/await (cơ bản)",
+      "question": "Thread (luồng) là gì?",
+      "options": [
+        "Một đơn vị thực thi code bên trong tiến trình",
+        "Một loại tệp cấu hình",
+        "Một lỗi trong chương trình",
+        "Một gói NuGet"
+      ],
+      "answer": 0,
+      "explanation": "Thread là **đường chạy code** bên trong một tiến trình; một tiến trình có thể có nhiều thread chạy đồng thời.\n- Không phải tệp cấu hình.\n- Không phải lỗi, dù viết sai code đa luồng có thể gây lỗi.\n- Không phải gói NuGet."
+    },
+    {
+      "id": "dotnet-m06-24",
+      "topic": "Huỷ tác vụ",
+      "source": "Module 6 - Async Programming - Task và async/await (cơ bản)",
+      "question": "`CancellationToken` thường dùng để làm gì?",
+      "options": [
+        "Mã hoá dữ liệu gửi đi",
+        "Đếm số lần gọi hàm",
+        "Xoá file tạm",
+        "Báo hiệu cho công việc đang chạy biết nên dừng, ví dụ khi người dùng đóng trang"
+      ],
+      "answer": 3,
+      "explanation": "`CancellationToken` là **tín hiệu huỷ hợp tác**: nơi gọi yêu cầu dừng, còn code bên dưới kiểm tra token và dừng lại.\n- Mã hoá dữ liệu cần thư viện mật mã.\n- Đếm số lần gọi là việc của bộ đếm hay metric.\n- Xoá file tạm do code riêng làm, không phải token."
+    },
+    {
+      "id": "dotnet-m06-25",
+      "topic": "Tên phương thức async",
+      "source": "Module 6 - Async Programming - Task và async/await (cơ bản)",
+      "question": "Theo quy ước, phương thức trả về `Task` nên đặt tên thế nào?",
+      "options": [
+        "Thêm hậu tố `Async`, ví dụ `GetOrdersAsync`",
+        "Thêm tiền tố `async_`",
+        "Viết hoa toàn bộ",
+        "Không cần quy ước gì"
+      ],
+      "answer": 0,
+      "explanation": "Quy ước .NET là thêm hậu tố **`Async`** (`GetOrdersAsync`) để người đọc biết cần `await` phương thức này.\n- Tiền tố `async_` không phải quy ước của .NET.\n- Viết hoa toàn bộ không phải quy ước.\n- Có quy ước rõ ràng, và các thư viện chuẩn (`ReadAllTextAsync`...) đều theo nó."
+    },
+    {
       "topic": "Luồng chạy của await",
       "source": "Module 6 - Async Programming - Task và async/await",
       "question": "Chương trình sau in ra những dòng nào, theo thứ tự?",

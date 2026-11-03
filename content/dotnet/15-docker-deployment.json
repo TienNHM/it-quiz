@@ -4,6 +4,76 @@
   "description": "Container, Dockerfile, Compose, secrets, cấu hình theo môi trường, CI/CD và triển khai lên VPS hoặc Azure.",
   "questions": [
     {
+      "id": "dotnet-m15-21",
+      "topic": "Image và container",
+      "source": "Module 15 - Docker + Deployment - Dockerfile cho ASP.NET Core (cơ bản)",
+      "question": "Quan hệ giữa image và container trong Docker là gì?",
+      "options": [
+        "Container là bản mẫu, image là thứ đang chạy.",
+        "Image là bản mẫu chỉ đọc, container là một thực thể đang chạy được tạo ra từ image đó.",
+        "Hai khái niệm này đồng nghĩa hoàn toàn.",
+        "Image chỉ chứa dữ liệu của database."
+      ],
+      "answer": 1,
+      "explanation": "Image giống bản thiết kế đóng gói sẵn mã, runtime và cấu hình; từ một image có thể chạy nhiều container độc lập. Phương án đảo vai trò sai vì nói ngược. Phương án đồng nghĩa sai vì image là tĩnh còn container là tiến trình đang chạy cùng lớp ghi riêng. Phương án image chỉ chứa database sai vì image có thể chứa bất kỳ ứng dụng nào, không giới hạn ở dữ liệu."
+    },
+    {
+      "id": "dotnet-m15-22",
+      "topic": "Dockerfile là gì",
+      "source": "Module 15 - Docker + Deployment - Dockerfile cho ASP.NET Core (cơ bản)",
+      "question": "`Dockerfile` là gì?",
+      "options": [
+        "Tệp lưu mật khẩu của Docker Hub.",
+        "Tệp log ghi lại lịch sử container đã chạy.",
+        "Tệp cấu hình mạng giữa nhiều container.",
+        "Tệp văn bản chứa các bước để build ra một Docker image."
+      ],
+      "answer": 3,
+      "explanation": "Dockerfile liệt kê từng chỉ thị như FROM, COPY, RUN, ENTRYPOINT để dựng image; chạy `docker build` sẽ đọc nó. Mật khẩu Docker Hub không nằm ở đây, và đưa mật khẩu vào Dockerfile là lỗi bảo mật. Log container xem bằng `docker logs`, không lưu trong Dockerfile. Cấu hình mạng nhiều container thuộc về Docker Compose hoặc tuỳ chọn mạng, không phải Dockerfile."
+    },
+    {
+      "id": "dotnet-m15-23",
+      "topic": "Docker Compose",
+      "source": "Module 15 - Docker + Deployment - Docker Compose (cơ bản)",
+      "question": "Docker Compose thường được dùng để làm gì?",
+      "options": [
+        "Biên dịch mã C# thành tệp thực thi.",
+        "Giám sát CPU của máy chủ và gửi cảnh báo.",
+        "Khai báo và chạy nhiều container liên quan (ví dụ API, database, cache) cùng lúc bằng một tệp YAML.",
+        "Tự viết lại Dockerfile cho tối ưu hơn."
+      ],
+      "answer": 2,
+      "explanation": "Compose mô tả một ứng dụng gồm nhiều dịch vụ trong tệp compose.yaml, rồi `docker compose up` khởi chạy tất cả cùng mạng và volume. Biên dịch C# là việc của SDK, `dotnet build`. Giám sát CPU và cảnh báo thuộc công cụ như Prometheus, không phải Compose. Compose không tự viết lại Dockerfile, bạn phải tự viết và chỉ định nó trong tệp."
+    },
+    {
+      "id": "dotnet-m15-24",
+      "topic": "Biến môi trường",
+      "source": "Module 15 - Docker + Deployment - Environment và Secrets (cơ bản)",
+      "question": "Vì sao nên cấu hình connection string qua biến môi trường thay vì ghi cứng trong code?",
+      "options": [
+        "Cùng một image chạy được ở nhiều môi trường mà không cần build lại, và bí mật không nằm trong mã nguồn.",
+        "Vì biến môi trường nhanh hơn code gấp nhiều lần.",
+        "Vì Docker không cho phép ghi chuỗi trong code.",
+        "Vì biến môi trường được mã hoá tự động khi lưu."
+      ],
+      "answer": 0,
+      "explanation": "Tách cấu hình khỏi code cho phép đổi database giữa dev, staging, production mà không build lại image, và tránh đưa mật khẩu vào kho mã. Tốc độ không phải lý do, nên phương án \"nhanh hơn\" sai. Docker không cấm chuỗi trong code, chỉ là cách làm đó không tốt. Biến môi trường mặc định không được mã hoá; vì vậy dữ liệu nhạy cảm nên dùng cơ chế secret chuyên dụng."
+    },
+    {
+      "id": "dotnet-m15-25",
+      "topic": "Kubernetes là gì",
+      "source": "Module 15 - Kubernetes Intro (cơ bản)",
+      "question": "Kubernetes (K8s) chủ yếu dùng để làm gì?",
+      "options": [
+        "Viết code C# nhanh hơn nhờ gợi ý tự động.",
+        "Thay thế hoàn toàn hệ điều hành của máy chủ.",
+        "Điều phối việc chạy, mở rộng và tự phục hồi nhiều container trên một cụm máy.",
+        "Lưu trữ mã nguồn và quản lý phiên bản."
+      ],
+      "answer": 2,
+      "explanation": "Kubernetes là hệ thống điều phối container: nó đặt container lên các node, tăng giảm số bản sao, khởi động lại container hỏng và cân bằng tải. Gợi ý code là việc của IDE hay trợ lý lập trình. Nó chạy trên hệ điều hành chứ không thay thế hệ điều hành. Lưu mã nguồn và phiên bản là việc của Git cùng dịch vụ như GitHub hay Azure Repos."
+    },
+    {
       "id": "dotnet-m15-01",
       "topic": "Biến môi trường và cấu hình",
       "source": "Module 15 - Docker + Deployment - Environment và Secrets",

@@ -4,6 +4,82 @@
   "description": "Tạo, xóa, liệt kê index; quy tắc tiền tố trái, độ chọn lọc, partial và expression index, chi phí ghi.",
   "questions": [
     {
+      "id": "sql-d15-18",
+      "topic": "Index là gì",
+      "source": "Ngày 15 - Chỉ mục (index) (cơ bản)",
+      "question": "Index (chỉ mục) trong cơ sở dữ liệu giống thứ gì trong đời thường?",
+      "options": [
+        "Mục lục hoặc phần tra cứu cuối sách, giúp tìm nhanh mà không phải lật từng trang",
+        "Bản sao lưu toàn bộ cuốn sách",
+        "Bìa của cuốn sách",
+        "Người đọc sách hộ bạn"
+      ],
+      "answer": 0,
+      "explanation": "Index là cấu trúc phụ lưu các giá trị của một hay vài cột kèm vị trí dòng, giúp tìm nhanh như tra mục lục thay vì lật từng trang.\n- Nó không phải bản sao lưu; sao lưu là việc của `pg_dump` hay backup.\n- Nó không phải bìa sách, tức không liên quan tới giao diện hay tên bảng.\n- Nó không tự đọc dữ liệu hộ bạn; bạn vẫn phải viết truy vấn."
+    },
+    {
+      "id": "sql-d15-19",
+      "topic": "Câu lệnh tạo index",
+      "source": "Ngày 15 - Chỉ mục (index) (cơ bản)",
+      "question": "Câu lệnh nào dùng để tạo một index trên cột `email` của bảng `customers`?",
+      "options": [
+        "`MAKE INDEX customers (email)`",
+        "`ADD INDEX TO customers.email`",
+        "```sql\nCREATE INDEX ON customers (email)\n```",
+        "`INDEX customers BY email`"
+      ],
+      "answer": 2,
+      "explanation": "Cú pháp đúng là `CREATE INDEX ON customers (email)` (có thể thêm tên index trước `ON`).\n- `MAKE INDEX`, `ADD INDEX TO` và `INDEX ... BY` không phải cú pháp của PostgreSQL nên đều báo lỗi cú pháp.\nSau khi tạo, bạn có thể xoá bằng `DROP INDEX` khi không còn cần.",
+      "tables": [
+        "customers"
+      ]
+    },
+    {
+      "id": "sql-d15-20",
+      "topic": "Loại index mặc định",
+      "source": "Ngày 15 - Chỉ mục (index) (cơ bản)",
+      "question": "Khi chỉ gõ `CREATE INDEX ...` mà không nói rõ loại, PostgreSQL tạo index kiểu nào?",
+      "options": [
+        "Hash",
+        "B-tree",
+        "GIN",
+        "Bitmap"
+      ],
+      "answer": 1,
+      "explanation": "Mặc định PostgreSQL tạo index kiểu B-tree, hợp với cả so sánh `=` lẫn khoảng (`<`, `>`, `BETWEEN`) và sắp xếp.\n- Hash chỉ dùng khi bạn yêu cầu `USING hash` và chỉ hợp với so sánh bằng.\n- GIN dành cho dữ liệu nhiều giá trị như mảng, JSONB, tìm kiếm văn bản, phải khai báo `USING gin`.\n- Bitmap index không phải kiểu index người dùng tạo trong PostgreSQL (Bitmap Scan chỉ là cách đọc trong plan)."
+    },
+    {
+      "id": "sql-d15-21",
+      "topic": "Nên index cột nào",
+      "source": "Ngày 15 - Chỉ mục (index) (cơ bản)",
+      "question": "Cột nào thường đáng được đặt index nhất?",
+      "options": [
+        "Cột hầu như không bao giờ xuất hiện trong `WHERE` hay `JOIN`",
+        "Cột ghi chú dài, chưa ai tìm kiếm theo nó",
+        "Mọi cột của mọi bảng, để chắc chắn",
+        "Cột thường xuyên dùng để lọc hoặc nối bảng và có nhiều giá trị khác nhau"
+      ],
+      "answer": 3,
+      "explanation": "Index có ích khi cột hay nằm trong `WHERE`/`JOIN` và phân tán nhiều giá trị, vì khi đó index thu hẹp rất nhanh số dòng cần đọc.\n- Cột không bao giờ dùng để lọc thì index chỉ tốn chỗ.\n- Cột ghi chú dài không ai tìm kiếm cũng không cần index.\n- Index mọi cột làm các lệnh ghi chậm đi và tốn dung lượng, nên không nên làm."
+    },
+    {
+      "id": "sql-d15-22",
+      "topic": "Khoá chính và index",
+      "source": "Ngày 15 - Chỉ mục (index) (cơ bản)",
+      "question": "Khi khai báo một cột là `PRIMARY KEY`, PostgreSQL làm gì với index?",
+      "options": [
+        "Không làm gì, bạn phải tự tạo index",
+        "Tự động tạo một index duy nhất trên cột đó để bảo đảm không trùng",
+        "Chỉ tạo index khi bảng có trên 1 triệu dòng",
+        "Xoá mọi index khác của bảng"
+      ],
+      "answer": 1,
+      "explanation": "Khoá chính phải duy nhất và không `NULL`, nên PostgreSQL tự tạo một unique index để kiểm tra việc này nhanh (ví dụ `orders_pkey` của bảng `orders`).\n- Bạn không phải tự tạo thêm index cho khoá chính.\n- Việc tạo không phụ thuộc kích thước bảng.\n- Khai báo khoá chính không xoá index nào khác.",
+      "tables": [
+        "orders"
+      ]
+    },
+    {
       "id": "sql-d15-01",
       "topic": "pg_indexes",
       "source": "Ngày 15 - Chỉ mục (index)",

@@ -4,6 +4,76 @@
   "description": "IMemoryCache, IDistributedCache/Redis, xoá cache, HybridCache, Hangfire và Quartz cho xử lý nền đáng tin cậy.",
   "questions": [
     {
+      "id": "dotnet-m14-22",
+      "topic": "Cache là gì",
+      "source": "Module 14 - Caching Fundamentals (cơ bản)",
+      "question": "Cache (bộ nhớ đệm) dùng để làm gì?",
+      "options": [
+        "Lưu vĩnh viễn dữ liệu quan trọng thay cho database.",
+        "Mã hoá dữ liệu để người lạ không đọc được.",
+        "Lưu tạm kết quả đã tính hoặc đã lấy để lần sau trả nhanh hơn mà không phải tính hay truy vấn lại.",
+        "Tự động sửa lỗi trong code của ứng dụng."
+      ],
+      "answer": 2,
+      "explanation": "Cache là bản sao tạm thời, thường nằm trong bộ nhớ, giúp giảm độ trễ và tải lên nguồn gốc như database hay API. Dữ liệu cache có thể hết hạn hoặc bị xoá nên không thể thay database, do đó phương án lưu vĩnh viễn sai. Mã hoá là việc của mật mã, không phải mục đích của cache. Cache không sửa lỗi code; còn có thể che lỗi nếu dùng không cẩn thận."
+    },
+    {
+      "id": "dotnet-m14-23",
+      "topic": "IMemoryCache và IDistributedCache",
+      "source": "Module 14 - IDistributedCache và Redis (cơ bản)",
+      "question": "Khác biệt dễ nhớ giữa `IMemoryCache` và `IDistributedCache` (ví dụ Redis) là gì?",
+      "options": [
+        "IMemoryCache nằm trong bộ nhớ của một tiến trình, còn IDistributedCache dùng chung giữa nhiều instance.",
+        "IMemoryCache dùng chung giữa mọi server, IDistributedCache chỉ nằm trong một tiến trình.",
+        "Hai loại hoàn toàn giống nhau, chỉ khác tên interface.",
+        "IDistributedCache chỉ lưu được số nguyên."
+      ],
+      "answer": 0,
+      "explanation": "IMemoryCache sống trong RAM của chính ứng dụng nên rất nhanh nhưng mỗi instance có bản riêng và mất khi khởi động lại. IDistributedCache lưu ở dịch vụ ngoài như Redis nên nhiều instance dùng chung, đổi lại có chi phí mạng. Phương án đảo vai trò sai vì nói ngược. Phương án \"giống nhau\" sai vì khác về phạm vi chia sẻ và cách lưu. Phương án chỉ lưu số nguyên sai vì dữ liệu lưu dạng mảng byte nên chứa được văn bản hay JSON."
+    },
+    {
+      "id": "dotnet-m14-24",
+      "topic": "Background job",
+      "source": "Module 14 - Background Jobs với Hangfire (cơ bản)",
+      "question": "Việc nào dưới đây phù hợp nhất để đưa vào background job thay vì làm ngay trong request?",
+      "options": [
+        "Kiểm tra mật khẩu khi người dùng đăng nhập.",
+        "Trả về danh sách sản phẩm cho trang chủ.",
+        "Kiểm tra token trong header của request.",
+        "Gửi email hoá đơn sau khi khách đặt hàng."
+      ],
+      "answer": 3,
+      "explanation": "Gửi email chậm và không cần khách chờ xong mới nhận phản hồi, nên đẩy vào job nền để request trả lời nhanh và có thể thử lại khi lỗi. Kiểm tra mật khẩu là bước người dùng phải chờ kết quả ngay. Trả danh sách sản phẩm cần kết quả để hiển thị, nên làm trong request. Kiểm tra token là việc của middleware ngay trước khi xử lý request, không thể để chạy sau."
+    },
+    {
+      "id": "dotnet-m14-25",
+      "topic": "Thời gian sống của cache",
+      "source": "Module 14 - Caching Fundamentals (cơ bản)",
+      "question": "Khi đặt thời gian sống (expiration, hay TTL) cho một mục cache, mục đích chính là gì?",
+      "options": [
+        "Để cache chạy nhanh hơn gấp đôi.",
+        "Để dữ liệu cũ tự bị loại bỏ sau một khoảng thời gian, tránh phục vụ dữ liệu quá lỗi thời.",
+        "Để mục cache không bao giờ bị xoá.",
+        "Để buộc người dùng phải đăng nhập lại."
+      ],
+      "answer": 1,
+      "explanation": "Expiration giới hạn tuổi của dữ liệu trong cache: hết hạn thì mục bị bỏ và lần sau lấy lại từ nguồn gốc. Nó giúp cân bằng giữa tốc độ và độ mới của dữ liệu. Nó không làm cache nhanh hơn, nên phương án gấp đôi sai. Phương án \"không bao giờ bị xoá\" nói ngược mục đích. Đăng nhập lại thuộc về phiên và token, không liên quan đến TTL của cache."
+    },
+    {
+      "id": "dotnet-m14-26",
+      "topic": "Hangfire là gì",
+      "source": "Module 14 - Background Jobs với Hangfire (cơ bản)",
+      "question": "Hangfire là thư viện dùng để làm gì?",
+      "options": [
+        "Dựng giao diện kéo thả cho trang web.",
+        "Nén ảnh và video khi người dùng tải lên.",
+        "Quản lý chứng chỉ HTTPS cho server.",
+        "Chạy và quản lý các công việc nền (fire-and-forget, hẹn giờ, định kỳ) có lưu trữ và dashboard."
+      ],
+      "answer": 3,
+      "explanation": "Hangfire lưu job vào database hoặc Redis, chạy bằng worker nền, hỗ trợ job một lần, job hẹn giờ và job định kỳ, cùng dashboard theo dõi và thử lại khi lỗi. Nó không dựng giao diện kéo thả, nên phương án đầu sai. Nén ảnh là việc của thư viện xử lý ảnh, dù có thể chạy bên trong job. Chứng chỉ HTTPS do Kestrel, reverse proxy hay dịch vụ cấp chứng chỉ quản lý, không phải Hangfire."
+    },
+    {
       "id": "dotnet-m14-01",
       "topic": "Cache stampede",
       "source": "Module 14 - IMemoryCache",

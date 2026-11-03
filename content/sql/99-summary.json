@@ -4,6 +4,76 @@
   "description": "Ôn tổng hợp bốn chặng: anti-join, HAVING, window function, JSONB, ràng buộc, CTE đệ quy, sargable và bảo mật.",
   "questions": [
     {
+      "id": "sql-d99-17",
+      "topic": "SQL viết tắt của gì",
+      "source": "Ngày 99 - Tổng kết (cơ bản)",
+      "question": "SQL là viết tắt của cụm từ nào?",
+      "options": [
+        "Simple Question List",
+        "System Quality Level",
+        "Secure Query Lock",
+        "Structured Query Language"
+      ],
+      "answer": 3,
+      "explanation": "SQL là Structured Query Language, ngôn ngữ truy vấn có cấu trúc dùng để làm việc với cơ sở dữ liệu quan hệ: đọc, thêm, sửa, xóa dữ liệu và định nghĩa cấu trúc bảng.\n- Ba cụm còn lại nghe quen tai nhưng không phải ý nghĩa của SQL."
+    },
+    {
+      "id": "sql-d99-18",
+      "topic": "DDL và DML",
+      "source": "Ngày 99 - Tổng kết (cơ bản)",
+      "question": "Trong các lệnh dưới đây, lệnh nào thuộc nhóm DDL (định nghĩa cấu trúc), không phải DML (thao tác dữ liệu)?",
+      "options": [
+        "```sql\nINSERT INTO products ...\n```",
+        "```sql\nUPDATE products SET ...\n```",
+        "```sql\nCREATE TABLE products (...)\n```",
+        "```sql\nDELETE FROM products WHERE ...\n```"
+      ],
+      "answer": 2,
+      "explanation": "DDL (Data Definition Language) tạo hoặc thay đổi cấu trúc như `CREATE`, `ALTER`, `DROP`. DML (Data Manipulation Language) làm việc với dữ liệu trong bảng: `INSERT`, `UPDATE`, `DELETE` (và `SELECT` để đọc).\n- `INSERT`, `UPDATE` và `DELETE` đều là DML vì chỉ thêm, sửa, xóa dữ liệu."
+    },
+    {
+      "id": "sql-d99-19",
+      "topic": "WHERE và HAVING",
+      "source": "Ngày 99 - Tổng kết (cơ bản)",
+      "question": "Khác biệt cơ bản giữa `WHERE` và `HAVING` là gì?",
+      "options": [
+        "`WHERE` lọc nhóm sau khi gộp, `HAVING` lọc từng dòng trước khi gộp",
+        "`WHERE` lọc từng dòng trước khi nhóm, `HAVING` lọc các nhóm sau khi `GROUP BY`",
+        "hai mệnh đề hoàn toàn giống nhau",
+        "`HAVING` chỉ dùng được cho cột kiểu văn bản"
+      ],
+      "answer": 1,
+      "explanation": "`WHERE` chạy trước, loại bỏ các dòng không thỏa; `GROUP BY` gộp; rồi `HAVING` lọc các nhóm theo kết quả hàm gộp, ví dụ `HAVING COUNT(*) > 3`.\n- Phương án đầu nói ngược vai trò của hai mệnh đề.\n- Hai mệnh đề khác nhau về thời điểm áp dụng.\n- `HAVING` dùng được với mọi kiểu dữ liệu, thường kèm hàm gộp."
+    },
+    {
+      "id": "sql-d99-20",
+      "topic": "INNER JOIN và LEFT JOIN",
+      "source": "Ngày 99 - Tổng kết (cơ bản)",
+      "question": "Khác biệt dễ nhớ giữa `INNER JOIN` và `LEFT JOIN` là gì?",
+      "options": [
+        "`INNER JOIN` chỉ giữ các dòng khớp ở cả hai bảng; `LEFT JOIN` giữ mọi dòng bảng bên trái, dòng không khớp có phần bên phải là NULL",
+        "`LEFT JOIN` nhanh hơn `INNER JOIN` ở mọi trường hợp",
+        "`INNER JOIN` giữ mọi dòng của bảng bên trái",
+        "hai loại JOIN luôn cho kết quả giống nhau"
+      ],
+      "answer": 0,
+      "explanation": "Ví dụ khách chưa có đơn nào: `INNER JOIN` loại khách đó, còn `LEFT JOIN` vẫn giữ lại với cột của đơn hàng là NULL.\n- Tốc độ của hai loại phụ thuộc truy vấn, không phải lúc nào `LEFT JOIN` cũng nhanh hơn.\n- Giữ mọi dòng bên trái là đặc điểm của `LEFT JOIN`, không phải của `INNER JOIN`.\n- Kết quả chỉ giống nhau khi mọi dòng đều có cặp khớp."
+    },
+    {
+      "id": "sql-d99-21",
+      "topic": "COMMIT và ROLLBACK",
+      "source": "Ngày 99 - Tổng kết (cơ bản)",
+      "question": "Trong một transaction, `COMMIT` và `ROLLBACK` khác nhau thế nào?",
+      "options": [
+        "`COMMIT` xóa bảng, `ROLLBACK` tạo bảng",
+        "cả hai đều hủy các thay đổi",
+        "`COMMIT` lưu vĩnh viễn các thay đổi của transaction; `ROLLBACK` hủy hết thay đổi từ lúc `BEGIN`",
+        "`ROLLBACK` lưu thay đổi, `COMMIT` hủy thay đổi"
+      ],
+      "answer": 2,
+      "explanation": "`COMMIT` chốt transaction, mọi thay đổi trở nên bền vững; `ROLLBACK` quay lại trạng thái trước `BEGIN` như chưa có gì xảy ra. Nhờ vậy chuỗi thao tác hoặc thành công trọn vẹn, hoặc không để lại dấu vết.\n- `COMMIT` và `ROLLBACK` không tạo hay xóa bảng.\n- Hai lệnh có tác dụng trái ngược, không cùng hủy thay đổi.\n- Phương án cuối đảo ngược ý nghĩa của hai lệnh."
+    },
+    {
       "id": "sql-d99-01",
       "topic": "NOT IN và NULL",
       "source": "Ngày 99 - Tổng kết",

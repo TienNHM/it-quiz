@@ -4,6 +4,78 @@
   "description": "ERD và các loại quan hệ, phụ thuộc hàm, chuẩn hóa 1NF-BCNF, khi nào phi chuẩn hóa và các thực hành thiết kế tốt.",
   "questions": [
     {
+      "id": "sql-d27-18",
+      "topic": "Khóa chính",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu (cơ bản)",
+      "question": "Khóa chính (PRIMARY KEY) của một bảng có vai trò gì?",
+      "options": [
+        "chỉ để sắp xếp dòng theo thứ tự tăng dần",
+        "liên kết bảng này với một bảng khác",
+        "dùng để mã hóa dữ liệu của bảng",
+        "định danh duy nhất từng dòng: không trùng và không được NULL"
+      ],
+      "answer": 3,
+      "explanation": "Khóa chính giúp mọi dòng có một \"chứng minh thư\" riêng: không bao giờ trùng, không được để trống, và là nơi các bảng khác tham chiếu tới.\n- Sắp xếp dòng là việc của `ORDER BY`.\n- Liên kết sang bảng khác là việc của khóa ngoại.\n- Mã hóa dữ liệu không liên quan đến khóa chính."
+    },
+    {
+      "id": "sql-d27-19",
+      "topic": "Khóa ngoại",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu (cơ bản)",
+      "question": "Khóa ngoại (FOREIGN KEY) là gì?",
+      "options": [
+        "cột trỏ tới khóa chính của bảng khác, để đảm bảo giá trị đó thật sự tồn tại",
+        "khóa chính của một bảng đặt ở nước ngoài",
+        "một cột bị ẩn khỏi người dùng",
+        "mật khẩu để truy cập bảng"
+      ],
+      "answer": 0,
+      "explanation": "Khóa ngoại như `orders.customer_id` tham chiếu `customers.customer_id`, nên không thể có đơn hàng của một khách không tồn tại.\n- \"Nước ngoài\" chỉ là cách gọi vui, khóa ngoại hoàn toàn nằm trong cơ sở dữ liệu.\n- Không có chuyện ẩn cột.\n- Mật khẩu là khái niệm của quyền truy cập, không liên quan."
+    },
+    {
+      "id": "sql-d27-20",
+      "topic": "Chuẩn hóa để làm gì",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu (cơ bản)",
+      "question": "Mục đích chính của chuẩn hóa (normalization) cơ sở dữ liệu là gì?",
+      "options": [
+        "làm cho cơ sở dữ liệu có nhiều bảng hơn càng tốt",
+        "giảm lặp dữ liệu và các lỗi khi thêm, sửa, xóa",
+        "làm mọi truy vấn nhanh gấp nhiều lần",
+        "mã hóa dữ liệu để bảo mật"
+      ],
+      "answer": 1,
+      "explanation": "Chuẩn hóa chia dữ liệu hợp lý, mỗi sự thật lưu đúng một nơi, nhờ đó ít trùng lặp và tránh dữ liệu mâu thuẫn khi sửa.\n- Số bảng nhiều không phải mục tiêu, và quá nhiều bảng còn làm JOIN phức tạp.\n- Chuẩn hóa không đảm bảo nhanh hơn, đôi khi còn cần phi chuẩn hóa để đọc nhanh.\n- Bảo mật là chuyện của phân quyền và mã hóa, không phải chuẩn hóa."
+    },
+    {
+      "id": "sql-d27-21",
+      "topic": "Khóa ngoại chặn dữ liệu sai",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu (cơ bản)",
+      "question": "Câu `INSERT` nào vào bảng `orders` sẽ bị khóa ngoại từ chối? (Chỉ có khách số 1 đến 18.)",
+      "options": [
+        "```sql\nINSERT INTO orders (customer_id, order_date, channel)\nVALUES (1, now(), 'online');\n```",
+        "```sql\nINSERT INTO orders (customer_id, order_date, channel)\nVALUES (9999, now(), 'online');\n```",
+        "```sql\nINSERT INTO orders (customer_id, order_date, channel)\nVALUES (2, now(), 'offline');\n```",
+        "```sql\nINSERT INTO orders (customer_id, order_date, channel)\nVALUES (3, now(), 'online');\n```"
+      ],
+      "answer": 1,
+      "explanation": "Khách số 9999 không tồn tại trong `customers`, nên vi phạm khóa ngoại `orders.customer_id` và báo lỗi `violates foreign key constraint`.\n- Ba câu còn lại dùng khách 1, 2 và 3 đều có thật, kênh `online` hoặc `offline` hợp lệ, các cột còn lại có giá trị mặc định nên chèn bình thường."
+    },
+    {
+      "id": "sql-d27-22",
+      "topic": "Danh mục gốc",
+      "source": "Ngày 27 - Thiết kế cơ sở dữ liệu (cơ bản)",
+      "code": "SELECT COUNT(*)\nFROM categories\nWHERE parent_id IS NULL;",
+      "codeLang": "sql",
+      "question": "Bảng `categories` có cột `parent_id` trỏ về danh mục cha; danh mục gốc (không có cha) để NULL. Truy vấn dưới đây đếm các danh mục gốc, kết quả là bao nhiêu?",
+      "options": [
+        "13",
+        "1",
+        "4",
+        "0"
+      ],
+      "answer": 2,
+      "explanation": "Danh mục gốc là danh mục không có cha, tức `parent_id IS NULL`. DSC Shop có 4 danh mục như vậy; các danh mục còn lại là con hoặc cháu của chúng.\n- 13 là tổng số danh mục, tức là không có điều kiện lọc.\n- 1 chỉ đúng nếu cây chỉ có một gốc.\n- 0 sai vì phải có danh mục gốc thì cây mới bắt đầu được."
+    },
+    {
       "id": "sql-d27-01",
       "topic": "Quan hệ n-n",
       "source": "Ngày 27 - Thiết kế cơ sở dữ liệu",

@@ -4,6 +4,81 @@
   "description": "Đọc, lọc, tách mảng, sửa JSONB, chỉ mục GIN và khi nào nên tách JSONB thành cột riêng trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d22-17",
+      "topic": "JSON là gì",
+      "source": "Ngày 22 - Làm việc với JSON và JSONB (cơ bản)",
+      "question": "JSON là viết tắt của cụm từ nào?",
+      "options": [
+        "JavaScript Object Notation: định dạng văn bản để biểu diễn dữ liệu dạng khóa và giá trị",
+        "Java Standard Output Network",
+        "Joint Syntax Object Name",
+        "JavaScript Online Node"
+      ],
+      "answer": 0,
+      "explanation": "JSON là JavaScript Object Notation, một định dạng văn bản nhẹ, dễ đọc, gồm các cặp khóa-giá trị như `{\"brand\": \"Apple\"}`. Nó được dùng phổ biến khi các ứng dụng trao đổi dữ liệu với nhau.\n- Ba cụm còn lại nghe giống nhưng không tồn tại như một chuẩn dữ liệu nào."
+    },
+    {
+      "id": "sql-d22-18",
+      "topic": "JSON và JSONB",
+      "source": "Ngày 22 - Làm việc với JSON và JSONB (cơ bản)",
+      "question": "Điểm khác biệt dễ nhớ nhất giữa kiểu `JSON` và `JSONB` trong PostgreSQL là gì?",
+      "options": [
+        "JSONB không lưu được số, chỉ lưu được chuỗi",
+        "JSON nhanh hơn JSONB ở mọi thao tác",
+        "JSONB lưu dạng nhị phân đã phân tích sẵn, truy vấn nhanh hơn và có thể đánh index GIN",
+        "hai kiểu hoàn toàn giống nhau, chỉ khác tên"
+      ],
+      "answer": 2,
+      "explanation": "JSONB lưu ở dạng nhị phân đã được phân tích, nên truy vấn và lọc nhanh hơn, lại hỗ trợ index GIN; đổi lại việc ghi hơi tốn hơn. Kiểu `JSON` chỉ giữ nguyên văn bản gốc.\n- JSONB lưu được số, chuỗi, mảng, đối tượng.\n- JSON không nhanh hơn ở việc truy vấn.\n- Hai kiểu khác nhau thật sự về cách lưu và khả năng đánh index."
+    },
+    {
+      "id": "sql-d22-19",
+      "topic": "Dữ liệu hợp với JSONB",
+      "source": "Ngày 22 - Làm việc với JSON và JSONB (cơ bản)",
+      "tables": [
+        "products"
+      ],
+      "question": "Dữ liệu nào dưới đây hợp để lưu trong một cột JSONB nhất?",
+      "options": [
+        "khóa chính của bảng",
+        "số tiền cần cộng tổng cho báo cáo doanh thu",
+        "ngày sinh của mọi khách hàng",
+        "thông số kỹ thuật thay đổi theo từng loại sản phẩm (laptop có RAM, chuột có DPI)"
+      ],
+      "answer": 3,
+      "explanation": "JSONB hợp với dữ liệu linh hoạt, mỗi dòng một kiểu khác nhau, phần lớn chỉ để hiển thị, như thông số kỹ thuật của sản phẩm.\n- Khóa chính cần kiểu rõ ràng để ràng buộc và index.\n- Số tiền cần kiểu `NUMERIC` để cộng tổng chính xác.\n- Ngày sinh có ở mọi dòng và cần kiểu `DATE`, nên làm cột thường."
+    },
+    {
+      "id": "sql-d22-20",
+      "topic": "Toán tử ->>",
+      "source": "Ngày 22 - Làm việc với JSON và JSONB (cơ bản)",
+      "question": "Toán tử `->>` khác toán tử `->` ở điểm nào?",
+      "options": [
+        "`->>` luôn trả về số nguyên, còn `->` trả về văn bản",
+        "`->>` trả về kiểu text (không còn nháy kép), còn `->` trả về JSONB",
+        "`->>` dùng để thêm một khóa mới vào JSON",
+        "`->>` chỉ dùng được với mảng, không dùng được với đối tượng"
+      ],
+      "answer": 1,
+      "explanation": "Cả hai đều lấy một phần của JSON theo khóa hoặc vị trí. `->` giữ nguyên kiểu JSONB, còn `->>` đổi kết quả thành text, nên thích hợp để hiển thị hoặc so sánh chuỗi.\n- `->>` không tự trả về số nguyên; muốn so sánh số phải ép kiểu.\n- Thêm khóa mới dùng `||` hoặc `jsonb_set`.\n- Cả hai dùng được với đối tượng (theo tên khóa) và mảng (theo chỉ số)."
+    },
+    {
+      "id": "sql-d22-21",
+      "topic": "Lấy giá trị từ JSONB",
+      "source": "Ngày 22 - Làm việc với JSON và JSONB (cơ bản)",
+      "code": "SELECT attributes ->> 'brand'\nFROM products\nWHERE sku = 'LAP-001';",
+      "codeLang": "sql",
+      "question": "Cột `attributes` của `LAP-001` chứa `\"brand\": \"ASUS\"`. Truy vấn dưới đây hiện ra gì?",
+      "options": [
+        "\"ASUS\" (có nháy kép)",
+        "NULL",
+        "ASUS",
+        "LAP-001"
+      ],
+      "answer": 2,
+      "explanation": "`->>` trả về text nên không còn nháy kép: `ASUS`.\n- `\"ASUS\"` có nháy kép là kết quả của `->` (một mũi tên), vì khi đó vẫn là JSONB.\n- NULL chỉ xuất hiện nếu khóa `brand` không tồn tại.\n- `LAP-001` là mã sản phẩm dùng để lọc dòng, không phải thứ được chọn ra."
+    },
+    {
       "id": "sql-d22-01",
       "topic": "Toán tử ->",
       "source": "Ngày 22 - Làm việc với JSON và JSONB",
@@ -208,7 +283,10 @@
         "`watt` của củ sạc: thông số riêng theo loại hàng"
       ],
       "answer": 2,
-      "explanation": "Đáp án đúng là `price`: dữ liệu có cấu trúc ổn định, mọi dòng đều có, cần ràng buộc (JSONB không có CHECK/REFERENCES theo từng khóa), cần tính toán và sắp xếp thường xuyên.\n- `gpu`, `switch` và `watt` là thông số thay đổi theo từng loại hàng, phần lớn sản phẩm không có, chủ yếu để hiển thị. Đó chính là phần JSONB sinh ra để chứa.\n- Nếu để `price` trong JSON, không ai chặn được giá âm hay giá dạng chuỗi như \"19.990.000\", và mỗi báo cáo doanh thu phải ép kiểu."
+      "explanation": "Đáp án đúng là `price`: dữ liệu có cấu trúc ổn định, mọi dòng đều có, cần ràng buộc (JSONB không có CHECK/REFERENCES theo từng khóa), cần tính toán và sắp xếp thường xuyên.\n- `gpu`, `switch` và `watt` là thông số thay đổi theo từng loại hàng, phần lớn sản phẩm không có, chủ yếu để hiển thị. Đó chính là phần JSONB sinh ra để chứa.\n- Nếu để `price` trong JSON, không ai chặn được giá âm hay giá dạng chuỗi như \"19.990.000\", và mỗi báo cáo doanh thu phải ép kiểu.",
+      "tables": [
+        "products"
+      ]
     },
     {
       "id": "sql-d22-15",

@@ -4,6 +4,76 @@
   "description": "Chèn/xóa phần tử, trộn và tách mảng, sắp xếp, tìm kiếm, tần suất, BCNN, đảo và xoay mảng, mảng con, truyền mảng vào hàm cùng tham chiếu và con trỏ.",
   "questions": [
     {
+      "id": "cpp-c04-24",
+      "topic": "Sắp xếp tăng dần",
+      "source": "NMLT C04 - sắp xếp, tìm kiếm, con trỏ (cơ bản)",
+      "question": "Sắp xếp mảng \"tăng dần\" nghĩa là gì?",
+      "options": [
+        "Các phần tử xếp sao cho giá trị đứng sau không lớn hơn giá trị đứng trước",
+        "Các phần tử xếp sao cho giá trị đứng sau không nhỏ hơn giá trị đứng trước",
+        "Các phần tử được xáo trộn ngẫu nhiên",
+        "Chỉ giữ lại các phần tử khác nhau"
+      ],
+      "answer": 1,
+      "explanation": "Tăng dần là từ nhỏ đến lớn: a[0] <= a[1] <= ... Phương án nói \"không lớn hơn\" mô tả giảm dần; xáo trộn ngẫu nhiên không phải sắp xếp; còn việc giữ lại phần tử khác nhau là loại trùng, một việc khác."
+    },
+    {
+      "id": "cpp-c04-25",
+      "topic": "Điều kiện tìm nhị phân",
+      "source": "NMLT C04 - sắp xếp, tìm kiếm, con trỏ (cơ bản)",
+      "question": "Tìm kiếm nhị phân chỉ áp dụng đúng khi nào?",
+      "options": [
+        "Khi mảng chỉ chứa số nguyên tố",
+        "Khi mảng có đúng 10 phần tử",
+        "Khi mảng chưa được sắp xếp",
+        "Khi mảng đã được sắp xếp"
+      ],
+      "answer": 3,
+      "explanation": "Tìm nhị phân so sánh với phần tử giữa rồi loại bỏ một nửa, nên bắt buộc mảng phải có thứ tự. Nó không phụ thuộc vào loại số hay đúng 10 phần tử, và trên mảng chưa sắp xếp kết quả có thể sai."
+    },
+    {
+      "id": "cpp-c04-26",
+      "topic": "Con trỏ là gì",
+      "source": "NMLT C04 - sắp xếp, tìm kiếm, con trỏ (cơ bản)",
+      "question": "Con trỏ (pointer) trong C++ là gì?",
+      "options": [
+        "Biến lưu một số nguyên rất lớn",
+        "Một vòng lặp đặc biệt",
+        "Chuỗi ký tự kết thúc bằng ký tự null",
+        "Biến lưu địa chỉ ô nhớ của một biến khác"
+      ],
+      "answer": 3,
+      "explanation": "Con trỏ chứa địa chỉ trong bộ nhớ, thường lấy bằng toán tử `&` và truy cập giá trị qua `*`. Nó không phải số nguyên lớn thông thường, không phải vòng lặp, còn chuỗi kết thúc bằng null là chuỗi kiểu C."
+    },
+    {
+      "id": "cpp-c04-27",
+      "topic": "Tham chiếu",
+      "source": "NMLT C04 - sắp xếp, tìm kiếm, con trỏ (cơ bản)",
+      "question": "Tham số khai báo kiểu `int &x` trong hàm có ý nghĩa gì?",
+      "options": [
+        "`x` là bản sao, sửa `x` không ảnh hưởng biến gốc",
+        "`x` là bí danh của biến được truyền vào, sửa `x` sẽ sửa luôn biến gốc",
+        "`x` là con trỏ phải viết `*x` mới dùng được",
+        "`x` luôn bằng 0"
+      ],
+      "answer": 1,
+      "explanation": "Tham chiếu `&` đặt tên khác cho chính biến truyền vào nên hàm sửa được biến gốc. Truyền tham trị mới là bản sao; con trỏ khai báo bằng `int *x`; và `x` nhận giá trị của biến truyền vào chứ không mặc định bằng 0."
+    },
+    {
+      "id": "cpp-c04-28",
+      "topic": "Chèn phần tử vào mảng",
+      "source": "NMLT C04 - sắp xếp, tìm kiếm, con trỏ (cơ bản)",
+      "question": "Muốn chèn một phần tử vào giữa mảng, ta thường phải làm gì trước khi gán giá trị mới?",
+      "options": [
+        "Dịch các phần tử phía sau vị trí chèn sang phải một ô để chừa chỗ",
+        "Xoá toàn bộ mảng rồi nhập lại",
+        "Dịch các phần tử phía trước vị trí chèn sang trái",
+        "Sắp xếp lại mảng giảm dần"
+      ],
+      "answer": 0,
+      "explanation": "Mảng là các ô liền nhau nên cần dịch phần tử từ vị trí chèn trở đi sang phải một ô, rồi ghi giá trị mới vào. Xoá toàn bộ mảng thì mất dữ liệu; dịch phần trước sang trái làm mất phần tử đầu; sắp xếp giảm dần không liên quan."
+    },
+    {
       "id": "cpp-c04-01",
       "topic": "Chèn phần tử",
       "source": "NMLT C04 - bài 1 Chèn phần tử vào mảng",

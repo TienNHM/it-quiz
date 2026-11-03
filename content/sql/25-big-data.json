@@ -4,6 +4,76 @@
   "description": "Phân vùng bảng RANGE, LIST, HASH, luật khóa chính và cận, DETACH, cắt tỉa phân vùng, cùng replication, sharding, kho dữ liệu cột và TOAST.",
   "questions": [
     {
+      "id": "sql-d25-17",
+      "topic": "Phân vùng bảng là gì",
+      "source": "Ngày 25 - SQL và dữ liệu lớn (cơ bản)",
+      "question": "Phân vùng bảng (table partitioning) trong PostgreSQL là gì?",
+      "options": [
+        "xóa các dòng cũ để bảng nhẹ đi",
+        "nén bảng thành một tệp zip",
+        "sao chép bảng sang máy chủ khác để dự phòng",
+        "chia một bảng lớn thành nhiều phần nhỏ theo một quy tắc (ví dụ theo năm), nhưng vẫn truy vấn như một bảng"
+      ],
+      "answer": 3,
+      "explanation": "Bảng cha được chia thành nhiều phân vùng, ví dụ mỗi năm một phân vùng. Ứng dụng vẫn đọc ghi bảng cha, còn PostgreSQL tự chọn phân vùng phù hợp và có thể bỏ qua những phân vùng không cần.\n- Xóa dòng cũ là việc của `DELETE`.\n- Nén thành zip không phải phân vùng.\n- Sao chép sang máy khác là replication."
+    },
+    {
+      "id": "sql-d25-18",
+      "topic": "Replication là gì",
+      "source": "Ngày 25 - SQL và dữ liệu lớn (cơ bản)",
+      "question": "Replication (sao chép) cơ sở dữ liệu nghĩa là gì?",
+      "options": [
+        "giữ bản sao của dữ liệu trên một hay nhiều máy khác, để dự phòng và chia tải đọc",
+        "tự động viết lại câu SQL cho nhanh hơn",
+        "đổi tên toàn bộ bảng sang tên mới",
+        "chia dữ liệu thành nhiều phần, mỗi máy giữ một phần khác nhau"
+      ],
+      "answer": 0,
+      "explanation": "Replication giữ các bản sao đồng bộ của cùng một dữ liệu trên nhiều máy: nếu máy chính hỏng thì còn bản dự phòng, và báo cáo có thể đọc từ bản sao.\n- Viết lại câu SQL là việc của bộ tối ưu hóa.\n- Đổi tên bảng là `ALTER TABLE ... RENAME`.\n- Chia mỗi máy một phần khác nhau là sharding, một khái niệm khác."
+    },
+    {
+      "id": "sql-d25-19",
+      "topic": "OLTP và OLAP",
+      "source": "Ngày 25 - SQL và dữ liệu lớn (cơ bản)",
+      "question": "OLTP và OLAP khác nhau thế nào?",
+      "options": [
+        "OLTP chỉ dành cho NoSQL, OLAP chỉ dành cho SQL",
+        "OLTP là phân tích dữ liệu lịch sử, OLAP là xử lý đơn hàng hằng ngày",
+        "OLTP xử lý nhiều giao dịch nhỏ hằng ngày (đặt hàng, thanh toán); OLAP chuyên phân tích tổng hợp dữ liệu lớn",
+        "hai khái niệm giống nhau, chỉ khác cách viết"
+      ],
+      "answer": 2,
+      "explanation": "OLTP (Online Transaction Processing) phục vụ hệ thống đang vận hành với nhiều thao tác ngắn. OLAP (Online Analytical Processing) phục vụ phân tích: quét lượng lớn dữ liệu để tổng hợp báo cáo.\n- Cả hai đều có thể dùng SQL.\n- Phát biểu bị đảo vai trò của OLTP và OLAP.\n- Hai khái niệm khác nhau rõ rệt về mục đích và cách thiết kế."
+    },
+    {
+      "id": "sql-d25-20",
+      "topic": "Big data là gì",
+      "source": "Ngày 25 - SQL và dữ liệu lớn (cơ bản)",
+      "question": "Big data (dữ liệu lớn) thường được mô tả bằng \"ba chữ V\" nào?",
+      "options": [
+        "Version, Variable, Value judgement",
+        "Volume (khối lượng), Velocity (tốc độ), Variety (đa dạng)",
+        "Vector, Viewport, Virtual",
+        "Valid, Verified, Visible"
+      ],
+      "answer": 1,
+      "explanation": "Ba chữ V kinh điển: Volume là lượng dữ liệu rất lớn, Velocity là dữ liệu đến với tốc độ cao, Variety là nhiều dạng khác nhau (bảng, văn bản, ảnh, log).\n- Các bộ ba còn lại là những từ bắt đầu bằng V nhưng không mô tả đặc điểm của dữ liệu lớn."
+    },
+    {
+      "id": "sql-d25-21",
+      "topic": "Sharding là gì",
+      "source": "Ngày 25 - SQL và dữ liệu lớn (cơ bản)",
+      "question": "Sharding là gì?",
+      "options": [
+        "chia dữ liệu thành nhiều phần và đặt lên các máy chủ khác nhau, mỗi máy giữ một phần",
+        "tạo thêm index cho mọi cột của bảng",
+        "tắt tính năng transaction để chạy nhanh hơn",
+        "chép toàn bộ dữ liệu sang mọi máy chủ"
+      ],
+      "answer": 0,
+      "explanation": "Sharding chia ngang dữ liệu (ví dụ theo `customer_id`) ra nhiều máy; mỗi máy chỉ giữ và xử lý một phần, nhờ đó tăng được cả dung lượng lẫn sức ghi.\n- Thêm index cho mọi cột không phải sharding và còn làm ghi chậm đi.\n- Sharding không có nghĩa là bỏ transaction.\n- Chép toàn bộ sang mọi máy là replication, không phải sharding."
+    },
+    {
       "id": "sql-d25-01",
       "source": "Ngày 25 - SQL và dữ liệu lớn",
       "topic": "Khóa chính bảng phân vùng",

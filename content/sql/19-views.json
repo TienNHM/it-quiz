@@ -4,6 +4,79 @@
   "description": "Tạo, sửa, xóa view, ghi dữ liệu qua view, WITH CHECK OPTION và materialized view trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d19-17",
+      "topic": "Lợi ích của view",
+      "source": "Ngày 19 - View và materialized view (cơ bản)",
+      "question": "Lợi ích dễ thấy nhất của view là gì?",
+      "options": [
+        "Làm mọi truy vấn chạy nhanh hơn",
+        "Đóng gói một truy vấn phức tạp thành một tên gọn để dùng lại như một bảng",
+        "Tự sao lưu dữ liệu hằng ngày",
+        "Tăng dung lượng đĩa"
+      ],
+      "answer": 1,
+      "explanation": "View đặt tên cho một câu `SELECT` (JOIN, lọc, tính toán), sau này chỉ cần `SELECT * FROM ten_view` là dùng được, như một bảng ảo.\n- View thường không làm truy vấn nhanh hơn: câu `SELECT` bên trong vẫn chạy lại mỗi lần.\n- View không sao lưu gì.\n- View thường không lưu dữ liệu nên không tốn thêm dung lượng đáng kể."
+    },
+    {
+      "id": "sql-d19-18",
+      "topic": "Lệnh tạo view",
+      "source": "Ngày 19 - View và materialized view (cơ bản)",
+      "question": "Lệnh nào tạo ra một view tên `cheap_products`?",
+      "options": [
+        "`MAKE VIEW cheap_products FROM products`",
+        "```sql\nNEW VIEW cheap_products = SELECT ...\n```",
+        "```sql\nVIEW cheap_products SELECT ...\n```",
+        "```sql\nCREATE VIEW cheap_products AS SELECT ...\n```"
+      ],
+      "answer": 3,
+      "explanation": "Cú pháp đúng là `CREATE VIEW ten AS SELECT ...`; dùng `CREATE OR REPLACE VIEW` nếu muốn ghi đè phiên bản cũ.\n- `MAKE VIEW`, `NEW VIEW` và `VIEW` đứng một mình đều không phải cú pháp hợp lệ nên bị báo lỗi cú pháp.\nSau khi tạo, bạn truy vấn view y như truy vấn bảng."
+    },
+    {
+      "id": "sql-d19-19",
+      "topic": "Làm mới materialized view",
+      "source": "Ngày 19 - View và materialized view (cơ bản)",
+      "question": "Lệnh nào cập nhật lại dữ liệu đã lưu của một materialized view tên `city_stats`?",
+      "options": [
+        "```sql\nUPDATE VIEW city_stats\n```",
+        "`RELOAD city_stats`",
+        "`REFRESH MATERIALIZED VIEW city_stats`",
+        "```sql\nSELECT city_stats\n```"
+      ],
+      "answer": 2,
+      "explanation": "Materialized view lưu sẵn kết quả, nên muốn nó theo kịp dữ liệu mới thì chạy `REFRESH MATERIALIZED VIEW city_stats`.\n- `UPDATE VIEW` và `RELOAD` không phải lệnh của PostgreSQL.\n- `SELECT city_stats` chỉ đọc, không làm mới dữ liệu (và còn thiếu `FROM`)."
+    },
+    {
+      "id": "sql-d19-20",
+      "topic": "Xoá view",
+      "source": "Ngày 19 - View và materialized view (cơ bản)",
+      "question": "Khi chạy `DROP VIEW cheap_products`, điều gì xảy ra với dữ liệu trong bảng `products`?",
+      "options": [
+        "Các sản phẩm rẻ bị xoá khỏi bảng `products`",
+        "Toàn bộ bảng `products` bị xoá",
+        "Dữ liệu `products` không đổi, chỉ định nghĩa view bị xoá",
+        "Dữ liệu của `products` bị chuyển sang view khác"
+      ],
+      "answer": 2,
+      "explanation": "View thường chỉ là câu `SELECT` được đặt tên, nên xoá view chỉ xoá định nghĩa đó; bảng gốc `products` vẫn nguyên vẹn.\n- Không dòng nào bị xoá khỏi bảng.\n- Bảng gốc cũng không bị xoá.\n- Không có chuyện dữ liệu \"chuyển\" sang view khác vì view vốn không chứa dữ liệu.",
+      "tables": [
+        "products"
+      ]
+    },
+    {
+      "id": "sql-d19-21",
+      "topic": "Truy vấn view",
+      "source": "Ngày 19 - View và materialized view (cơ bản)",
+      "question": "Sau khi có view `order_totals`, cách đọc dữ liệu từ nó là gì?",
+      "options": [
+        "Dùng như một bảng: `select * FROM order_totals`",
+        "Phải dùng lệnh đặc biệt `READ VIEW order_totals`",
+        "Chỉ đọc được bằng `CALL order_totals()`",
+        "Không đọc được, view chỉ để chèn dữ liệu"
+      ],
+      "answer": 0,
+      "explanation": "View được truy vấn như một bảng bình thường: `SELECT * FROM order_totals WHERE ...`, kể cả `JOIN` với bảng khác.\n- `READ VIEW` không phải lệnh của PostgreSQL.\n- `CALL` dành cho procedure, không dành cho view.\n- View chủ yếu dùng để đọc; chỉ những view đơn giản mới ghi được qua nó, và đó không phải mục đích chính."
+    },
+    {
       "id": "sql-d19-01",
       "topic": "View lưu gì",
       "source": "Ngày 19 - View và materialized view",

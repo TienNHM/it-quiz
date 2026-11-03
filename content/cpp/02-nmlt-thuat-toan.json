@@ -4,6 +4,76 @@
   "description": "Vòng lặp và các thuật toán thường gặp: tổng, giai thừa, số nguyên tố, số hoàn hảo, đảo số, đối xứng, UCLN, Fibonacci, tổ hợp, đổi tiền và ngày tháng.",
   "questions": [
     {
+      "id": "cpp-c02-25",
+      "topic": "Vòng lặp là gì",
+      "source": "NMLT C02 - vòng lặp và thuật toán cơ bản (cơ bản)",
+      "question": "Vòng lặp (`for`, `while`) trong C++ dùng để làm gì?",
+      "options": [
+        "Lặp lại một đoạn lệnh nhiều lần",
+        "Chạy chương trình theo thứ tự ngược lại",
+        "Tự động sửa lỗi cho chương trình",
+        "Khai báo một hàm mới"
+      ],
+      "answer": 0,
+      "explanation": "Vòng lặp giúp thực hiện lặp lại một khối lệnh nhiều lần mà không phải viết lại. Nó không đảo ngược chương trình, không tự sửa lỗi, và việc khai báo hàm là một cú pháp khác hẳn."
+    },
+    {
+      "id": "cpp-c02-26",
+      "topic": "do-while",
+      "source": "NMLT C02 - vòng lặp và thuật toán cơ bản (cơ bản)",
+      "question": "Điểm khác biệt chính của vòng lặp `do { ... } while (dk);` so với `while (dk) { ... }` là gì?",
+      "options": [
+        "Nó chạy nhanh hơn `while`",
+        "Nó không bao giờ dừng",
+        "Thân vòng lặp luôn được chạy ít nhất một lần",
+        "Nó chỉ dùng được với số nguyên"
+      ],
+      "answer": 2,
+      "explanation": "`do-while` kiểm tra điều kiện sau khi chạy thân, nên thân chạy ít nhất một lần, còn `while` có thể không chạy lần nào. Hai vòng lặp không khác nhau về tốc độ, vẫn dừng khi điều kiện sai và dùng được với mọi kiểu điều kiện."
+    },
+    {
+      "id": "cpp-c02-27",
+      "topic": "Lệnh break",
+      "source": "NMLT C02 - vòng lặp và thuật toán cơ bản (cơ bản)",
+      "question": "Trong vòng lặp, lệnh `break` có tác dụng gì?",
+      "options": [
+        "Thoát ngay khỏi vòng lặp hiện tại",
+        "Bỏ qua lượt lặp hiện tại và sang lượt kế tiếp",
+        "Kết thúc toàn bộ chương trình",
+        "Quay lại chạy lại từ lượt lặp đầu tiên"
+      ],
+      "answer": 0,
+      "explanation": "`break` thoát hẳn vòng lặp chứa nó. Bỏ qua lượt hiện tại để sang lượt sau là việc của `continue`; kết thúc cả chương trình cần `return` trong `main` hoặc `exit`; `break` không quay lại đầu vòng lặp."
+    },
+    {
+      "id": "cpp-c02-28",
+      "topic": "Lệnh continue",
+      "source": "NMLT C02 - vòng lặp và thuật toán cơ bản (cơ bản)",
+      "question": "Trong vòng lặp, lệnh `continue` có tác dụng gì?",
+      "options": [
+        "Thoát hẳn khỏi vòng lặp",
+        "Bỏ qua phần còn lại của lượt lặp hiện tại và sang lượt kế tiếp",
+        "Dừng chương trình và báo lỗi",
+        "Chạy lại lượt lặp hiện tại từ đầu với cùng giá trị"
+      ],
+      "answer": 1,
+      "explanation": "`continue` nhảy đến lượt lặp kế tiếp (với `for` thì thực hiện bước cập nhật rồi kiểm tra điều kiện). Thoát hẳn vòng lặp là `break`; `continue` không dừng chương trình và cũng không lặp lại cùng một lượt."
+    },
+    {
+      "id": "cpp-c02-29",
+      "topic": "Số nguyên tố",
+      "source": "NMLT C02 - vòng lặp và thuật toán cơ bản (cơ bản)",
+      "question": "Số nguyên tố là số như thế nào?",
+      "options": [
+        "Mọi số lẻ lớn hơn 1",
+        "Mọi số không chia hết cho 2",
+        "Số tự nhiên lớn hơn 1 chỉ chia hết cho 1 và chính nó",
+        "Số chỉ có đúng ba ước số"
+      ],
+      "answer": 2,
+      "explanation": "Số nguyên tố là số tự nhiên lớn hơn 1 chỉ có hai ước là 1 và chính nó, ví dụ 2, 3, 5, 7. Số lẻ như 9 hay 15 không phải số nguyên tố; \"không chia hết cho 2\" cũng gồm 9, 15; số có ba ước (như 4 có 1, 2, 4) là hợp số."
+    },
+    {
       "id": "cpp-c02-01",
       "topic": "Tính tổng 1..n",
       "source": "NMLT C02 - B01 Tổng S = 1 + 2 + ... + n",

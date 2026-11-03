@@ -4,6 +4,76 @@
   "description": "Kiểu dữ liệu, toán tử, chia nguyên và chia thực, ép kiểu, tràn số, if/switch, nhập xuất và các công thức toán cơ bản.",
   "questions": [
     {
+      "id": "cpp-c01-25",
+      "topic": "Kiểu int là gì",
+      "source": "NMLT C01 - kiểu dữ liệu và nhập xuất (cơ bản)",
+      "question": "Trong C++, kiểu dữ liệu `int` dùng để lưu loại giá trị nào?",
+      "options": [
+        "Số thực có phần thập phân",
+        "Một ký tự đơn",
+        "Số nguyên (không có phần thập phân)",
+        "Một đoạn văn bản dài"
+      ],
+      "answer": 2,
+      "explanation": "`int` lưu số nguyên như -5, 0, 42. Số thực có phần lẻ cần `float` hoặc `double`; một ký tự đơn dùng `char`; đoạn văn bản dùng `string`. Vì vậy ba phương án còn lại đều nói về kiểu khác, không phải `int`."
+    },
+    {
+      "id": "cpp-c01-26",
+      "topic": "cout dùng để làm gì",
+      "source": "NMLT C01 - kiểu dữ liệu và nhập xuất (cơ bản)",
+      "question": "Trong chương trình C++, `cout` thường được dùng để làm gì?",
+      "options": [
+        "Đọc dữ liệu từ bàn phím",
+        "In dữ liệu ra màn hình",
+        "Mở và đọc một file",
+        "Khai báo một biến mới"
+      ],
+      "answer": 1,
+      "explanation": "`cout` (kèm toán tử `<<`) in dữ liệu ra màn hình. Việc đọc từ bàn phím là của `cin`, mở file dùng `ifstream`/`fstream`, còn khai báo biến chỉ cần viết kiểu và tên biến, không liên quan đến `cout`."
+    },
+    {
+      "id": "cpp-c01-27",
+      "topic": "Biến là gì",
+      "source": "NMLT C01 - kiểu dữ liệu và nhập xuất (cơ bản)",
+      "question": "Trong lập trình, \"biến\" là gì?",
+      "options": [
+        "Một lệnh để in ra màn hình",
+        "Một giá trị cố định không bao giờ đổi",
+        "Tên của file chứa chương trình",
+        "Một vùng nhớ có tên dùng để lưu giá trị, giá trị có thể thay đổi"
+      ],
+      "answer": 3,
+      "explanation": "Biến là vùng nhớ được đặt tên để lưu giá trị và giá trị đó có thể đổi trong lúc chạy. Lệnh in là `cout`; giá trị cố định không đổi là hằng (`const`); tên file chương trình không phải là biến."
+    },
+    {
+      "id": "cpp-c01-28",
+      "topic": "Toán tử = và ==",
+      "source": "NMLT C01 - kiểu dữ liệu và nhập xuất (cơ bản)",
+      "question": "Trong C++, phép so sánh \"hai giá trị có bằng nhau không\" được viết như thế nào?",
+      "options": [
+        "`a = b`",
+        "`a => b`",
+        "`a != b`",
+        "`a == b`"
+      ],
+      "answer": 3,
+      "explanation": "`==` so sánh bằng và cho kết quả đúng/sai. Dấu `=` là phép gán (gán giá trị của b cho a), `=>` không phải toán tử so sánh trong C++, còn `!=` kiểm tra khác nhau, ngược với yêu cầu."
+    },
+    {
+      "id": "cpp-c01-29",
+      "topic": "Kiểu bool",
+      "source": "NMLT C01 - kiểu dữ liệu và nhập xuất (cơ bản)",
+      "question": "Biến kiểu `bool` trong C++ có thể nhận những giá trị nào?",
+      "options": [
+        "Mọi số nguyên từ 0 đến 255",
+        "`true` hoặc `false`",
+        "Một chuỗi ký tự bất kỳ",
+        "Chỉ số thực từ 0.0 đến 1.0"
+      ],
+      "answer": 1,
+      "explanation": "`bool` là kiểu logic, chỉ có hai giá trị `true` (đúng) và `false` (sai). Số nguyên từ 0 đến 255 gần với `unsigned char`, chuỗi ký tự là `string`, còn số thực là `float`/`double`, không phải `bool`."
+    },
+    {
       "id": "cpp-c01-01",
       "topic": "Chia nguyên và chia thực",
       "source": "NMLT C01 - bài 2, 19 (phép chia)",

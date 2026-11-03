@@ -4,6 +4,86 @@
   "description": "BEGIN/COMMIT/ROLLBACK, SAVEPOINT, lost update, isolation level, khóa dòng và deadlock trên dữ liệu DSC Shop.",
   "questions": [
     {
+      "id": "sql-d16-18",
+      "topic": "Transaction là gì",
+      "source": "Ngày 16 - Transaction và ACID (cơ bản)",
+      "question": "Transaction (giao dịch) trong cơ sở dữ liệu là gì?",
+      "options": [
+        "Một nhóm lệnh được xử lý như một đơn vị: hoặc thành công tất cả, hoặc không lệnh nào có hiệu lực",
+        "Một bảng lưu lịch sử giao dịch ngân hàng",
+        "Một câu lệnh chỉ dùng để đọc dữ liệu",
+        "Một loại index đặc biệt"
+      ],
+      "answer": 0,
+      "explanation": "Transaction gom nhiều lệnh thành một đơn vị trọn vẹn: tất cả cùng thành công (`COMMIT`) hoặc bị huỷ hết (`ROLLBACK`).\n- Nó không phải bảng lưu lịch sử, dù hay được dùng trong nghiệp vụ ngân hàng.\n- Nó không chỉ dành cho việc đọc; chủ yếu để bảo vệ các thay đổi dữ liệu.\n- Nó không phải index."
+    },
+    {
+      "id": "sql-d16-19",
+      "topic": "ACID viết tắt",
+      "source": "Ngày 16 - Transaction và ACID (cơ bản)",
+      "question": "ACID, bộ bốn tính chất của transaction, viết tắt của những từ nào?",
+      "options": [
+        "Access, Control, Index, Data",
+        "Add, Change, Insert, Delete",
+        "Automatic, Cached, Indexed, Distributed",
+        "Atomicity, Consistency, Isolation, Durability"
+      ],
+      "answer": 3,
+      "explanation": "ACID gồm Atomicity (nguyên tử), Consistency (nhất quán), Isolation (cô lập) và Durability (bền vững).\n- \"Access, Control, Index, Data\" và \"Automatic, Cached, Indexed, Distributed\" chỉ là các từ ghép bịa ra cho vần với chữ cái.\n- \"Add, Change, Insert, Delete\" gần giống các thao tác ghi dữ liệu nhưng không phải ý nghĩa của ACID."
+    },
+    {
+      "id": "sql-d16-20",
+      "topic": "ROLLBACK huỷ thay đổi",
+      "source": "Ngày 16 - Transaction và ACID (cơ bản)",
+      "question": "Giá gốc của MacBook Air M2 (sản phẩm 5) là 24990000. Chạy đoạn dưới, câu SELECT cuối trả về giá nào?",
+      "options": [
+        "1000",
+        "24990000",
+        "0",
+        "NULL"
+      ],
+      "answer": 1,
+      "explanation": "`ROLLBACK` huỷ mọi thay đổi kể từ `BEGIN`, nên giá trở lại đúng như ban đầu là 24990000.\n- 1000 chỉ đúng nếu có `COMMIT` thay cho `ROLLBACK`.\n- 0 sai: `ROLLBACK` không đặt giá về 0, nó trả dữ liệu về trạng thái cũ.\n- NULL sai vì dòng vẫn còn nguyên với giá cũ, không bị xoá hay làm rỗng.",
+      "code": "BEGIN;\nUPDATE products SET price = 1000 WHERE product_id = 5;\nROLLBACK;\nSELECT price FROM products WHERE product_id = 5;",
+      "codeLang": "sql",
+      "tables": [
+        "products"
+      ]
+    },
+    {
+      "id": "sql-d16-21",
+      "topic": "Ví dụ chuyển tiền",
+      "source": "Ngày 16 - Transaction và ACID (cơ bản)",
+      "question": "Vì sao việc chuyển 100.000 đ từ ví A sang ví B nên đặt trong một transaction?",
+      "options": [
+        "Để lệnh chạy nhanh gấp đôi",
+        "Để không cần kiểm tra số dư ví A",
+        "Vì lệnh trừ tiền ví A và lệnh cộng tiền ví B phải cùng thành công hoặc cùng bị huỷ",
+        "Vì `update` không thể chạy ngoài transaction"
+      ],
+      "answer": 2,
+      "explanation": "Nếu chỉ trừ ví A mà lỗi trước khi cộng ví B thì tiền biến mất. Transaction bảo đảm hai bước này cùng thành công hoặc cùng bị huỷ (tính nguyên tử).\n- Transaction không làm lệnh nhanh hơn.\n- Kiểm tra số dư vẫn cần, ví dụ bằng `CHECK` hoặc điều kiện trong `UPDATE`.\n- `UPDATE` chạy được ngoài transaction: ở chế độ autocommit mỗi câu lệnh tự là một transaction."
+    },
+    {
+      "id": "sql-d16-22",
+      "topic": "COMMIT là điểm không quay lui",
+      "source": "Ngày 16 - Transaction và ACID (cơ bản)",
+      "question": "Tồn kho ban đầu của ASUS ROG Strix G16 (sản phẩm 1) là 5. Chạy đoạn dưới, câu SELECT cuối trả về bao nhiêu?",
+      "options": [
+        "5",
+        "3",
+        "4",
+        "Lỗi, không được gõ `ROLLBACK` sau `COMMIT`"
+      ],
+      "answer": 2,
+      "explanation": "`COMMIT` đã ghi bền vững việc trừ kho, nên tồn kho là 4. `ROLLBACK` đến sau không còn transaction nào để huỷ.\n- 5 chỉ đúng nếu `ROLLBACK` đứng trước `COMMIT`.\n- 3 sai: chỉ trừ một lần, không có lần trừ nào khác.\n- PostgreSQL không báo lỗi mà chỉ cảnh báo `there is no transaction in progress`, rồi chạy tiếp.",
+      "code": "BEGIN;\nUPDATE products SET stock_quantity = stock_quantity - 1 WHERE product_id = 1;\nCOMMIT;\nROLLBACK;\nSELECT stock_quantity FROM products WHERE product_id = 1;",
+      "codeLang": "sql",
+      "tables": [
+        "products"
+      ]
+    },
+    {
       "id": "sql-d16-01",
       "source": "Ngày 16 - Transaction và ACID",
       "topic": "Autocommit",
@@ -47,7 +127,10 @@
         "Câu đọc chạy nhưng chỉ thấy dữ liệu từ trước khi bắt đầu transaction"
       ],
       "answer": 2,
-      "explanation": "Trong PostgreSQL, một câu lệnh lỗi đưa cả transaction vào trạng thái **aborted**. Mọi câu sau đều bị từ chối với `current transaction is aborted, commands ignored until end of transaction block`, cho tới khi `ROLLBACK` (hoặc `ROLLBACK TO SAVEPOINT`).\n- Chỉ hủy riêng câu lỗi rồi chạy tiếp là hành vi mặc định của MySQL và SQL Server, không phải PostgreSQL.\n- PostgreSQL không tự ROLLBACK và mở transaction mới giúp bạn.\n- SELECT không được chạy, nên cũng không có chuyện nó thấy dữ liệu cũ."
+      "explanation": "Trong PostgreSQL, một câu lệnh lỗi đưa cả transaction vào trạng thái **aborted**. Mọi câu sau đều bị từ chối với `current transaction is aborted, commands ignored until end of transaction block`, cho tới khi `ROLLBACK` (hoặc `ROLLBACK TO SAVEPOINT`).\n- Chỉ hủy riêng câu lỗi rồi chạy tiếp là hành vi mặc định của MySQL và SQL Server, không phải PostgreSQL.\n- PostgreSQL không tự ROLLBACK và mở transaction mới giúp bạn.\n- SELECT không được chạy, nên cũng không có chuyện nó thấy dữ liệu cũ.",
+      "tables": [
+        "products"
+      ]
     },
     {
       "id": "sql-d16-04",

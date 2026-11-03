@@ -4,6 +4,90 @@
   "description": "Demand paging, bit valid-invalid, lỗi trang, thrashing, nghịch lý Belady và thời gian truy cập hiệu quả.",
   "questions": [
     {
+      "id": "os-vm-16",
+      "topic": "Bộ nhớ ảo",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Bộ nhớ ảo (virtual memory)** cho phép điều gì?",
+      "options": [
+        "Tăng tốc độ của RAM vật lý lên nhiều lần",
+        "Thay thế hoàn toàn đĩa cứng bằng RAM",
+        "Chạy chương trình có kích thước lớn hơn bộ nhớ vật lý, vì chỉ cần một phần chương trình nằm trong RAM",
+        "Chạy chương trình mà không cần hệ điều hành"
+      ],
+      "answer": 2,
+      "explanation": "**Bộ nhớ ảo** tách bộ nhớ logic của chương trình khỏi bộ nhớ vật lý: chỉ những phần đang dùng được giữ trong RAM, phần còn lại nằm trên đĩa (swap). Nhờ vậy chương trình có thể lớn hơn RAM thật và nhiều chương trình chạy cùng lúc.\n\nNó không làm RAM nhanh hơn (thậm chí chậm hơn khi phải đụng tới đĩa), không thay đĩa cứng và vẫn cần hệ điều hành quản lý."
+    },
+    {
+      "id": "os-vm-17",
+      "topic": "Demand paging",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Demand paging** (phân trang theo yêu cầu) hoạt động theo nguyên tắc nào?",
+      "options": [
+        "Nạp toàn bộ chương trình vào RAM trước khi chạy",
+        "Chỉ nạp trang vào RAM khi chương trình thực sự truy cập đến trang đó",
+        "Chỉ nạp trang vào RAM khi người dùng bấm nút yêu cầu",
+        "Không bao giờ nạp trang vào RAM"
+      ],
+      "answer": 1,
+      "explanation": "**Demand paging**: trang chỉ được nạp từ đĩa vào RAM **khi cần** (lần đầu truy cập gây page fault). Nhờ vậy chương trình khởi động nhanh và RAM không bị chiếm bởi các trang không bao giờ dùng.\n\nNạp toàn bộ trước là cách làm cũ (tốn RAM và thời gian); người dùng không phải bấm yêu cầu nào; và nếu không bao giờ nạp thì chương trình không chạy được."
+    },
+    {
+      "id": "os-vm-18",
+      "topic": "Thay trang",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Thuật toán thay trang (page replacement)** được dùng khi nào?",
+      "options": [
+        "Khi muốn đổi tên một trang",
+        "Khi người dùng đóng một cửa sổ",
+        "Khi CPU nóng quá mức",
+        "Khi xảy ra lỗi trang mà RAM không còn khung trống, phải chọn một trang đang có trong RAM để đẩy ra"
+      ],
+      "answer": 3,
+      "explanation": "Khi page fault xảy ra nhưng **không còn khung trang trống**, hệ điều hành phải chọn một trang nạn nhân trong RAM để đuổi (ghi ra đĩa nếu đã bị sửa) rồi nạp trang mới vào chỗ đó. Việc chọn trang nào do **thuật toán thay trang** (FIFO, LRU, Optimal...) quyết định.\n\nĐổi tên trang, đóng cửa sổ hay CPU nóng không liên quan tới thay trang."
+    },
+    {
+      "id": "os-vm-19",
+      "topic": "LRU",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Ý tưởng của thuật toán thay trang **LRU (Least Recently Used)** là gì?",
+      "options": [
+        "Đuổi trang vào RAM sớm nhất",
+        "Đuổi trang được dùng nhiều nhất",
+        "Đuổi trang lâu nhất chưa được truy cập, vì giả định trang lâu không dùng thì ít có khả năng được dùng lại sớm",
+        "Đuổi ngẫu nhiên một trang bất kỳ"
+      ],
+      "answer": 2,
+      "explanation": "**LRU** dựa trên tính cục bộ: trang vừa dùng gần đây thường sắp được dùng lại, trang đã lâu không đụng tới thì ít khả năng cần. Vì vậy LRU đuổi trang **lâu nhất chưa được truy cập**.\n\nĐuổi trang vào sớm nhất là FIFO; đuổi trang dùng nhiều nhất đi ngược logic (và gần với MRU); đuổi ngẫu nhiên là thuật toán random."
+    },
+    {
+      "id": "os-vm-20",
+      "topic": "FIFO thay trang",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Thuật toán thay trang **FIFO** chọn trang nào để đuổi?",
+      "options": [
+        "Trang ít được dùng nhất",
+        "Trang được nạp vào bộ nhớ lâu nhất (vào trước nhất)",
+        "Trang sẽ được dùng muộn nhất trong tương lai",
+        "Trang vừa được truy cập gần nhất"
+      ],
+      "answer": 1,
+      "explanation": "**FIFO (First-In First-Out)** đuổi trang **nạp vào bộ nhớ sớm nhất**, giống hàng đợi: vào trước thì ra trước. Nhược điểm là nó không xét xem trang đó có đang được dùng nhiều không và có thể gặp nghịch lý Belady.\n\nTrang ít dùng nhất là LFU, trang dùng muộn nhất trong tương lai là Optimal, trang vừa truy cập gần nhất là ngược với LRU."
+    },
+    {
+      "id": "os-vm-21",
+      "topic": "Optimal",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Thuật toán thay trang **Optimal (OPT)** có đặc điểm nào sau đây?",
+      "options": [
+        "Dễ cài đặt nhất và được hầu hết hệ điều hành dùng",
+        "Chỉ dùng cho đĩa cứng",
+        "Cho số lỗi trang ít nhất nhưng không cài đặt được thực tế vì phải biết trước chuỗi tham chiếu tương lai",
+        "Luôn dính nghịch lý Belady"
+      ],
+      "answer": 2,
+      "explanation": "**Optimal** đuổi trang sẽ **được dùng lại muộn nhất** trong tương lai, nên cho số lỗi trang thấp nhất có thể. Nhưng muốn vậy phải biết trước tương lai nên chỉ dùng làm **mốc so sánh** cho các thuật toán thực tế.\n\nNó không dễ cài đặt, không dành riêng cho đĩa và ngược lại: Optimal là thuật toán ngăn xếp nên **không** bị nghịch lý Belady."
+    },
+    {
       "id": "os-vm-01",
       "topic": "Demand paging",
       "source": "Cuối kỳ HĐH – SPKT",
@@ -99,7 +183,7 @@
         "Tỷ lệ lỗi trang có thể tăng khi giảm số lượng khung được phân bổ"
       ],
       "answer": 1,
-      "explanation": "Định nghĩa chính xác: **thêm khung trang mà số lỗi trang lại tăng** — đi ngược trực giác \"cho nhiều bộ nhớ hơn thì chạy tốt hơn\".\n\nChú ý phương án nhiễu **c** và **d**: cả hai đều mô tả hành vi **bình thường, đúng như mong đợi** (thêm khung thì ít lỗi hơn, bớt khung thì nhiều lỗi hơn) nên không thể là \"bất thường\".\n\nVí dụ kiểm chứng với FIFO, chuỗi `1 2 3 4 1 2 5 1 2 3 4 5`: 3 khung cho 9 lỗi, 4 khung cho 10 lỗi."
+      "explanation": "Định nghĩa chính xác: **thêm khung trang mà số lỗi trang lại tăng** — đi ngược trực giác \"cho nhiều bộ nhớ hơn thì chạy tốt hơn\".\n\nChú ý hai phương án nhiễu cuối cùng (giảm lỗi khi tăng khung, tăng lỗi khi giảm khung): cả hai đều mô tả hành vi **bình thường, đúng như mong đợi** (thêm khung thì ít lỗi hơn, bớt khung thì nhiều lỗi hơn) nên không thể là \"bất thường\".\n\nVí dụ kiểm chứng với FIFO, chuỗi `1 2 3 4 1 2 5 1 2 3 4 5`: 3 khung cho 9 lỗi, 4 khung cho 10 lỗi."
     },
     {
       "id": "os-vm-08",
@@ -107,7 +191,7 @@
       "source": "Cuối kỳ HĐH – SPKT",
       "question": "**Thrashing** trong phân trang theo yêu cầu là gì?",
       "options": [
-        "vượt quá I/O trang",
+        "hệ thống dành nhiều thời gian cho I/O trang hơn cho việc chạy lệnh (I/O trang vượt mức)",
         "giảm I/O trang",
         "cải thiện hiệu suất hệ thống",
         "giảm mức độ đa chương trình"

@@ -32,5 +32,6 @@
     "CREATE VIEW active_products AS SELECT * FROM products WHERE is_active WITH CHECK OPTION; UPDATE active_products SET is_active = FALSE WHERE sku = 'LAP-001'",
     "CREATE VIEW active_products AS SELECT * FROM products WHERE is_active WITH CHECK OPTION; UPDATE active_products SET stock_quantity = 0 WHERE sku = 'PHN-004'",
     "CREATE VIEW active_products AS SELECT * FROM products WHERE is_active WITH CHECK OPTION; SELECT sku FROM active_products WHERE stock_quantity = 0"
-  ]}
+  ]},
+  {"id":"sql-d21-23","kind":"predict","query":"BEGIN; DELETE FROM payments; ROLLBACK; SELECT COUNT(*) FROM payments","format":"scalar"}
 ]

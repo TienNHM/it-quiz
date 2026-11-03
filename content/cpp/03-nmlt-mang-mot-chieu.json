@@ -4,6 +4,76 @@
   "description": "Nhập/xuất mảng, tổng, max/min, trung bình, đếm và tìm phần tử nguyên tố/hoàn thiện, UCLN mảng, Fibonacci và hoán đổi phần tử, kèm các lỗi thường gặp.",
   "questions": [
     {
+      "id": "cpp-c03-23",
+      "topic": "Mảng là gì",
+      "source": "NMLT C03 - mảng một chiều (cơ bản)",
+      "question": "Mảng một chiều trong C++ là gì?",
+      "options": [
+        "Một biến chỉ chứa được đúng một giá trị",
+        "Một hàm dùng để sắp xếp dữ liệu",
+        "Một dãy các phần tử có thể khác kiểu nhau tuỳ ý",
+        "Một dãy các phần tử cùng kiểu được lưu liên tiếp trong bộ nhớ"
+      ],
+      "answer": 3,
+      "explanation": "Mảng gồm nhiều phần tử cùng kiểu, nằm liên tiếp nhau trong bộ nhớ và truy cập bằng chỉ số. Một biến đơn chỉ chứa một giá trị, mảng không phải hàm sắp xếp, và các phần tử của mảng bắt buộc cùng kiểu."
+    },
+    {
+      "id": "cpp-c03-24",
+      "topic": "Chỉ số đầu tiên",
+      "source": "NMLT C03 - mảng một chiều (cơ bản)",
+      "question": "Trong C++, phần tử đầu tiên của mảng `a` được truy cập bằng cách nào?",
+      "options": [
+        "`a[1]`",
+        "`a[0]`",
+        "`a[-1]`",
+        "`a[n]` với n là kích thước mảng"
+      ],
+      "answer": 1,
+      "explanation": "Chỉ số mảng trong C++ bắt đầu từ 0, nên phần tử đầu là `a[0]`. `a[1]` là phần tử thứ hai, `a[-1]` nằm trước mảng (truy cập sai), còn `a[n]` vượt quá phần tử cuối là `a[n-1]`."
+    },
+    {
+      "id": "cpp-c03-25",
+      "topic": "Phần tử cuối mảng",
+      "source": "NMLT C03 - mảng một chiều (cơ bản)",
+      "question": "Mảng `int a[10];` có 10 phần tử. Phần tử cuối cùng là phần tử nào?",
+      "options": [
+        "`a[10]`",
+        "`a[11]`",
+        "`a[9]`",
+        "`a[0]`"
+      ],
+      "answer": 2,
+      "explanation": "Với 10 phần tử, chỉ số hợp lệ là 0 đến 9, nên phần tử cuối là `a[9]`. `a[10]` và `a[11]` vượt khỏi mảng (hành vi không xác định), còn `a[0]` là phần tử đầu tiên."
+    },
+    {
+      "id": "cpp-c03-26",
+      "topic": "Truy cập ngoài biên",
+      "source": "NMLT C03 - mảng một chiều (cơ bản)",
+      "question": "Truy cập `a[100]` khi mảng `int a[10];` chỉ có 10 phần tử thì điều gì có thể xảy ra?",
+      "options": [
+        "Hành vi không xác định: có thể ra giá trị rác hoặc chương trình lỗi",
+        "Luôn trả về 0 một cách an toàn",
+        "Trình biên dịch tự mở rộng mảng cho đủ",
+        "Luôn báo lỗi biên dịch dừng ngay trước khi chạy"
+      ],
+      "answer": 0,
+      "explanation": "C++ không kiểm tra biên mảng khi chạy, nên truy cập ngoài biên là hành vi không xác định (giá trị rác, lỗi, hay sai âm thầm). Nó không mặc định trả 0, không tự mở rộng mảng, và thường cũng không bị báo lỗi lúc biên dịch."
+    },
+    {
+      "id": "cpp-c03-27",
+      "topic": "Trung bình cộng",
+      "source": "NMLT C03 - mảng một chiều (cơ bản)",
+      "question": "Muốn tính trung bình cộng của các phần tử trong mảng ta làm thế nào?",
+      "options": [
+        "Lấy phần tử lớn nhất cộng phần tử nhỏ nhất",
+        "Lấy tổng các phần tử nhân với số phần tử",
+        "Lấy tổng các phần tử chia cho số phần tử",
+        "Lấy phần tử ở giữa mảng"
+      ],
+      "answer": 2,
+      "explanation": "Trung bình cộng bằng tổng chia cho số lượng phần tử. Max cộng min (rồi chia 2) chỉ là trung điểm khoảng giá trị; nhân tổng với số phần tử ra giá trị rất lớn; phần tử ở giữa liên quan đến trung vị chứ không phải trung bình."
+    },
+    {
       "id": "cpp-c03-01",
       "topic": "Chỉ số mảng",
       "source": "NMLT C03 - bài 1 Nhập và xuất mảng",

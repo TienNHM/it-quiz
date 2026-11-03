@@ -4,6 +4,76 @@
   "description": "Xếp hạng, lũy kế, LAG/LEAD, khung ROWS/RANGE và CTE đệ quy trên cây danh mục, sơ đồ nhân viên.",
   "questions": [
     {
+      "id": "sql-d29-16",
+      "topic": "Từ khóa OVER",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy (cơ bản)",
+      "question": "Từ khóa nào cho PostgreSQL biết một hàm đang được dùng như window function?",
+      "options": [
+        "`GROUP`",
+        "`OVER`",
+        "`WINDOW ONLY`",
+        "`PARTITION` đứng một mình"
+      ],
+      "answer": 1,
+      "explanation": "Window function luôn đi kèm mệnh đề `OVER (...)`, ví dụ `SUM(amount) OVER (PARTITION BY customer_id)`. Phần trong ngoặc mô tả cửa sổ: chia nhóm bằng `PARTITION BY` và sắp xếp bằng `ORDER BY`.\n- `GROUP` đi với `GROUP BY` để gộp dòng, chứ không tạo window function.\n- `WINDOW ONLY` không phải cú pháp có thật.\n- `PARTITION BY` chỉ là một phần nằm bên trong `OVER`."
+    },
+    {
+      "id": "sql-d29-17",
+      "topic": "Đánh số thứ tự",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy (cơ bản)",
+      "question": "Hàm `ROW_NUMBER()` dùng để làm gì?",
+      "options": [
+        "đếm tổng số dòng của bảng rồi gộp thành một dòng",
+        "xóa các dòng trùng nhau",
+        "đổi số dòng thành chữ",
+        "đánh số thứ tự 1, 2, 3, ... cho các dòng theo thứ tự được chỉ định"
+      ],
+      "answer": 3,
+      "explanation": "`ROW_NUMBER() OVER (ORDER BY ...)` gán cho mỗi dòng một số thứ tự liên tiếp, thường dùng để lấy top-N hoặc dòng đầu tiên của mỗi nhóm.\n- Đếm tổng số dòng và gộp lại là `COUNT(*)` kèm `GROUP BY`.\n- Xóa dòng trùng là việc của `DISTINCT` hoặc `DELETE`.\n- `ROW_NUMBER` không đổi số thành chữ."
+    },
+    {
+      "id": "sql-d29-18",
+      "topic": "CTE là gì",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy (cơ bản)",
+      "question": "CTE (Common Table Expression) viết bằng từ khóa `WITH` là gì?",
+      "options": [
+        "một truy vấn con có tên, định nghĩa ngay đầu câu lệnh để dùng như một bảng tạm trong câu đó",
+        "một kiểu dữ liệu để lưu ngày tháng",
+        "một loại index đặc biệt",
+        "một quyền truy cập đặc biệt của quản trị viên"
+      ],
+      "answer": 0,
+      "explanation": "CTE cho phép đặt tên cho một truy vấn con rồi dùng lại phía dưới, giúp câu lệnh dài trở nên dễ đọc theo từng bước. Nó chỉ tồn tại trong câu lệnh đó.\n- CTE không phải kiểu dữ liệu ngày tháng.\n- CTE không phải index.\n- CTE không liên quan đến phân quyền."
+    },
+    {
+      "id": "sql-d29-19",
+      "topic": "Truy vấn đệ quy dùng khi nào",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy (cơ bản)",
+      "question": "Truy vấn đệ quy (`WITH RECURSIVE`) hợp nhất với loại dữ liệu nào?",
+      "options": [
+        "một bảng chỉ có hai cột số",
+        "dữ liệu dạng cây, như sơ đồ tổ chức nhân viên - quản lý hay danh mục cha - con",
+        "dữ liệu đã được sắp xếp sẵn",
+        "dữ liệu chỉ có một dòng"
+      ],
+      "answer": 1,
+      "explanation": "Dữ liệu cây có độ sâu không biết trước (nhân viên dưới quyền quản lý, danh mục con của danh mục cha) rất hợp với đệ quy: lặp đi lặp lại \"tìm cấp dưới của những người vừa tìm được\" cho tới hết.\n- Bảng hai cột số hay chỉ một dòng không cần đệ quy.\n- Đã sắp xếp sẵn hay chưa không quyết định việc cần đệ quy."
+    },
+    {
+      "id": "sql-d29-20",
+      "topic": "LAG là gì",
+      "source": "Ngày 29 - Window function và truy vấn đệ quy (cơ bản)",
+      "question": "Hàm `LAG(giá_trị)` trả về gì?",
+      "options": [
+        "giá trị lớn nhất của cả bảng",
+        "giá trị của dòng kế tiếp (phía sau)",
+        "số dòng trong cửa sổ",
+        "giá trị của dòng đứng ngay trước dòng hiện tại"
+      ],
+      "answer": 3,
+      "explanation": "`LAG` \"nhìn lui\" một dòng (hoặc nhiều dòng nếu ghi thêm tham số), rất tiện để so sánh doanh thu tháng này với tháng trước.\n- Giá trị lớn nhất của cả bảng là `MAX`.\n- Giá trị dòng kế tiếp là `LEAD`, hàm đối xứng của `LAG`.\n- Số dòng trong cửa sổ là `COUNT(*) OVER (...)`."
+    },
+    {
       "id": "sql-d29-01",
       "topic": "Window vs GROUP BY",
       "source": "Ngày 29 - Window function và truy vấn đệ quy",

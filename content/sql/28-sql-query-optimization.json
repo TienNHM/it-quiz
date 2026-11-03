@@ -4,6 +4,76 @@
   "description": "Điều kiện sargable, viết lại subquery, EXISTS/IN/NOT EXISTS, covering index, phân trang keyset, N+1 và materialized view.",
   "questions": [
     {
+      "id": "sql-d28-15",
+      "topic": "Bước đầu khi truy vấn chậm",
+      "source": "Ngày 28 - Tối ưu truy vấn (cơ bản)",
+      "question": "Một truy vấn chạy chậm. Bước đầu tiên hợp lý nhất là gì?",
+      "options": [
+        "dùng `EXPLAIN` (hoặc `EXPLAIN ANALYZE`) để xem PostgreSQL thực thi truy vấn thế nào",
+        "thêm index cho mọi cột của bảng ngay lập tức",
+        "khởi động lại máy chủ cơ sở dữ liệu",
+        "xóa dữ liệu cũ mà không kiểm tra"
+      ],
+      "answer": 0,
+      "explanation": "Đo trước khi sửa: `EXPLAIN` cho thấy kế hoạch thực thi (quét bảng hay dùng index, thứ tự JOIN, số dòng ước lượng), từ đó biết chỗ nào đáng tối ưu.\n- Thêm index cho mọi cột tốn chỗ và làm ghi chậm đi, chưa chắc giải quyết đúng vấn đề.\n- Khởi động lại máy chủ không sửa được câu truy vấn kém.\n- Xóa dữ liệu bừa bãi nguy hiểm và có thể mất dữ liệu cần thiết."
+    },
+    {
+      "id": "sql-d28-16",
+      "topic": "Tránh SELECT *",
+      "source": "Ngày 28 - Tối ưu truy vấn (cơ bản)",
+      "question": "Vì sao trong code thực tế thường khuyên liệt kê đúng các cột cần dùng thay vì viết `SELECT *`?",
+      "options": [
+        "vì cú pháp chọn mọi cột bị cấm trong PostgreSQL",
+        "vì chọn mọi cột chỉ trả về một dòng",
+        "chỉ lấy cột cần thiết giúp giảm dữ liệu truyền đi và có thể tận dụng index (Index Only Scan)",
+        "vì liệt kê cột sẽ tự tạo index"
+      ],
+      "answer": 2,
+      "explanation": "Lấy thừa cột nghĩa là đọc và gửi thừa dữ liệu qua mạng; khi chỉ cần vài cột đã có sẵn trong index thì còn tránh được việc mở bảng.\n- Cú pháp chọn mọi cột (`*`) hoàn toàn hợp lệ, nhất là khi khám phá dữ liệu.\n- Nó trả về mọi dòng thỏa điều kiện, không chỉ một dòng.\n- Liệt kê cột không tự tạo index nào."
+    },
+    {
+      "id": "sql-d28-17",
+      "topic": "LIMIT làm gì",
+      "source": "Ngày 28 - Tối ưu truy vấn (cơ bản)",
+      "question": "Mệnh đề `LIMIT 10` trong truy vấn có tác dụng gì?",
+      "options": [
+        "giới hạn thời gian truy vấn tối đa 10 giây",
+        "chỉ trả về tối đa 10 dòng",
+        "chỉ cho phép đọc 10 cột",
+        "giới hạn người dùng 10 lần truy vấn mỗi ngày"
+      ],
+      "answer": 1,
+      "explanation": "`LIMIT n` cắt kết quả còn tối đa n dòng; kết hợp với `ORDER BY` để lấy \"10 dòng đầu\" theo đúng thứ tự. Trả ít dòng hơn giúp giảm dữ liệu truyền đi.\n- Giới hạn thời gian là `statement_timeout`, một cài đặt khác.\n- `LIMIT` nói về số dòng, không phải số cột.\n- Không có giới hạn số lần truy vấn nào."
+    },
+    {
+      "id": "sql-d28-18",
+      "topic": "Seq Scan là gì",
+      "source": "Ngày 28 - Tối ưu truy vấn (cơ bản)",
+      "question": "Trong kết quả `EXPLAIN`, nút `Seq Scan` nghĩa là gì?",
+      "options": [
+        "PostgreSQL đang quét theo trình tự chỉ mục (index) đã sắp xếp",
+        "truy vấn bị lỗi và phải quét lại",
+        "PostgreSQL đang xóa các dòng thừa",
+        "PostgreSQL đọc tuần tự toàn bộ các dòng của bảng"
+      ],
+      "answer": 3,
+      "explanation": "`Seq Scan` (sequential scan) là quét từ đầu đến cuối bảng. Với bảng nhỏ hoặc khi cần phần lớn dòng thì đó là cách rẻ nhất, chỉ đáng lo khi bảng lớn mà chỉ cần ít dòng.\n- Quét theo index hiện ra là `Index Scan` hoặc `Index Only Scan`.\n- Đó không phải thông báo lỗi.\n- `EXPLAIN` chỉ mô tả cách thực thi, không xóa dòng nào."
+    },
+    {
+      "id": "sql-d28-19",
+      "topic": "Cái giá của index",
+      "source": "Ngày 28 - Tối ưu truy vấn (cơ bản)",
+      "question": "Việc tạo thêm nhiều index trên một bảng có thể gây ra hệ quả gì?",
+      "options": [
+        "tốn thêm dung lượng và làm các thao tác thêm, sửa, xóa chậm hơn vì index phải cập nhật theo",
+        "làm việc đọc dữ liệu luôn chậm đi",
+        "làm mất dữ liệu cũ trong bảng",
+        "không có hệ quả gì, index miễn phí hoàn toàn"
+      ],
+      "answer": 0,
+      "explanation": "Index giúp đọc nhanh nhưng mỗi lần ghi, PostgreSQL phải cập nhật thêm mọi index liên quan và index chiếm thêm dung lượng, nên chỉ tạo index cho truy vấn thật sự cần.\n- `SELECT` thường nhanh hơn nhờ index chứ không chậm đi.\n- Index không làm mất dữ liệu trong bảng.\n- Index không miễn phí: có chi phí về không gian và chi phí ghi."
+    },
+    {
       "id": "sql-d28-01",
       "topic": "Lọc theo ngày sargable",
       "source": "Ngày 28 - Tối ưu truy vấn",

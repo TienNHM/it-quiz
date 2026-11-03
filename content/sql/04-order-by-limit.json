@@ -4,6 +4,81 @@
   "description": "Sắp xếp kết quả, xử lý NULL, lấy top N, phân trang bằng OFFSET và keyset.",
   "questions": [
     {
+      "id": "sql-d04-17",
+      "topic": "ORDER BY là gì",
+      "source": "Ngày 4 - ORDER BY và LIMIT (cơ bản)",
+      "question": "Mệnh đề `ORDER BY` dùng để làm gì?",
+      "options": [
+        "sắp xếp thứ tự các dòng kết quả",
+        "lọc bớt các dòng không thỏa điều kiện",
+        "xóa các dòng bị trùng nhau",
+        "gộp các dòng thành nhóm"
+      ],
+      "answer": 0,
+      "explanation": "`ORDER BY` **sắp xếp** kết quả theo một hay nhiều cột. Không có nó, thứ tự các dòng không được bảo đảm.\n- Lọc dòng là việc của `WHERE`.\n- Bỏ dòng trùng là việc của `DISTINCT`.\n- Gộp thành nhóm là việc của `GROUP BY`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d04-18",
+      "topic": "ASC và DESC",
+      "source": "Ngày 4 - ORDER BY và LIMIT (cơ bản)",
+      "question": "Trong `ORDER BY price DESC`, từ `DESC` có nghĩa là gì?",
+      "options": [
+        "sắp xếp tăng dần, từ nhỏ đến lớn",
+        "mô tả (describe) cột `price`",
+        "sắp xếp giảm dần, từ lớn đến nhỏ",
+        "chỉ lấy các giá trị khác nhau"
+      ],
+      "answer": 2,
+      "explanation": "`DESC` (descending) là **giảm dần**: giá cao nhất đứng trước. `ASC` (ascending) là tăng dần.\n- Tăng dần là `ASC`, không phải `DESC`.\n- Từ \"describe\" dễ gây nhầm vì viết gần giống, nhưng trong `ORDER BY` nó chỉ chiều sắp xếp.\n- Lấy giá trị khác nhau là việc của `DISTINCT`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d04-19",
+      "topic": "Chiều sắp xếp mặc định",
+      "source": "Ngày 4 - ORDER BY và LIMIT (cơ bản)",
+      "question": "Nếu viết `ORDER BY price` mà không ghi `ASC` hay `DESC`, kết quả được xếp thế nào?",
+      "options": [
+        "giảm dần, giá cao đứng trước",
+        "tăng dần, giá thấp đứng trước",
+        "theo thứ tự thêm vào bảng, không đổi",
+        "báo lỗi vì thiếu chiều sắp xếp"
+      ],
+      "answer": 1,
+      "explanation": "Mặc định `ORDER BY` là **tăng dần** (`ASC`), nên giá thấp đứng trước.\n- Giảm dần phải ghi rõ `DESC`.\n- Thứ tự thêm vào bảng không được bảo đảm, nên không có \"thứ tự gốc\" để giữ.\n- Không có lỗi: `ASC` là giá trị ngầm định, bạn có thể bỏ qua.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d04-20",
+      "topic": "LIMIT là gì",
+      "source": "Ngày 4 - ORDER BY và LIMIT (cơ bản)",
+      "question": "Mệnh đề `LIMIT 5` ở cuối câu `SELECT` có tác dụng gì?",
+      "options": [
+        "chỉ cho phép sửa tối đa 5 dòng",
+        "chỉ lấy các dòng có giá trị bằng 5",
+        "giới hạn bảng chỉ có 5 cột",
+        "chỉ trả về tối đa 5 dòng"
+      ],
+      "answer": 3,
+      "explanation": "`LIMIT 5` cắt kết quả còn **tối đa 5 dòng**. Muốn lấy \"5 dòng lớn nhất hay nhỏ nhất\" thì phải có `ORDER BY` đi kèm.\n- `LIMIT` áp dụng cho truy vấn đọc, không giới hạn số dòng được sửa.\n- Nó không so sánh giá trị với số 5.\n- Số cột do danh sách sau `SELECT` quyết định, không liên quan `LIMIT`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d04-21",
+      "topic": "OFFSET là gì",
+      "source": "Ngày 4 - ORDER BY và LIMIT (cơ bản)",
+      "question": "Mệnh đề `OFFSET 10` thường được dùng để làm gì?",
+      "options": [
+        "giới hạn kết quả còn đúng 10 dòng",
+        "bỏ qua 10 dòng đầu, hay dùng để chuyển sang trang kế tiếp",
+        "tăng giá trị mỗi dòng thêm 10",
+        "sắp xếp lại 10 dòng cuối cùng"
+      ],
+      "answer": 1,
+      "explanation": "`OFFSET n` **bỏ qua n dòng đầu** của kết quả; ghép với `LIMIT` ta có phân trang, ví dụ `LIMIT 10 OFFSET 10` là trang thứ hai.\n- Giới hạn số dòng là việc của `LIMIT`, không phải `OFFSET`.\n- `OFFSET` không thay đổi giá trị dữ liệu nào.\n- Nó cũng không sắp xếp lại gì: thứ tự do `ORDER BY` quyết định.",
+      "kind": "concept"
+    },
+    {
       "id": "sql-d04-01",
       "topic": "ORDER BY, LIMIT",
       "source": "Ngày 4 - ORDER BY và LIMIT",
@@ -166,7 +241,7 @@
         "Nhiều khách hòa nhau về `city` nên thứ tự giữa họ không xác định và có thể khác nhau giữa các lần chạy; cần thêm cột duy nhất như `customer_id` vào cuối `ORDER BY`"
       ],
       "answer": 3,
-      "explanation": "Bốn khách Hà Nội hòa nhau về `city`, nên mỗi câu truy vấn được xếp họ theo thứ tự bất kỳ; hai câu với `OFFSET` khác nhau có thể xếp khác nhau. Kết quả thật trong bài: id 7 xuất hiện ở cả trang 2 lẫn trang 3, còn id 13 không có ở trang nào. Sửa: `ORDER BY city, customer_id`.\n- Công thức đúng là `(trang - 1) * cỡ_trang`, và nó không gây lặp dòng.\n- `LIMIT n` trả tối đa đúng n dòng, không dư.\n- `ORDER BY` không bỏ dòng nào, chỉ xếp thứ tự."
+      "explanation": "Bốn khách Hà Nội hòa nhau về `city`, nên mỗi câu truy vấn được xếp họ theo thứ tự bất kỳ; hai câu với `OFFSET` khác nhau có thể xếp khác nhau. Hệ quả: khi thứ tự của họ khác nhau giữa hai lần chạy, một khách Hà Nội có thể bị lặp ở hai trang liên tiếp, còn khách khác lại không xuất hiện ở trang nào. Sửa: `ORDER BY city, customer_id`.\n- Công thức đúng là `(trang - 1) * cỡ_trang`, và nó không gây lặp dòng.\n- `LIMIT n` trả tối đa đúng n dòng, không dư.\n- `ORDER BY` không bỏ dòng nào, chỉ xếp thứ tự."
     },
     {
       "id": "sql-d04-12",

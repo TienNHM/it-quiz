@@ -4,6 +4,76 @@
   "description": "EF Core: change tracker, DbContext và cấu hình mô hình, quan hệ, migration, mẫu truy vấn, N+1 và hiệu năng.",
   "questions": [
     {
+      "id": "dotnet-m13-21",
+      "topic": "EF Core là gì",
+      "source": "Module 13 - EF Core Overview (cơ bản)",
+      "question": "Entity Framework Core (EF Core) là gì?",
+      "options": [
+        "Một hệ quản trị cơ sở dữ liệu thay thế SQL Server.",
+        "Một framework dựng giao diện web bằng C#.",
+        "Một công cụ đóng gói ứng dụng vào container.",
+        "Một ORM giúp làm việc với database bằng các đối tượng C# thay vì viết SQL thủ công cho mọi thao tác."
+      ],
+      "answer": 3,
+      "explanation": "ORM (Object-Relational Mapper) ánh xạ bảng sang lớp C#, cho phép truy vấn bằng LINQ và lưu thay đổi bằng SaveChanges; EF Core tự sinh SQL tương ứng. Nó không phải hệ quản trị database, nó chỉ nói chuyện với SQL Server, PostgreSQL, SQLite và các hệ khác. Nó cũng không dựng giao diện, đó là việc của Razor, Blazor hay MVC. Đóng gói vào container là việc của Docker, không liên quan đến EF Core."
+    },
+    {
+      "id": "dotnet-m13-22",
+      "topic": "DbContext là gì",
+      "source": "Module 13 - DbContext và Entity Configuration (cơ bản)",
+      "question": "Lớp `DbContext` trong EF Core đóng vai trò gì?",
+      "options": [
+        "Là chuỗi kết nối, chỉ có địa chỉ server và mật khẩu.",
+        "Là phiên làm việc với database, chứa các DbSet và theo dõi thay đổi để lưu bằng SaveChanges.",
+        "Là một tệp migration chứa lệnh SQL.",
+        "Là bảng đặc biệt lưu thông tin về mọi bảng khác."
+      ],
+      "answer": 1,
+      "explanation": "DbContext đại diện cho một phiên làm việc: nó giữ các DbSet để truy vấn, theo dõi thực thể đã nạp và gom thay đổi thành SQL khi gọi SaveChanges. Chuỗi kết nối chỉ là một cấu hình mà DbContext dùng, không phải bản thân nó. Migration là tệp mô tả thay đổi schema, tách biệt với DbContext. Bảng lưu thông tin các bảng khác giống metadata của hệ quản trị, không phải khái niệm của EF Core."
+    },
+    {
+      "id": "dotnet-m13-23",
+      "topic": "Migration là gì",
+      "source": "Module 13 - Migrations (cơ bản)",
+      "question": "Migration trong EF Core dùng để làm gì?",
+      "options": [
+        "Chuyển dữ liệu từ máy chủ này sang máy chủ khác mỗi khi có người dùng mới.",
+        "Tự động tăng tốc truy vấn bằng cách thêm index tuỳ ý.",
+        "Ghi lại các thay đổi của mô hình thành các bước có thể áp dụng để cập nhật schema database.",
+        "Xoá toàn bộ dữ liệu và tạo lại database mỗi lần chạy ứng dụng."
+      ],
+      "answer": 2,
+      "explanation": "Migration là các tệp C# sinh bởi `dotnet ef migrations add`, mô tả cách đưa schema từ trạng thái này sang trạng thái khác (Up) và quay lui (Down). Nhờ đó schema được quản lý phiên bản cùng mã nguồn. Phương án chuyển dữ liệu giữa máy chủ sai vì migration lo schema, không lo di chuyển dữ liệu. Phương án tự thêm index sai vì EF chỉ tạo index khi mô hình khai báo. Phương án xoá và tạo lại sai vì áp migration chỉ chạy những bước chưa áp dụng."
+    },
+    {
+      "id": "dotnet-m13-24",
+      "topic": "AsNoTracking",
+      "source": "Module 13 - Performance (cơ bản)",
+      "question": "Với truy vấn chỉ để đọc và hiển thị, việc thêm `AsNoTracking()` giúp ích gì?",
+      "options": [
+        "EF Core không theo dõi các thực thể nạp lên, nên nhanh hơn và tốn ít bộ nhớ hơn.",
+        "Truy vấn tự động được lưu cache vĩnh viễn.",
+        "Dữ liệu tự cập nhật vào database khi bạn sửa đối tượng.",
+        "Truy vấn có thể chạy mà không cần kết nối database."
+      ],
+      "answer": 0,
+      "explanation": "AsNoTracking bỏ qua change tracker, nên EF Core không phải tạo bản chụp và so sánh cho từng thực thể. Phù hợp với dữ liệu chỉ đọc. Nó không bật cache, nên phương án cache sai. Đúng ngược lại, vì không theo dõi nên sửa đối tượng và gọi SaveChanges sẽ không lưu gì, do đó phương án tự cập nhật sai. Truy vấn vẫn cần kết nối và vẫn gửi SQL, nên phương án không cần kết nối sai."
+    },
+    {
+      "id": "dotnet-m13-25",
+      "topic": "Quan hệ một-nhiều",
+      "source": "Module 13 - Relationships (cơ bản)",
+      "question": "Trong EF Core, quan hệ một-nhiều giữa `Customer` và `Order` thường được biểu diễn thế nào?",
+      "options": [
+        "Customer có tập Orders, Order có CustomerId (khoá ngoại) và có thể có thuộc tính Customer.",
+        "Customer chứa toàn bộ nội dung Order dưới dạng một chuỗi văn bản duy nhất.",
+        "Mỗi Order phải tạo ra một database riêng.",
+        "Không thể biểu diễn quan hệ, chỉ có thể dùng SQL thuần."
+      ],
+      "answer": 0,
+      "explanation": "Phía \"một\" giữ một tập navigation (Orders), phía \"nhiều\" giữ khoá ngoại CustomerId và tuỳ chọn một navigation trở lại. EF Core nhận ra quy ước này và tạo quan hệ. Nhét toàn bộ Order vào một chuỗi không phải quan hệ và làm truy vấn rất khó. Mỗi Order một database là vô lý và không phải cách ánh xạ. EF Core hỗ trợ cả quan hệ một-nhiều, một-một lẫn nhiều-nhiều nên không cần SQL thuần."
+    },
+    {
       "id": "dotnet-m13-01",
       "topic": "Change tracker và identity map",
       "source": "Module 13 - EF Core Overview",

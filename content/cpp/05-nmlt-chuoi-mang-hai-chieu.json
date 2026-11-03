@@ -4,6 +4,76 @@
   "description": "Chuỗi ký tự (char[] và string), các thuật toán duyệt chuỗi, mảng hai chiều, đường chéo ma trận và nén chuỗi RLE.",
   "questions": [
     {
+      "id": "cpp-c05-25",
+      "topic": "Ký tự kết thúc chuỗi C",
+      "source": "NMLT C05 - chuỗi và mảng hai chiều (cơ bản)",
+      "question": "Chuỗi kiểu C (mảng `char`) kết thúc bằng ký tự đặc biệt nào?",
+      "options": [
+        "```cpp\n'\\0'\n```",
+        "```cpp\n'\\n'\n```",
+        "```cpp\n' '\n```",
+        "```cpp\n';'\n```"
+      ],
+      "answer": 2,
+      "explanation": "Chuỗi kiểu C luôn kết thúc bằng ký tự null `'\\0'` để các hàm biết chuỗi dừng ở đâu. `'\\n'` chỉ là xuống dòng, khoảng trắng là ký tự thường nằm trong chuỗi, còn dấu `;` chỉ là một ký tự thông thường."
+    },
+    {
+      "id": "cpp-c05-26",
+      "topic": "Ký tự và chuỗi",
+      "source": "NMLT C05 - chuỗi và mảng hai chiều (cơ bản)",
+      "question": "Trong C++, `'a'` và `\"a\"` khác nhau như thế nào?",
+      "options": [
+        "`'a'` là một ký tự (`char`), `\"a\"` là một chuỗi gồm ký tự a và ký tự kết thúc",
+        "Hai cách viết hoàn toàn giống nhau",
+        "`'a'` là chuỗi, `\"a\"` là ký tự",
+        "`'a'` dùng cho chữ hoa, `\"a\"` dùng cho chữ thường"
+      ],
+      "answer": 0,
+      "explanation": "Dấu nháy đơn tạo một ký tự `char`, dấu nháy kép tạo một chuỗi (kiểu C có thêm `'\\0'`). Chúng không giống nhau, không bị hoán đổi vai trò, và cách viết không liên quan đến chữ hoa hay chữ thường."
+    },
+    {
+      "id": "cpp-c05-27",
+      "topic": "getline",
+      "source": "NMLT C05 - chuỗi và mảng hai chiều (cơ bản)",
+      "question": "Khi nhập một họ tên có khoảng trắng như \"Nguyen Van A\" vào `string s`, nên dùng gì?",
+      "options": [
+        "```cpp\ncin >> s;\n```",
+        "```cpp\ngetline(cin, s);\n```",
+        "```cpp\ncout << s;\n```",
+        "```cpp\ns.length();\n```"
+      ],
+      "answer": 1,
+      "explanation": "`getline(cin, s)` đọc cả dòng, kể cả khoảng trắng. `cin >> s` dừng tại khoảng trắng đầu tiên nên chỉ được \"Nguyen\". `cout << s` là in ra, còn `s.length()` chỉ trả độ dài chuỗi."
+    },
+    {
+      "id": "cpp-c05-28",
+      "topic": "Mảng hai chiều",
+      "source": "NMLT C05 - chuỗi và mảng hai chiều (cơ bản)",
+      "question": "Với ma trận `int a[3][4];`, cách hiểu nào đúng?",
+      "options": [
+        "Có 4 hàng và 3 cột",
+        "Có 12 hàng và 1 cột",
+        "Có 3 hàng và 4 cột, truy cập phần tử bằng `a[i][j]` (i là hàng, j là cột)",
+        "Là một chuỗi gồm 3 ký tự"
+      ],
+      "answer": 2,
+      "explanation": "Khai báo `a[3][4]` có chỉ số thứ nhất là số hàng (3) và chỉ số thứ hai là số cột (4), tổng 12 phần tử. Đảo ngược hàng với cột là sai, 12 hàng 1 cột là cách hiểu không khớp khai báo, và đây là mảng số nguyên chứ không phải chuỗi."
+    },
+    {
+      "id": "cpp-c05-29",
+      "topic": "Độ dài string",
+      "source": "NMLT C05 - chuỗi và mảng hai chiều (cơ bản)",
+      "question": "Với `string s = \"hello\";`, biểu thức `s.length()` cho kết quả bao nhiêu?",
+      "options": [
+        "4",
+        "6",
+        "1",
+        "5"
+      ],
+      "answer": 3,
+      "explanation": "`s.length()` trả về số ký tự của chuỗi, \"hello\" có 5 ký tự (h, e, l, l, o). Kết quả 4 là thiếu một ký tự, 6 là cộng nhầm ký tự kết thúc `'\\0'` (string không tính vào length), còn 1 là số lượng chuỗi chứ không phải số ký tự."
+    },
+    {
       "id": "cpp-c05-01",
       "topic": "Chuỗi C",
       "source": "NMLT C05 - bài 3 Đảo ngược chuỗi",

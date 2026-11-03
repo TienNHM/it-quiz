@@ -4,6 +4,79 @@
   "description": "CASE dạng tìm kiếm và đơn giản, CASE trong ORDER BY và UPDATE, SUM/COUNT(CASE) và FILTER, cùng các bẫy thứ tự WHEN, NULL, kiểu dữ liệu.",
   "questions": [
     {
+      "id": "sql-d13-15",
+      "topic": "CASE là gì",
+      "source": "Ngày 13 - CASE và tổng hợp có điều kiện (cơ bản)",
+      "question": "Biểu thức `CASE WHEN ... THEN ... END` trong SQL dùng để làm gì?",
+      "options": [
+        "Tạo một bảng mới từ kết quả truy vấn",
+        "Chọn một giá trị theo điều kiện, giống `if ... else` trong lập trình",
+        "Sắp xếp các dòng theo thứ tự tăng dần",
+        "Xoá những dòng không thoả điều kiện"
+      ],
+      "answer": 1,
+      "explanation": "`CASE` cho phép trả về giá trị khác nhau tuỳ điều kiện, giống `if ... else if ... else`, ví dụ gắn nhãn \"Rẻ\", \"Vừa\", \"Đắt\" theo giá.\n- Tạo bảng là việc của `CREATE TABLE`.\n- Sắp xếp là việc của `ORDER BY`, dù `CASE` có thể đặt bên trong nó.\n- Xoá dòng là việc của `DELETE`; `CASE` chỉ tính ra giá trị, không đổi dữ liệu."
+    },
+    {
+      "id": "sql-d13-16",
+      "topic": "Kết thúc CASE",
+      "source": "Ngày 13 - CASE và tổng hợp có điều kiện (cơ bản)",
+      "question": "Một biểu thức `CASE` trong SQL phải kết thúc bằng từ khoá nào?",
+      "options": [
+        "`END`",
+        "`STOP`",
+        "`CLOSE`",
+        "`DONE`"
+      ],
+      "answer": 0,
+      "explanation": "`CASE` luôn đóng bằng `END`: `CASE WHEN ... THEN ... ELSE ... END`.\n- `STOP`, `CLOSE` và `DONE` không phải từ khoá đóng của `CASE` nên viết vậy sẽ báo lỗi cú pháp.\nBạn có thể thêm `AS ten_cot` sau `END` để đặt tên cho cột kết quả."
+    },
+    {
+      "id": "sql-d13-17",
+      "topic": "Vai trò của ELSE",
+      "source": "Ngày 13 - CASE và tổng hợp có điều kiện (cơ bản)",
+      "question": "Trong `CASE`, nhánh `ELSE` có vai trò gì?",
+      "options": [
+        "Bắt buộc phải có, nếu thiếu câu lệnh bị lỗi",
+        "Chạy trước mọi nhánh `WHEN`",
+        "Dùng để đặt tên cho cột kết quả",
+        "Là giá trị trả về khi không điều kiện `WHEN` nào đúng"
+      ],
+      "answer": 3,
+      "explanation": "`ELSE` là giá trị mặc định khi không `WHEN` nào thoả, ví dụ `ELSE 'Khác'`.\n- Nó không bắt buộc; thiếu `ELSE` thì các dòng không khớp nhận `NULL`.\n- Nó chạy sau cùng chứ không phải trước, vì chỉ dùng khi mọi `WHEN` đều sai.\n- Đặt tên cột là việc của `AS` đặt sau `END`."
+    },
+    {
+      "id": "sql-d13-18",
+      "topic": "Nơi dùng được CASE",
+      "source": "Ngày 13 - CASE và tổng hợp có điều kiện (cơ bản)",
+      "question": "`CASE` là một biểu thức, nên có thể đặt ở đâu?",
+      "options": [
+        "Chỉ trong danh sách cột của `select`",
+        "Chỉ trong `WHERE`",
+        "Ở bất kỳ chỗ nào cần một giá trị, như `select`, `WHERE`, `ORDER BY`, `GROUP BY`",
+        "Chỉ trong lệnh `create TABLE`"
+      ],
+      "answer": 2,
+      "explanation": "Vì `CASE` trả về một giá trị, nó đặt được ở mọi chỗ cần một giá trị: danh sách cột, điều kiện `WHERE`, `ORDER BY`, `GROUP BY`, thậm chí vế phải của `UPDATE ... SET`.\n- Giới hạn chỉ ở `SELECT` hoặc chỉ ở `WHERE` đều sai.\n- `CREATE TABLE` định nghĩa cấu trúc bảng, không phải nơi tính giá trị theo điều kiện."
+    },
+    {
+      "id": "sql-d13-19",
+      "topic": "CASE dạng đơn giản",
+      "source": "Ngày 13 - CASE và tổng hợp có điều kiện (cơ bản)",
+      "question": "Cách viết nào sau đây là `CASE` dạng đơn giản, so sánh một cột với từng giá trị cụ thể?",
+      "options": [
+        "`CASE WHEN city > 0 THEN 1 END`",
+        "`CASE city WHEN 'Hà Nội' THEN 'Miền Bắc' ELSE 'Khác' END`",
+        "`CASE IF city = 'Hà Nội' THEN 'Miền Bắc' END`",
+        "`CASE city = 'Hà Nội' THEN 'Miền Bắc' END`"
+      ],
+      "answer": 1,
+      "explanation": "Dạng đơn giản viết tên cột ngay sau `CASE`, rồi mỗi `WHEN` là một giá trị cần so với cột đó: `CASE city WHEN 'Hà Nội' THEN ... ELSE ... END`.\n- Phương án đầu là dạng tìm kiếm (searched `CASE`), mỗi `WHEN` có điều kiện đầy đủ, hơn nữa so sánh chữ với số 0 vô nghĩa.\n- `CASE IF` không phải cú pháp SQL.\n- Phương án cuối thiếu `WHEN` nên báo lỗi cú pháp.",
+      "tables": [
+        "customers"
+      ]
+    },
+    {
       "id": "sql-d13-01",
       "topic": "CASE thiếu ELSE",
       "source": "Ngày 13 - CASE và tổng hợp có điều kiện",

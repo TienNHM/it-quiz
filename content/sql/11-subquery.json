@@ -4,6 +4,85 @@
   "description": "Subquery vô hướng, IN/EXISTS, subquery tương quan, bẫy NOT IN với NULL và CTE trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d11-15",
+      "topic": "Subquery là gì",
+      "source": "Ngày 11 - Truy vấn con và CTE (cơ bản)",
+      "question": "Subquery (truy vấn con) là gì?",
+      "options": [
+        "Một câu `select` nằm bên trong một câu lệnh SQL khác, đặt trong dấu ngoặc đơn",
+        "Một bảng tạm được lưu vĩnh viễn trong database",
+        "Một index giúp truy vấn chạy nhanh hơn",
+        "Một câu lệnh chỉ chạy được sau khi `COMMIT`"
+      ],
+      "answer": 0,
+      "explanation": "Subquery là một câu `SELECT` lồng trong câu lệnh khác, viết trong ngoặc đơn, ví dụ `WHERE price > (SELECT AVG(price) FROM products)`.\n- Nó không phải bảng tạm: kết quả chỉ tồn tại trong lúc câu lệnh chạy.\n- Nó không phải index; index là cấu trúc để tìm dòng nhanh.\n- Nó không liên quan tới `COMMIT`; subquery chạy trong chính câu lệnh chứa nó.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d11-16",
+      "topic": "CTE là gì",
+      "source": "Ngày 11 - Truy vấn con và CTE (cơ bản)",
+      "question": "CTE là viết tắt của cụm từ nào, và thường bắt đầu bằng từ khoá gì?",
+      "options": [
+        "Column Type Entry, bắt đầu bằng `create`",
+        "Common Table Expression, bắt đầu bằng `with`",
+        "Current Table Event, bắt đầu bằng `BEGIN`",
+        "Combined Table Export, bắt đầu bằng `COPY`"
+      ],
+      "answer": 1,
+      "explanation": "CTE là Common Table Expression (biểu thức bảng dùng chung), viết sau từ khoá `WITH` để đặt tên cho một kết quả trung gian rồi dùng lại trong câu truy vấn chính.\n- Các cụm viết tắt khác là bịa ra, không có thuật ngữ nào như vậy trong SQL.\n- `CREATE`, `BEGIN` và `COPY` là các lệnh khác hẳn: tạo đối tượng, mở transaction, nhập xuất dữ liệu.\nCTE giúp truy vấn dài dễ đọc hơn, giống chia một bài toán thành các bước nhỏ.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d11-17",
+      "topic": "Toán tử IN với subquery",
+      "source": "Ngày 11 - Truy vấn con và CTE (cơ bản)",
+      "question": "Trong `WHERE customer_id IN (SELECT customer_id FROM orders)`, toán tử `IN` có ý nghĩa gì?",
+      "options": [
+        "Chỉ lấy khách có đúng một đơn hàng",
+        "Xoá các khách có trong bảng `orders`",
+        "Nối bảng `customers` với bảng `orders` thành một bảng mới",
+        "Giữ các dòng có `customer_id` nằm trong danh sách mà subquery trả về"
+      ],
+      "answer": 3,
+      "explanation": "`IN` kiểm tra một giá trị có nằm trong tập giá trị hay không; ở đây tập đó do subquery trả về, nên câu lấy các khách đã có ít nhất một đơn hàng.\n- Không hề đếm \"đúng một đơn\": khách có nhiều đơn vẫn chỉ được giữ một lần trong kết quả.\n- `IN` chỉ lọc để đọc, không xoá dòng nào; xoá phải dùng `DELETE`.\n- Nối bảng là việc của `JOIN`, còn `IN` chỉ lọc dòng của bảng ngoài.",
+      "kind": "concept",
+      "tables": [
+        "customers",
+        "orders"
+      ]
+    },
+    {
+      "id": "sql-d11-18",
+      "topic": "EXISTS trả về gì",
+      "source": "Ngày 11 - Truy vấn con và CTE (cơ bản)",
+      "question": "Biểu thức `EXISTS (subquery)` trả về giá trị nào?",
+      "options": [
+        "`TRUE` nếu subquery trả về ít nhất một dòng, ngược lại `FALSE`",
+        "Số dòng mà subquery tìm được",
+        "Giá trị lớn nhất của cột đầu tiên trong subquery",
+        "Một bảng chứa kết quả của subquery"
+      ],
+      "answer": 0,
+      "explanation": "`EXISTS` chỉ hỏi \"có dòng nào không\": có ít nhất một dòng thì `TRUE`, không có thì `FALSE`, nên rất hợp để kiểm tra tồn tại như \"khách này đã có đơn chưa\".\n- Nó không đếm dòng; muốn đếm thì dùng `COUNT(*)`.\n- Nó không tính giá trị lớn nhất; đó là việc của `MAX`.\n- Nó trả về giá trị đúng/sai chứ không trả về bảng.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d11-19",
+      "topic": "Subquery vô hướng",
+      "source": "Ngày 11 - Truy vấn con và CTE (cơ bản)",
+      "question": "Subquery vô hướng (scalar subquery) là loại subquery như thế nào?",
+      "options": [
+        "Trả về nhiều dòng và nhiều cột",
+        "Trả về đúng một giá trị (một dòng, một cột) nên dùng như một con số trong biểu thức",
+        "Chỉ dùng được trong mệnh đề `FROM`",
+        "Luôn tham chiếu cột của truy vấn ngoài"
+      ],
+      "answer": 1,
+      "explanation": "Subquery vô hướng cho ra đúng một giá trị, ví dụ `(SELECT AVG(price) FROM products)`, nên đặt được vào chỗ cần một con số như `WHERE price > (...)`.\n- Trả nhiều dòng nhiều cột là kiểu subquery khác, không dùng được với `=` hay `>`.\n- Không phải chỉ dùng trong `FROM`: nó thường nằm ở `WHERE` hoặc danh sách cột.\n- Tham chiếu cột của truy vấn ngoài là đặc điểm của subquery tương quan, không phải của subquery vô hướng.",
+      "kind": "concept"
+    },
+    {
       "id": "sql-d11-01",
       "topic": "Subquery vô hướng",
       "source": "Ngày 11 - Truy vấn con và CTE",

@@ -4,6 +4,76 @@
   "description": "Giải thuật sinh cấu hình kế tiếp: xâu nhị phân, tập con, tổ hợp, hoán vị, thao tác bit và đối chiếu với next_permutation.",
   "questions": [
     {
+      "id": "cpp-c10-26",
+      "topic": "Bit là gì",
+      "source": "KTLT C10 - giải thuật sinh và thao tác bit (cơ bản)",
+      "question": "Một bit trong máy tính là gì?",
+      "options": [
+        "Một nhóm 8 ký tự",
+        "Một số nguyên từ 0 đến 255",
+        "Một kiểu dữ liệu chứa chuỗi",
+        "Đơn vị thông tin nhỏ nhất, chỉ nhận giá trị 0 hoặc 1"
+      ],
+      "answer": 3,
+      "explanation": "Bit là đơn vị nhỏ nhất, chỉ có 0 hoặc 1. Một nhóm 8 bit mới là một byte (0 đến 255 nếu không dấu), còn chuỗi là cấu trúc lớn hơn nhiều, không phải bit."
+    },
+    {
+      "id": "cpp-c10-27",
+      "topic": "Thứ tự từ điển",
+      "source": "KTLT C10 - giải thuật sinh và thao tác bit (cơ bản)",
+      "question": "Trong giải thuật sinh, \"thứ tự từ điển\" của các cấu hình nghĩa là gì?",
+      "options": [
+        "Các cấu hình được xếp ngẫu nhiên",
+        "Các cấu hình được sắp theo thứ tự giống như các từ trong từ điển (so sánh từ trái sang phải)",
+        "Các cấu hình được xếp theo độ dài chữ số",
+        "Các cấu hình luôn xếp từ lớn đến nhỏ"
+      ],
+      "answer": 1,
+      "explanation": "Thứ tự từ điển so sánh từng vị trí từ trái sang phải, như 123 < 132 < 213. Nó không phải thứ tự ngẫu nhiên, không phải theo độ dài và cũng không nhất thiết từ lớn đến nhỏ (mà thường từ nhỏ đến lớn)."
+    },
+    {
+      "id": "cpp-c10-28",
+      "topic": "Dịch trái 1 bit",
+      "source": "KTLT C10 - giải thuật sinh và thao tác bit (cơ bản)",
+      "question": "Với số nguyên không dấu x, phép `x << 1` thường tương đương với phép nào?",
+      "options": [
+        "Nhân x với 2",
+        "Chia x cho 2",
+        "Cộng x thêm 1",
+        "Lấy x trừ 1"
+      ],
+      "answer": 0,
+      "explanation": "Dịch trái 1 bit đẩy mọi bit lên một vị trí, tương đương nhân đôi (nếu không tràn). Dịch phải `>>` mới tương ứng chia 2, và hai phép còn lại là cộng/trừ 1 không liên quan đến dịch bit."
+    },
+    {
+      "id": "cpp-c10-29",
+      "topic": "Toán tử & trên bit",
+      "source": "KTLT C10 - giải thuật sinh và thao tác bit (cơ bản)",
+      "question": "Toán tử `&` (một ký tự) giữa hai số nguyên thực hiện phép gì?",
+      "options": [
+        "OR từng bit",
+        "Phép logic \"và\" cho kết quả đúng/sai trên cả biểu thức",
+        "AND từng bit (bit kết quả là 1 khi cả hai bit tương ứng đều là 1)",
+        "XOR từng bit"
+      ],
+      "answer": 2,
+      "explanation": "`&` là AND bit; OR bit là `|`, XOR bit là `^`. Phép logic cho cả biểu thức đúng/sai là `&&` (hai ký tự), không phải `&`."
+    },
+    {
+      "id": "cpp-c10-30",
+      "topic": "next_permutation",
+      "source": "KTLT C10 - giải thuật sinh và thao tác bit (cơ bản)",
+      "question": "Hàm `next_permutation` của C++ nằm trong thư viện nào và làm gì?",
+      "options": [
+        "`<algorithm>`, biến dãy thành hoán vị kế tiếp theo thứ tự từ điển",
+        "`<cmath>`, tính căn bậc hai",
+        "`<string>`, đảo ngược chuỗi",
+        "`<fstream>`, đọc file hoán vị"
+      ],
+      "answer": 0,
+      "explanation": "`next_permutation` thuộc `<algorithm>` và sinh hoán vị lớn hơn kế tiếp theo thứ tự từ điển. `<cmath>` chứa hàm toán học, `<string>` là kiểu chuỗi, `<fstream>` dành cho file; ba thư viện đó không có hàm này."
+    },
+    {
       "id": "cpp-c10-01",
       "topic": "Cấu hình đầu và cuối",
       "source": "KTLT C4 (Giải thuật sinh)",

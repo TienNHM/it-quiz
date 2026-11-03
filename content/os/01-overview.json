@@ -4,6 +4,90 @@
   "description": "Chức năng của HĐH, system call, ngắt, IPC và phân loại hệ thống.",
   "questions": [
     {
+      "id": "os-ov-18",
+      "topic": "Hệ điều hành là gì",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Hệ điều hành (Operating System) là gì?",
+      "options": [
+        "Một trình soạn thảo văn bản dùng để viết chương trình",
+        "Phần mềm trung gian giữa người dùng/ứng dụng và phần cứng, quản lý tài nguyên máy tính",
+        "Một loại phần cứng gắn trên bo mạch chủ",
+        "Một ngôn ngữ lập trình bậc cao"
+      ],
+      "answer": 1,
+      "explanation": "Hệ điều hành là phần mềm nằm giữa **người dùng/ứng dụng** và **phần cứng**: nó phân phối CPU, bộ nhớ, đĩa, thiết bị I/O cho các chương trình và che đi chi tiết phần cứng.\n\nCác phương án khác sai: trình soạn thảo chỉ là một ứng dụng chạy trên HĐH; phần cứng trên bo mạch như BIOS/chip không phải HĐH; ngôn ngữ lập trình là công cụ viết phần mềm, không phải thứ quản lý tài nguyên."
+    },
+    {
+      "id": "os-ov-19",
+      "topic": "Kernel là gì",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Kernel** (nhân) của hệ điều hành là gì?",
+      "options": [
+        "Giao diện đồ hoạ gồm cửa sổ và biểu tượng",
+        "Bộ ứng dụng văn phòng đi kèm hệ điều hành",
+        "Chương trình diệt virus của hệ điều hành",
+        "Phần lõi của hệ điều hành, luôn nằm trong bộ nhớ và chạy ở kernel mode"
+      ],
+      "answer": 3,
+      "explanation": "**Kernel** là phần lõi của HĐH: luôn thường trú trong bộ nhớ, chạy với đặc quyền cao nhất (kernel mode) và làm các việc nền tảng như lập lịch, quản lý bộ nhớ, điều khiển thiết bị.\n\nGiao diện đồ hoạ (GUI) chỉ là lớp vỏ ở trên; bộ ứng dụng văn phòng hay phần mềm diệt virus là ứng dụng thường, không phải nhân."
+    },
+    {
+      "id": "os-ov-20",
+      "topic": "Linux",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Ai là người khởi xướng và viết phiên bản đầu tiên của nhân **Linux** (năm 1991)?",
+      "options": [
+        "Linus Torvalds",
+        "Bill Gates",
+        "Dennis Ritchie",
+        "Steve Jobs"
+      ],
+      "answer": 0,
+      "explanation": "Nhân Linux do **Linus Torvalds**, khi đó là sinh viên Phần Lan, khởi xướng năm 1991 và phát hành mã nguồn mở.\n\nBill Gates là đồng sáng lập Microsoft (Windows); Dennis Ritchie là cha đẻ ngôn ngữ C và đồng tác giả Unix; Steve Jobs là đồng sáng lập Apple (macOS/iOS)."
+    },
+    {
+      "id": "os-ov-21",
+      "topic": "Shell là gì",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Shell** (như `bash`, `cmd`) trong hệ điều hành dùng để làm gì?",
+      "options": [
+        "Quản lý bảng trang của bộ nhớ ảo",
+        "Nhận lệnh từ người dùng rồi chuyển cho hệ điều hành thực thi",
+        "Lưu trữ dữ liệu của file xuống đĩa cứng",
+        "Phát hiện lỗi phần cứng khi máy khởi động"
+      ],
+      "answer": 2,
+      "explanation": "**Shell** là chương trình thông dịch lệnh: đọc lệnh người dùng gõ, phân tích rồi gọi các system call để kernel thực hiện. `bash` và `cmd` là ví dụ quen thuộc.\n\nQuản lý bảng trang là việc của kernel; lưu dữ liệu xuống đĩa là việc của hệ thống file; phát hiện lỗi phần cứng lúc khởi động (POST) là việc của BIOS/firmware."
+    },
+    {
+      "id": "os-ov-22",
+      "topic": "User mode và kernel mode",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Vì sao CPU có hai chế độ **user mode** và **kernel mode**?",
+      "options": [
+        "Để chương trình người dùng chạy nhanh hơn kernel",
+        "Để tiết kiệm điện cho CPU khi rảnh",
+        "Để bảo vệ hệ thống: chỉ kernel mới được chạy các lệnh đặc quyền như truy cập phần cứng trực tiếp",
+        "Để hai tiến trình có thể dùng chung thanh ghi mà không xung đột"
+      ],
+      "answer": 2,
+      "explanation": "Hai chế độ tạo ra **vùng bảo vệ**: chương trình người dùng chạy ở user mode, không được thực hiện lệnh đặc quyền (I/O trực tiếp, tắt ngắt, sửa bảng trang). Muốn dùng dịch vụ phải gọi system call để chuyển sang kernel mode.\n\nMục đích không phải để chạy nhanh hơn hay tiết kiệm điện, và việc chia thanh ghi giữa các tiến trình là việc của context switch chứ không phải của hai chế độ này."
+    },
+    {
+      "id": "os-ov-23",
+      "topic": "GUI và CLI",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Điểm khác nhau cơ bản giữa **GUI** và **CLI** là gì?",
+      "options": [
+        "GUI chỉ chạy trên Linux còn CLI chỉ chạy trên Windows",
+        "GUI dùng chuột và biểu tượng đồ hoạ, còn CLI dùng lệnh gõ bằng bàn phím",
+        "GUI không cần hệ điều hành còn CLI thì cần",
+        "GUI chạy ở kernel mode còn CLI chạy ở user mode"
+      ],
+      "answer": 1,
+      "explanation": "**GUI** (Graphical User Interface) tương tác bằng cửa sổ, biểu tượng, chuột; **CLI** (Command Line Interface) tương tác bằng cách gõ lệnh văn bản.\n\nCả hai đều có trên nhiều hệ điều hành (Windows có `cmd`/PowerShell, Linux có GNOME/KDE), cả hai đều cần HĐH, và cả hai đều là chương trình người dùng chạy ở user mode."
+    },
+    {
       "id": "os-ov-01",
       "topic": "Chức năng HĐH",
       "source": "Cuối kỳ HĐH – SPKT",
@@ -105,15 +189,15 @@
       "id": "os-ov-08",
       "topic": "Phân loại hệ thống",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Hệ thống chỉ cho phép **một tiến trình thực thi tại một thời điểm** được gọi là gì?",
+      "question": "Hệ thống chỉ cho phép **một tiến trình nằm trong bộ nhớ và thực thi tại một thời điểm** được gọi là gì?",
       "options": [
         "uniprogramming systems",
         "unithread systems",
         "uniprocessing systems",
-        "unitasking systems"
+        "batch systems"
       ],
-      "answer": 2,
-      "explanation": "Đáp án đề là **uniprocessing systems**.\n\n**Lưu ý:** theo thuật ngữ chuẩn, khái niệm \"chỉ một tiến trình nằm trong bộ nhớ và thực thi tại một thời điểm\" là **uniprogramming** — đối lập với *multiprogramming*. Còn **uniprocessing** thường được hiểu là hệ thống **chỉ có một bộ xử lý**, đối lập với *multiprocessing*; một máy uniprocessor vẫn chạy đa chương bình thường bằng cách luân phiên CPU.\n\nHai thuật ngữ này bị dùng lẫn lộn trong nhiều tài liệu. Đi thi chọn theo đáp án đề, nhưng khi phân tích hệ thống thì nhớ: **uni/multi-programming** nói về *số tiến trình*, **uni/multi-processing** nói về *số CPU*."
+      "answer": 0,
+      "explanation": "Đáp án là **uniprogramming** (đơn chương): bộ nhớ chỉ chứa một tiến trình, tiến trình đó chạy xong (hoặc chờ I/O thì CPU cũng ngồi chờ) rồi mới đến tiến trình khác. MS-DOS là ví dụ điển hình.\n\nVì sao các phương án khác sai:\n- **uniprocessing** nói về số **bộ xử lý** (chỉ có một CPU), đối lập với multiprocessing; máy một CPU vẫn chạy đa chương bình thường bằng cách luân phiên CPU.\n- **unithread** nói về số luồng trong một tiến trình, không phải số tiến trình.\n- **batch** là kiểu gom công việc thành lô, không quyết định số tiến trình trong bộ nhớ.\n\nNhớ: uni/multi-**programming** nói về số *tiến trình*, uni/multi-**processing** nói về số *CPU*."
     },
     {
       "id": "os-ov-09",
@@ -217,15 +301,15 @@
       "id": "os-ov-16",
       "topic": "MS-DOS",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Thành phần nào sau đây thuộc hệ điều hành **MS-DOS**?",
+      "question": "Thành phần nào sau đây thuộc chính hệ điều hành **MS-DOS** theo sơ đồ cấu trúc phân tầng trong giáo trình (không tính firmware)?",
       "options": [
         "PowerShell",
         "Resident system program",
-        "Command-line Interpreters",
+        "Microkernel",
         "Dịch vụ Rom Bios (Rom Bios device drivers)"
       ],
       "answer": 1,
-      "explanation": "Cấu trúc phân tầng của MS-DOS theo giáo trình, từ trên xuống:\n```\nApplication program\nResident system program     ← phần thường trú của MS-DOS\nMS-DOS device drivers\nROM BIOS device drivers     ← firmware, KHÔNG thuộc MS-DOS\n```\n\n**Resident system program** là phần lõi của MS-DOS nằm thường trú trong bộ nhớ (`IO.SYS`, `MSDOS.SYS`) — đây là đáp án.\n\nVì sao loại các phương án khác:\n- **ROM BIOS device drivers** nằm trong firmware của bo mạch chủ, MS-DOS *dùng* chúng chứ không *sở hữu* chúng.\n- **PowerShell** là shell hiện đại của Windows, ra đời năm 2006, không liên quan MS-DOS."
+      "explanation": "Cấu trúc phân tầng của MS-DOS theo giáo trình, từ trên xuống:\n```\nApplication program\nResident system program     ← phần thường trú của MS-DOS\nMS-DOS device drivers\nROM BIOS device drivers     ← firmware, KHÔNG thuộc MS-DOS\n```\n\n**Resident system program** là phần lõi của MS-DOS nằm thường trú trong bộ nhớ (`IO.SYS`, `MSDOS.SYS`) — đây là đáp án.\n\nVì sao loại các phương án khác:\n- **ROM BIOS device drivers** nằm trong firmware của bo mạch chủ, MS-DOS *dùng* chúng chứ không *sở hữu* chúng.\n- **PowerShell** là shell hiện đại của Windows, ra đời năm 2006, không liên quan MS-DOS.\n- **Microkernel** là một kiểu kiến trúc nhân khác, MS-DOS không có cấu trúc đó."
     },
     {
       "id": "os-ov-17",

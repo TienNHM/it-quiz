@@ -4,6 +4,81 @@
   "description": "Ôn lại schema, ràng buộc, WHERE/NULL, ORDER BY/LIMIT, biểu thức, hàm và INSERT/UPDATE/DELETE trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d07-17",
+      "topic": "Thứ tự các mệnh đề",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 2) (cơ bản)",
+      "question": "Câu `SELECT` nào viết **đúng thứ tự** các mệnh đề?",
+      "options": [
+        "```sql\nSELECT sku FROM products\nORDER BY price\nWHERE price > 0;\n```",
+        "```sql\nSELECT sku\nWHERE price > 0\nFROM products\nORDER BY price;\n```",
+        "```sql\nSELECT sku FROM products\nWHERE price > 0\nORDER BY price;\n```",
+        "```sql\nFROM products\nSELECT sku\nWHERE price > 0;\n```"
+      ],
+      "answer": 2,
+      "explanation": "Thứ tự viết đúng là `SELECT` ... `FROM` ... `WHERE` ... `ORDER BY`.\n- Đặt `ORDER BY` trước `WHERE` bị lỗi cú pháp.\n- Đặt `WHERE` trước `FROM` cũng lỗi cú pháp.\n- Bắt đầu bằng `FROM` rồi mới `SELECT` là thứ tự của một số ngôn ngữ khác, SQL không chấp nhận.",
+      "kind": "choose-query"
+    },
+    {
+      "id": "sql-d07-18",
+      "topic": "DISTINCT",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 2) (cơ bản)",
+      "question": "Từ khóa `DISTINCT` trong `SELECT DISTINCT city FROM customers;` dùng để làm gì?",
+      "options": [
+        "loại bỏ các dòng kết quả bị trùng nhau",
+        "sắp xếp các thành phố theo tên",
+        "đếm số thành phố",
+        "chỉ lấy khách có thành phố khác rỗng"
+      ],
+      "answer": 0,
+      "explanation": "`DISTINCT` giữ **mỗi giá trị khác nhau một lần**, nên mỗi thành phố chỉ xuất hiện một dòng.\n- Sắp xếp là việc của `ORDER BY`.\n- Đếm cần `COUNT`, ví dụ `COUNT(DISTINCT city)`.\n- Lọc rỗng cần `WHERE`; `DISTINCT` vẫn giữ giá trị `NULL` như một giá trị.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d07-19",
+      "topic": "Hoa thường trong từ khóa",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 2) (cơ bản)",
+      "question": "Hai câu `select * from customers;` và `SELECT * FROM customers;` khác nhau thế nào?",
+      "options": [
+        "câu viết thường báo lỗi",
+        "câu viết hoa chạy nhanh hơn",
+        "câu viết hoa lấy nhiều dòng hơn",
+        "không khác gì, từ khóa SQL không phân biệt hoa thường"
+      ],
+      "answer": 3,
+      "explanation": "Từ khóa SQL **không phân biệt hoa thường**; viết hoa chỉ là quy ước cho dễ đọc. Tên không đặt trong nháy kép cũng được đổi về chữ thường.\n- Câu viết thường vẫn chạy bình thường.\n- Tốc độ không phụ thuộc kiểu chữ.\n- Hai câu cho cùng một kết quả, vì dữ liệu lấy ra giống nhau.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d07-20",
+      "topic": "Dấu chấm phẩy",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 2) (cơ bản)",
+      "question": "Dấu `;` ở cuối câu lệnh SQL có vai trò gì?",
+      "options": [
+        "làm câu lệnh chạy nhanh hơn",
+        "báo hiệu kết thúc một câu lệnh",
+        "biến câu lệnh thành chú thích",
+        "phân tách các cột trong danh sách chọn cột"
+      ],
+      "answer": 1,
+      "explanation": "Dấu `;` đánh dấu **kết thúc một câu lệnh**, đặc biệt cần khi chạy nhiều câu liên tiếp hoặc trong `psql`.\n- Nó không ảnh hưởng tốc độ.\n- Chú thích mới dùng `--` hoặc `/* */`.\n- Các cột trong `SELECT` được phân tách bằng dấu phẩy `,`, không phải `;`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d07-21",
+      "topic": "Toán tử IN",
+      "source": "Ngày 7 - Ôn tập 1 (Ngày 2) (cơ bản)",
+      "question": "Điều kiện `WHERE category_id IN (7, 8)` nghĩa là gì?",
+      "options": [
+        "`category_id` nằm trong khoảng từ 7 đến 8, không gồm hai đầu",
+        "`category_id` bằng 7 và đồng thời bằng 8",
+        "`category_id` bằng 7 hoặc bằng 8",
+        "`category_id` khác 7 và khác 8"
+      ],
+      "answer": 2,
+      "explanation": "`IN (7, 8)` đúng khi giá trị **bằng một trong các phần tử** của danh sách, tương đương `category_id = 7 OR category_id = 8`.\n- Một giá trị không thể vừa bằng 7 vừa bằng 8, nên \"và đồng thời\" luôn sai.\n- Nói về khoảng thì đó là `BETWEEN`, mà `BETWEEN` còn gồm cả hai đầu.\n- Khác 7 và khác 8 là `NOT IN (7, 8)`.",
+      "kind": "concept"
+    },
+    {
       "id": "sql-d07-01",
       "topic": "Khóa chính ghép",
       "source": "Ngày 7 - Ôn tập 1 (Ngày 2)",
@@ -219,7 +294,7 @@
         "```sql\nINSERT INTO categories (name, parent_id)\nVALUES ('Máy in', NULL);\n```"
       ],
       "answer": 1,
-      "explanation": "`discount` có `CHECK (discount BETWEEN 0 AND 1)`, nên `1.5` bị từ chối dù kiểu `numeric(3,2)` chứa được số này.\n- Phương án thứ nhất bỏ qua `discount`, nên dùng `DEFAULT 0`; cặp `(1, 1)` chưa tồn tại nên không vi phạm khóa chính.\n- `UPDATE` tăng giá gấp đôi vẫn thỏa `price >= 0`.\n- Thêm danh mục mới với `parent_id` NULL là hợp lệ (danh mục gốc)."
+      "explanation": "`discount` có `CHECK (discount BETWEEN 0 AND 1)`, nên `1.5` bị từ chối dù kiểu `numeric(3,2)` chứa được số này.\n- Lệnh thêm dòng bỏ qua `discount`, nên dùng `DEFAULT 0`; cặp `(1, 1)` chưa tồn tại nên không vi phạm khóa chính.\n- `UPDATE` tăng giá gấp đôi vẫn thỏa `price >= 0`.\n- Thêm danh mục mới với `parent_id` NULL là hợp lệ (danh mục gốc)."
     },
     {
       "id": "sql-d07-16",

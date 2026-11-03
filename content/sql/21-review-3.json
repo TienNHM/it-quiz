@@ -4,6 +4,78 @@
   "description": "Ôn lại index, transaction, function và procedure, trigger, view và cách đọc plan EXPLAIN trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d21-19",
+      "topic": "Index là gì",
+      "source": "Ngày 21 - Ôn tập 3 (cơ bản)",
+      "question": "Trong cơ sở dữ liệu, index (chỉ mục) giống thứ gì nhất ngoài đời thường?",
+      "options": [
+        "một bản sao lưu của cả bảng, để phòng khi mất dữ liệu",
+        "mục lục hoặc phần tra cứu ở cuối sách: giúp tìm nhanh mà không phải lật từng trang",
+        "một ràng buộc không cho phép nhập dữ liệu trùng",
+        "một câu truy vấn được đặt tên để dùng lại nhiều lần"
+      ],
+      "answer": 1,
+      "explanation": "Index là cấu trúc phụ lưu sẵn thứ tự của một hay vài cột, giúp tìm dòng nhanh như tra mục lục thay vì đọc từng trang (quét cả bảng).\n- Bản sao lưu là việc của backup, không phải của index.\n- Chặn dữ liệu trùng là việc của ràng buộc `UNIQUE` (dù `UNIQUE` thường được cài bằng một index).\n- Câu truy vấn được đặt tên là view."
+    },
+    {
+      "id": "sql-d21-20",
+      "topic": "ACID là gì",
+      "source": "Ngày 21 - Ôn tập 3 (cơ bản)",
+      "question": "Bốn chữ cái trong ACID của transaction lần lượt là gì?",
+      "options": [
+        "Access, Control, Index, Data",
+        "Add, Commit, Insert, Delete",
+        "Action, Check, Integrity, Dump",
+        "Atomicity, Consistency, Isolation, Durability"
+      ],
+      "answer": 3,
+      "explanation": "ACID gồm Atomicity (nguyên tử: làm hết hoặc không làm gì), Consistency (nhất quán: dữ liệu luôn thỏa ràng buộc), Isolation (cô lập: các transaction không dẫm lên nhau) và Durability (bền vững: đã COMMIT thì không mất).\n- Các cách ghép chữ còn lại chỉ là những từ nghe quen trong CSDL nhưng không phải ý nghĩa của ACID."
+    },
+    {
+      "id": "sql-d21-21",
+      "topic": "View là gì",
+      "source": "Ngày 21 - Ôn tập 3 (cơ bản)",
+      "question": "View trong SQL thực chất là gì?",
+      "options": [
+        "một câu truy vấn đọc dữ liệu được lưu lại dưới một cái tên, dùng như một bảng ảo",
+        "một bảng thật có sẵn dữ liệu riêng, tạo ra như mọi bảng thông thường",
+        "một loại index đặc biệt để sắp xếp dữ liệu",
+        "một quyền cho phép người dùng xem dữ liệu"
+      ],
+      "answer": 0,
+      "explanation": "View chỉ lưu câu truy vấn, không lưu dữ liệu riêng; mỗi lần đọc view, PostgreSQL chạy lại câu `SELECT` phía sau. Nhờ vậy view giúp gói gọn truy vấn phức tạp và ẩn bớt cột.\n- View không phải bảng thật có dữ liệu riêng (materialized view mới lưu kết quả).\n- View không phải index.\n- Quyền xem dữ liệu là `GRANT SELECT`, một khái niệm khác."
+    },
+    {
+      "id": "sql-d21-22",
+      "topic": "Trigger là gì",
+      "source": "Ngày 21 - Ôn tập 3 (cơ bản)",
+      "question": "Trigger trong cơ sở dữ liệu là gì?",
+      "options": [
+        "một lệnh dùng để xóa nhanh toàn bộ dữ liệu của bảng",
+        "một cách đặt mật khẩu cho bảng",
+        "đoạn mã tự động chạy khi có sự kiện thêm, sửa hoặc xóa dòng trên bảng",
+        "một loại index giúp truy vấn nhanh hơn"
+      ],
+      "answer": 2,
+      "explanation": "Trigger gắn vào một bảng và tự chạy đúng lúc có sự kiện (ví dụ sau khi chèn một dòng hàng thì trừ tồn kho), người dùng không cần gọi.\n- Xóa nhanh toàn bộ dữ liệu là `TRUNCATE`.\n- Trigger không liên quan đến mật khẩu.\n- Trigger không làm truy vấn nhanh hơn, ngược lại còn thêm việc cho mỗi lần ghi."
+    },
+    {
+      "id": "sql-d21-23",
+      "topic": "COMMIT và ROLLBACK",
+      "source": "Ngày 21 - Ôn tập 3 (cơ bản)",
+      "code": "BEGIN;\nDELETE FROM payments;\nROLLBACK;\n\nSELECT COUNT(*) FROM payments;",
+      "codeLang": "sql",
+      "question": "Bảng `payments` của DSC Shop có 37 dòng. Chạy đoạn dưới đây thì dòng cuối trả về bao nhiêu?",
+      "options": [
+        "37",
+        "0",
+        "1",
+        "báo lỗi vì không thể xóa hết bảng"
+      ],
+      "answer": 0,
+      "explanation": "`ROLLBACK` hủy mọi thay đổi từ `BEGIN`, nên lệnh `DELETE` coi như chưa từng chạy và bảng vẫn còn 37 dòng.\n- 0 sẽ đúng nếu thay `ROLLBACK` bằng `COMMIT`.\n- 1 không có cách tính nào khớp.\n- Không có lỗi: `DELETE` không có `WHERE` là câu hợp lệ, chỉ nguy hiểm khi quên transaction."
+    },
+    {
       "id": "sql-d21-01",
       "topic": "Index",
       "source": "Ngày 21 - Ôn tập 3 (Ngày 15)",

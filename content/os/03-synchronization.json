@@ -4,6 +4,90 @@
   "description": "Miền găng, Peterson, mutex lock, semaphore, monitor và các bài toán đồng bộ kinh điển.",
   "questions": [
     {
+      "id": "os-sync-30",
+      "topic": "Race condition",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Race condition** (điều kiện tranh đua) là gì?",
+      "options": [
+        "Cuộc thi tốc độ giữa hai thuật toán lập lịch",
+        "Tình huống kết quả phụ thuộc vào thứ tự xen kẽ truy cập dữ liệu chung của các tiến trình hoặc luồng",
+        "Lỗi biên dịch xảy ra khi hai file có cùng tên",
+        "Hiện tượng CPU chạy quá nhanh so với RAM"
+      ],
+      "answer": 1,
+      "explanation": "**Race condition** xảy ra khi nhiều tiến trình/luồng cùng truy cập và sửa dữ liệu chung, và kết quả cuối cùng **phụ thuộc vào thứ tự xen kẽ** các lệnh. Ví dụ hai luồng cùng làm `counter++` có thể làm mất một lần cộng.\n\nNó không phải một cuộc thi tốc độ, không phải lỗi biên dịch và cũng không liên quan tới chênh lệch tốc độ giữa CPU và RAM."
+    },
+    {
+      "id": "os-sync-31",
+      "topic": "Critical section",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Miền găng (critical section)** là gì?",
+      "options": [
+        "Vùng nhớ bị hỏng trên đĩa cứng",
+        "Đoạn mã chạy ở mức ưu tiên cao nhất của CPU",
+        "Đoạn mã đã được trình biên dịch tối ưu hoá",
+        "Đoạn mã truy cập tài nguyên dùng chung, tại một thời điểm chỉ cho một tiến trình thực hiện"
+      ],
+      "answer": 3,
+      "explanation": "**Critical section** là đoạn mã truy cập/sửa **dữ liệu dùng chung**. Để tránh race condition, hệ điều hành hoặc lập trình viên phải đảm bảo mỗi lúc chỉ **một** tiến trình ở trong miền găng (mutual exclusion).\n\nNó không phải vùng nhớ hỏng, không liên quan độ ưu tiên CPU và cũng không phải kết quả tối ưu hoá của trình biên dịch."
+    },
+    {
+      "id": "os-sync-32",
+      "topic": "Semaphore",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Semaphore** (do Dijkstra đề xuất) là gì?",
+      "options": [
+        "Một loại thiết bị phần cứng cảnh báo lỗi",
+        "Một ngôn ngữ lập trình đồng thời",
+        "Một biến nguyên chỉ được thao tác qua hai phép nguyên tử wait() và signal() để đồng bộ tiến trình",
+        "Một thuật toán lập lịch CPU"
+      ],
+      "answer": 2,
+      "explanation": "**Semaphore** là một biến nguyên dùng để đồng bộ: `wait()` giảm giá trị (chờ nếu hết), `signal()` tăng giá trị. Nó do **Edsger Dijkstra** đề xuất, tên gốc là P và V.\n\nTên 'semaphore' nghĩa là cột tín hiệu đường sắt nhưng ở đây là cấu trúc phần mềm, không phải thiết bị phần cứng, không phải ngôn ngữ lập trình và không phải thuật toán lập lịch."
+    },
+    {
+      "id": "os-sync-33",
+      "topic": "Mutex",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Mutex** (mutual exclusion lock) hoạt động giống thứ gì trong đời thường?",
+      "options": [
+        "Chiếc loa phát thanh thông báo cho mọi người",
+        "Chìa khoá phòng thử đồ: ai cầm chìa thì được vào, người khác phải chờ đến khi chìa được trả lại",
+        "Tấm bảng thông báo ai cũng xem và sửa được cùng lúc",
+        "Một cuộc thi chạy tiếp sức"
+      ],
+      "answer": 1,
+      "explanation": "**Mutex** là một khoá: tiến trình gọi `acquire()` để lấy khoá rồi vào miền găng, xong thì `release()` để trả. Trong lúc đó tiến trình khác phải chờ — giống một chiếc chìa khoá phòng thử đồ chỉ có một chiếc.\n\nLoa phát thanh hay bảng thông báo ai cũng sửa được là hình ảnh của việc chia sẻ không kiểm soát (dễ race condition), còn chạy tiếp sức là thứ khác hẳn."
+    },
+    {
+      "id": "os-sync-34",
+      "topic": "Dining Philosophers",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Bài toán **Dining Philosophers** (các triết gia ăn tối) dùng để minh hoạ điều gì?",
+      "options": [
+        "Cách lập lịch CPU bằng Round Robin",
+        "Việc truyền thông điệp giữa hai tiến trình",
+        "Cách tổ chức bộ nhớ ảo",
+        "Các vấn đề tranh chấp tài nguyên như deadlock và starvation khi nhiều tiến trình cùng cần nhiều tài nguyên"
+      ],
+      "answer": 3,
+      "explanation": "Năm triết gia ngồi quanh bàn, giữa mỗi hai người có một chiếc đũa; ai muốn ăn phải cầm cả hai đũa bên cạnh. Nếu tất cả cùng cầm đũa trái thì **deadlock**; nếu có người luôn bị bỏ đói thì **starvation**.\n\nBài toán này không nói về lập lịch Round Robin, giao tiếp thông điệp hay bộ nhớ ảo."
+    },
+    {
+      "id": "os-sync-35",
+      "topic": "Monitor",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Monitor** trong đồng bộ tiến trình là gì?",
+      "options": [
+        "Màn hình hiển thị trạng thái hệ thống",
+        "Chương trình giám sát nhiệt độ CPU",
+        "Cấu trúc đồng bộ mức ngôn ngữ, trong đó chỉ một tiến trình được hoạt động bên trong monitor tại một thời điểm",
+        "Một loại thiết bị nhập xuất"
+      ],
+      "answer": 2,
+      "explanation": "**Monitor** là cấu trúc mức cao (như `synchronized` trong Java): dữ liệu và các thủ tục truy cập gom vào một khối, và hệ thống tự đảm bảo **mỗi lúc chỉ một tiến trình** thực thi bên trong, nên lập trình viên đỡ phải tự gọi wait/signal của semaphore cho việc loại trừ tương hỗ.\n\nNó không phải màn hình, không phải chương trình theo dõi nhiệt độ và cũng không phải thiết bị I/O."
+    },
+    {
       "id": "os-sync-01",
       "topic": "Critical Section",
       "source": "Cuối kỳ HĐH – SPKT",
@@ -126,12 +210,12 @@
       "code": "Process X                       Process Y\nwhile (true)                    while (true)\n{                               {\n    varP = true;                    varQ = true;\n    while (varQ == true)            while (varP == true)\n    {                               {\n        /* Critical Section */          /* Critical Section */\n        varP = false;                   varQ = false;\n    }                               }\n}                               }",
       "options": [
         "Ngăn chặn Deadlock nhưng không đảm bảo Mutual Exclusion",
-        "Không ngăn chặn được Deadlock và không đảm bảo Mutual Exclusion",
         "Đảm bảo Mutual Exclusion nhưng không ngăn chặn được Deadlock",
-        "Đảm bảo Mutual Exclusion và ngăn chặn Deadlock"
+        "Đảm bảo Mutual Exclusion và ngăn chặn Deadlock",
+        "Không ngăn chặn được Deadlock và không đảm bảo Mutual Exclusion"
       ],
-      "answer": 3,
-      "explanation": "Đáp án theo đề là **d**, dựa trên lập luận: miền găng nằm *bên trong* vòng `while`, X chỉ vào được khi Y đã giơ tay (`varQ == true`) và ngược lại, nên hai bên \"bắt tay\" nhau chứ không cùng giành khoá; và không tồn tại thế cả hai cùng chờ vĩnh viễn nên không deadlock.\n\n**Về deadlock thì chắc chắn đúng**: X chỉ kẹt khi `varQ == false`, mà lúc đó Y đang ở vòng ngoài và luôn đặt `varQ = true` — nên không có trạng thái cả hai cùng đứng im mãi.\n\n**Cần nói rõ:** phần **Mutual Exclusion** của câu này gây tranh cãi ngay từ đề gốc (GATE 2015). Xen kẽ sau đây cho cả hai cùng vào miền găng:\n\n- X: `varP = true`\n- Y: `varQ = true`\n- X: kiểm tra `varQ == true` → đúng → **vào CS**\n- Y: kiểm tra `varP == true` → vẫn đúng (X chỉ đặt `varP = false` ở **cuối** thân CS) → **vào CS**\n\nTheo phân tích sát mã nguồn thì Mutual Exclusion **không** được đảm bảo, tức phương án a mới đúng. Đi thi cứ chọn theo đáp án của đề, nhưng nên biết lỗ hổng này để không áp dụng sai vào bài khác."
+      "answer": 0,
+      "explanation": "Đáp án đúng: **ngăn chặn Deadlock nhưng KHÔNG đảm bảo Mutual Exclusion** (đây cũng là đáp án chính thức của đề GATE 2015 gốc).\n\n**Mutual Exclusion bị vi phạm.** Xen kẽ sau cho cả hai cùng vào miền găng:\n- X: `varP = true`\n- Y: `varQ = true`\n- X: kiểm tra `varQ == true` → đúng → **vào CS**\n- Y: kiểm tra `varP == true` → vẫn đúng (X chỉ đặt `varP = false` ở **cuối** thân CS) → **vào CS**\n\n**Deadlock không xảy ra.** X chỉ bị kẹt (không vào CS) khi `varQ == false`, mà lúc đó Y chưa đặt cờ nên nó luôn sớm đặt `varQ = true` ở vòng ngoài; không có thế hai bên đều đứng im mãi.\n\nVậy các phương án nói 'đảm bảo Mutual Exclusion' đều sai, còn phương án 'không ngăn được Deadlock' cũng sai vì deadlock không xảy ra."
     },
     {
       "id": "os-sync-12",
@@ -297,13 +381,13 @@
       "question": "P1 và P2 cùng dùng chung biến **TaiKhoan** và mỗi tiến trình có **TienRut** riêng (không âm). Khởi đầu TaiKhoan = 1000, P1 rút 600, P2 rút 500. Khi xảy ra **race condition**, TaiKhoan có khả năng bằng bao nhiêu?",
       "code": "if (TaiKhoan - TienRut >= 0)\n    TaiKhoan = TaiKhoan - TienRut;\nelse\n    error();",
       "options": [
-        "500",
+        "1000",
         "Giá trị không xác định (undefined value)",
         "-100",
         "600"
       ],
       "answer": 2,
-      "explanation": "Xen kẽ tai hại: **cả hai cùng kiểm tra trước khi ai kịp trừ**.\n```\nP1: kiểm tra 1000 - 600 >= 0  → đúng, được phép rút\nP2: kiểm tra 1000 - 500 >= 0  → đúng, được phép rút   (TaiKhoan vẫn còn 1000!)\nP1: TaiKhoan = 1000 - 600 = 400\nP2: TaiKhoan = 400  - 500 = -100\n```\n\nKết quả **−100**: tài khoản âm dù đoạn mã có kiểm tra số dư hẳn hoi.\n\nGốc rễ của lỗi: phép **kiểm tra rồi hành động** (check-then-act) không phải thao tác nguyên tử. Giữa lúc kiểm tra và lúc trừ tiền, dữ liệu đã bị tiến trình khác thay đổi.\n\nCách chữa: bọc **toàn bộ** đoạn kiểm tra và cập nhật vào miền găng, dùng mutex hoặc semaphore. Đây chính là lý do mọi hệ thống ngân hàng đều phải dùng giao dịch."
+      "explanation": "Xen kẽ tai hại: **cả hai cùng kiểm tra trước khi ai kịp trừ**.\n```\nP1: kiểm tra 1000 - 600 >= 0  → đúng, được phép rút\nP2: kiểm tra 1000 - 500 >= 0  → đúng, được phép rút   (TaiKhoan vẫn còn 1000!)\nP1: TaiKhoan = 1000 - 600 = 400\nP2: TaiKhoan = 400  - 500 = -100\n```\n\nKết quả **−100**: tài khoản âm dù đoạn mã có kiểm tra số dư hẳn hoi. (Tuỳ xen kẽ, kết quả còn có thể là 400 hoặc 500 do mất cập nhật, nhưng không bao giờ là 1000 hay 600 vì luôn có ít nhất một phép trừ được ghi.)\n\nGốc rễ của lỗi: phép **kiểm tra rồi hành động** (check-then-act) không phải thao tác nguyên tử. Giữa lúc kiểm tra và lúc trừ tiền, dữ liệu đã bị tiến trình khác thay đổi.\n\nCách chữa: bọc **toàn bộ** đoạn kiểm tra và cập nhật vào miền găng, dùng mutex hoặc semaphore. Kết quả 'không xác định' không phải đáp án vì các giá trị khả dĩ đều xác định được."
     },
     {
       "id": "os-sync-24",

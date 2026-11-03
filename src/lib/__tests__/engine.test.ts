@@ -162,8 +162,8 @@ describe('buildSession', () => {
   const subject = getSubject(SID)!;
   const total = getSubjectQuestions(SID).length;
 
-  it('dữ liệu thật: 208 câu', () => {
-    expect(total).toBe(208);
+  it('dữ liệu thật: môn có đủ câu và mọi chương có câu', () => {
+    expect(total).toBe(subject.chapters.reduce((s, c) => s + c.count, 0));
   });
   it('practice theo chương giữ thứ tự gốc', () => {
     const ch = subject.chapters[0];

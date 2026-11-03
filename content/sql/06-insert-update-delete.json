@@ -4,6 +4,81 @@
   "description": "INSERT, RETURNING, UPDATE, DELETE, UPSERT, TRUNCATE và quy trình sửa dữ liệu an toàn trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d06-15",
+      "topic": "INSERT là gì",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu (cơ bản)",
+      "question": "Lệnh `INSERT INTO` dùng để làm gì?",
+      "options": [
+        "sửa dữ liệu của dòng đã có",
+        "xóa dòng khỏi bảng",
+        "đọc dữ liệu từ bảng",
+        "thêm dòng mới vào bảng"
+      ],
+      "answer": 3,
+      "explanation": "`INSERT INTO` **thêm** một hoặc nhiều dòng mới vào bảng.\n- Sửa dòng đã có là việc của `UPDATE`.\n- Xóa dòng là việc của `DELETE`.\n- Đọc dữ liệu là việc của `SELECT`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d06-16",
+      "topic": "UPDATE là gì",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu (cơ bản)",
+      "question": "Lệnh `UPDATE` dùng để làm gì?",
+      "options": [
+        "sửa giá trị của các dòng đã có trong bảng",
+        "thêm cột mới vào bảng",
+        "tạo bản sao lưu của database",
+        "cập nhật phiên bản PostgreSQL"
+      ],
+      "answer": 0,
+      "explanation": "`UPDATE` **sửa** giá trị trong các dòng đã tồn tại, thường kèm `WHERE` để chỉ rõ dòng nào.\n- Thêm cột mới là việc của `ALTER TABLE ... ADD COLUMN`.\n- Sao lưu dùng công cụ như `pg_dump`.\n- `UPDATE` chỉ làm việc với dữ liệu, không nâng cấp phần mềm PostgreSQL.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d06-17",
+      "topic": "DELETE FROM",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu (cơ bản)",
+      "question": "Câu `DELETE FROM customers WHERE customer_id = 18;` làm gì?",
+      "options": [
+        "xóa cả bảng `customers`",
+        "xóa cột `customer_id`",
+        "xóa dòng khách có `customer_id` bằng 18",
+        "xóa mọi khách khác 18"
+      ],
+      "answer": 2,
+      "explanation": "`DELETE FROM ... WHERE ...` xóa **các dòng thỏa điều kiện**, ở đây là đúng khách có mã 18.\n- Xóa cả bảng phải dùng `DROP TABLE`.\n- Xóa cột phải dùng `ALTER TABLE ... DROP COLUMN`.\n- Xóa \"khác 18\" cần viết `<>`; điều kiện `= 18` chỉ chọn đúng khách 18.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d06-18",
+      "topic": "Quên WHERE",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu (cơ bản)",
+      "question": "Điều gì xảy ra nếu bạn quên `WHERE` khi viết `UPDATE` hoặc `DELETE`?",
+      "options": [
+        "PostgreSQL tự hỏi lại bạn trước khi chạy",
+        "lệnh tác động lên TẤT CẢ các dòng của bảng",
+        "lệnh chỉ tác động lên dòng đầu tiên",
+        "lệnh báo lỗi cú pháp"
+      ],
+      "answer": 1,
+      "explanation": "Thiếu `WHERE` thì điều kiện không giới hạn dòng nào, nên `UPDATE`/`DELETE` chạy trên **mọi dòng**. Vì vậy nên viết `WHERE` trước, hoặc thử trong `BEGIN` ... `ROLLBACK`.\n- Máy chủ không tự hỏi xác nhận.\n- Lệnh không chỉ chọn dòng đầu tiên.\n- Câu lệnh vẫn đúng cú pháp nên không có lỗi.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d06-19",
+      "topic": "DELETE và DROP TABLE",
+      "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu (cơ bản)",
+      "question": "Điểm khác nhau chính giữa `DELETE FROM orders;` và `DROP TABLE orders;` là gì?",
+      "options": [
+        "câu đầu xóa hết dòng nhưng giữ lại bảng, câu sau bỏ luôn cả bảng",
+        "câu đầu bỏ luôn cả bảng, câu sau chỉ xóa dòng",
+        "không khác nhau, hai câu làm đúng một việc",
+        "câu đầu chỉ chạy được trên bảng rỗng"
+      ],
+      "answer": 0,
+      "explanation": "`DELETE FROM orders;` xóa **dữ liệu** (các dòng), bảng vẫn còn cấu trúc. `DROP TABLE orders;` xóa **cả bảng** gồm cấu trúc và dữ liệu.\n- Phát biểu đảo ngược hai lệnh là sai.\n- Hai lệnh khác nhau rõ ràng về phạm vi tác động.\n- `DELETE` chạy được trên bảng có dữ liệu, đó chính là mục đích của nó.",
+      "kind": "concept"
+    },
+    {
       "id": "sql-d06-01",
       "topic": "INSERT một dòng",
       "source": "Ngày 6 - Thêm, sửa, xóa dữ liệu",

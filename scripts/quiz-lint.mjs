@@ -9,7 +9,7 @@ const CONFIG = {
     lang: 'sql',
     isCode: (o) => /\b(SELECT|INSERT INTO|UPDATE|DELETE FROM|CREATE|ALTER|DROP|WITH)\b/.test(o),
     codeFieldLooksLikeCode: (c) => /\b(SELECT|INSERT|UPDATE|DELETE|CREATE)\b/.test(c),
-    count: [8, 18],
+    count: [8, 26],
     minVerify: 0.4,
   },
   dotnet: {
@@ -17,7 +17,7 @@ const CONFIG = {
     lang: 'csharp',
     isCode: (o) => /;|=>|\{|\}/.test(o) || /^\s*(public|private|internal|var|using|await|class|record|interface|dotnet|git|docker)\b/.test(o),
     codeFieldLooksLikeCode: (c) => /;|=>|\{|\}/.test(c),
-    count: [12, 24],
+    count: [12, 32],
     minVerify: 0.25,
   },
   cpp: {
@@ -25,7 +25,7 @@ const CONFIG = {
     lang: 'cpp',
     isCode: (o) => /;|\{|\}|#include|->|::|<<|>>/.test(o) || /^\s*(int|long|char|float|double|void|bool|string|const|struct|for|while|if|return|cout|cin|printf|scanf)/.test(o),
     codeFieldLooksLikeCode: (c) => /;|\{|\}|#include/.test(c),
-    count: [18, 26],
+    count: [18, 34],
     minVerify: 0.6,
   },
 };

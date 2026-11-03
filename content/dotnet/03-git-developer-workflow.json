@@ -2,7 +2,78 @@
   "id": "dotnet-m03",
   "title": "Module 3: Git + Developer Workflow",
   "description": "Git là gì, cấu hình, an toàn, workflow cơ bản, nhánh, pull request và giải xung đột.",
+  "conceptual": true,
   "questions": [
+    {
+      "id": "dotnet-m03-21",
+      "topic": "Git và GitHub",
+      "source": "Module 3 - Git là gì và tại sao cần (cơ bản)",
+      "question": "Git và GitHub khác nhau thế nào?",
+      "options": [
+        "Git là công cụ quản lý phiên bản chạy trên máy bạn, GitHub là dịch vụ web lưu kho Git và hỗ trợ cộng tác",
+        "Git và GitHub là cùng một phần mềm",
+        "Git là website, GitHub là công cụ dòng lệnh",
+        "GitHub bắt buộc phải có để dùng Git"
+      ],
+      "answer": 0,
+      "explanation": "**Git** là hệ thống quản lý phiên bản phân tán chạy cục bộ; **GitHub** là dịch vụ trên web để lưu kho Git, tạo pull request và làm việc nhóm.\n- Hai thứ không phải một phần mềm.\n- Đảo vai trò (Git là website) là sai.\n- Git dùng được hoàn toàn offline, không bắt buộc GitHub; còn có GitLab, Azure DevOps..."
+    },
+    {
+      "id": "dotnet-m03-22",
+      "topic": "Commit là gì",
+      "source": "Module 3 - Git là gì và tại sao cần (cơ bản)",
+      "question": "Một commit trong Git là gì?",
+      "options": [
+        "Lệnh xoá toàn bộ lịch sử",
+        "Một ảnh chụp trạng thái các file tại một thời điểm, kèm lời nhắn mô tả",
+        "Một nhánh mới",
+        "Một bản sao của kho trên máy khác"
+      ],
+      "answer": 1,
+      "explanation": "Commit là một **ảnh chụp (snapshot)** của dự án kèm thông điệp, tác giả và thời gian; chuỗi commit tạo thành lịch sử.\n- Xoá lịch sử không phải commit.\n- Nhánh là con trỏ tới một commit, không phải bản thân commit.\n- Bản sao kho trên máy khác là kết quả của `git clone`."
+    },
+    {
+      "id": "dotnet-m03-23",
+      "topic": "Nhánh để làm gì",
+      "source": "Module 3 - Git là gì và tại sao cần (cơ bản)",
+      "question": "Vì sao nên làm việc trên một nhánh (branch) riêng cho mỗi tính năng?",
+      "options": [
+        "Vì Git bắt buộc mỗi file một nhánh",
+        "Để mỗi lần commit chạy nhanh hơn",
+        "Vì nhánh tự động sửa lỗi cho bạn",
+        "Để phát triển tính năng tách biệt khỏi code chính, xong rồi mới gộp lại"
+      ],
+      "answer": 3,
+      "explanation": "Nhánh cho phép **làm việc độc lập**: thử nghiệm, sửa dở dang mà không ảnh hưởng nhánh chính, hoàn thành xong mới gộp qua pull request.\n- Git không có quy tắc mỗi file một nhánh.\n- Nhánh không làm commit nhanh hơn.\n- Nhánh không tự sửa lỗi, bạn vẫn phải tự viết code."
+    },
+    {
+      "id": "dotnet-m03-24",
+      "topic": "git clone",
+      "source": "Module 3 - Git là gì và tại sao cần (cơ bản)",
+      "question": "Lệnh `git clone <url>` làm gì?",
+      "options": [
+        "Xoá kho từ xa",
+        "Tạo commit mới từ các file đang sửa",
+        "Gộp hai nhánh với nhau",
+        "Sao chép kho từ xa về máy, gồm cả lịch sử"
+      ],
+      "answer": 3,
+      "explanation": "`git clone` tải **toàn bộ kho** (code và lịch sử commit) từ địa chỉ `<url>` về máy để bạn bắt đầu làm việc.\n- Nó không xoá gì ở kho từ xa.\n- Tạo commit là `git commit`.\n- Gộp nhánh là `git merge` hoặc `git rebase`."
+    },
+    {
+      "id": "dotnet-m03-25",
+      "topic": "Pull request",
+      "source": "Module 3 - Git là gì và tại sao cần (cơ bản)",
+      "question": "Pull request (PR) trên GitHub dùng để làm gì?",
+      "options": [
+        "Đề nghị gộp thay đổi của một nhánh vào nhánh khác và cho đồng đội xem xét trước",
+        "Tải code từ máy chủ về máy bạn",
+        "Xoá một nhánh trên máy",
+        "Khôi phục file đã xoá"
+      ],
+      "answer": 0,
+      "explanation": "PR là **đề nghị gộp** nhánh của bạn vào nhánh đích; đồng đội đọc code, góp ý và CI chạy kiểm tra trước khi merge.\n- Tải code về máy là `git pull` hoặc `git fetch`, tên gần giống nhưng khác việc.\n- Xoá nhánh là `git branch -d`.\n- Khôi phục file là việc của `git restore` hoặc `git revert`."
+    },
     {
       "id": "dotnet-m03-01",
       "topic": "Commit bất biến",

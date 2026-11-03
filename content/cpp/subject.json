@@ -9,77 +9,77 @@
       "slug": "01-nmlt-du-lieu-so",
       "title": "Chương 1: Xử lý trên dữ liệu số",
       "description": "Kiểu dữ liệu, toán tử, chia nguyên và chia thực, ép kiểu, tràn số, if/switch, nhập xuất và các công thức toán cơ bản.",
-      "count": 24
+      "count": 29
     },
     {
       "id": "cpp-c02",
       "slug": "02-nmlt-thuat-toan",
       "title": "Chương 2: Các thuật toán xử lý thông dụng",
       "description": "Vòng lặp và các thuật toán thường gặp: tổng, giai thừa, số nguyên tố, số hoàn hảo, đảo số, đối xứng, UCLN, Fibonacci, tổ hợp, đổi tiền và ngày tháng.",
-      "count": 24
+      "count": 29
     },
     {
       "id": "cpp-c03",
       "slug": "03-nmlt-mang-mot-chieu",
       "title": "Chương 3: Mảng một chiều",
       "description": "Nhập/xuất mảng, tổng, max/min, trung bình, đếm và tìm phần tử nguyên tố/hoàn thiện, UCLN mảng, Fibonacci và hoán đổi phần tử, kèm các lỗi thường gặp.",
-      "count": 22
+      "count": 27
     },
     {
       "id": "cpp-c04",
       "slug": "04-nmlt-mang-nang-cao",
       "title": "Chương 4: Mảng một chiều (nâng cao)",
       "description": "Chèn/xóa phần tử, trộn và tách mảng, sắp xếp, tìm kiếm, tần suất, BCNN, đảo và xoay mảng, mảng con, truyền mảng vào hàm cùng tham chiếu và con trỏ.",
-      "count": 23
+      "count": 28
     },
     {
       "id": "cpp-c05",
       "slug": "05-nmlt-chuoi-mang-hai-chieu",
       "title": "Chương 5: Chuỗi và mảng hai chiều",
       "description": "Chuỗi ký tự (char[] và string), các thuật toán duyệt chuỗi, mảng hai chiều, đường chéo ma trận và nén chuỗi RLE.",
-      "count": 24
+      "count": 29
     },
     {
       "id": "cpp-c06",
       "slug": "06-ktlt-struct-tap-tin",
       "title": "Chương 6: Kiểu dữ liệu có cấu trúc và tập tin",
       "description": "Struct và mảng struct, truyền struct vào hàm, các bài toán phân số và ngày tháng, nhập xuất tập tin bằng ifstream/ofstream và fopen/fscanf.",
-      "count": 24
+      "count": 29
     },
     {
       "id": "cpp-c07",
       "slug": "07-ktlt-mang-ky-thuat",
       "title": "Chương 7: Kỹ thuật tổ chức và xử lý dữ liệu trên mảng",
       "description": "Các kỹ thuật xử lý mảng 1 chiều, 2 chiều: lính canh, tìm nhị phân, đếm phân phối, số lớn, ma phương, dò mìn, mảng đánh dấu và chia để trị.",
-      "count": 24
+      "count": 29
     },
     {
       "id": "cpp-c08",
       "slug": "08-ktlt-tinh-chinh",
       "title": "Chương 8: Tinh chỉnh chương trình",
       "description": "Độ phức tạp thuật toán, tối ưu vòng lặp, tránh tính lặp, mảng cộng dồn, sàng nguyên tố và tránh tràn số khi tinh chỉnh chương trình.",
-      "count": 23
+      "count": 28
     },
     {
       "id": "cpp-c09",
       "slug": "09-ktlt-duyet",
       "title": "Chương 9: Phương pháp duyệt",
       "description": "Vét cạn, quay lui, cắt nhánh và nhánh cận qua các bài đệ quy, hoán vị, tổ hợp, N quân hậu.",
-      "count": 22
+      "count": 27
     },
     {
       "id": "cpp-c10",
       "slug": "10-ktlt-sinh",
       "title": "Chương 10: Giải thuật sinh",
       "description": "Giải thuật sinh cấu hình kế tiếp: xâu nhị phân, tập con, tổ hợp, hoán vị, thao tác bit và đối chiếu với next_permutation.",
-      "count": 25
+      "count": 30
     },
     {
       "id": "cpp-c11",
       "slug": "11-ktlt-quy-hoach-dong",
       "title": "Chương 11: Quy hoạch động",
       "description": "Bài toán con gối nhau, công thức truy hồi, bảng QHD, truy vết, cái túi, LCS, đổi tiền và Fibonacci có nhớ.",
-      "count": 24
+      "count": 29
     }
   ]
 }

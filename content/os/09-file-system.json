@@ -4,6 +4,90 @@
   "description": "FCB, các lớp chức năng của hệ thống file, volume control block, FAT32 và NTFS.",
   "questions": [
     {
+      "id": "os-fs-14",
+      "topic": "File là gì",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Với hệ điều hành, **file (tập tin)** là gì?",
+      "options": [
+        "Một đơn vị lưu trữ có tên, chứa dữ liệu hoặc chương trình, được lưu trên thiết bị lưu trữ",
+        "Một loại tiến trình đặc biệt",
+        "Một vùng nhớ của CPU",
+        "Một thiết bị nhập xuất"
+      ],
+      "answer": 0,
+      "explanation": "**File** là đơn vị lưu trữ logic có **tên**, chứa dữ liệu hoặc mã chương trình, được hệ điều hành lưu trên thiết bị lưu trữ (đĩa, SSD, USB). Người dùng thao tác theo tên file, còn hệ thống file lo việc ánh xạ xuống các khối vật lý.\n\nFile không phải tiến trình, không phải vùng nhớ của CPU và không phải thiết bị nhập xuất."
+    },
+    {
+      "id": "os-fs-15",
+      "topic": "Thư mục",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Thư mục (directory/folder)** dùng để làm gì?",
+      "options": [
+        "Tăng tốc độ của CPU",
+        "Chạy chương trình nền",
+        "Tổ chức và quản lý các file (và thư mục con) theo cấu trúc phân cấp, giúp tìm kiếm dễ hơn",
+        "Sao lưu dữ liệu tự động"
+      ],
+      "answer": 2,
+      "explanation": "**Thư mục** chứa danh sách các mục (file hoặc thư mục con), giúp tổ chức dữ liệu theo cây phân cấp và ánh xạ **tên file → thông tin file (FCB/inode)**. Nhờ vậy ta đặt tên trùng ở các thư mục khác nhau và tìm file nhanh.\n\nThư mục không ảnh hưởng tốc độ CPU, không chạy chương trình và không tự sao lưu dữ liệu."
+    },
+    {
+      "id": "os-fs-16",
+      "topic": "Đường dẫn",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Khác biệt giữa **đường dẫn tuyệt đối** và **đường dẫn tương đối** là gì?",
+      "options": [
+        "Đường dẫn tuyệt đối chỉ dùng cho thư mục, tương đối chỉ dùng cho file",
+        "Hai loại đường dẫn hoàn toàn giống nhau",
+        "Đường dẫn tuyệt đối bắt đầu từ thư mục gốc, còn tương đối được tính từ thư mục hiện hành",
+        "Đường dẫn tương đối bắt đầu từ thư mục gốc"
+      ],
+      "answer": 2,
+      "explanation": "**Đường dẫn tuyệt đối** xuất phát từ **thư mục gốc** (ví dụ `/home/an/bai.txt` hoặc `C:\\Users\\An\\bai.txt`) nên không đổi dù đang đứng ở đâu. **Đường dẫn tương đối** được tính từ **thư mục hiện hành** (ví dụ `../bai.txt`), ngắn gọn hơn nhưng phụ thuộc vị trí hiện tại.\n\nCả hai đều dùng được cho file lẫn thư mục; hai loại khác nhau; và đường dẫn tương đối không bắt đầu từ thư mục gốc."
+    },
+    {
+      "id": "os-fs-17",
+      "topic": "Quyền truy cập",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Trong UNIX/Linux, ký hiệu quyền **rwx** nghĩa là gì?",
+      "options": [
+        "Đọc (read), ghi (write), thực thi (execute)",
+        "Chạy (run), chờ (wait), thoát (exit)",
+        "Nén (reduce), giải nén (widen), mở rộng (expand)",
+        "Xoá (remove), đổi tên (rename), di chuyển (xfer)"
+      ],
+      "answer": 0,
+      "explanation": "**rwx** là ba quyền cơ bản trên file: **r**ead (đọc), **w**rite (ghi), e**x**ecute (thực thi hoặc đi vào thư mục). Mỗi file có ba nhóm quyền cho chủ sở hữu, nhóm và những người còn lại, ví dụ `rwxr-xr--`.\n\nCác phương án còn lại là những cụm từ nghe giống nhưng không phải ý nghĩa của rwx."
+    },
+    {
+      "id": "os-fs-18",
+      "topic": "Journaling",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Journaling** trong hệ thống file (như NTFS, ext4) giúp ích gì?",
+      "options": [
+        "Giúp file mở nhanh gấp đôi",
+        "Tự động nén mọi file",
+        "Ghi lại các thay đổi dự định thực hiện vào nhật ký, nhờ đó sau khi mất điện hệ thống khôi phục lại trạng thái nhất quán nhanh",
+        "Ngăn người dùng xoá file"
+      ],
+      "answer": 2,
+      "explanation": "Hệ thống file có **journal** ghi ý định thay đổi (siêu dữ liệu, đôi khi cả dữ liệu) vào nhật ký trước khi thực hiện thật. Nếu mất điện giữa chừng, lúc khởi động lại chỉ cần xem nhật ký để hoàn tất hoặc huỷ thay đổi dở, khỏi phải quét toàn đĩa như fsck/chkdsk.\n\nJournaling không làm file mở nhanh gấp đôi, không nén và không ngăn xoá file."
+    },
+    {
+      "id": "os-fs-19",
+      "topic": "Block và cluster",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Trong hệ thống file, **block (cluster)** là gì?",
+      "options": [
+        "Đơn vị nhỏ nhất mà hệ thống file cấp phát cho file trên đĩa (gồm một hoặc nhiều sector)",
+        "Một tập tin nén",
+        "Một loại virus",
+        "Một thiết bị USB"
+      ],
+      "answer": 0,
+      "explanation": "Hệ thống file không cấp phát từng byte mà theo **block** (ext) hay **cluster** (FAT/NTFS), mỗi block gồm một hoặc nhiều sector. File nhỏ vẫn chiếm trọn ít nhất một block, nên block càng lớn thì càng lãng phí chỗ ở block cuối (phân mảnh trong).\n\nBlock/cluster không phải file nén, virus hay thiết bị USB."
+    },
+    {
       "id": "os-fs-01",
       "topic": "FCB",
       "source": "Cuối kỳ HĐH – SPKT",
@@ -11,7 +95,6 @@
       "options": [
         "Kích thước file",
         "Danh sách liên kết file",
-        "Ngày tạo và truy xuất file",
         "Quyền truy xuất file",
         "Danh sách điều khiển truy cập file"
       ],
@@ -41,8 +124,7 @@
         "Boot Block",
         "Volume control block",
         "File Control Block",
-        "Boot control block",
-        "File Block"
+        "Boot control block"
       ],
       "answer": 1,
       "explanation": "**Volume control block** — trên UNIX gọi là **superblock**, trên NTFS là **Master File Table** — chứa thông tin mô tả **toàn bộ một phân vùng**:\n```\n- Tổng số block trong partition\n- Kích thước mỗi block\n- Số block trống và con trỏ tới danh sách block trống\n- Số FCB trống và con trỏ tới chúng\n```\n\nPhân biệt ba loại khối siêu dữ liệu:\n- **Boot control block** (boot block, sector đầu tiên) — chứa mã khởi động hệ điều hành. Phân vùng nào không dùng để boot thì khối này rỗng.\n- **Volume control block** — mô tả **một phân vùng**. Đây là đáp án.\n- **File control block** — mô tả **một file**.\n\nVì mất superblock là mất luôn cả phân vùng, hệ thống file luôn giữ **nhiều bản sao** của nó rải rác trên đĩa."
@@ -79,7 +161,7 @@
       "id": "os-fs-06",
       "topic": "NTFS",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Kích thước **phân vùng** lớn nhất của **NTFS** là bao nhiêu?",
+      "question": "Trên ổ đĩa dùng bảng phân vùng **MBR** (sector 512 byte), một phân vùng **NTFS** có kích thước tối đa là bao nhiêu?",
       "options": [
         "64 GB",
         "2 TB",
@@ -87,13 +169,13 @@
         "4 TB"
       ],
       "answer": 1,
-      "explanation": "Đáp án đề là **2 TB**.\n\nCon số này đến từ giới hạn của bảng phân vùng **MBR**: MBR dùng 32 bit để đánh số sector, với sector 512 byte thì 2^32 × 512 byte = **2 TB**. Đây là trần của *cách chia phân vùng*, không phải của bản thân NTFS.\n\nNếu dùng **GPT** thay cho MBR, NTFS hỗ trợ phân vùng lên tới **256 TB** (với cluster 64 KB), và giới hạn lý thuyết của định dạng còn cao hơn nhiều.\n\nĐi thi cứ trả lời theo đề, nhưng biết rõ 2 TB là giới hạn của MBR để khỏi lúng túng khi gặp ổ cứng 4 TB ngoài đời."
+      "explanation": "Đáp án là **2 TB**.\n\nCon số này đến từ giới hạn của bảng phân vùng **MBR**: MBR dùng 32 bit để đánh số sector, với sector 512 byte thì 2^32 × 512 byte = **2 TB**. Đây là trần của *cách chia phân vùng*, không phải của bản thân NTFS.\n\nNếu dùng **GPT** thay cho MBR, NTFS hỗ trợ phân vùng lên tới **256 TB** (với cluster 64 KB), và giới hạn lý thuyết của định dạng còn cao hơn nhiều. Vì vậy các con số 4 TB, 32 GB, 64 GB không phải trần của NTFS trên MBR (32 GB và 64 GB nhỏ hơn rất nhiều, còn 4 TB vượt quá giới hạn 32 bit sector)."
     },
     {
       "id": "os-fs-07",
       "topic": "FAT32",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Kích thước **phân vùng** lớn nhất của **FAT32** là bao nhiêu?",
+      "question": "Công cụ format của **Windows** chỉ cho phép tạo phân vùng **FAT32** có kích thước tối đa là bao nhiêu?",
       "options": [
         "32 GB",
         "4 TB",
@@ -101,7 +183,7 @@
         "2 TB"
       ],
       "answer": 0,
-      "explanation": "Đáp án đề là **32 GB** — đây là giới hạn do **công cụ format của Windows** áp đặt từ thời Windows 2000, không phải giới hạn của định dạng.\n\nVề lý thuyết FAT32 hỗ trợ tới **2 TB** với cluster 512 byte (và 16 TB với cluster 4 KB). Windows vẫn **đọc ghi bình thường** phân vùng FAT32 lớn hơn 32 GB nếu được format bằng công cụ khác — nó chỉ từ chối *tạo ra* phân vùng như vậy, vì bảng FAT khi đó phình quá to và hiệu năng tệ đi.\n\nBa con số của FAT32 cần thuộc riêng rẽ:\n- **File** lớn nhất: **4 GB**\n- **Phân vùng** lớn nhất (Windows format): **32 GB**\n- **Phân vùng** lớn nhất (lý thuyết): 2 TB"
+      "explanation": "Đáp án là **32 GB** — đây là giới hạn do **công cụ format của Windows** áp đặt từ thời Windows 2000, không phải giới hạn của định dạng.\n\nVề lý thuyết FAT32 hỗ trợ tới **2 TB** với cluster 512 byte (và 16 TB với cluster 4 KB). Windows vẫn **đọc ghi bình thường** phân vùng FAT32 lớn hơn 32 GB nếu được format bằng công cụ khác — nó chỉ từ chối *tạo ra* phân vùng như vậy, vì bảng FAT khi đó phình quá to và hiệu năng tệ đi. Vì thế 2 TB (lý thuyết) không phải là mức công cụ của Windows cho phép, còn 64 GB và 4 TB không phải con số giới hạn của công cụ này.\n\nBa con số của FAT32 cần thuộc riêng rẽ:\n- **File** lớn nhất: **4 GB**\n- **Phân vùng** lớn nhất (Windows format): **32 GB**\n- **Phân vùng** lớn nhất (lý thuyết): 2 TB"
     },
     {
       "id": "os-fs-08",
@@ -136,7 +218,7 @@
       "id": "os-fs-10",
       "topic": "Phân vùng",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Cấu trúc đĩa cứng dạng **MBR** có tối đa bao nhiêu **Primary partition**?",
+      "question": "Đĩa cứng dạng **MBR** cần dùng thêm **một extended partition** (để chứa các logical partition). Khi đó đĩa có tối đa bao nhiêu **primary partition**?",
       "options": [
         "1",
         "2",
@@ -144,7 +226,7 @@
         "4"
       ],
       "answer": 2,
-      "explanation": "Đáp án đề là **3**.\n\n**Lưu ý:** bảng phân vùng MBR nằm trong 64 byte cuối của sector đầu tiên, mỗi mục 16 byte nên có **đúng 4 mục**. Vì vậy con số chuẩn thường gặp là:\n```\nTối đa 4 primary partition\nHOẶC 3 primary + 1 extended (chứa nhiều logical partition bên trong)\n```\nCon số **3** của đề ứng với trường hợp thứ hai — khi người dùng cần nhiều hơn 4 phân vùng nên phải hy sinh một mục cho extended partition.\n\nĐi thi chọn theo đáp án đề, nhưng nhớ đủ cả hai vế: **4 primary**, hoặc **3 primary + 1 extended**.\n\nHạn chế khác của MBR: chỉ địa chỉ hoá được **2 TB**, đó là lý do GPT ra đời."
+      "explanation": "Đáp án là **3**.\n\nBảng phân vùng MBR nằm trong 64 byte cuối của sector đầu tiên, mỗi mục 16 byte nên có **đúng 4 mục**:\n```\nTối đa 4 primary partition\nHOẶC 3 primary + 1 extended (chứa nhiều logical partition bên trong)\n```\nKhi một mục đã dành cho extended partition thì chỉ còn **3** mục cho primary. Con số 4 chỉ đúng khi *không* dùng extended; 1 và 2 là những số có thể dùng nhưng không phải mức tối đa.\n\nHạn chế khác của MBR: chỉ địa chỉ hoá được **2 TB**, đó là lý do GPT ra đời."
     },
     {
       "id": "os-fs-11",
@@ -164,29 +246,29 @@
       "id": "os-fs-12",
       "topic": "FAT32",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Kích thước tập tin lớn nhất lưu trữ trong **FAT32** là bao nhiêu?",
+      "question": "Bạn chép một file phim **5 GB** vào USB định dạng **FAT32** và bị báo lỗi 'file quá lớn'. Nguyên nhân là gì?",
       "options": [
-        "1 GB",
-        "2 GB",
-        "3 GB",
-        "4 GB"
+        "USB bị nhiễm virus",
+        "FAT32 không hỗ trợ tên file dài",
+        "Phân vùng FAT32 chỉ lưu được tối đa 5 file",
+        "FAT32 giới hạn kích thước một file tối đa 4 GB (trừ 1 byte)"
       ],
       "answer": 3,
-      "explanation": "**4 GB** (chính xác là 4 GB − 1 byte = 4.294.967.295 byte).\n\nNguyên nhân: FAT32 lưu kích thước tập tin trong một trường **32 bit**, nên giá trị lớn nhất là 2^32 − 1.\n\nĐây là giới hạn gây khó chịu nhất khi dùng USB định dạng FAT32: không chép được file phim 4K, file ảnh đĩa hay file sao lưu lớn. Giải pháp là chuyển sang **exFAT** (giới hạn 16 EB) hoặc **NTFS**.\n\nBa con số của FAT32 cần nhớ tách bạch:\n```\nFile lớn nhất                    : 4 GB\nPhân vùng lớn nhất (Windows tạo) : 32 GB\nPhân vùng lớn nhất (lý thuyết)   : 2 TB\n```"
+      "explanation": "FAT32 lưu kích thước tập tin trong một trường **32 bit**, nên giá trị lớn nhất là 2^32 − 1 byte, tức **4 GB − 1 byte**. File 5 GB vượt trần này nên không chép được.\n\nGiải pháp: định dạng lại USB sang **exFAT** (giới hạn 16 EB) hoặc **NTFS**.\n\nCác nguyên nhân khác sai: virus không gây thông báo này; FAT32 vẫn hỗ trợ tên dài (LFN); và FAT32 không giới hạn số file ở mức 5.\n\nBa con số của FAT32 cần nhớ tách bạch:\n```\nFile lớn nhất                    : 4 GB\nPhân vùng lớn nhất (Windows tạo) : 32 GB\nPhân vùng lớn nhất (lý thuyết)   : 2 TB\n```"
     },
     {
       "id": "os-fs-13",
       "topic": "FAT32",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "**LFN (Long File Name)** có trong định dạng nào?",
+      "question": "**LFN (Long File Name)** là cơ chế tên file dài đi kèm họ FAT. Trong các lựa chọn sau, định dạng nào dùng LFN như một phần của chuẩn?",
       "options": [
         "NTFS",
         "EXT2/3",
-        "FAT16",
+        "FAT16 theo chuẩn DOS nguyên bản (chỉ tên 8.3)",
         "FAT32"
       ],
       "answer": 3,
-      "explanation": "**LFN** là cơ chế được đưa vào từ **FAT32** (và bản mở rộng VFAT của FAT16 trên Windows 95) để vượt qua giới hạn tên file **8.3** cũ kỹ của DOS.\n\nCách hoạt động khá khéo: tên dài được chẻ thành nhiều **directory entry phụ** gắn thuộc tính đặc biệt, mỗi entry chứa 13 ký tự Unicode, kèm một entry 8.3 rút gọn để hệ điều hành cũ vẫn đọc được.\n```\nTên cũ (8.3)  :  BAOCAO~1.DOC   - 8 ký tự tên + 3 ký tự phần mở rộng\nLFN           :  Báo cáo tài chính quý 4.docx   - tới 255 ký tự Unicode\n```\n\nVì sao không phải các phương án kia: **NTFS** và **EXT2/3** sinh ra đã hỗ trợ tên dài sẵn, không cần cơ chế LFN chắp vá; còn **FAT16** nguyên bản chỉ có 8.3."
+      "explanation": "**LFN** là cơ chế gắn với **FAT32** (và bản mở rộng VFAT của FAT16 trên Windows 95) để vượt qua giới hạn tên file **8.3** cũ kỹ của DOS.\n\nCách hoạt động khá khéo: tên dài được chẻ thành nhiều **directory entry phụ** gắn thuộc tính đặc biệt, mỗi entry chứa 13 ký tự Unicode, kèm một entry 8.3 rút gọn để hệ điều hành cũ vẫn đọc được.\n```\nTên cũ (8.3)  :  BAOCAO~1.DOC   - 8 ký tự tên + 3 ký tự phần mở rộng\nLFN           :  Báo cáo tài chính quý 4.docx   - tới 255 ký tự Unicode\n```\n\nVì sao không phải các phương án kia: **NTFS** và **EXT2/3** sinh ra đã hỗ trợ tên dài sẵn, không cần cơ chế LFN chắp vá; còn **FAT16 theo chuẩn DOS nguyên bản** chỉ có tên 8.3."
     }
   ]
 }

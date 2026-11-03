@@ -4,6 +4,76 @@
   "description": "COPY và \\copy, định dạng CSV, bảng staging để làm sạch dữ liệu, upsert hàng loạt và xuất báo cáo ra file.",
   "questions": [
     {
+      "id": "sql-d24-17",
+      "topic": "CSV là gì",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV (cơ bản)",
+      "question": "CSV là viết tắt của gì?",
+      "options": [
+        "Central Storage Volume",
+        "Comma-Separated Values: tệp văn bản, mỗi dòng một bản ghi, các giá trị cách nhau bằng dấu phẩy",
+        "Column Sort Version",
+        "Computer System Variable"
+      ],
+      "answer": 1,
+      "explanation": "CSV là Comma-Separated Values: file văn bản thuần, mỗi dòng là một bản ghi, các cột ngăn bởi dấu phẩy. Hầu như mọi công cụ (Excel, PostgreSQL, Python) đều đọc được nên rất tiện để trao đổi dữ liệu.\n- Các cụm còn lại không phải tên một định dạng tệp có thật."
+    },
+    {
+      "id": "sql-d24-18",
+      "topic": "Nạp CSV vào bảng",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV (cơ bản)",
+      "question": "Lệnh nào của PostgreSQL dùng để nạp hàng loạt dữ liệu từ tệp CSV vào bảng?",
+      "options": [
+        "`LOAD TABLE`",
+        "`IMPORT FILE`",
+        "`READ CSV`",
+        "`COPY ... FROM`"
+      ],
+      "answer": 3,
+      "explanation": "`COPY tên_bảng FROM ...` đọc tệp và nạp rất nhanh. Khi tệp nằm trên máy của bạn (không phải máy chủ) thì dùng `\\copy` trong psql.\n- `LOAD TABLE`, `IMPORT FILE` và `READ CSV` không phải lệnh của PostgreSQL."
+    },
+    {
+      "id": "sql-d24-19",
+      "topic": "Xuất dữ liệu ra CSV",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV (cơ bản)",
+      "question": "Muốn xuất kết quả của một bảng hoặc truy vấn ra tệp CSV bằng PostgreSQL, bạn dùng lệnh nào?",
+      "options": [
+        "`COPY ... TO` (hoặc `\\copy ... TO` trong psql)",
+        "lệnh kiểu `INTO FILE` của MySQL",
+        "`SAVE AS CSV`",
+        "`EXPORT TABLE`"
+      ],
+      "answer": 0,
+      "explanation": "`COPY ... TO` ghi dữ liệu ra tệp, kèm `FORMAT csv` để đúng định dạng CSV; trong psql, `\\copy ... TO` ghi tệp ngay trên máy bạn.\n- Lệnh kiểu `INTO FILE` là cú pháp của MySQL, PostgreSQL không có.\n- `SAVE AS CSV` không phải lệnh SQL.\n- `EXPORT TABLE` không phải lệnh của PostgreSQL."
+    },
+    {
+      "id": "sql-d24-20",
+      "topic": "Dòng tiêu đề CSV",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV (cơ bản)",
+      "question": "Dòng đầu tiên của nhiều tệp CSV thường là gì, và `HEADER true` trong `COPY` để làm gì?",
+      "options": [
+        "là dòng dữ liệu quan trọng nhất; `HEADER true` đưa nó lên cuối tệp",
+        "là tổng số dòng của tệp; `HEADER true` kiểm tra tổng đó",
+        "là tên các cột; `HEADER true` báo cho PostgreSQL bỏ qua dòng này khi nạp",
+        "là mật khẩu mở tệp; `HEADER true` nhập mật khẩu giúp bạn"
+      ],
+      "answer": 2,
+      "explanation": "Dòng tiêu đề chứa tên các cột chứ không phải dữ liệu. Với `HEADER true`, PostgreSQL bỏ qua dòng đó; quên tùy chọn này thì dòng tên cột bị nạp như một bản ghi.\n- Dòng đầu không phải dòng dữ liệu đặc biệt.\n- Không có dòng tổng số dòng trong CSV chuẩn.\n- CSV là văn bản thuần, không có mật khẩu."
+    },
+    {
+      "id": "sql-d24-21",
+      "topic": "UTF-8 và tiếng Việt",
+      "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV (cơ bản)",
+      "question": "Khi nhập hoặc xuất CSV có tiếng Việt, vì sao nên dùng mã hóa UTF-8?",
+      "options": [
+        "để tệp nhỏ hơn đúng một nửa dung lượng",
+        "để PostgreSQL nạp nhanh gấp mười lần",
+        "để chữ số và dấu phẩy được tính đúng",
+        "để các chữ có dấu như ă, ơ, ế hiển thị và lưu đúng, không bị lỗi ký tự lạ"
+      ],
+      "answer": 3,
+      "explanation": "UTF-8 là bộ mã hóa phổ biến chứa đầy đủ ký tự tiếng Việt. Dùng sai mã hóa thì \"Nguyễn\" dễ biến thành chuỗi ký tự lạ.\n- UTF-8 không làm tệp nhỏ hơn một nửa, tiếng Việt có dấu còn tốn thêm byte.\n- Tốc độ nạp không đổi đáng kể.\n- Chữ số và dấu phẩy là ký tự ASCII, đúng với mọi bộ mã hóa phổ biến."
+    },
+    {
       "id": "sql-d24-01",
       "topic": "COPY và \\copy",
       "source": "Ngày 24 - Nhập và xuất dữ liệu với CSV",

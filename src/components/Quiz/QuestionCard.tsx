@@ -2,6 +2,7 @@ import {useEffect, useRef} from 'react';
 import {correctDisplayIndices, type PlayQuestion} from '../../lib';
 import CodeBlock from '../CodeBlock';
 import DataPanel from './DataPanel';
+import {localizeExplanation} from './format';
 import {Icon} from '../Icon';
 import Mermaid from '../Mermaid';
 import RichText from '../RichText';
@@ -67,7 +68,7 @@ export default function QuestionCard(props: {
       {revealed && (
         <div className="q-explain" aria-live="polite" ref={explainRef}>
           <strong>Giải thích</strong>
-          <RichText text={q.explanation} />
+          <RichText text={localizeExplanation(q.explanation, item.order)} />
         </div>
       )}
     </div>

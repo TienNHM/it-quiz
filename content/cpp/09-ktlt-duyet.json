@@ -4,6 +4,76 @@
   "description": "Vét cạn, quay lui, cắt nhánh và nhánh cận qua các bài đệ quy, hoán vị, tổ hợp, N quân hậu.",
   "questions": [
     {
+      "id": "cpp-c09-23",
+      "topic": "Đệ quy là gì",
+      "source": "KTLT C09 - duyệt và đệ quy (cơ bản)",
+      "question": "Hàm đệ quy là hàm như thế nào?",
+      "options": [
+        "Hàm không có tham số",
+        "Hàm chỉ chạy một lần duy nhất",
+        "Hàm tự gọi lại chính nó",
+        "Hàm luôn trả về kiểu `void`"
+      ],
+      "answer": 2,
+      "explanation": "Đệ quy là khi hàm tự gọi lại chính mình (với bài toán nhỏ hơn) cho đến khi gặp điều kiện dừng. Việc có tham số hay không, chạy mấy lần hay kiểu trả về không quyết định một hàm có đệ quy hay không."
+    },
+    {
+      "id": "cpp-c09-24",
+      "topic": "Hoán vị",
+      "source": "KTLT C09 - duyệt và đệ quy (cơ bản)",
+      "question": "Hoán vị của 3 phần tử {1, 2, 3} có tất cả bao nhiêu cách sắp xếp khác nhau?",
+      "options": [
+        "6",
+        "3",
+        "9",
+        "8"
+      ],
+      "answer": 0,
+      "explanation": "Số hoán vị của n phần tử là n! nên 3! = 6: 123, 132, 213, 231, 312, 321. Con số 3 chỉ là số phần tử, 9 là 3² và 8 là 2³, đều không phải số hoán vị."
+    },
+    {
+      "id": "cpp-c09-25",
+      "topic": "Tổ hợp và hoán vị",
+      "source": "KTLT C09 - duyệt và đệ quy (cơ bản)",
+      "question": "Điểm khác nhau cơ bản giữa tổ hợp và hoán vị là gì?",
+      "options": [
+        "Tổ hợp có quan tâm thứ tự, hoán vị thì không",
+        "Hai khái niệm hoàn toàn giống nhau",
+        "Tổ hợp không quan tâm thứ tự các phần tử, hoán vị thì có quan tâm",
+        "Tổ hợp chỉ dùng cho số lẻ"
+      ],
+      "answer": 2,
+      "explanation": "Chọn {1,2} và {2,1} chỉ tính là một tổ hợp nhưng là hai hoán vị khác nhau. Phương án đảo ngược hoặc nói giống nhau đều sai, và tổ hợp không giới hạn ở số lẻ."
+    },
+    {
+      "id": "cpp-c09-26",
+      "topic": "Tháp Hà Nội",
+      "source": "KTLT C09 - duyệt và đệ quy (cơ bản)",
+      "question": "Quy tắc nào đúng trong bài toán Tháp Hà Nội?",
+      "options": [
+        "Có thể đặt đĩa lớn lên đĩa nhỏ miễn là chuyển từng đĩa một",
+        "Mỗi lần chỉ chuyển một đĩa và không được đặt đĩa lớn lên đĩa nhỏ",
+        "Mỗi lần được chuyển nhiều đĩa cùng lúc",
+        "Chỉ được dùng đúng hai cọc"
+      ],
+      "answer": 1,
+      "explanation": "Luật của Tháp Hà Nội: một lần chuyển một đĩa và đĩa lớn không được nằm trên đĩa nhỏ. Cho phép đặt đĩa lớn lên nhỏ hay chuyển nhiều đĩa một lúc làm mất ý nghĩa bài toán; bài toán cũng cần cọc trung gian nên dùng ba cọc."
+    },
+    {
+      "id": "cpp-c09-27",
+      "topic": "N quân hậu",
+      "source": "KTLT C09 - duyệt và đệ quy (cơ bản)",
+      "question": "Trong bài toán N quân hậu, điều kiện cần thoả là gì?",
+      "options": [
+        "Đặt N quân hậu cùng nằm trên một hàng",
+        "Đặt N quân hậu cạnh nhau ở góc bàn cờ",
+        "Chỉ đặt được các quân hậu trên đường chéo chính",
+        "Đặt N quân hậu lên bàn cờ N x N sao cho không quân nào ăn được quân nào"
+      ],
+      "answer": 3,
+      "explanation": "Hậu ăn được theo hàng, cột và đường chéo, nên ta cần đặt sao cho không hai quân nào cùng hàng, cột hay đường chéo. Đặt cùng một hàng hoặc dồn một góc làm chúng ăn nhau, và không bị giới hạn chỉ trên đường chéo chính."
+    },
+    {
       "id": "cpp-c09-01",
       "topic": "Khái niệm vét cạn",
       "source": "KTLT C3 (Phương pháp duyệt)",

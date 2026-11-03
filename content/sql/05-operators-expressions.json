@@ -4,6 +4,85 @@
   "description": "Chia số nguyên, NULL trong biểu thức, hàm chuỗi, ngày giờ, ROUND, COALESCE và NULLIF trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d05-15",
+      "topic": "Toán tử nối chuỗi",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng (cơ bản)",
+      "question": "Trong PostgreSQL, toán tử nào dùng để **nối hai chuỗi** lại với nhau?",
+      "options": [
+        "`&`",
+        "`+`",
+        "`||`",
+        "`..`"
+      ],
+      "answer": 2,
+      "explanation": "`||` là toán tử nối chuỗi của chuẩn SQL, ví dụ `'Hà' || ' Nội'` ra `Hà Nội`.\n- `+` dùng để cộng số, nối chuỗi bằng `+` là cách của SQL Server nên PostgreSQL báo lỗi.\n- `&` là toán tử bit, không nối chuỗi.\n- `..` không phải toán tử SQL.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d05-16",
+      "topic": "Toán tử % là phép chia dư",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng (cơ bản)",
+      "question": "Truy vấn dưới đây trả về giá trị nào?",
+      "code": "SELECT 10 % 3;",
+      "codeLang": "sql",
+      "options": [
+        "0",
+        "1",
+        "3",
+        "3.33"
+      ],
+      "answer": 1,
+      "explanation": "Toán tử `%` trong PostgreSQL là **phần dư** của phép chia nguyên: 10 chia 3 được 3, dư **1**.\n- `0` chỉ đúng khi chia hết (ví dụ `9 % 3`).\n- `3` là thương của phép chia, không phải phần dư.\n- `3.33` là kết quả chia có phần thập phân, còn `%` chỉ cho số dư.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d05-17",
+      "topic": "COALESCE",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng (cơ bản)",
+      "question": "Hàm `COALESCE(a, b, c)` trả về giá trị nào?",
+      "options": [
+        "giá trị đầu tiên không phải NULL trong danh sách",
+        "tổng của a, b và c",
+        "giá trị lớn nhất trong ba giá trị",
+        "giá trị cuối cùng trong danh sách, bất kể NULL"
+      ],
+      "answer": 0,
+      "explanation": "`COALESCE` duyệt từ trái sang phải và trả về **giá trị đầu tiên khác NULL**. Hay dùng để thay `NULL` bằng giá trị dự phòng.\n- Nó không cộng các giá trị lại.\n- Nó cũng không so sánh để tìm lớn nhất (đó là `GREATEST`).\n- Giá trị cuối chỉ được chọn khi các giá trị trước đó đều NULL.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d05-18",
+      "topic": "Hàm ROUND",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng (cơ bản)",
+      "question": "Truy vấn dưới đây trả về giá trị nào?",
+      "code": "SELECT ROUND(3.7);",
+      "codeLang": "sql",
+      "options": [
+        "3",
+        "3.7",
+        "7",
+        "4"
+      ],
+      "answer": 3,
+      "explanation": "`ROUND` làm tròn đến số nguyên gần nhất: 3.7 gần 4 hơn 3, nên kết quả là **4**.\n- `3` là kết quả của việc cắt bỏ phần thập phân (như `TRUNC`), không phải làm tròn.\n- `3.7` là giá trị gốc, chưa qua hàm.\n- `7` chỉ là chữ số thập phân, không liên quan đến kết quả.",
+      "kind": "predict"
+    },
+    {
+      "id": "sql-d05-19",
+      "topic": "NULL nghĩa là gì",
+      "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng (cơ bản)",
+      "question": "Trong SQL, giá trị `NULL` có nghĩa là gì?",
+      "options": [
+        "số 0",
+        "giá trị chưa biết hoặc chưa có",
+        "chuỗi rỗng \"\"",
+        "giá trị sai (FALSE)"
+      ],
+      "answer": 1,
+      "explanation": "`NULL` nghĩa là **chưa biết / không có giá trị**. Ví dụ khách chưa khai ngày sinh thì `birth_date` là NULL.\n- Nó khác số `0`: 0 là một giá trị đã biết.\n- Nó khác chuỗi rỗng: chuỗi rỗng là một chuỗi có độ dài 0.\n- Nó cũng khác `FALSE`: FALSE là một giá trị đúng/sai cụ thể, còn NULL là chưa xác định.",
+      "kind": "concept"
+    },
+    {
       "id": "sql-d05-01",
       "topic": "Chia số nguyên",
       "source": "Ngày 5 - Toán tử, biểu thức và hàm thường dùng",
@@ -15,7 +94,7 @@
         "```sql\nSELECT ROUND(stock_quantity / 200)\n       * 100\nFROM products\nWHERE category_id = 12;\n```"
       ],
       "answer": 1,
-      "explanation": "Đáp án đúng là phương án 2: `stock_quantity * 100.0` biến phép tính thành `NUMERIC` ngay từ đầu nên `/ 200` giữ được phần thập phân, ra 20 và 100.\n- Phương án 1: `40 / 200` là chia hai số nguyên nên bằng 0, nhân 100 vẫn 0 (lỗi \"chia nguyên\").\n- Phương án 3: `CAST` bọc SAU khi `stock_quantity / 200` đã chia nguyên ra `0`, đổi `0` sang NUMERIC vẫn là `0`, quá muộn.\n- Phương án 4: `ROUND` cũng chạy sau phép chia nguyên nên vẫn là 0.\nQuy tắc: muốn kết quả thập phân thì một vế phải là số thập phân TRƯỚC khi chia."
+      "explanation": "Đáp án đúng là `stock_quantity * 100.0 / 200`: `100.0` biến phép tính thành `NUMERIC` ngay từ đầu nên `/ 200` giữ được phần thập phân, ra 20 và 100.\n- Truy vấn `stock_quantity / 200 * 100`: `40 / 200` là chia hai số nguyên nên bằng 0, nhân 100 vẫn 0 (lỗi \"chia nguyên\").\n- Truy vấn bọc `CAST(stock_quantity / 200 AS NUMERIC)`: `CAST` bọc SAU khi `stock_quantity / 200` đã chia nguyên ra `0`, đổi `0` sang NUMERIC vẫn là `0`, quá muộn.\n- Truy vấn dùng `ROUND(stock_quantity / 200)`: `ROUND` cũng chạy sau phép chia nguyên nên vẫn là 0.\nQuy tắc: muốn kết quả thập phân thì một vế phải là số thập phân TRƯỚC khi chia."
     },
     {
       "id": "sql-d05-02",
@@ -61,7 +140,7 @@
         "```sql\nSELECT full_name || ' - ' ||\n  COALESCE(phone, 'chưa có SĐT')\nFROM customers\nWHERE customer_id <= 6;\n```"
       ],
       "answer": 3,
-      "explanation": "Phương án 4 chỉ thay riêng `phone` khi NULL, rồi mới nối nên tên vẫn còn.\n- Phương án 1: `||` gặp `NULL` thì cả chuỗi thành `NULL`, khách Lê Hoàng Cường mất cả dòng.\n- Phương án 2: `CONCAT` không ra NULL nhưng để lại `Lê Hoàng Cường - ` (cụt, không có chữ \"chưa có SĐT\").\n- Phương án 3: `COALESCE` bọc ngoài cả chuỗi nên khi `phone` NULL, dòng chỉ còn `chưa có SĐT`, mất tên.\nÝ chính: `COALESCE` phải đặt đúng cột có thể NULL."
+      "explanation": "Truy vấn bọc `COALESCE` riêng quanh `phone` chỉ thay `phone` khi NULL, rồi mới nối nên tên vẫn còn.\n- Truy vấn nối thẳng `phone`: `||` gặp `NULL` thì cả chuỗi thành `NULL`, khách Lê Hoàng Cường mất cả dòng.\n- Truy vấn dùng `CONCAT`: không ra NULL nhưng để lại `Lê Hoàng Cường - ` (cụt, không có chữ \"chưa có SĐT\").\n- Truy vấn bọc `COALESCE` ngoài cả chuỗi nối: khi `phone` NULL, dòng chỉ còn `chưa có SĐT`, mất tên.\nÝ chính: `COALESCE` phải đặt đúng cột có thể NULL."
     },
     {
       "id": "sql-d05-05",
@@ -122,7 +201,7 @@
         "```sql\nSELECT customer_id FROM customers\nWHERE LOWER(TRIM(city)) = 'đà nẵng';\n```"
       ],
       "answer": 3,
-      "explanation": "Đưa giá trị cột về dạng chuẩn (`LOWER`, bỏ khoảng trắng thừa bằng `TRIM`) rồi so với hằng cũng viết thường: khách 3, 8 và 18 đều khớp.\n- Phương án 1: so sánh có phân biệt hoa thường nên chỉ lấy `Đà Nẵng` (khách 3, 18), bỏ sót khách 8.\n- Phương án 2: ngược lại, chỉ lấy `đà nẵng` (khách 8).\n- Phương án 3: `LOWER(city)` ra chữ thường nhưng hằng `'Đà Nẵng'` còn chữ hoa nên không bao giờ bằng, kết quả rỗng.\nHai vế phải được đưa về CÙNG một dạng."
+      "explanation": "Đưa giá trị cột về dạng chuẩn (`LOWER`, bỏ khoảng trắng thừa bằng `TRIM`) rồi so với hằng cũng viết thường: khách 3, 8 và 18 đều khớp.\n- Truy vấn so với `'Đà Nẵng'`: so sánh có phân biệt hoa thường nên chỉ lấy `Đà Nẵng` (khách 3, 18), bỏ sót khách 8.\n- Truy vấn so với `'đà nẵng'` không qua `LOWER`: ngược lại, chỉ lấy `đà nẵng` (khách 8).\n- Truy vấn `LOWER(city) = 'Đà Nẵng'`: `LOWER(city)` ra chữ thường nhưng hằng `'Đà Nẵng'` còn chữ hoa nên không bao giờ bằng, kết quả rỗng.\nHai vế phải được đưa về CÙNG một dạng."
     },
     {
       "id": "sql-d05-09",
@@ -152,7 +231,7 @@
         "```sql\nSELECT order_id FROM orders\nWHERE EXTRACT(YEAR FROM order_date)\n      = 2026\n   OR EXTRACT(MONTH FROM order_date)\n      = 10;\n```"
       ],
       "answer": 1,
-      "explanation": "Khoảng nửa mở `>= đầu tháng AND < đầu tháng sau` chọn đúng tháng 10/2026 (đơn 39 và 40) và còn dùng được index trên `order_date`.\n- Phương án 1: chỉ kiểm tra THÁNG nên lẫn cả đơn tháng 10/2025 (đơn 20).\n- Phương án 3: `TO_CHAR` ra chuỗi, so sánh theo chữ nên `'12/01/2025'` cũng lớn hơn `'01/10/2026'`; kết quả sai nhiều dòng.\n- Phương án 4: dùng `OR` nên lấy mọi đơn năm 2026 cộng mọi đơn tháng 10 của năm nào cũng được."
+      "explanation": "Khoảng nửa mở `>= đầu tháng AND < đầu tháng sau` chọn đúng tháng 10/2026 (đơn 39 và 40) và còn dùng được index trên `order_date`.\n- Truy vấn dùng `EXTRACT(MONTH ...)`: chỉ kiểm tra THÁNG nên lẫn cả đơn tháng 10/2025 (đơn 20).\n- Truy vấn so sánh `TO_CHAR(...)`: `TO_CHAR` ra chuỗi, so sánh theo chữ nên `'12/01/2025'` cũng lớn hơn `'01/10/2026'`; kết quả sai nhiều dòng.\n- Truy vấn nối năm và tháng bằng `OR`: dùng `OR` nên lấy mọi đơn năm 2026 cộng mọi đơn tháng 10 của năm nào cũng được."
     },
     {
       "id": "sql-d05-11",
@@ -196,7 +275,7 @@
         "```sql\nSELECT sku,\n  price / stock_quantity\nFROM products\nWHERE stock_quantity > 0;\n```"
       ],
       "answer": 0,
-      "explanation": "`NULLIF(stock_quantity, 0)` biến mẫu số 0 thành NULL, nên phép chia ra NULL thay vì lỗi, và mọi dòng đều còn trong kết quả.\n- Phương án 2: dòng có `stock_quantity = 0` làm cả truy vấn báo `division by zero`.\n- Phương án 3: `COALESCE` chỉ thay NULL, mà `stock_quantity` đâu có NULL, còn số 0 vẫn nguyên nên vẫn lỗi.\n- Phương án 4: chạy được nhưng lọc mất các sản phẩm hết hàng, không hiện NULL như yêu cầu."
+      "explanation": "`NULLIF(stock_quantity, 0)` biến mẫu số 0 thành NULL, nên phép chia ra NULL thay vì lỗi, và mọi dòng đều còn trong kết quả.\n- Truy vấn chia thẳng cho `stock_quantity`: dòng có `stock_quantity = 0` làm cả truy vấn báo `division by zero`.\n- Truy vấn dùng `COALESCE(stock_quantity, 1)`: `COALESCE` chỉ thay NULL, mà `stock_quantity` đâu có NULL, còn số 0 vẫn nguyên nên vẫn lỗi.\n- Truy vấn lọc `WHERE stock_quantity > 0`: chạy được nhưng lọc mất các sản phẩm hết hàng, không hiện NULL như yêu cầu."
     },
     {
       "id": "sql-d05-14",

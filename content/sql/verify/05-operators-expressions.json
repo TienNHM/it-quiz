@@ -94,5 +94,17 @@
     "kind": "predict",
     "query": "SELECT REPLACE(INITCAP('TP.HCM'), 'TP.HCM', 'Hồ Chí Minh')",
     "format": "scalar"
+  },
+  {
+    "id": "sql-d05-16",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT 10 % 3;"
+  },
+  {
+    "id": "sql-d05-18",
+    "kind": "predict",
+    "format": "scalar",
+    "query": "SELECT ROUND(3.7);"
   }
 ]

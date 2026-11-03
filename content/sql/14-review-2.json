@@ -4,6 +4,82 @@
   "description": "Ôn chặng 2: hàm tổng hợp, GROUP BY/HAVING, JOIN, subquery/CTE, tập hợp và CASE qua các báo cáo của DSC Shop.",
   "questions": [
     {
+      "id": "sql-d14-18",
+      "topic": "WHERE và HAVING",
+      "source": "Ngày 14 - Ôn tập 2 (cơ bản)",
+      "question": "Điểm khác nhau cơ bản giữa `WHERE` và `HAVING` là gì?",
+      "options": [
+        "`WHERE` lọc từng dòng trước khi gom nhóm, `HAVING` lọc các nhóm sau khi gom",
+        "`WHERE` chỉ dùng cho số, `HAVING` chỉ dùng cho chữ",
+        "`WHERE` dùng được hàm tổng hợp, `HAVING` thì không",
+        "Hai mệnh đề giống hệt nhau, chỉ khác cách viết"
+      ],
+      "answer": 0,
+      "explanation": "`WHERE` loại dòng trước `GROUP BY`; `HAVING` lọc nhóm sau khi đã tính hàm tổng hợp như `COUNT` hay `SUM`.\n- Cả hai đều dùng được với số lẫn chữ, không chia theo kiểu dữ liệu.\n- Ngược lại với phát biểu thứ ba: hàm tổng hợp dùng được trong `HAVING` nhưng không dùng được trực tiếp trong `WHERE`.\n- Chúng không giống nhau, vì lọc dòng và lọc nhóm là hai bước khác nhau."
+    },
+    {
+      "id": "sql-d14-19",
+      "topic": "LEFT JOIN",
+      "source": "Ngày 14 - Ôn tập 2 (cơ bản)",
+      "question": "Điểm đặc trưng của `LEFT JOIN` so với `INNER JOIN` là gì?",
+      "options": [
+        "Chỉ giữ dòng có ở cả hai bảng",
+        "Giữ mọi dòng của bảng bên trái, dòng không khớp bên phải nhận `NULL`",
+        "Giữ mọi dòng của bảng bên phải",
+        "Tự loại các dòng trùng nhau"
+      ],
+      "answer": 1,
+      "explanation": "`LEFT JOIN` giữ trọn bảng bên trái; dòng nào không tìm được dòng khớp bên phải vẫn hiện, với các cột bên phải là `NULL`. Nhờ vậy ta thấy được \"khách chưa mua gì\".\n- Chỉ giữ dòng có ở cả hai bảng là `INNER JOIN`.\n- Giữ mọi dòng bên phải là `RIGHT JOIN`.\n- Loại dòng trùng là việc của `DISTINCT`, không phải của `JOIN`."
+    },
+    {
+      "id": "sql-d14-20",
+      "topic": "DISTINCT",
+      "source": "Ngày 14 - Ôn tập 2 (cơ bản)",
+      "question": "Từ khoá `DISTINCT` trong `SELECT DISTINCT city FROM customers` có tác dụng gì?",
+      "options": [
+        "Sắp xếp thành phố theo bảng chữ cái",
+        "Chỉ đếm số thành phố",
+        "Chỉ giữ các thành phố có nhiều hơn một khách",
+        "Loại các dòng trùng nhau, mỗi thành phố chỉ hiện một lần"
+      ],
+      "answer": 3,
+      "explanation": "`DISTINCT` loại các dòng giống hệt nhau, nên mỗi thành phố chỉ xuất hiện một lần dù có nhiều khách ở đó.\n- Sắp xếp là việc của `ORDER BY`.\n- Đếm là việc của `COUNT`; `DISTINCT` vẫn trả về danh sách chứ không phải một con số.\n- Lọc thành phố có nhiều hơn một khách cần `GROUP BY ... HAVING COUNT(*) > 1`.",
+      "tables": [
+        "customers"
+      ]
+    },
+    {
+      "id": "sql-d14-21",
+      "topic": "Bí danh AS",
+      "source": "Ngày 14 - Ôn tập 2 (cơ bản)",
+      "question": "Từ khoá `AS` trong `SELECT price * quantity AS total` dùng để làm gì?",
+      "options": [
+        "Chuyển kiểu dữ liệu của cột sang số nguyên",
+        "Nhân giá trị lên gấp đôi",
+        "Đặt tên (bí danh) cho cột kết quả hoặc bảng cho dễ đọc",
+        "Lưu kết quả thành một bảng vĩnh viễn"
+      ],
+      "answer": 2,
+      "explanation": "`AS` đặt bí danh: cột tính ra có tên `total` thay vì một tên tự sinh khó đọc; cũng dùng được cho bảng như `FROM customers AS c`.\n- Chuyển kiểu dữ liệu dùng `CAST` hoặc `::`.\n- `AS` không tính toán gì thêm, phép nhân đã nằm ở `price * quantity`.\n- Bí danh chỉ có hiệu lực trong câu lệnh, không lưu thành bảng."
+    },
+    {
+      "id": "sql-d14-22",
+      "topic": "GROUP BY",
+      "source": "Ngày 14 - Ôn tập 2 (cơ bản)",
+      "question": "`GROUP BY customer_id` kết hợp với `COUNT(*)` cho ra kết quả gì?",
+      "options": [
+        "Tổng số dòng của cả bảng, một con số duy nhất",
+        "Danh sách khách sắp theo mã tăng dần, không tính toán gì",
+        "Mỗi mã khách một dòng, kèm số đơn của khách đó",
+        "Chỉ những khách có hơn 10 đơn"
+      ],
+      "answer": 2,
+      "explanation": "`GROUP BY` gom các dòng cùng `customer_id` thành một nhóm, rồi `COUNT(*)` đếm số dòng trong từng nhóm, nên mỗi khách một dòng kèm số đơn.\n- Một con số duy nhất cho cả bảng là kết quả khi không có `GROUP BY`.\n- Sắp xếp là việc của `ORDER BY`.\n- Lọc khách có hơn 10 đơn cần thêm `HAVING COUNT(*) > 10`.",
+      "tables": [
+        "orders"
+      ]
+    },
+    {
       "id": "sql-d14-01",
       "topic": "AVG theo mức đơn",
       "source": "Ngày 14 - Ôn tập 2",
@@ -89,7 +165,10 @@
         "`order_date <= '2025-12-31'` là đủ, vì dữ liệu bắt đầu từ năm 2025"
       ],
       "answer": 2,
-      "explanation": "Khoảng **nửa mở** `>=` ngày đầu kỳ và `<` ngày đầu kỳ sau luôn đúng với mọi kiểu ngày giờ, và không phụ thuộc vào phần giờ.\n- `BETWEEN ... AND '2025-12-31'` hiểu cận trên là 00:00 ngày 31/12 nên bỏ sót các đơn sau giờ đó trong ngày cuối năm (dữ liệu mẫu tình cờ không có đơn nào ngày 31/12, nhưng dữ liệu thật thì có).\n- `LIKE` không dùng được với `TIMESTAMPTZ`: PostgreSQL báo `operator does not exist`.\n- `<= '2025-12-31'` cũng cắt cụt ngày 31/12, và dựa vào giả định \"dữ liệu bắt đầu từ 2025\" mà báo cáo không nên phụ thuộc."
+      "explanation": "Khoảng **nửa mở** `>=` ngày đầu kỳ và `<` ngày đầu kỳ sau luôn đúng với mọi kiểu ngày giờ, và không phụ thuộc vào phần giờ.\n- `BETWEEN ... AND '2025-12-31'` hiểu cận trên là 00:00 ngày 31/12 nên bỏ sót các đơn sau giờ đó trong ngày cuối năm (dữ liệu mẫu tình cờ không có đơn nào ngày 31/12, nhưng dữ liệu thật thì có).\n- `LIKE` không dùng được với `TIMESTAMPTZ`: PostgreSQL báo `operator does not exist`.\n- `<= '2025-12-31'` cũng cắt cụt ngày 31/12, và dựa vào giả định \"dữ liệu bắt đầu từ 2025\" mà báo cáo không nên phụ thuộc.",
+      "tables": [
+        "orders"
+      ]
     },
     {
       "id": "sql-d14-07",

@@ -4,6 +4,76 @@
   "description": "SOLID, generics, LINQ, delegates/events, extension methods và nullable reference types.",
   "questions": [
     {
+      "id": "dotnet-m05-21",
+      "topic": "LINQ là gì",
+      "source": "Module 5 - SOLID Principles (cơ bản)",
+      "question": "LINQ trong C# dùng để làm gì?",
+      "options": [
+        "Truy vấn và biến đổi tập dữ liệu (lọc, sắp xếp, nhóm...) bằng cú pháp thống nhất",
+        "Kết nối mạng với máy chủ",
+        "Vẽ đồ thị",
+        "Biên dịch code C# thành JavaScript"
+      ],
+      "answer": 0,
+      "explanation": "LINQ (Language Integrated Query) cho phép lọc, sắp xếp, nhóm danh sách bằng `Where`, `OrderBy`, `Select`... theo một cách thống nhất.\n- Kết nối mạng dùng `HttpClient` hay socket.\n- Vẽ đồ thị thuộc thư viện đồ hoạ.\n- Biên dịch sang JavaScript không phải việc của LINQ."
+    },
+    {
+      "id": "dotnet-m05-22",
+      "topic": "Generic <T>",
+      "source": "Module 5 - SOLID Principles (cơ bản)",
+      "question": "`List<int>` và `List<string>` cho thấy lợi ích gì của generic?",
+      "options": [
+        "Mỗi kiểu phải viết một class List riêng",
+        "Một định nghĩa dùng lại được cho nhiều kiểu mà vẫn kiểm tra kiểu lúc biên dịch",
+        "Generic làm mất kiểm tra kiểu",
+        "Generic chỉ dùng được cho kiểu số"
+      ],
+      "answer": 1,
+      "explanation": "Generic cho phép **viết một lần, dùng cho nhiều kiểu** (`T`), đồng thời trình biên dịch vẫn kiểm tra kiểu nên không thể nhét `string` vào `List<int>`.\n- Không cần viết class riêng cho từng kiểu, đó chính là mục đích của generic.\n- Generic không bỏ kiểm tra kiểu mà còn tăng cường nó.\n- Dùng được cho mọi kiểu, không chỉ số."
+    },
+    {
+      "id": "dotnet-m05-23",
+      "topic": "Biểu thức lambda",
+      "source": "Module 5 - SOLID Principles (cơ bản)",
+      "question": "Dấu `=>` trong `x => x * 2` đọc là gì và dùng để làm gì?",
+      "options": [
+        "Phép so sánh lớn hơn hoặc bằng",
+        "Phép gán giá trị cho biến",
+        "Toán tử nối chuỗi",
+        "Mũi tên lambda: nhận tham số `x` và trả về `x * 2`, dùng để viết hàm ngắn gọn"
+      ],
+      "answer": 3,
+      "explanation": "`=>` là toán tử lambda: bên trái là tham số, bên phải là thân hàm, nên `x => x * 2` là hàm nhân đôi ngắn gọn, hay dùng với LINQ.\n- So sánh lớn hơn hoặc bằng viết là `>=`.\n- Phép gán dùng `=`.\n- Nối chuỗi dùng `+` hoặc nội suy `$\"\"`."
+    },
+    {
+      "id": "dotnet-m05-24",
+      "topic": "Kiểu nullable",
+      "source": "Module 5 - SOLID Principles (cơ bản)",
+      "question": "`int? n = null;` có ý nghĩa gì?",
+      "options": [
+        "Biến `n` có thể chứa số nguyên hoặc `null` (không có giá trị)",
+        "Biến `n` luôn bằng 0",
+        "Lỗi biên dịch vì `int` không thể là null",
+        "Biến `n` là chuỗi"
+      ],
+      "answer": 0,
+      "explanation": "Dấu `?` sau kiểu giá trị tạo **kiểu nullable**: `int?` chứa được số nguyên hoặc `null`, hữu ích khi dữ liệu có thể vắng mặt.\n- `null` không có nghĩa là 0.\n- Đoạn code biên dịch bình thường vì `int?` khác `int`.\n- Biến vẫn là kiểu số, không phải chuỗi."
+    },
+    {
+      "id": "dotnet-m05-25",
+      "topic": "Nguyên tắc SOLID",
+      "source": "Module 5 - SOLID Principles (cơ bản)",
+      "question": "SOLID trong thiết kế phần mềm là gì?",
+      "options": [
+        "Một thư viện của .NET",
+        "Một phiên bản của C#",
+        "Một loại cơ sở dữ liệu",
+        "Năm nguyên tắc thiết kế hướng đối tượng giúp code dễ bảo trì"
+      ],
+      "answer": 3,
+      "explanation": "SOLID là **tập năm nguyên tắc** (Single responsibility, Open/closed, Liskov, Interface segregation, Dependency inversion) giúp code dễ mở rộng và bảo trì.\n- Không phải thư viện hay phiên bản ngôn ngữ nên không có gói nào tên SOLID để cài.\n- Cũng không phải cơ sở dữ liệu, dù tên nghe giống \"solid state\"."
+    },
+    {
       "id": "dotnet-m05-01",
       "topic": "SOLID - SRP",
       "source": "Module 5 - SOLID Principles",

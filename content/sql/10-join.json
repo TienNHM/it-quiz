@@ -4,6 +4,81 @@
   "description": "INNER, LEFT, RIGHT, FULL, CROSS và SELF JOIN trên DSC Shop, anti-join và hai cái bẫy kinh điển: điều kiện ở WHERE và nhân dòng khi SUM.",
   "questions": [
     {
+      "id": "sql-d10-15",
+      "topic": "JOIN là gì",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN (cơ bản)",
+      "question": "`JOIN` dùng để làm gì?",
+      "options": [
+        "gộp dữ liệu hai bảng thành một bảng mới trong database",
+        "ghép các dòng của hai bảng lại với nhau dựa trên cột liên quan, ngay trong kết quả truy vấn",
+        "xóa các dòng trùng giữa hai bảng",
+        "đổi tên bảng khi truy vấn"
+      ],
+      "answer": 1,
+      "explanation": "`JOIN` **ghép dòng** từ hai bảng theo điều kiện, thường là khóa ngoại khớp khóa chính, ví dụ `orders.customer_id = customers.customer_id`. Kết quả chỉ tồn tại trong kết quả truy vấn.\n- Nó không tạo bảng mới trong database.\n- Xóa dòng trùng không phải việc của `JOIN`.\n- Đổi tên bảng khi truy vấn là việc của bí danh (alias).",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d10-16",
+      "topic": "INNER JOIN",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN (cơ bản)",
+      "question": "`INNER JOIN` giữ lại những dòng nào?",
+      "options": [
+        "mọi dòng của bảng bên trái",
+        "mọi dòng của cả hai bảng, kể cả dòng không khớp",
+        "chỉ các dòng không khớp",
+        "chỉ những cặp dòng thỏa điều kiện ghép ở cả hai bảng"
+      ],
+      "answer": 3,
+      "explanation": "`INNER JOIN` chỉ giữ **cặp dòng khớp điều kiện**. Khách chưa đặt đơn nào sẽ không xuất hiện khi `INNER JOIN` với `orders`.\n- Giữ mọi dòng của bảng trái là `LEFT JOIN`.\n- Giữ mọi dòng của cả hai bảng là `FULL JOIN`.\n- Dòng không khớp bị loại, không phải được giữ.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d10-17",
+      "topic": "LEFT JOIN",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN (cơ bản)",
+      "question": "`customers c LEFT JOIN orders o ON ...` khác `INNER JOIN` ở điểm nào?",
+      "options": [
+        "giữ mọi khách, kể cả khách chưa có đơn (cột của `orders` là NULL)",
+        "chỉ giữ khách có nhiều hơn một đơn",
+        "chỉ giữ đơn không có khách",
+        "trả về ít dòng hơn `INNER JOIN`"
+      ],
+      "answer": 0,
+      "explanation": "`LEFT JOIN` giữ **mọi dòng bảng bên trái** (`customers`); với khách chưa có đơn thì các cột của `orders` là NULL.\n- Số đơn không phải điều kiện lọc của `LEFT JOIN`.\n- \"Đơn không có khách\" là chiều ngược lại và với khóa ngoại thì không xảy ra.\n- `LEFT JOIN` trả về nhiều dòng hơn hoặc bằng `INNER JOIN`, không bao giờ ít hơn.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d10-18",
+      "topic": "Bí danh bảng",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN (cơ bản)",
+      "question": "Trong `FROM customers c JOIN orders o ON o.customer_id = c.customer_id`, `c` và `o` là gì?",
+      "options": [
+        "hai cột mới được thêm vào bảng",
+        "bí danh (alias) viết tắt cho tên bảng, giúp gõ ngắn gọn",
+        "hai hàm tổng hợp",
+        "hai điều kiện lọc"
+      ],
+      "answer": 2,
+      "explanation": "`c` và `o` là **bí danh** của `customers` và `orders`, dùng để viết ngắn và phân biệt cột trùng tên như `c.customer_id` với `o.customer_id`.\n- Chúng không thêm cột nào vào bảng.\n- Hàm tổng hợp phải có dạng như `COUNT(...)`.\n- Điều kiện lọc nằm ở `ON` hoặc `WHERE`, không phải ở tên bí danh.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d10-19",
+      "topic": "Mệnh đề ON",
+      "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN (cơ bản)",
+      "question": "Trong câu `JOIN`, mệnh đề `ON` có vai trò gì?",
+      "options": [
+        "bật hoặc tắt chế độ JOIN",
+        "nêu điều kiện để ghép dòng của hai bảng với nhau",
+        "sắp xếp kết quả ghép",
+        "đặt tên cho kết quả ghép"
+      ],
+      "answer": 1,
+      "explanation": "`ON` cho biết **hai dòng khớp nhau khi nào**, thường là so sánh khóa ngoại với khóa chính. Thiếu điều kiện ghép đúng sẽ ra kết quả sai hoặc rất nhiều dòng thừa.\n- Không có công tắc bật tắt `JOIN`.\n- Sắp xếp là việc của `ORDER BY`.\n- Đặt tên là việc của `AS` hoặc bí danh.",
+      "kind": "concept"
+    },
+    {
       "id": "sql-d10-01",
       "topic": "LEFT JOIN + COUNT",
       "source": "Ngày 10 - Kết hợp nhiều bảng với JOIN",

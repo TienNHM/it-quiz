@@ -4,6 +4,76 @@
   "description": "Viết function và procedure trong PostgreSQL: LANGUAGE sql và PL/pgSQL, tham số mặc định, CALL, bắt lỗi EXCEPTION, SQL động an toàn.",
   "questions": [
     {
+      "id": "sql-d17-15",
+      "topic": "Function là gì",
+      "source": "Ngày 17 - Function và Stored Procedure (cơ bản)",
+      "question": "Function (hàm) do người dùng tự viết trong PostgreSQL là gì?",
+      "options": [
+        "Một khối lệnh có tên lưu trong database, nhận tham số và trả về giá trị, gọi được trong `select`",
+        "Một loại bảng tạm",
+        "Một kiểu dữ liệu mới như `integer`",
+        "Một công cụ sao lưu"
+      ],
+      "answer": 0,
+      "explanation": "Function là khối logic đặt tên, lưu ngay trong database, nhận tham số và trả về một giá trị (hoặc một bảng); có thể dùng như `SELECT order_total(5)`.\n- Nó không phải bảng.\n- Kiểu dữ liệu mới tạo bằng `CREATE TYPE`, không phải `CREATE FUNCTION`.\n- Sao lưu dùng các công cụ như `pg_dump`."
+    },
+    {
+      "id": "sql-d17-16",
+      "topic": "Lệnh gọi procedure",
+      "source": "Ngày 17 - Function và Stored Procedure (cơ bản)",
+      "question": "Một stored procedure trong PostgreSQL được gọi bằng lệnh nào?",
+      "options": [
+        "```sql\nSELECT my_proc()\n```",
+        "`RUN my_proc()`",
+        "`EXEC my_proc()`",
+        "`CALL my_proc()`"
+      ],
+      "answer": 3,
+      "explanation": "Procedure được gọi bằng `CALL ten_procedure(...)`. Function thì được gọi trong câu `SELECT`.\n- `SELECT my_proc()` dùng cho function và sẽ báo lỗi với procedure.\n- `RUN` không phải lệnh của PostgreSQL.\n- `EXEC` là cách gọi của SQL Server; PostgreSQL dùng `CALL` (còn `EXECUTE` là lệnh khác, chạy câu lệnh đã chuẩn bị sẵn)."
+    },
+    {
+      "id": "sql-d17-17",
+      "topic": "PL/pgSQL",
+      "source": "Ngày 17 - Function và Stored Procedure (cơ bản)",
+      "question": "PL/pgSQL là gì?",
+      "options": [
+        "Một hệ quản trị cơ sở dữ liệu khác",
+        "Tên viết tắt của chuẩn SQL",
+        "Ngôn ngữ lập trình thủ tục có sẵn của PostgreSQL, có biến, `IF`, vòng lặp",
+        "Một công cụ vẽ sơ đồ database"
+      ],
+      "answer": 2,
+      "explanation": "PL/pgSQL (Procedural Language/PostgreSQL) cho phép viết biến, `IF`, vòng lặp và xử lý lỗi bên trong function, procedure hay trigger.\n- Nó không phải hệ quản trị riêng; nó chạy trong PostgreSQL.\n- Nó không phải tên chuẩn SQL; chuẩn có tên riêng (SQL/PSM).\n- Nó không phải công cụ vẽ sơ đồ."
+    },
+    {
+      "id": "sql-d17-18",
+      "topic": "Lợi ích của function",
+      "source": "Ngày 17 - Function và Stored Procedure (cơ bản)",
+      "question": "Lợi ích dễ thấy nhất của việc đóng một công thức tính (ví dụ tính tổng tiền đơn) vào function là gì?",
+      "options": [
+        "Mọi truy vấn tự động chạy nhanh hơn 10 lần",
+        "Công thức viết một chỗ, dùng lại nhiều nơi, sửa một lần là áp dụng khắp nơi",
+        "Không bao giờ cần kiểm thử nữa",
+        "Có thể bỏ hẳn các bảng dữ liệu"
+      ],
+      "answer": 1,
+      "explanation": "Function giúp tái sử dụng: công thức nằm một chỗ, các truy vấn chỉ việc gọi tên, và khi công thức đổi thì sửa một lần.\n- Không có chuyện tự nhanh gấp 10 lần; function đôi khi còn làm chậm nếu gọi cho từng dòng.\n- Vẫn phải kiểm thử function như mọi đoạn code.\n- Function xử lý dữ liệu, không thay được bảng chứa dữ liệu."
+    },
+    {
+      "id": "sql-d17-19",
+      "topic": "RETURNS",
+      "source": "Ngày 17 - Function và Stored Procedure (cơ bản)",
+      "question": "Trong `CREATE FUNCTION f(x integer) RETURNS integer ...`, phần `RETURNS integer` nói điều gì?",
+      "options": [
+        "Function nhận tối đa một số nguyên",
+        "Function sẽ chạy `integer` lần",
+        "Kiểu giá trị mà function trả về là số nguyên",
+        "Function chỉ chạy được trên cột kiểu `integer`"
+      ],
+      "answer": 2,
+      "explanation": "`RETURNS` khai báo kiểu của giá trị trả về; ở đây function trả về một số nguyên.\n- Số tham số nằm trong ngoặc sau tên hàm (`x integer`), không phải ở `RETURNS`.\n- Nó không liên quan tới số lần chạy.\n- Function nhận đối số kiểu nào tuỳ phần tham số, và nó không bị giới hạn chỉ chạy trên một cột nào."
+    },
+    {
       "id": "sql-d17-01",
       "topic": "Function vs procedure",
       "source": "Ngày 17 - Function và Stored Procedure",

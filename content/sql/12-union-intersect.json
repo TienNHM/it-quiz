@@ -4,6 +4,80 @@
   "description": "Gộp, giao và trừ kết quả truy vấn: UNION/UNION ALL, INTERSECT, EXCEPT và các quy tắc về cột, kiểu, ORDER BY.",
   "questions": [
     {
+      "id": "sql-d12-17",
+      "topic": "UNION là gì",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT (cơ bản)",
+      "question": "Phép `UNION` giữa hai câu `SELECT` làm gì?",
+      "options": [
+        "Chỉ giữ các dòng có ở cả hai kết quả",
+        "Lấy các dòng của vế đầu mà vế sau không có",
+        "Ghép các cột của hai bảng sang ngang thành một dòng dài hơn",
+        "Gộp các dòng của hai kết quả thành một và loại các dòng trùng nhau"
+      ],
+      "answer": 3,
+      "explanation": "`UNION` xếp các dòng của hai kết quả chồng lên nhau thành một danh sách và bỏ các dòng giống hệt nhau.\n- Chỉ giữ dòng có ở cả hai vế là việc của `INTERSECT`.\n- Lấy dòng của vế đầu mà vế sau không có là việc của `EXCEPT`.\n- Ghép cột sang ngang là việc của `JOIN`; `UNION` chỉ nối dọc nên số cột hai vế phải bằng nhau."
+    },
+    {
+      "id": "sql-d12-18",
+      "topic": "INTERSECT là gì",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT (cơ bản)",
+      "question": "Phép `INTERSECT` giữa hai câu `SELECT` trả về những dòng nào?",
+      "options": [
+        "Những dòng có mặt ở cả hai kết quả",
+        "Mọi dòng của cả hai kết quả, kể cả dòng trùng",
+        "Những dòng chỉ có ở vế đầu",
+        "Những dòng chỉ có ở vế sau"
+      ],
+      "answer": 0,
+      "explanation": "`INTERSECT` là phép giao: chỉ giữ dòng xuất hiện ở cả hai kết quả, giống tìm những người có tên trong cả hai danh sách.\n- Mọi dòng của cả hai là việc của `UNION ALL`.\n- Dòng chỉ có ở vế đầu là việc của `EXCEPT`.\n- Dòng chỉ có ở vế sau cũng là `EXCEPT` nhưng đảo thứ tự hai vế."
+    },
+    {
+      "id": "sql-d12-19",
+      "topic": "EXCEPT là gì",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT (cơ bản)",
+      "question": "Phép `A EXCEPT B` trả về những dòng nào?",
+      "options": [
+        "Dòng có ở cả A và B",
+        "Dòng của A mà B không có",
+        "Dòng của B mà A không có",
+        "Mọi dòng của A và B, loại trùng"
+      ],
+      "answer": 1,
+      "explanation": "`A EXCEPT B` là phép hiệu: lấy dòng của A rồi bỏ đi những dòng cũng có trong B, ví dụ \"khách đã đặt online nhưng chưa đặt offline\".\n- Dòng có ở cả hai là `INTERSECT`.\n- Dòng của B mà A không có là `B EXCEPT A`, vì `EXCEPT` phụ thuộc thứ tự hai vế.\n- Gộp mọi dòng của hai bên là `UNION`."
+    },
+    {
+      "id": "sql-d12-20",
+      "topic": "Điều kiện của phép tập hợp",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT (cơ bản)",
+      "question": "Để ghép hai câu `SELECT` bằng `UNION`, điều kiện cơ bản nhất là gì?",
+      "options": [
+        "Hai câu phải lấy từ cùng một bảng",
+        "Hai câu phải có cùng tên cột",
+        "Hai câu phải có cùng số cột và kiểu dữ liệu từng cột tương thích",
+        "Hai câu phải có cùng số dòng"
+      ],
+      "answer": 2,
+      "explanation": "Các cột được ghép theo vị trí, nên hai vế cần cùng số cột và kiểu dữ liệu ở từng vị trí phải tương thích; nếu không PostgreSQL báo lỗi.\n- Không cần cùng một bảng: có thể gộp khách hàng với nhân viên.\n- Không cần cùng tên cột, vì ghép theo vị trí chứ không theo tên.\n- Không cần cùng số dòng; mỗi vế có thể dài ngắn tuỳ ý."
+    },
+    {
+      "id": "sql-d12-21",
+      "topic": "Tên cột của kết quả UNION",
+      "source": "Ngày 12 - UNION, INTERSECT và EXCEPT (cơ bản)",
+      "question": "Với `SELECT full_name AS ten FROM customers UNION SELECT full_name FROM employees`, cột kết quả có tên gì?",
+      "options": [
+        "`full_name`, lấy từ vế sau",
+        "`union`, do PostgreSQL tự đặt",
+        "Không có tên, kết quả bị lỗi",
+        "`ten`, lấy tên cột của vế đầu tiên"
+      ],
+      "answer": 3,
+      "explanation": "Tên cột của kết quả phép tập hợp lấy từ câu `SELECT` đầu tiên, nên ở đây là `ten`.\n- Vế sau không quyết định tên cột; tên ở vế sau bị bỏ qua.\n- PostgreSQL không tự đặt tên `union` cho cột.\n- Không có lỗi: hai vế cùng một cột chuỗi nên ghép hợp lệ, tên cột khác nhau không ảnh hưởng.",
+      "tables": [
+        "customers",
+        "employees"
+      ]
+    },
+    {
       "id": "sql-d12-01",
       "topic": "UNION vs UNION ALL",
       "source": "Ngày 12 - UNION, INTERSECT và EXCEPT",
@@ -15,7 +89,11 @@
         "`EXCEPT`, vì nó nối hai bảng lại với nhau"
       ],
       "answer": 1,
-      "explanation": "`UNION ALL` chỉ nối hai danh sách, không kiểm tra trùng nên không bao giờ làm mất dòng. Khi mỗi dòng là dữ liệu thật thì đây là lựa chọn mặc định.\n- `UNION` loại trùng trên toàn bộ kết quả: hai khách khác nhau cùng tên `Nguyễn Văn An` sẽ bị gộp thành một dòng mà không có cảnh báo.\n- `INTERSECT` chỉ giữ dòng có ở cả hai vế, không phải để gộp danh sách.\n- `EXCEPT` lấy dòng của vế trái mà vế phải không có, cũng không phải để nối."
+      "explanation": "`UNION ALL` chỉ nối hai danh sách, không kiểm tra trùng nên không bao giờ làm mất dòng. Khi mỗi dòng là dữ liệu thật thì đây là lựa chọn mặc định.\n- `UNION` loại trùng trên toàn bộ kết quả: hai khách khác nhau cùng tên `Nguyễn Văn An` sẽ bị gộp thành một dòng mà không có cảnh báo.\n- `INTERSECT` chỉ giữ dòng có ở cả hai vế, không phải để gộp danh sách.\n- `EXCEPT` lấy dòng của vế trái mà vế phải không có, cũng không phải để nối.",
+      "tables": [
+        "customers",
+        "employees"
+      ]
     },
     {
       "id": "sql-d12-02",

@@ -4,6 +4,90 @@
   "description": "Deadlock và starvation, bốn điều kiện Coffman, điều kiện tài nguyên an toàn, giải thuật Banker và đồ thị cấp phát.",
   "questions": [
     {
+      "id": "os-dl-35",
+      "topic": "Deadlock đời thường",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Tình huống nào sau đây giống **deadlock** nhất?",
+      "options": [
+        "Bốn xe cùng tiến vào ngã tư, mỗi xe chờ xe bên phải nhường đường nên không xe nào đi được",
+        "Một người xếp hàng lâu nhưng cuối cùng cũng được phục vụ",
+        "Một chiếc xe hết xăng giữa đường",
+        "Đèn giao thông chuyển từ đỏ sang xanh"
+      ],
+      "answer": 0,
+      "explanation": "**Deadlock** là khi một nhóm tiến trình cùng chờ lẫn nhau theo vòng tròn nên không ai tiến được. Bốn xe ở ngã tư, mỗi xe chờ xe bên phải, là hình ảnh kinh điển.\n\nXếp hàng lâu nhưng cuối cùng được phục vụ thì không kẹt vĩnh viễn; xe hết xăng là hỏng riêng một xe, không ai chờ ai theo vòng; đèn đổi màu là hoạt động bình thường."
+    },
+    {
+      "id": "os-dl-36",
+      "topic": "Bốn điều kiện deadlock",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Điều nào sau đây **không** phải là một trong bốn điều kiện cần của deadlock?",
+      "options": [
+        "Mutual Exclusion",
+        "Preemption (tài nguyên luôn bị trưng dụng được)",
+        "Hold and Wait",
+        "Circular Wait"
+      ],
+      "answer": 1,
+      "explanation": "Bốn điều kiện cần (Coffman): **Mutual Exclusion**, **Hold and Wait**, **No Preemption** (không trưng dụng được) và **Circular Wait**. Phải thoả đồng thời cả bốn thì mới có thể deadlock.\n\nPhương án 'Preemption' là điều ngược lại của điều kiện thứ ba: nếu tài nguyên **trưng dụng được** thì deadlock dễ được gỡ, nên đó không phải điều kiện cần mà là cách để phá deadlock."
+    },
+    {
+      "id": "os-dl-37",
+      "topic": "Starvation và deadlock",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Điểm khác nhau cơ bản giữa **starvation** và **deadlock** là gì?",
+      "options": [
+        "Starvation chỉ xảy ra với bộ nhớ, deadlock chỉ xảy ra với CPU",
+        "Hai khái niệm hoàn toàn giống nhau",
+        "Trong deadlock, các tiến trình trong nhóm cùng chờ lẫn nhau mãi mãi; trong starvation, một tiến trình bị bỏ đói nhưng hệ thống vẫn chạy cho các tiến trình khác",
+        "Starvation luôn do lỗi phần cứng gây ra"
+      ],
+      "answer": 2,
+      "explanation": "**Deadlock**: cả nhóm tiến trình kẹt vì mỗi tiến trình chờ tiến trình khác trong nhóm, không ai tiến được. **Starvation**: một tiến trình sẵn sàng nhưng liên tục bị bỏ qua (ví dụ trong lập lịch ưu tiên), còn các tiến trình khác vẫn chạy bình thường.\n\nCả hai đều có thể xảy ra với nhiều loại tài nguyên (không riêng bộ nhớ hay CPU), chúng không giống nhau và starvation thường do chính sách lập lịch chứ không phải lỗi phần cứng."
+    },
+    {
+      "id": "os-dl-38",
+      "topic": "Banker's algorithm",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Tên gọi **giải thuật Banker** (nhà băng) gợi ý điều gì?",
+      "options": [
+        "Hệ thống chỉ cấp phát tài nguyên khi vẫn đảm bảo có thể đáp ứng nhu cầu tối đa của mọi tiến trình, giống ngân hàng không cho vay quá số tiền mình có",
+        "Thuật toán chỉ dùng trong ngân hàng thật",
+        "Thuật toán tính lãi suất cho tài nguyên",
+        "Thuật toán sắp xếp tiến trình theo tên"
+      ],
+      "answer": 0,
+      "explanation": "Giải thuật Banker (Dijkstra) ví hệ điều hành như nhà băng: mỗi tiến trình là một khách hàng khai báo trước hạn mức tối đa; nhà băng chỉ cho vay (cấp tài nguyên) khi sau đó vẫn còn thứ tự phục vụ an toàn cho mọi khách. Đây là kỹ thuật **tránh deadlock (avoidance)**.\n\nNó không dành riêng cho ngân hàng thật, không tính lãi và không sắp xếp tiến trình theo tên."
+    },
+    {
+      "id": "os-dl-39",
+      "topic": "Safe state",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Hệ thống ở **trạng thái an toàn (safe state)** nghĩa là gì?",
+      "options": [
+        "Hệ thống đã cài phần mềm diệt virus",
+        "Hệ thống đang có deadlock nhưng chưa bị phát hiện",
+        "Hệ thống không cấp phát tài nguyên cho ai",
+        "Tồn tại ít nhất một thứ tự chạy các tiến trình sao cho tất cả đều hoàn thành được (chuỗi an toàn)"
+      ],
+      "answer": 3,
+      "explanation": "**Safe state**: tồn tại một **chuỗi an toàn** — một thứ tự các tiến trình mà mỗi tiến trình đều có thể lấy đủ tài nguyên còn lại và chạy xong. Ở trạng thái an toàn thì chắc chắn không deadlock.\n\n'An toàn' ở đây không liên quan tới virus; trạng thái đang có deadlock là trạng thái **không** an toàn; và hệ thống vẫn cấp phát bình thường, chỉ cấp theo cách giữ được chuỗi an toàn."
+    },
+    {
+      "id": "os-dl-40",
+      "topic": "Ostrich algorithm",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Thuật toán đà điểu (ostrich algorithm)** trong xử lý deadlock là gì?",
+      "options": [
+        "Dùng đồ thị để phát hiện chu trình mỗi giây",
+        "Huỷ ngay mọi tiến trình khi nghi ngờ",
+        "Phớt lờ vấn đề deadlock, giả như nó hiếm khi xảy ra và để người dùng tự khởi động lại nếu bị treo",
+        "Khoá toàn bộ tài nguyên vĩnh viễn"
+      ],
+      "answer": 2,
+      "explanation": "Con đà điểu trong truyền thuyết vùi đầu xuống cát để khỏi nhìn thấy nguy hiểm. **Ostrich algorithm** là chiến lược **bỏ qua** deadlock: vì ngăn hay phát hiện đều tốn kém mà deadlock hiếm gặp, nhiều hệ điều hành thực tế (UNIX, Windows) chọn cách này.\n\nPhát hiện chu trình định kỳ là detection, huỷ tiến trình là một cách recovery, còn khoá tài nguyên vĩnh viễn chỉ làm hệ thống tệ hơn."
+    },
+    {
       "id": "os-dl-01",
       "topic": "Deadlock",
       "source": "Cuối kỳ HĐH – SPKT",
@@ -49,15 +133,15 @@
       "id": "os-dl-04",
       "topic": "Ngăn deadlock",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Hệ thống có **m** tài nguyên cùng loại, chia sẻ bởi 3 tiến trình P1, P2, P3 với nhu cầu cao nhất lần lượt là **2, 5 và 7**. Đối với giá trị nào của m thì deadlock sẽ không xảy ra?",
+      "question": "Hệ thống có **m** tài nguyên cùng loại, chia sẻ bởi 3 tiến trình P1, P2, P3 với nhu cầu cao nhất lần lượt là **2, 5 và 7**. Với giá trị nào của m sau đây deadlock **chắc chắn không** xảy ra?",
       "options": [
         "14",
-        "70",
-        "13",
-        "7"
+        "11",
+        "7",
+        "9"
       ],
       "answer": 0,
-      "explanation": "Công thức chuẩn cho tài nguyên cùng loại: hệ **không thể deadlock** khi\n\n```\nm >= tổng(nhu cầu tối đa) - n + 1\n```\n\nỞ đây: m ≥ (2 + 5 + 7) − 3 + 1 = **12**.\n\nCách hiểu: trường hợp xấu nhất là mỗi tiến trình đang giữ *thiếu đúng một* tài nguyên so với nhu cầu, tức 1 + 4 + 6 = 11 tài nguyên bị giữ mà không ai chạy được. Chỉ cần thêm **1** tài nguyên nữa là có ít nhất một tiến trình đủ bộ, chạy xong rồi nhả ra cho người khác → dây chuyền được gỡ.\n\nVới m = 7 thì quá ít (P3 một mình đã cần 7) → deadlock hoàn toàn có thể xảy ra.\n\n**Lưu ý:** đáp án đề là **14** (đúng bằng tổng nhu cầu — chắc chắn an toàn vì cả ba cùng lấy đủ max một lúc). Nhưng theo công thức thì m = 13 và m = 70 cũng không thể deadlock, nên câu này có tới ba phương án đúng. Chính đề cũng công nhận công thức đó ở câu hỏi về điều kiện đủ **tổng (Si − 1) < m**. Đi thi chọn theo đáp án đề, còn khi làm tự luận thì trả lời m ≥ 12."
+      "explanation": "Điều kiện đủ cho tài nguyên cùng loại: hệ **không thể deadlock** khi\n```\nm >= tổng(nhu cầu tối đa) - n + 1 = (2 + 5 + 7) - 3 + 1 = 12\n```\nm = **14** ≥ 12 nên an toàn (thậm chí bằng tổng nhu cầu, cả ba có thể lấy đủ cùng lúc).\n\nCác phương án còn lại đều nhỏ hơn 12:\n- **m = 11**: trường hợp xấu nhất mỗi tiến trình ôm thiếu đúng một đơn vị (1 + 4 + 6 = 11), không còn gì rảnh → deadlock có thể xảy ra.\n- **m = 9 và m = 7**: càng thiếu; với m = 7 thì P3 một mình đã cần 7, các tiến trình còn lại chen vào là kẹt."
     },
     {
       "id": "os-dl-05",
@@ -226,7 +310,7 @@
         "9"
       ],
       "answer": 2,
-      "explanation": "Dùng điều kiện đủ: **tổng (Si − 1) < m**, tức m nhỏ nhất là **tổng (Si − 1) + 1**.\n\n```\ntổng(Si - 1) = (4-1) × 3 = 9\nm tối thiểu   = 9 + 1 = 10\n```\n\nKiểm chứng bằng tay: với m = 9, cả ba tiến trình mỗi bên ôm 3 đơn vị là hết sạch, ai cũng thiếu đúng 1 → **deadlock**. Thêm đúng một đơn vị nữa (m = 10) thì luôn có một tiến trình gom đủ 4, chạy xong nhả ra 4 đơn vị cho người khác.\n\n**12** là tổng nhu cầu — thừa, vì không cần cả ba chạy cùng lúc. Đây chính là chỗ đáp án của câu \"m tài nguyên cho 2/5/7\" bị lệch: câu đó chọn tổng nhu cầu thay vì công thức."
+      "explanation": "Dùng điều kiện đủ: **tổng (Si − 1) < m**, tức m nhỏ nhất là **tổng (Si − 1) + 1**.\n\n```\ntổng(Si - 1) = (4-1) × 3 = 9\nm tối thiểu   = 9 + 1 = 10\n```\n\nKiểm chứng bằng tay: với m = 9, cả ba tiến trình mỗi bên ôm 3 đơn vị là hết sạch, ai cũng thiếu đúng 1 → **deadlock**. Thêm đúng một đơn vị nữa (m = 10) thì luôn có một tiến trình gom đủ 4, chạy xong nhả ra 4 đơn vị cho người khác.\n\n**12** là tổng nhu cầu — thừa, vì không cần cả ba chạy cùng lúc; **5** thì quá ít (một tiến trình cần 4, ba tiến trình ôm mỗi bên 1-2 đơn vị là kẹt). Mốc đúng là tổng (Si − 1) + 1."
     },
     {
       "id": "os-dl-17",
@@ -269,7 +353,7 @@
         "Ngăn chặn deadlock hạn chế hơn tránh bế tắc"
       ],
       "answer": 1,
-      "explanation": "Phương án **b sai** vì khái niệm **trạng thái an toàn** hoàn toàn không tồn tại trong **deadlock prevention**.\n\nPrevention không hề nhìn vào trạng thái hệ thống. Nó áp **ràng buộc cấu trúc** lên cách tiến trình được phép xin tài nguyên — xin trọn gói, xin theo thứ tự đánh số, cho phép tịch thu — và cứ thế mà cấp, bất kể trạng thái ra sao. Việc kiểm tra \"cấp xong có còn an toàn không\" là đặc trưng của **avoidance** (giải thuật Banker).\n\nBa phương án còn lại đều đúng:\n- **a** — đúng, đây chính là định nghĩa của avoidance.\n- **c** — đúng, Banker bắt khai báo trước nhu cầu tối đa.\n- **d** — đúng, prevention khắt khe hơn nên **tận dụng tài nguyên kém hơn** và thông lượng thấp hơn avoidance."
+      "explanation": "Phát biểu thứ hai sai vì khái niệm **trạng thái an toàn** hoàn toàn không tồn tại trong **deadlock prevention**.\n\nPrevention không hề nhìn vào trạng thái hệ thống. Nó áp **ràng buộc cấu trúc** lên cách tiến trình được phép xin tài nguyên — xin trọn gói, xin theo thứ tự đánh số, cho phép tịch thu — và cứ thế mà cấp, bất kể trạng thái ra sao. Việc kiểm tra 'cấp xong có còn an toàn không' là đặc trưng của **avoidance** (giải thuật Banker).\n\nBa phát biểu còn lại đều đúng:\n- phát biểu đầu — đây chính là định nghĩa của avoidance.\n- phát biểu thứ ba — Banker bắt khai báo trước nhu cầu tối đa.\n- phát biểu cuối — prevention khắt khe hơn nên **tận dụng tài nguyên kém hơn** và thông lượng thấp hơn avoidance."
     },
     {
       "id": "os-dl-20",
@@ -325,10 +409,10 @@
         "Hệ thống có thể không có deadlock",
         "Hệ thống có deadlock nếu xoá cạnh R1 được gán cho T2",
         "Hệ thống có deadlock",
-        "Hệ thống không có deadlock nếu xoá cạnh R1 được gán cho T2"
+        "Hệ thống chắc chắn không có chu trình nào trong đồ thị"
       ],
       "answer": 0,
-      "explanation": "Đồ thị này **có chu trình**: T1 → R1 → T3 → R2 → T1. Nhưng chu trình chỉ là **điều kiện cần**, không phải điều kiện đủ, khi tài nguyên có **nhiều instance**.\n\nLý do hệ thống vẫn có thể thoát: **T2** đang giữ một instance của R1 và **T4** giữ một instance của R2, mà cả hai **không chờ gì cả**. Chúng chạy xong rồi nhả tài nguyên ra là chu trình tự gỡ.\n\nQuy tắc phải thuộc:\n- Tài nguyên **1 instance**: có chu trình ⇔ **chắc chắn deadlock**.\n- Tài nguyên **nhiều instance**: có chu trình ⇒ **có thể** deadlock, phải xét thêm ai đang giữ instance ngoài chu trình.\n\nVì vậy phát biểu đúng nhất là \"**có thể không có deadlock**\" — dè dặt, không khẳng định chắc chắn."
+      "explanation": "Đồ thị này **có chu trình**: T1 → R1 → T3 → R2 → T1. Nhưng chu trình chỉ là **điều kiện cần**, không phải điều kiện đủ, khi tài nguyên có **nhiều instance**.\n\nLý do hệ thống vẫn có thể thoát: **T2** đang giữ một instance của R1 và **T4** giữ một instance của R2, mà cả hai **không chờ gì cả**. Chúng chạy xong rồi nhả tài nguyên ra là chu trình tự gỡ.\n\nQuy tắc phải thuộc:\n- Tài nguyên **1 instance**: có chu trình ⇔ **chắc chắn deadlock**.\n- Tài nguyên **nhiều instance**: có chu trình ⇒ **có thể** deadlock, phải xét thêm ai đang giữ instance ngoài chu trình.\n\nVì vậy phát biểu đúng là '**có thể không có deadlock**'. Phương án 'có deadlock' sai vì đã nói trên; phương án 'xoá cạnh R1 gán cho T2 thì có deadlock' sai vì xoá cạnh đó chính là T2 nhả tài nguyên, làm chu trình dễ gỡ hơn; phương án 'không có chu trình' sai vì chu trình T1 → R1 → T3 → R2 → T1 hiện hữu."
     },
     {
       "id": "os-dl-24",
@@ -337,13 +421,13 @@
       "question": "Cho đồ thị cấp phát tài nguyên của một hệ thống như hình dưới:\n\n- R1 có **1 instance**, cấp cho T2\n- R2 có **1 instance**, cấp cho T1\n- R3 có **1 instance**, cấp cho T3\n- T1 **yêu cầu** R1, T2 **yêu cầu** R2, T3 **yêu cầu** R2\n\nPhát biểu nào đúng?",
       "diagram": "flowchart LR\n    T1((T1)) -->|yêu cầu| R1[\"R1 · 1 instance\"]\n    R1 -->|cấp phát| T2((T2))\n    T2 -->|yêu cầu| R2[\"R2 · 1 instance\"]\n    R2 -->|cấp phát| T1\n    T3((T3)) -->|yêu cầu| R2\n    R3[\"R3 · 1 instance\"] -->|cấp phát| T3",
       "options": [
-        "Hệ thống có deadlock nếu nối cạnh T3 yêu cầu R1",
+        "Hệ thống chỉ có deadlock nếu nối thêm cạnh T3 yêu cầu R1",
         "Hệ thống không có deadlock",
-        "Hệ thống có thể có deadlock",
+        "Hệ thống có thể có deadlock hoặc không, tuỳ thứ tự thực thi",
         "Hệ thống có 1 deadlock"
       ],
       "answer": 3,
-      "explanation": "Chu trình: **T1 → R1 → T2 → R2 → T1**.\n\nKhác với câu trước, ở đây **mỗi tài nguyên chỉ có 1 instance**. Instance duy nhất của R1 nằm trong tay T2 (đang chờ R2), instance duy nhất của R2 nằm trong tay T1 (đang chờ R1). Không ai ngoài chu trình có thể nhả ra thứ họ cần.\n\n→ **Chắc chắn deadlock**, gồm đúng một chu trình nên đáp án là \"hệ thống có 1 deadlock\".\n\nT3 cũng bị kẹt vì đang chờ R2, nhưng nó **không thuộc chu trình** — đây là trường hợp tiến trình bị vạ lây, không tính là deadlock thứ hai.\n\nVới đồ thị đơn instance, việc phát hiện deadlock rút gọn thành **tìm chu trình trong đồ thị có hướng**, làm bằng DFS là xong."
+      "explanation": "Chu trình: **T1 → R1 → T2 → R2 → T1**.\n\nKhác với câu trước, ở đây **mỗi tài nguyên chỉ có 1 instance**. Instance duy nhất của R1 nằm trong tay T2 (đang chờ R2), instance duy nhất của R2 nằm trong tay T1 (đang chờ R1). Không ai ngoài chu trình có thể nhả ra thứ họ cần.\n\n→ **Chắc chắn deadlock**, gồm đúng một chu trình nên đáp án là 'hệ thống có 1 deadlock'.\n\nCác phương án khác sai: 'không có deadlock' sai vì chu trình đơn instance luôn là deadlock; 'chỉ có deadlock nếu nối thêm cạnh' sai vì deadlock đã tồn tại sẵn; 'có thể có hoặc không tuỳ thứ tự' sai vì với đơn instance thì chu trình là điều kiện đủ.\n\nT3 cũng bị kẹt vì đang chờ R2, nhưng nó **không thuộc chu trình** — đây là trường hợp tiến trình bị vạ lây, không tính là deadlock thứ hai."
     },
     {
       "id": "os-dl-25",
@@ -352,12 +436,12 @@
       "question": "Hệ thống có **m** tài nguyên cùng loại chia sẻ bởi **n** thread, mỗi thread chỉ yêu cầu hoặc giải phóng một tài nguyên tại một thời điểm. Điều kiện nào là **điều kiện đủ** để deadlock không xảy ra?\n\n- (1) Nhu cầu tối đa của mỗi luồng là d, với 1 < d < m\n- (2) Tổng của tất cả các nhu cầu tối đa nhỏ hơn m + n\n- (3) Tổng của tất cả các nhu cầu tối đa nhỏ hơn m + 1",
       "options": [
         "(1)",
+        "(1) và (2)",
         "(2)",
-        "(3)",
-        "(1) và (2)"
+        "(2) và (3)"
       ],
       "answer": 3,
-      "explanation": "Đáp án đề là **(1) và (2)**.\n\n**(2) chắc chắn đúng** — đây chính là công thức quen thuộc viết dưới dạng khác:\n```\ntổng(Si) < m + n\n⇔ tổng(Si) - n < m\n⇔ tổng(Si - 1) < m\n```\n\n**Lưu ý — (1) không thật sự đủ.** Phản ví dụ: m = 4, n = 4, mỗi thread có d = 2 (thoả 1 < 2 < 4). Bốn thread mỗi bên ôm 1 tài nguyên là hết sạch 4, ai cũng thiếu đúng 1 → **deadlock**. Điều kiện (1) chỉ giới hạn nhu cầu từng thread mà bỏ qua **số lượng thread**, nên không chặn được trường hợp xấu nhất.\n\nNgược lại, **(3) lại là điều kiện đủ** dù đề không chọn: tổng nhu cầu < m + 1 nghĩa là tổng nhu cầu ≤ m, tức mọi thread có thể lấy đủ max cùng lúc — an toàn tuyệt đối, chỉ là chặt hơn mức cần thiết.\n\nĐi thi chọn theo đáp án đề, nhưng nhớ rằng điều kiện đúng và đáng thuộc là **(2)**."
+      "explanation": "Điều kiện đủ để không deadlock: **tổng(Si − 1) < m**.\n\n**(2) đúng** — chính là công thức đó viết dạng khác:\n```\ntổng(Si) < m + n\n⇔ tổng(Si) - n < m\n⇔ tổng(Si - 1) < m\n```\n\n**(3) cũng đúng** — tổng nhu cầu < m + 1 nghĩa là tổng nhu cầu ≤ m, tức mọi thread có thể lấy đủ max cùng lúc, an toàn tuyệt đối (chặt hơn mức cần thiết).\n\n**(1) sai** — nó chỉ giới hạn nhu cầu từng thread mà bỏ qua số lượng thread. Phản ví dụ: m = 4, n = 4, mỗi thread d = 2 (thoả 1 < 2 < 4). Bốn thread mỗi bên ôm 1 tài nguyên là hết sạch 4, ai cũng thiếu đúng 1 → **deadlock**.\n\nVậy đáp án là **(2) và (3)**."
     },
     {
       "id": "os-dl-26",

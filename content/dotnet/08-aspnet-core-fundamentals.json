@@ -4,6 +4,76 @@
   "description": "Pipeline và middleware, routing, validation, hệ thống cấu hình, logging có cấu trúc và vận hành sau reverse proxy.",
   "questions": [
     {
+      "id": "dotnet-m08-21",
+      "topic": "Middleware là gì",
+      "source": "Module 8 - Request Pipeline và Middleware (cơ bản)",
+      "question": "Trong ASP.NET Core, middleware là gì?",
+      "options": [
+        "Một cơ sở dữ liệu",
+        "Một thành phần trong pipeline xử lý request, có thể xử lý rồi chuyển tiếp cho thành phần kế tiếp",
+        "Một loại tệp cấu hình",
+        "Một giao diện đồ hoạ"
+      ],
+      "answer": 1,
+      "explanation": "Middleware là **mắt xích trong đường ống** xử lý request/response: mỗi cái làm một việc (ghi log, xác thực...) rồi gọi `next` hoặc dừng lại.\n- Không phải cơ sở dữ liệu.\n- Cấu hình nằm ở `appsettings.json`.\n- Không phải giao diện đồ hoạ."
+    },
+    {
+      "id": "dotnet-m08-22",
+      "topic": "Kestrel",
+      "source": "Module 8 - Request Pipeline và Middleware (cơ bản)",
+      "question": "Kestrel trong ASP.NET Core là gì?",
+      "options": [
+        "Một ngôn ngữ truy vấn",
+        "Một công cụ vẽ giao diện",
+        "Một hệ điều hành",
+        "Máy chủ web mặc định, đa nền tảng, tích hợp sẵn trong ASP.NET Core"
+      ],
+      "answer": 3,
+      "explanation": "**Kestrel** là máy chủ web mặc định của ASP.NET Core, chạy được trên Windows, Linux và macOS và thường đặt sau một reverse proxy khi chạy thật.\n- Ngôn ngữ truy vấn là SQL hay LINQ.\n- Không vẽ giao diện.\n- Không phải hệ điều hành."
+    },
+    {
+      "id": "dotnet-m08-23",
+      "topic": "appsettings.json",
+      "source": "Module 8 - Request Pipeline và Middleware (cơ bản)",
+      "question": "File `appsettings.json` trong project ASP.NET Core dùng để làm gì?",
+      "options": [
+        "Lưu cấu hình ứng dụng như chuỗi kết nối, mức log",
+        "Chứa mã nguồn C# chính",
+        "Lưu ảnh của website",
+        "Ghi lịch sử commit"
+      ],
+      "answer": 0,
+      "explanation": "`appsettings.json` chứa **cấu hình** dạng JSON (chuỗi kết nối, mức log...) và đọc được qua `IConfiguration`; mỗi môi trường có thể có file riêng như `appsettings.Development.json`.\n- Mã nguồn nằm trong file `.cs`.\n- Ảnh để ở `wwwroot`.\n- Lịch sử commit do Git quản lý."
+    },
+    {
+      "id": "dotnet-m08-24",
+      "topic": "Minimal API",
+      "source": "Module 8 - Request Pipeline và Middleware (cơ bản)",
+      "question": "Dòng `app.MapGet(\"/hello\", () => \"Xin chào\");` làm gì?",
+      "options": [
+        "Gửi một email chào",
+        "Khai báo một biến tên hello",
+        "Tạo bảng trong cơ sở dữ liệu",
+        "Tạo endpoint trả về \"Xin chào\" khi client gửi GET tới /hello"
+      ],
+      "answer": 3,
+      "explanation": "`MapGet` đăng ký **endpoint**: khi có request `GET /hello` thì lambda chạy và trả chuỗi, đây là phong cách minimal API.\n- Không gửi email.\n- Không khai báo biến.\n- Không tạo bảng, vì chưa có database nào liên quan."
+    },
+    {
+      "id": "dotnet-m08-25",
+      "topic": "Program.cs",
+      "source": "Module 8 - Request Pipeline và Middleware (cơ bản)",
+      "question": "Trong project ASP.NET Core hiện đại, `Program.cs` thường chứa gì?",
+      "options": [
+        "Chỉ các chú thích",
+        "Cấu hình và khởi động ứng dụng: đăng ký service, dựng pipeline, chạy app",
+        "Dữ liệu của người dùng",
+        "Bản sao lưu của project"
+      ],
+      "answer": 1,
+      "explanation": "`Program.cs` là **điểm vào**: tạo `builder`, đăng ký service, dựng middleware pipeline rồi `app.Run()`.\n- Nó có code chạy thật, không chỉ chú thích.\n- Dữ liệu người dùng nằm ở database.\n- Sao lưu không nằm trong code."
+    },
+    {
       "id": "dotnet-m08-01",
       "topic": "Pipeline và middleware",
       "source": "Module 8 - Request Pipeline và Middleware",

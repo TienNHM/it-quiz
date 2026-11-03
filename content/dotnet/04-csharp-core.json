@@ -4,6 +4,76 @@
   "description": "OOP thực dụng trong C#: class/struct, đóng gói, kế thừa, interface, mức truy cập và record.",
   "questions": [
     {
+      "id": "dotnet-m04-21",
+      "topic": "Class và object",
+      "source": "Module 4 - Class và Object (cơ bản)",
+      "question": "Trong lập trình hướng đối tượng, quan hệ giữa class và object là gì?",
+      "options": [
+        "Class là bản thiết kế, object là một thể hiện cụ thể tạo từ bản thiết kế đó",
+        "Object là bản thiết kế, class là thể hiện",
+        "Class và object là cùng một thứ",
+        "Object chỉ tồn tại trong file .csproj"
+      ],
+      "answer": 0,
+      "explanation": "Class giống **bản vẽ**, còn object (instance) là **sản phẩm thật** tạo bằng `new`, ví dụ `new Customer()`; từ một class tạo được nhiều object.\n- Đảo ngược vai trò là sai.\n- Hai khái niệm khác nhau: một bên là định nghĩa, một bên là thể hiện.\n- File .csproj là cấu hình build, không chứa object."
+    },
+    {
+      "id": "dotnet-m04-22",
+      "topic": "Mức truy cập private",
+      "source": "Module 4 - Class và Object (cơ bản)",
+      "question": "Thành viên khai báo `private` trong một class có thể được truy cập từ đâu?",
+      "options": [
+        "Từ mọi nơi trong ứng dụng",
+        "Từ mọi class trong cùng namespace",
+        "Chỉ từ bên trong chính class đó",
+        "Chỉ từ các class con"
+      ],
+      "answer": 2,
+      "explanation": "`private` là mức hẹp nhất: chỉ code **bên trong chính class** mới thấy, giúp che giấu chi tiết cài đặt (đóng gói).\n- Truy cập từ mọi nơi là `public`.\n- Cùng namespace không đủ để thấy thành viên private.\n- Class con thấy được thành viên `protected`, không phải `private`."
+    },
+    {
+      "id": "dotnet-m04-23",
+      "topic": "Kế thừa",
+      "source": "Module 4 - Class và Object (cơ bản)",
+      "question": "Khi `class Dog : Animal`, điều gì đúng?",
+      "options": [
+        "`Animal` kế thừa từ `Dog`",
+        "`Dog` kế thừa từ `Animal` nên dùng lại được các thành viên công khai/protected của `Animal`",
+        "Hai class bị gộp thành một",
+        "`Dog` không dùng được gì từ `Animal`"
+      ],
+      "answer": 1,
+      "explanation": "Dấu `:` sau tên class nghĩa là **kế thừa**: `Dog` là lớp con, tự có các thành viên `public`/`protected` của lớp cha `Animal`.\n- Chiều kế thừa bị đảo ngược ở phương án đầu.\n- Hai class vẫn là hai kiểu riêng.\n- Nếu không dùng lại được gì thì kế thừa vô nghĩa."
+    },
+    {
+      "id": "dotnet-m04-24",
+      "topic": "Interface là gì",
+      "source": "Module 4 - Class và Object (cơ bản)",
+      "question": "Interface trong C# (ví dụ `IShape`) dùng để làm gì?",
+      "options": [
+        "Lưu dữ liệu vào cơ sở dữ liệu",
+        "Định nghĩa \"hợp đồng\" gồm các thành viên mà class cài đặt phải có",
+        "Thay thế hoàn toàn mọi class",
+        "Tăng tốc độ biên dịch"
+      ],
+      "answer": 1,
+      "explanation": "Interface mô tả **những gì** một kiểu phải làm (các phương thức, thuộc tính), còn class cài đặt quyết định **làm thế nào**; nhờ vậy code phụ thuộc vào hợp đồng chứ không vào class cụ thể.\n- Lưu dữ liệu là việc của repository hay database.\n- Interface không thay thế class vì vẫn cần class để tạo object.\n- Nó không liên quan tốc độ biên dịch."
+    },
+    {
+      "id": "dotnet-m04-25",
+      "topic": "Thuộc tính (property)",
+      "source": "Module 4 - Class và Object (cơ bản)",
+      "question": "Trong C#, `public string Name { get; set; }` là gì?",
+      "options": [
+        "Một phương thức tĩnh",
+        "Một hằng số",
+        "Một thuộc tính tự động, có thể đọc và ghi giá trị",
+        "Một biến cục bộ"
+      ],
+      "answer": 2,
+      "explanation": "Đây là **auto-property**: trình biên dịch tự tạo trường ẩn, `get` để đọc và `set` để ghi giá trị.\n- Phương thức tĩnh có dấu ngoặc `()` và từ khoá `static`.\n- Hằng số dùng `const` và không đổi được.\n- Biến cục bộ chỉ tồn tại trong một hàm, không có `get`/`set`."
+    },
+    {
       "id": "dotnet-m04-01",
       "topic": "class và struct",
       "source": "Module 4 - Class và Object",

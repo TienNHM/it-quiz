@@ -4,6 +4,76 @@
   "description": "Claims, JWT, refresh token, phân quyền theo vai trò, policy, tài nguyên và hệ thống permission.",
   "questions": [
     {
+      "id": "dotnet-m10-21",
+      "topic": "Xác thực và phân quyền",
+      "source": "Module 10 - Authentication vs Authorization (cơ bản)",
+      "question": "Câu nào mô tả đúng sự khác nhau giữa Authentication và Authorization?",
+      "options": [
+        "Authentication quyết định bạn được làm gì, Authorization chỉ kiểm tra bạn là ai.",
+        "Hai thuật ngữ này là một, chỉ khác cách viết tắt.",
+        "Authentication trả lời \"bạn là ai\", Authorization trả lời \"bạn được phép làm gì\".",
+        "Authentication dành cho người dùng, Authorization chỉ dành cho máy chủ."
+      ],
+      "answer": 2,
+      "explanation": "Authentication (xác thực) là bước chứng minh danh tính, ví dụ đăng nhập bằng mật khẩu. Authorization (phân quyền) diễn ra sau đó, quyết định người đã biết danh tính được phép làm gì. Phương án đảo vai trò là sai vì nói ngược hai khái niệm. Phương án \"là một\" sai vì chúng là hai bước riêng, thậm chí do hai middleware khác nhau xử lý. Phương án \"người dùng với máy chủ\" sai vì cả hai đều áp dụng cho bất kỳ chủ thể nào, kể cả service gọi service."
+    },
+    {
+      "id": "dotnet-m10-22",
+      "topic": "JWT là gì",
+      "source": "Module 10 - JWT Authentication (cơ bản)",
+      "question": "JWT (JSON Web Token) thường được dùng để làm gì trong một API?",
+      "options": [
+        "Mang thông tin danh tính và claim của người dùng dưới dạng token có chữ ký để API kiểm tra.",
+        "Lưu toàn bộ dữ liệu bảng người dùng để API khỏi cần dùng database.",
+        "Mã hoá mật khẩu người dùng trước khi lưu vào database.",
+        "Tăng tốc truy vấn SQL bằng cách cache kết quả."
+      ],
+      "answer": 0,
+      "explanation": "JWT là một chuỗi gồm header, payload và chữ ký; payload chứa các claim như id người dùng, vai trò, thời điểm hết hạn, và chữ ký giúp API biết token không bị sửa. Phương án \"lưu toàn bộ bảng người dùng\" sai vì token chỉ chứa vài claim nhỏ. Phương án mã hoá mật khẩu sai vì băm mật khẩu là việc của thuật toán băm như PBKDF2 hay bcrypt, không phải JWT. Phương án tăng tốc SQL sai vì JWT không liên quan đến truy vấn hay cache."
+    },
+    {
+      "id": "dotnet-m10-23",
+      "topic": "Claim là gì",
+      "source": "Module 10 - Authentication vs Authorization (cơ bản)",
+      "question": "Trong ASP.NET Core, \"claim\" là gì?",
+      "options": [
+        "Một yêu cầu HTTP mà người dùng gửi lên để xin cấp tài khoản.",
+        "Một lỗi xảy ra khi người dùng nhập sai mật khẩu.",
+        "Một bảng trong database dùng để lưu lịch sử đăng nhập.",
+        "Một cặp thông tin về người dùng, ví dụ tên claim \"role\" với giá trị \"Admin\"."
+      ],
+      "answer": 3,
+      "explanation": "Claim là một mẩu thông tin được xác nhận về người dùng, gồm loại và giá trị, như email, id hay vai trò. Nhiều claim gộp lại thành identity của người dùng. Phương án \"yêu cầu HTTP xin cấp tài khoản\" sai vì đó là đăng ký, không phải claim. Phương án \"lỗi nhập sai mật khẩu\" sai vì đó là kết quả đăng nhập thất bại. Phương án \"bảng lịch sử đăng nhập\" sai vì claim là dữ liệu trong token hoặc cookie, không phải một bảng ghi lịch sử."
+    },
+    {
+      "id": "dotnet-m10-24",
+      "topic": "Mã 401 và 403",
+      "source": "Module 10 - Authentication vs Authorization (cơ bản)",
+      "question": "Người dùng đã đăng nhập hợp lệ nhưng không đủ quyền vào một trang quản trị. Mã HTTP nào hợp lý nhất?",
+      "options": [
+        "200 OK",
+        "403 Forbidden",
+        "401 Unauthorized (nghĩa là chưa xác thực)",
+        "500 Internal Server Error"
+      ],
+      "answer": 1,
+      "explanation": "403 nghĩa là \"tôi biết bạn là ai nhưng bạn không được phép\", đúng với người đã đăng nhập mà thiếu quyền. 401 dùng cho trường hợp chưa xác thực hoặc token sai hay hết hạn, nên không khớp ở đây. 200 nghĩa là yêu cầu thành công, sai vì người dùng đang bị từ chối. 500 là lỗi phía server, còn đây là kết quả bình thường của việc phân quyền chứ không phải lỗi của máy chủ."
+    },
+    {
+      "id": "dotnet-m10-25",
+      "topic": "Role trong Authorize",
+      "source": "Module 10 - Role-based Authorization (cơ bản)",
+      "question": "Gắn `[Authorize(Roles = \"Admin\")]` lên một action có nghĩa là gì?",
+      "options": [
+        "Mọi người đều gọi được, kể cả người chưa đăng nhập.",
+        "Chỉ cần người dùng tên là Admin, không cần đăng nhập.",
+        "Chỉ người dùng đã đăng nhập và có vai trò Admin mới gọi được action đó.",
+        "Action bị tắt hoàn toàn nên không ai gọi được."
+      ],
+      "answer": 2,
+      "explanation": "Thuộc tính Authorize với Roles yêu cầu người dùng đã xác thực và có claim vai trò khớp với danh sách. Nếu chưa đăng nhập, kết quả là 401, còn đăng nhập mà thiếu vai trò là 403. Phương án \"mọi người đều gọi được\" sai vì đó là hành vi khi dùng AllowAnonymous hoặc không gắn gì. Phương án \"chỉ cần tên Admin\" sai vì phân quyền theo vai trò chứ không theo tên, và vẫn phải đăng nhập. Phương án \"action bị tắt\" sai vì attribute chỉ lọc người gọi, không vô hiệu hoá endpoint."
+    },
+    {
       "id": "dotnet-m10-01",
       "topic": "ClaimsIdentity",
       "source": "Module 10 - Authentication vs Authorization",

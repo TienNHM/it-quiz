@@ -4,6 +4,90 @@
   "description": "Seek time, rotational latency và các thuật toán lập lịch đĩa FCFS, SSTF, SCAN, C-SCAN.",
   "questions": [
     {
+      "id": "os-io-09",
+      "topic": "Track và sector",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Trên đĩa cứng, **track (rãnh)** và **sector (cung)** là gì?",
+      "options": [
+        "Track là một vòng tròn đồng tâm trên mặt đĩa, sector là phần nhỏ nhất của track dùng để lưu dữ liệu",
+        "Track là đầu đọc ghi, sector là mô-tơ quay đĩa",
+        "Track là tên file, sector là tên thư mục",
+        "Track là loại đĩa USB, sector là loại đĩa DVD"
+      ],
+      "answer": 0,
+      "explanation": "Mặt đĩa được chia thành các **track** là những vòng tròn đồng tâm; mỗi track chia tiếp thành các **sector** (thường 512 byte hoặc 4 KB) là đơn vị đọc/ghi nhỏ nhất. Đầu đọc ghi di chuyển tới đúng track (seek) rồi chờ đĩa quay tới sector cần.\n\nĐầu đọc ghi và mô-tơ là phần cứng khác; tên file/thư mục thuộc hệ thống file; USB/DVD là loại thiết bị chứ không phải track hay sector."
+    },
+    {
+      "id": "os-io-10",
+      "topic": "HDD và SSD",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Điểm khác nhau đơn giản giữa ổ **HDD** và ổ **SSD** là gì?",
+      "options": [
+        "HDD dùng chip nhớ flash, SSD dùng đĩa quay và đầu từ",
+        "HDD và SSD hoàn toàn giống nhau về cấu tạo",
+        "SSD không có bộ phận chuyển động cơ học nên truy cập nhanh hơn, còn HDD có đĩa quay và đầu từ",
+        "SSD chỉ dùng được trên máy tính để bàn"
+      ],
+      "answer": 2,
+      "explanation": "**HDD** lưu dữ liệu trên các đĩa từ quay, đầu từ phải di chuyển (seek) và chờ đĩa quay nên chậm hơn. **SSD** dùng chip nhớ flash, không có bộ phận cơ học nên seek time gần như bằng 0 và nhanh hơn nhiều.\n\nPhương án đầu đảo ngược cấu tạo; hai loại ổ có cấu tạo khác hẳn nhau; và SSD dùng được cả trên laptop lẫn máy để bàn."
+    },
+    {
+      "id": "os-io-11",
+      "topic": "Device driver",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Trình điều khiển thiết bị (device driver)** là gì?",
+      "options": [
+        "Một loại thiết bị nhập xuất mới",
+        "Phần mềm giúp hệ điều hành giao tiếp với một thiết bị phần cứng cụ thể",
+        "Người dùng điều khiển máy tính từ xa",
+        "Chương trình nén file"
+      ],
+      "answer": 1,
+      "explanation": "**Device driver** là mô-đun phần mềm (thường chạy trong kernel) biết cách ra lệnh cho **một loại thiết bị cụ thể** (đĩa, card mạng, máy in...) và chuyển các yêu cầu chuẩn của hệ điều hành thành lệnh riêng của thiết bị. Nhờ đó hệ điều hành không cần biết chi tiết từng hãng.\n\nNó là phần mềm chứ không phải thiết bị, không phải công cụ điều khiển từ xa và không liên quan nén file."
+    },
+    {
+      "id": "os-io-12",
+      "topic": "DMA",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**DMA (Direct Memory Access)** có lợi ích gì?",
+      "options": [
+        "Giúp CPU chạy nhanh gấp đôi",
+        "Cho phép thiết bị chuyển dữ liệu trực tiếp vào/ra bộ nhớ chính mà không cần CPU chép từng byte, CPU chỉ bị ngắt khi xong",
+        "Giúp tăng dung lượng RAM",
+        "Chỉ dùng để kết nối mạng"
+      ],
+      "answer": 1,
+      "explanation": "Với **DMA**, bộ điều khiển DMA tự chuyển cả khối dữ liệu giữa thiết bị và RAM; CPU chỉ cần giao việc rồi được ngắt khi hoàn tất, nên CPU rảnh để làm việc khác thay vì chép từng byte (programmed I/O).\n\nDMA không làm CPU nhanh gấp đôi, không tăng dung lượng RAM và dùng cho nhiều thiết bị (đĩa, âm thanh, mạng...), không riêng gì mạng."
+    },
+    {
+      "id": "os-io-13",
+      "topic": "Spooling",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Spooling** (như hàng đợi in) dùng để làm gì?",
+      "options": [
+        "Tăng độ phân giải của máy in",
+        "Xoá dữ liệu cũ trên đĩa",
+        "Mã hoá dữ liệu gửi qua mạng",
+        "Lưu tạm dữ liệu cho thiết bị chậm vào hàng đợi trên đĩa để chương trình không phải đứng chờ thiết bị"
+      ],
+      "answer": 3,
+      "explanation": "**Spooling** (Simultaneous Peripheral Operations On-Line): dữ liệu cần in được ghi tạm vào hàng đợi trên đĩa; máy in lấy dần ra in theo tốc độ của nó, còn chương trình tiếp tục chạy mà không phải chờ. Nó còn giúp nhiều tiến trình dùng chung một thiết bị không chia sẻ được như máy in.\n\nNó không liên quan tới độ phân giải máy in, xoá dữ liệu hay mã hoá."
+    },
+    {
+      "id": "os-io-14",
+      "topic": "Thiết bị khối và ký tự",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Thiết bị nào sau đây thuộc loại **thiết bị ký tự (character device)**, truyền dữ liệu theo từng byte/luồng?",
+      "options": [
+        "Ổ đĩa cứng",
+        "Ổ SSD",
+        "Ổ USB lưu trữ",
+        "Bàn phím"
+      ],
+      "answer": 3,
+      "explanation": "**Thiết bị ký tự** truyền dữ liệu theo luồng byte tuần tự, không truy cập ngẫu nhiên theo khối: bàn phím, chuột, cổng nối tiếp. **Thiết bị khối** (đĩa cứng, SSD, USB lưu trữ) đọc/ghi theo từng khối cố định và truy cập ngẫu nhiên được.\n\nVì vậy ba phương án còn lại đều là thiết bị khối."
+    },
+    {
       "id": "os-io-01",
       "topic": "Thời gian truy cập đĩa",
       "source": "Cuối kỳ HĐH – SPKT",
@@ -35,7 +119,7 @@
       "id": "os-io-03",
       "topic": "Lập lịch đĩa",
       "source": "Cuối kỳ HĐH – SPKT",
-      "question": "Thuật toán lập lịch đĩa nào dẫn đến khoảng cách di chuyển đầu đĩa ở mức **tối thiểu**?",
+      "question": "Thuật toán lập lịch đĩa nào hoạt động như **thang máy**: đầu đĩa quét theo một chiều tới tận cùng, phục vụ mọi yêu cầu gặp trên đường, rồi đảo chiều và tiếp tục phục vụ trên đường quay lại?",
       "options": [
         "SSTF",
         "FCFS",
@@ -43,7 +127,7 @@
         "C-SCAN"
       ],
       "answer": 2,
-      "explanation": "Đáp án đề là **SCAN** (thuật toán thang máy): đầu đĩa quét một mạch từ đầu này sang đầu kia, phục vụ mọi yêu cầu gặp trên đường, rồi đảo chiều quét ngược lại. Vì đi theo một hướng cho tới cùng, nó **không bao giờ đi tới đi lui**, và tổng quãng đường bị chặn bởi hai lần chiều dài đĩa cho mỗi vòng quét.\n\n**Lưu ý phân biệt:** **SSTF** chọn yêu cầu **gần đầu đĩa nhất ở mỗi bước**, nên từng bước thì ngắn nhất — nhiều tài liệu vì thế gọi SSTF là thuật toán tối thiểu quãng di chuyển. Nhưng SSTF **tham lam theo từng bước**, có thể nhảy qua nhảy lại quanh vị trí hiện tại và **không tối ưu toàn cục**, lại gây starvation. Đi thi nên bám theo đáp án đề, còn khi làm bài tính toán cụ thể thì cứ tính tổng quãng đường của từng thuật toán rồi so.\n\n**FCFS** rõ ràng tệ nhất: phục vụ theo thứ tự đến nên đầu đĩa có thể quăng qua quăng lại suốt mặt đĩa."
+      "explanation": "Đó là **SCAN** (thuật toán thang máy): đầu đĩa quét một mạch từ đầu này sang đầu kia, phục vụ mọi yêu cầu gặp trên đường, tới cuối thì đảo chiều và phục vụ tiếp trên đường quay lại. Vì đi theo một hướng cho tới cùng nên nó không quăng qua quăng lại như FCFS, và không gây starvation.\n\nVì sao các phương án khác sai:\n- **SSTF** chọn yêu cầu gần đầu đĩa nhất ở mỗi bước (tham lam), không quét theo chiều cố định.\n- **FCFS** phục vụ đúng thứ tự đến, bỏ qua vị trí đầu đĩa.\n- **C-SCAN** chỉ phục vụ theo một chiều; tới cuối thì nhảy về đầu kia mà không phục vụ gì trên đường về.\n\nLưu ý: SCAN không phải lúc nào cũng cho quãng đường ngắn nhất; trong từng bài cụ thể phải tính tổng quãng đường của từng thuật toán rồi so sánh."
     },
     {
       "id": "os-io-04",
@@ -99,7 +183,7 @@
         "360 ms"
       ],
       "answer": 1,
-      "explanation": "FCFS phục vụ đúng thứ tự đến, cộng dồn quãng đường từng chặng:\n```\n20 → 10 :  10\n10 → 22 :  12\n22 → 20 :   2\n20 →  2 :  18\n 2 → 40 :  38\n40 →  6 :  34\n 6 → 38 :  32\n-----------------\nTổng    : 146 cylinder\n```\n\nThời gian = 146 × 6 = **876 ms**.\n\nNhìn vào bảng là thấy ngay nhược điểm của FCFS: đầu đĩa **quăng qua quăng lại** (20 → 2 → 40 → 6 → 38) mà không hề gom nhóm các yêu cầu gần nhau.\n\nSo sánh: dùng **SSTF** cho cùng bộ yêu cầu thì quãng đường chỉ còn 20 → 22 → 20 ... khoảng 60 cylinder, tức chưa tới một nửa."
+      "explanation": "FCFS phục vụ đúng thứ tự đến, cộng dồn quãng đường từng chặng:\n```\n20 → 10 :  10\n10 → 22 :  12\n22 → 20 :   2\n20 →  2 :  18\n 2 → 40 :  38\n40 →  6 :  34\n 6 → 38 :  32\n-----------------\nTổng    : 146 cylinder\n```\n\nThời gian = 146 × 6 = **876 ms**.\n\nNhìn vào bảng là thấy ngay nhược điểm của FCFS: đầu đĩa **quăng qua quăng lại** (20 → 2 → 40 → 6 → 38) mà không hề gom nhóm các yêu cầu gần nhau.\n\nSo sánh: dùng **SSTF** cho cùng bộ yêu cầu thì đầu đĩa đi 20 → 20 → 22 → 10 → 6 → 2 → 38 → 40, tổng chỉ **60 cylinder**, tức chưa tới một nửa FCFS."
     },
     {
       "id": "os-io-08",

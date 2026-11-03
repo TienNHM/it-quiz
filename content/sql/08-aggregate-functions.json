@@ -4,6 +4,81 @@
   "description": "COUNT, SUM, AVG, MIN, MAX, cách chúng đối xử với NULL và cách tính tiền đơn hàng trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d08-16",
+      "topic": "Hàm tổng hợp là gì",
+      "source": "Ngày 8 - Hàm tổng hợp (cơ bản)",
+      "question": "Hàm tổng hợp (aggregate function) như `COUNT`, `SUM`, `AVG` làm gì?",
+      "options": [
+        "biến đổi từng dòng thành một dòng khác",
+        "gộp nhiều dòng thành một giá trị duy nhất",
+        "sắp xếp các dòng theo thứ tự",
+        "chỉ dùng được với dữ liệu kiểu chữ"
+      ],
+      "answer": 1,
+      "explanation": "Hàm tổng hợp nhận **nhiều dòng** và trả về **một giá trị**, ví dụ đếm số đơn hay tính tổng tiền.\n- Biến mỗi dòng thành một dòng khác là việc của hàm thường như `UPPER` hay `ROUND`.\n- Sắp xếp là việc của `ORDER BY`.\n- `SUM` và `AVG` dùng với kiểu số, không giới hạn ở kiểu chữ.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d08-17",
+      "topic": "COUNT(*)",
+      "source": "Ngày 8 - Hàm tổng hợp (cơ bản)",
+      "question": "`SELECT COUNT(*) FROM orders;` trả về điều gì?",
+      "options": [
+        "tổng số tiền của mọi đơn",
+        "số cột của bảng `orders`",
+        "đơn hàng có giá trị lớn nhất",
+        "số dòng của bảng `orders`"
+      ],
+      "answer": 3,
+      "explanation": "`COUNT(*)` đếm **số dòng**, ở đây là số đơn hàng trong `orders`.\n- Tổng tiền cần `SUM` trên cột số tiền.\n- Số cột không đếm bằng `COUNT`, mà xem trong cấu trúc bảng.\n- Đơn lớn nhất cần `MAX` hoặc `ORDER BY ... LIMIT 1`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d08-18",
+      "topic": "SUM và AVG",
+      "source": "Ngày 8 - Hàm tổng hợp (cơ bản)",
+      "question": "Phân biệt `SUM` và `AVG`: phát biểu nào đúng?",
+      "options": [
+        "`SUM` cho tổng, `AVG` cho trung bình cộng",
+        "`SUM` cho trung bình, `AVG` cho tổng",
+        "cả hai đều đếm số dòng",
+        "`SUM` cho giá trị lớn nhất, `AVG` cho giá trị nhỏ nhất"
+      ],
+      "answer": 0,
+      "explanation": "`SUM` là **tổng**, `AVG` là **trung bình cộng** (tổng chia số giá trị khác NULL).\n- Phát biểu đảo ngược hai hàm là sai.\n- Đếm dòng là việc của `COUNT`.\n- Lớn nhất và nhỏ nhất là `MAX` và `MIN`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d08-19",
+      "topic": "MIN và MAX",
+      "source": "Ngày 8 - Hàm tổng hợp (cơ bản)",
+      "question": "Muốn biết giá của sản phẩm **đắt nhất** trong `products`, dùng hàm nào?",
+      "options": [
+        "`MIN(price)`",
+        "`COUNT(price)`",
+        "`MAX(price)`",
+        "`SUM(price)`"
+      ],
+      "answer": 2,
+      "explanation": "`MAX(price)` trả về **giá trị lớn nhất**, tức giá của sản phẩm đắt nhất.\n- `MIN(price)` trả về giá nhỏ nhất, tức sản phẩm rẻ nhất.\n- `COUNT(price)` đếm số sản phẩm có giá.\n- `SUM(price)` cộng giá của mọi sản phẩm, không cho biết món nào đắt nhất.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d08-20",
+      "topic": "Hàm tổng hợp không có GROUP BY",
+      "source": "Ngày 8 - Hàm tổng hợp (cơ bản)",
+      "question": "`SELECT SUM(amount) FROM payments;` (không có `GROUP BY`) trả về bao nhiêu dòng?",
+      "options": [
+        "đúng một dòng, vì cả bảng được coi là một nhóm",
+        "một dòng cho mỗi lần thanh toán",
+        "không dòng nào",
+        "số dòng bằng số phương thức thanh toán"
+      ],
+      "answer": 0,
+      "explanation": "Khi không có `GROUP BY`, hàm tổng hợp xử lý **cả bảng như một nhóm** nên chỉ ra một dòng.\n- Một dòng cho mỗi thanh toán là kết quả của truy vấn không dùng hàm tổng hợp.\n- Truy vấn vẫn trả về một dòng, kể cả khi bảng rỗng (khi đó `SUM` là NULL).\n- Muốn tách theo phương thức thanh toán phải thêm `GROUP BY method`.",
+      "kind": "concept"
+    },
+    {
       "id": "sql-d08-01",
       "topic": "COUNT(cot)",
       "source": "Ngày 8 - Hàm tổng hợp",

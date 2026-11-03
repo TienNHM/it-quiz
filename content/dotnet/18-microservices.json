@@ -4,6 +4,76 @@
   "description": "Khi nào nên và không nên microservices, tách service, API Gateway, giao tiếp, observability và identity trong hệ phân tán.",
   "questions": [
     {
+      "id": "dotnet-m18-21",
+      "topic": "Microservices là gì",
+      "source": "Module 18 - Giao tiếp giữa các service (cơ bản)",
+      "question": "Kiến trúc microservices có đặc điểm nào?",
+      "options": [
+        "Toàn bộ ứng dụng được đóng gói thành một khối duy nhất để triển khai.",
+        "Mọi service bắt buộc dùng chung một database.",
+        "Chia hệ thống thành nhiều service nhỏ, mỗi service lo một phần nghiệp vụ và có thể triển khai độc lập.",
+        "Mỗi service phải viết bằng cùng một ngôn ngữ và cùng phiên bản."
+      ],
+      "answer": 2,
+      "explanation": "Microservices tách hệ thống theo ranh giới nghiệp vụ; mỗi service tự quản dữ liệu và triển khai riêng. Một khối duy nhất là monolith, đối lập với microservices. Dùng chung database tạo ra sự gắn kết chặt, là anti-pattern. Việc mọi service phải cùng ngôn ngữ và phiên bản là hạn chế không có trong định nghĩa, thực tế các đội có thể chọn công nghệ khác nhau."
+    },
+    {
+      "id": "dotnet-m18-22",
+      "topic": "API Gateway là gì",
+      "source": "Module 18 - API Gateway - YARP (cơ bản)",
+      "question": "API Gateway (ví dụ YARP) đóng vai trò gì?",
+      "options": [
+        "Là cổng vào duy nhất, định tuyến yêu cầu tới đúng service và xử lý các việc chung như xác thực hay giới hạn tốc độ.",
+        "Là nơi lưu toàn bộ dữ liệu của mọi service.",
+        "Là công cụ biên dịch ra file Docker image.",
+        "Là trình sinh mã tự động cho mọi service."
+      ],
+      "answer": 0,
+      "explanation": "Gateway đứng trước các service, nhận mọi request từ ngoài, định tuyến đúng nơi và gánh các mối quan tâm chung như HTTPS, xác thực, rate limit. Lưu dữ liệu là việc của từng service và database của chúng. Build image là việc của Docker. Sinh mã tự động là công cụ khác, không phải gateway."
+    },
+    {
+      "id": "dotnet-m18-23",
+      "topic": "Ba trụ cột observability",
+      "source": "Module 18 - Observability - bộ ba (cơ bản)",
+      "question": "Bộ ba trụ cột của observability (khả năng quan sát) thường được nhắc là gì?",
+      "options": [
+        "Ảnh chụp màn hình, video và âm thanh.",
+        "Log, metric và trace.",
+        "Class, interface và enum.",
+        "Build, test và deploy."
+      ],
+      "answer": 1,
+      "explanation": "Log ghi lại sự kiện cụ thể, metric là số liệu theo thời gian như tỷ lệ lỗi hay độ trễ, trace theo dõi một request đi qua nhiều service. Ba thứ này bổ sung nhau để hiểu hệ thống đang làm gì. Ảnh, video, âm thanh không phải dữ liệu vận hành. Class, interface, enum là khái niệm ngôn ngữ lập trình. Build, test, deploy là các bước của CI/CD."
+    },
+    {
+      "id": "dotnet-m18-24",
+      "topic": "Monolith phân tán",
+      "source": "Module 18 - Anti-pattern: distributed monolith (cơ bản)",
+      "question": "\"Distributed monolith\" (monolith phân tán) là tình huống nào?",
+      "options": [
+        "Một monolith chạy tốt và rất ít lỗi.",
+        "Một hệ thống gồm các service hoàn toàn độc lập, không gọi nhau.",
+        "Một ứng dụng chạy trên nhiều máy nhưng chỉ có một người dùng.",
+        "Hệ thống tách thành nhiều service nhưng chúng gọi nhau chặt chẽ nên vẫn phải triển khai và sửa cùng nhau."
+      ],
+      "answer": 3,
+      "explanation": "Monolith phân tán mang chi phí của microservices (mạng, độ trễ, vận hành) mà không có lợi ích độc lập, vì service phụ thuộc đồng bộ vào nhau. Monolith chạy tốt không phải là phản mẫu. Các service hoàn toàn độc lập chính là mục tiêu của microservices. Số lượng người dùng không quyết định kiến trúc có phải monolith phân tán hay không."
+    },
+    {
+      "id": "dotnet-m18-25",
+      "topic": "Health check là gì",
+      "source": "Module 18 - Mở rộng và đào sâu (cơ bản)",
+      "question": "Endpoint health check (ví dụ `/health`) thường phục vụ mục đích gì?",
+      "options": [
+        "Hiển thị cho người dùng cuối danh sách sản phẩm.",
+        "Thay thế hoàn toàn việc viết log.",
+        "Cho hệ thống bên ngoài như load balancer hay Kubernetes biết service còn hoạt động bình thường hay không.",
+        "Tự động sửa lỗi cho service khi phát hiện bất thường."
+      ],
+      "answer": 2,
+      "explanation": "Health check là đường nhỏ trả về trạng thái sống hay sẵn sàng, để orchestrator quyết định có chuyển traffic hay khởi động lại. Nó không phải trang nghiệp vụ cho người dùng. Nó không thay log vì chỉ cho biết trạng thái hiện tại, không ghi chi tiết sự kiện. Nó chỉ báo cáo chứ không tự sửa lỗi; việc hành động do hạ tầng quyết định."
+    },
+    {
       "id": "dotnet-m18-01",
       "topic": "Lỗi tích luỹ",
       "source": "Module 18 - Giao tiếp giữa các service",

@@ -105,5 +105,6 @@
     "kind": "predict",
     "format": "scalar",
     "query": "SELECT COUNT(*) FROM products WHERE attributes ?& ARRAY['ram_gb', 'storage_gb']"
-  }
+  },
+  {"id":"sql-d22-21","kind":"predict","query":"SELECT attributes ->> 'brand' FROM products WHERE sku = 'LAP-001'","format":"scalar"}
 ]

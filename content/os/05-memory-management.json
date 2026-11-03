@@ -4,6 +4,90 @@
   "description": "Dịch địa chỉ động, MMU, cấp phát phân vùng, phân mảnh, phân đoạn, swap space và lỗi trang.",
   "questions": [
     {
+      "id": "os-mm-19",
+      "topic": "Địa chỉ logic và vật lý",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Địa chỉ logic** (hay địa chỉ ảo) khác **địa chỉ vật lý** ở điểm nào?",
+      "options": [
+        "Địa chỉ logic nằm trên đĩa cứng, địa chỉ vật lý nằm trên CPU",
+        "Địa chỉ logic do chương trình/CPU sinh ra, còn địa chỉ vật lý là vị trí thật trong bộ nhớ chính",
+        "Hai loại địa chỉ luôn luôn giống nhau",
+        "Địa chỉ logic chỉ dùng cho mạng, địa chỉ vật lý chỉ dùng cho file"
+      ],
+      "answer": 1,
+      "explanation": "**Địa chỉ logic** là địa chỉ mà CPU/chương trình nhìn thấy; **địa chỉ vật lý** là vị trí thật của dữ liệu trong RAM. MMU chuyển đổi logic → vật lý khi chạy.\n\nHai loại địa chỉ chỉ giống nhau trong hệ rất đơn giản (không có bộ nhớ ảo/tái định vị động); và chúng đều là khái niệm về bộ nhớ, không liên quan đến mạng hay file."
+    },
+    {
+      "id": "os-mm-20",
+      "topic": "Swapping",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Swapping** (hoán đổi) trong quản lý bộ nhớ là gì?",
+      "options": [
+        "Đổi chỗ hai tiến trình đang chạy cùng lúc trên CPU",
+        "Đổi tên file trên đĩa",
+        "Tạm thời chuyển một tiến trình từ RAM ra đĩa (và nạp lại sau) để nhường chỗ cho tiến trình khác",
+        "Thay đổi ngôn ngữ của chương trình"
+      ],
+      "answer": 2,
+      "explanation": "**Swapping**: khi RAM không đủ, hệ điều hành đưa tạm một tiến trình (swap out) ra vùng swap trên đĩa, rồi nạp lại (swap in) khi cần. Nhờ vậy tổng bộ nhớ các tiến trình dùng có thể lớn hơn RAM thật.\n\nNó không phải đổi chỗ hai tiến trình trên CPU (đó là context switch), không liên quan đổi tên file hay ngôn ngữ chương trình."
+    },
+    {
+      "id": "os-mm-21",
+      "topic": "Phân mảnh trong",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Phân mảnh trong (internal fragmentation)** là gì?",
+      "options": [
+        "Khoảng trống rời rạc nằm giữa các tiến trình đang chạy",
+        "Việc đĩa cứng bị chia thành nhiều phân vùng",
+        "Việc file bị chia nhỏ thành nhiều đoạn trên mạng",
+        "Phần bộ nhớ thừa bên trong một khối đã cấp cho tiến trình nhưng tiến trình không dùng hết"
+      ],
+      "answer": 3,
+      "explanation": "**Phân mảnh trong**: hệ điều hành cấp một khối cố định (ví dụ 4 KB) nhưng tiến trình chỉ dùng 3 KB, 1 KB còn lại nằm **bên trong** khối đó và bị lãng phí. Phân trang thường gặp loại phân mảnh này ở trang cuối của tiến trình.\n\nKhoảng trống rời rạc **giữa** các tiến trình là phân mảnh ngoài; chia phân vùng đĩa và chia file qua mạng là những chuyện khác."
+    },
+    {
+      "id": "os-mm-22",
+      "topic": "Base và limit",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Trong cơ chế bảo vệ bộ nhớ đơn giản, thanh ghi **base** và **limit** dùng để làm gì?",
+      "options": [
+        "Đếm số lệnh mà CPU đã thực thi",
+        "Cho biết địa chỉ bắt đầu và kích thước vùng nhớ mà tiến trình được phép truy cập",
+        "Lưu địa chỉ lệnh kế tiếp",
+        "Giới hạn số file một tiến trình có thể mở"
+      ],
+      "answer": 1,
+      "explanation": "**Base** là địa chỉ bắt đầu của vùng nhớ tiến trình, **limit** là kích thước của vùng. Mỗi địa chỉ truy cập phải nằm trong [base, base + limit), nếu không phần cứng sinh trap — nhờ đó tiến trình không đọc ghi lấn sang vùng của tiến trình khác.\n\nĐếm lệnh không phải việc của chúng; địa chỉ lệnh kế tiếp nằm ở program counter; số file mở là giới hạn của hệ thống file/tiến trình."
+    },
+    {
+      "id": "os-mm-23",
+      "topic": "Phân trang và phân đoạn",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "Điểm khác nhau đơn giản nhất giữa **phân trang (paging)** và **phân đoạn (segmentation)** là gì?",
+      "options": [
+        "Phân trang chỉ dùng cho đĩa, phân đoạn chỉ dùng cho RAM",
+        "Phân trang chia bộ nhớ thành các khối kích thước cố định, còn phân đoạn chia theo các đoạn logic có kích thước thay đổi",
+        "Phân trang dùng cho Windows, phân đoạn dùng cho Linux",
+        "Phân trang chia theo kích thước thay đổi, phân đoạn chia theo kích thước cố định"
+      ],
+      "answer": 1,
+      "explanation": "**Phân trang**: chia không gian địa chỉ thành các **trang** bằng nhau (ví dụ 4 KB), khớp với các **khung trang** vật lý. **Phân đoạn**: chia theo đơn vị logic của chương trình (code, data, stack...) với kích thước **khác nhau**.\n\nHai kỹ thuật đều dùng cho bộ nhớ chính, không gắn riêng với hệ điều hành nào, và phương án cuối đảo ngược sự thật (trang cố định, đoạn thay đổi)."
+    },
+    {
+      "id": "os-mm-24",
+      "topic": "Bộ nhớ chính",
+      "source": "Cuối kỳ HĐH – SPKT (cơ bản)",
+      "question": "**Bộ nhớ chính (RAM)** của máy tính có đặc điểm nào sau đây?",
+      "options": [
+        "Dữ liệu được giữ lại khi mất điện",
+        "Chỉ CPU mới được đọc dữ liệu trong RAM",
+        "Dung lượng luôn lớn hơn đĩa cứng",
+        "Truy cập nhanh hơn đĩa cứng nhưng dữ liệu mất khi tắt máy (bộ nhớ khả biến)"
+      ],
+      "answer": 3,
+      "explanation": "**RAM** là bộ nhớ chính, nhanh hơn đĩa cứng rất nhiều nhưng **khả biến**: mất điện là mất dữ liệu, nên dữ liệu lâu dài phải lưu xuống đĩa. Chương trình phải được nạp vào RAM mới chạy được.\n\nRAM không giữ dữ liệu khi mất điện; thiết bị I/O qua DMA cũng truy cập được RAM chứ không chỉ CPU; và dung lượng RAM thường nhỏ hơn đĩa cứng."
+    },
+    {
       "id": "os-mm-01",
       "topic": "Dịch địa chỉ",
       "source": "Cuối kỳ HĐH – SPKT",
@@ -98,8 +182,8 @@
         "(a), (b) và (c)",
         "(b) và (c)"
       ],
-      "answer": 3,
-      "explanation": "Đáp án đề là **(b) và (c)**.\n\n**Lưu ý — cả ba mệnh đề đều đúng theo sách giáo khoa**, nên câu này đúng ra phải chọn \"(a), (b) và (c)\":\n- **(a)** chính là *định nghĩa* của phân mảnh ngoài: tổng bộ nhớ trống đủ, nhưng bị chia vụn thành nhiều mảnh rời rạc, không mảnh nào đủ lớn.\n- **(b)** đúng: **phân mảnh trong** là phần thừa bên trong khối đã cấp (cấp 4 KB mà tiến trình dùng 3 KB), **phân mảnh ngoài** là khoảng trống rời rạc giữa các khối.\n- **(c)** đúng: **nén (compaction)** dồn các vùng đang dùng lại với nhau để gom các lỗ trống thành một khối liền kề. Điều kiện là hệ thống phải dùng **tái định vị động** lúc chạy.\n\nĐi thi chọn theo đáp án đề, nhưng đừng học thuộc rằng (a) sai — nó là định nghĩa chuẩn."
+      "answer": 2,
+      "explanation": "Cả ba mệnh đề đều đúng theo sách giáo khoa, nên đáp án là **(a), (b) và (c)**.\n\n- **(a)** chính là *định nghĩa* của phân mảnh ngoài: tổng bộ nhớ trống đủ, nhưng bị chia vụn thành nhiều mảnh rời rạc, không mảnh nào đủ lớn.\n- **(b)** đúng: **phân mảnh trong** là phần thừa bên trong khối đã cấp (cấp 4 KB mà tiến trình dùng 3 KB), **phân mảnh ngoài** là khoảng trống rời rạc giữa các khối.\n- **(c)** đúng: **nén (compaction)** dồn các vùng đang dùng lại với nhau để gom các lỗ trống thành một khối liền kề. Điều kiện là hệ thống phải dùng **tái định vị động** lúc chạy.\n\nVì vậy các phương án thiếu bất kỳ mệnh đề nào trong ba mệnh đề trên đều sai (ví dụ '(b) và (c)' sai vì loại bỏ (a), vốn là định nghĩa chuẩn)."
     },
     {
       "id": "os-mm-08",
@@ -256,13 +340,13 @@
       "question": "Với cùng bảng SMT, địa chỉ vật lý **1600K** ứng với địa chỉ logic ⟨s, d⟩ nào?",
       "code": "S   Kích thước   Địa chỉ (base)\n0   300K         200K\n1   200K         1300K\n2   500K         700K\n3   400K         1500K",
       "options": [
-        "s=3; d=420K",
+        "s=3; d=100K",
         "s=0; d=120K",
         "s=2; d=320K",
         "s=1; d=220K"
       ],
       "answer": 0,
-      "explanation": "Cách làm: tìm segment có **khoảng [base, base + size)** chứa địa chỉ vật lý, rồi lấy hiệu.\n```\nS0: [200K, 500K)     S1: [1300K, 1500K)\nS2: [700K, 1200K)    S3: [1500K, 1900K)   ← chứa 1600K\n```\nVậy **s = 3**, và **d = 1600K − 1500K = 100K**.\n\n**Lưu ý:** con số 100K **không có trong phương án nào**; đáp án đề là *s=3; d=420K*, vốn ứng với địa chỉ vật lý 1920K chứ không phải 1600K. Nhiều khả năng đề in nhầm số.\n\nPhần **s = 3** thì chắc chắn đúng, nên đi thi vẫn chọn phương án a. Điều cần nắm là **phương pháp**: xác định khoảng địa chỉ của từng segment rồi trừ base."
+      "explanation": "Cách làm: tìm segment có **khoảng [base, base + size)** chứa địa chỉ vật lý, rồi lấy hiệu.\n```\nS0: [200K, 500K)     S1: [1300K, 1500K)\nS2: [700K, 1200K)    S3: [1500K, 1900K)   ← chứa 1600K\n```\nVậy **s = 3**, và **d = 1600K − 1500K = 100K**.\n\nCác phương án khác sai:\n- s=0, d=120K ứng với 200K + 120K = 320K.\n- s=2, d=320K ứng với 700K + 320K = 1020K.\n- s=1, d=220K vượt kích thước đoạn 1 (200K) nên là địa chỉ không hợp lệ."
     }
   ]
 }

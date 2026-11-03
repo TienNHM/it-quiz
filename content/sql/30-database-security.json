@@ -4,6 +4,76 @@
   "description": "Role, GRANT/REVOKE theo từng tầng, quyền tối thiểu, RLS, SQL injection, lưu mật khẩu và sao lưu trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d30-17",
+      "topic": "SQL injection là gì",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu (cơ bản)",
+      "question": "SQL injection là kiểu tấn công nào?",
+      "options": [
+        "gửi thật nhiều truy vấn để làm máy chủ quá tải",
+        "đoán mật khẩu bằng cách thử lần lượt mọi tổ hợp",
+        "chèn mã SQL độc hại vào dữ liệu nhập để ứng dụng chạy nó như một phần câu lệnh",
+        "cài phần mềm gián điệp lên máy người dùng"
+      ],
+      "answer": 2,
+      "explanation": "Khi ứng dụng ghép dữ liệu người dùng thẳng vào câu SQL, kẻ tấn công có thể nhập các ký tự đặc biệt để thay đổi ý nghĩa câu lệnh. Cách phòng chống chính là truy vấn tham số hóa.\n- Gửi thật nhiều truy vấn là tấn công làm quá tải (DoS).\n- Thử mật khẩu hàng loạt là tấn công vét cạn (brute force).\n- Cài phần mềm gián điệp là một nhóm tấn công khác."
+    },
+    {
+      "id": "sql-d30-18",
+      "topic": "GRANT là gì",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu (cơ bản)",
+      "question": "Lệnh `GRANT` trong SQL dùng để làm gì?",
+      "options": [
+        "cấp quyền cho một role hoặc người dùng (ví dụ quyền đọc trên một bảng)",
+        "thu hồi quyền của người dùng",
+        "xóa người dùng khỏi hệ thống",
+        "sao lưu dữ liệu ra tệp"
+      ],
+      "answer": 0,
+      "explanation": "`GRANT SELECT ON products TO report_user;` cho phép `report_user` đọc bảng `products`.\n- Thu hồi quyền là `REVOKE`, lệnh đối lập.\n- Xóa người dùng (role) là `DROP ROLE`.\n- Sao lưu là việc của công cụ như `pg_dump`."
+    },
+    {
+      "id": "sql-d30-19",
+      "topic": "REVOKE là gì",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu (cơ bản)",
+      "question": "Lệnh `REVOKE` trong SQL có tác dụng gì?",
+      "options": [
+        "thêm một cột mới vào bảng",
+        "thu hồi quyền đã cấp cho một role hoặc người dùng",
+        "cho phép người dùng đăng nhập vào cơ sở dữ liệu",
+        "đổi mật khẩu của người dùng"
+      ],
+      "answer": 1,
+      "explanation": "`REVOKE` gỡ quyền đã cấp, ví dụ `REVOKE DELETE ON orders FROM app_user;`.\n- Thêm cột là `ALTER TABLE ... ADD COLUMN`.\n- Cho phép đăng nhập là thuộc tính `LOGIN` của role (và quyền `CONNECT`), không phải `REVOKE`.\n- Đổi mật khẩu là `ALTER ROLE ... PASSWORD`."
+    },
+    {
+      "id": "sql-d30-20",
+      "topic": "Quyền tối thiểu",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu (cơ bản)",
+      "question": "Nguyên tắc \"quyền tối thiểu\" (least privilege) nghĩa là gì?",
+      "options": [
+        "mọi người dùng đều nên được cấp quyền quản trị cho tiện",
+        "chỉ những người dùng lâu năm mới được cấp quyền",
+        "mỗi quyền chỉ được cấp một lần duy nhất",
+        "mỗi người dùng hay ứng dụng chỉ nên có đúng những quyền cần thiết cho công việc của mình"
+      ],
+      "answer": 3,
+      "explanation": "Cấp ít quyền nhất đủ dùng giúp giảm thiệt hại nếu tài khoản bị lộ hoặc ứng dụng bị khai thác: ví dụ app bán hàng không cần quyền xóa bảng.\n- Cấp quyền quản trị cho tất cả là làm ngược nguyên tắc.\n- Thâm niên không phải tiêu chí cấp quyền.\n- Quyền có thể cấp nhiều lần và thu hồi khi cần."
+    },
+    {
+      "id": "sql-d30-21",
+      "topic": "Sao lưu dữ liệu",
+      "source": "Ngày 30 - Bảo mật cơ sở dữ liệu (cơ bản)",
+      "question": "Vì sao cần sao lưu (backup) cơ sở dữ liệu định kỳ?",
+      "options": [
+        "để cơ sở dữ liệu tự động chạy nhanh hơn",
+        "để khôi phục dữ liệu khi gặp sự cố như xóa nhầm, hỏng đĩa hay bị tấn công",
+        "để không cần đặt mật khẩu nữa",
+        "để tăng số dòng trong các bảng"
+      ],
+      "answer": 1,
+      "explanation": "Bản sao lưu là \"tấm lưới an toàn\": khi dữ liệu bị xóa nhầm, hỏng phần cứng hoặc bị mã hóa tống tiền thì còn bản để khôi phục. Nên thử khôi phục định kỳ để chắc bản sao lưu dùng được.\n- Sao lưu không làm hệ thống chạy nhanh hơn.\n- Có sao lưu vẫn phải đặt mật khẩu và phân quyền.\n- Sao lưu không làm tăng số dòng."
+    },
+    {
       "topic": "Role, user và nhóm quyền",
       "question": "Trong PostgreSQL, user và nhóm quyền (group) khác nhau thế nào?",
       "options": [

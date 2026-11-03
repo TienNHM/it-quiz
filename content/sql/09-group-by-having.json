@@ -4,6 +4,81 @@
   "description": "Nhóm dữ liệu với GROUP BY, lọc nhóm với HAVING, phân biệt WHERE và HAVING, thứ tự thực thi câu SELECT.",
   "questions": [
     {
+      "id": "sql-d09-19",
+      "topic": "GROUP BY là gì",
+      "source": "Ngày 9 - GROUP BY và HAVING (cơ bản)",
+      "question": "Mệnh đề `GROUP BY` làm gì?",
+      "options": [
+        "sắp xếp kết quả theo nhóm chữ cái",
+        "xóa các nhóm dòng trùng nhau khỏi bảng",
+        "gom các dòng có cùng giá trị thành từng nhóm, để tính toán cho mỗi nhóm",
+        "chia bảng thành hai bảng nhỏ"
+      ],
+      "answer": 2,
+      "explanation": "`GROUP BY` gom các dòng **cùng giá trị** thành nhóm, rồi hàm tổng hợp tính riêng cho từng nhóm, ví dụ số đơn của mỗi kênh bán.\n- Sắp xếp là việc của `ORDER BY`.\n- Nó không xóa dữ liệu nào trong bảng.\n- Nó chỉ gộp dòng trong kết quả truy vấn, không tạo thêm bảng.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d09-20",
+      "topic": "HAVING là gì",
+      "source": "Ngày 9 - GROUP BY và HAVING (cơ bản)",
+      "question": "Mệnh đề `HAVING` dùng để làm gì?",
+      "options": [
+        "lọc các nhóm sau khi đã `GROUP BY`",
+        "đặt tên cho nhóm",
+        "sắp xếp các dòng trong nhóm",
+        "chọn cột để nhóm"
+      ],
+      "answer": 0,
+      "explanation": "`HAVING` **lọc nhóm** dựa trên kết quả hàm tổng hợp, ví dụ `HAVING COUNT(*) >= 3`.\n- Đặt tên (bí danh) là việc của `AS`.\n- Sắp xếp là việc của `ORDER BY`.\n- Chọn cột để nhóm là việc của `GROUP BY`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d09-21",
+      "topic": "WHERE khác HAVING",
+      "source": "Ngày 9 - GROUP BY và HAVING (cơ bản)",
+      "question": "Điểm khác nhau cơ bản giữa `WHERE` và `HAVING` là gì?",
+      "options": [
+        "`WHERE` lọc nhóm, `HAVING` lọc từng dòng",
+        "chúng giống hệt nhau, dùng cái nào cũng được",
+        "`HAVING` chỉ dùng cho kiểu chữ",
+        "`WHERE` lọc từng dòng trước khi nhóm, `HAVING` lọc nhóm sau khi nhóm"
+      ],
+      "answer": 3,
+      "explanation": "`WHERE` chạy **trước** `GROUP BY` và lọc từng dòng; `HAVING` chạy **sau** và lọc các nhóm. Hàm tổng hợp như `COUNT(*)` chỉ dùng được trong `HAVING`, không dùng trong `WHERE`.\n- Phát biểu đảo ngược vai trò hai mệnh đề là sai.\n- Hai mệnh đề không thay thế được cho nhau.\n- Kiểu dữ liệu không phải tiêu chí phân biệt chúng.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d09-22",
+      "topic": "Ví dụ đời thường về GROUP BY",
+      "source": "Ngày 9 - GROUP BY và HAVING (cơ bản)",
+      "question": "Bạn muốn biết **mỗi lớp có bao nhiêu học sinh** từ một bảng danh sách học sinh. Cách nào phù hợp nhất?",
+      "options": [
+        "`ORDER BY` lớp rồi tự đếm bằng tay",
+        "`GROUP BY` lớp và dùng `COUNT(*)`",
+        "`WHERE` lớp bằng 0",
+        "`DISTINCT` tên học sinh"
+      ],
+      "answer": 1,
+      "explanation": "Đây là bài toán điển hình của `GROUP BY lop` kèm `COUNT(*)`: mỗi lớp thành một nhóm, rồi đếm số dòng trong nhóm.\n- `ORDER BY` chỉ xếp thứ tự, không đếm hộ bạn.\n- `WHERE lop = 0` chỉ giữ các dòng có lớp bằng 0, không tính cho từng lớp.\n- `DISTINCT` tên chỉ bỏ trùng tên, không cho biết sĩ số mỗi lớp.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d09-23",
+      "topic": "Cột trong SELECT khi có GROUP BY",
+      "source": "Ngày 9 - GROUP BY và HAVING (cơ bản)",
+      "question": "Khi có `GROUP BY`, một cột xuất hiện trong `SELECT` (không bọc hàm tổng hợp) phải thỏa điều kiện nào?",
+      "options": [
+        "phải nằm trong danh sách `GROUP BY`",
+        "phải là cột kiểu số",
+        "phải đứng đầu danh sách chọn cột",
+        "phải có chữ hoa trong tên"
+      ],
+      "answer": 0,
+      "explanation": "Cột trong `SELECT` mà không bọc hàm tổng hợp phải **nằm trong `GROUP BY`** (hoặc phụ thuộc vào khóa chính đã nhóm), vì mỗi nhóm chỉ có thể hiển thị một giá trị cho cột đó.\n- Kiểu dữ liệu của cột không phải điều kiện.\n- Vị trí trong danh sách `SELECT` không quan trọng.\n- Cách viết hoa tên cột không ảnh hưởng.",
+      "kind": "concept"
+    },
+    {
       "id": "sql-d09-01",
       "topic": "GROUP BY cơ bản",
       "source": "Ngày 9 - GROUP BY và HAVING",
@@ -15,7 +90,7 @@
         "```sql\nSELECT channel, COUNT(*)\nFROM orders\nWHERE COUNT(*) > 0\nGROUP BY channel;\n```"
       ],
       "answer": 2,
-      "explanation": "Đáp án đúng là phương án 3: `GROUP BY channel` chia đơn thành hai nhóm online/offline, mỗi nhóm một dòng.\n- Phương án 1 thiếu `GROUP BY`: `channel` là cột thường còn `COUNT(*)` là hàm tổng hợp, PostgreSQL báo lỗi `must appear in the GROUP BY clause or be used in an aggregate function`.\n- Phương án 2 nhóm theo `status` nhưng lại chọn `channel`, cột này không đại diện được cho nhóm nên cũng lỗi.\n- Phương án 4 đặt hàm tổng hợp vào `WHERE`: lỗi `aggregate functions are not allowed in WHERE`."
+      "explanation": "Đáp án đúng là `GROUP BY channel`: nó chia đơn thành hai nhóm online/offline, mỗi nhóm một dòng.\n- Truy vấn thiếu `GROUP BY`: `channel` là cột thường còn `COUNT(*)` là hàm tổng hợp, PostgreSQL báo lỗi `must appear in the GROUP BY clause or be used in an aggregate function`.\n- Truy vấn nhóm theo `status` nhưng lại chọn `channel`, cột này không đại diện được cho nhóm nên cũng lỗi.\n- Truy vấn đặt hàm tổng hợp vào `WHERE`: lỗi `aggregate functions are not allowed in WHERE`."
     },
     {
       "id": "sql-d09-02",
@@ -29,7 +104,7 @@
         "```sql\nSELECT customer_id, COUNT(*)\nFROM orders\nGROUP BY customer_id\nHAVING COUNT(*) >= 3;\n```"
       ],
       "answer": 3,
-      "explanation": "Đáp án đúng là phương án 4: điều kiện trên nhóm nằm trong `HAVING COUNT(*) >= 3`, kết quả 5 khách (1, 2, 3, 4, 6).\n- Phương án 1 chỉ lấy 3 dòng đầu sau khi sắp xếp, không phải mọi khách đạt điều kiện, và ngưỡng 3 đơn không được kiểm tra.\n- Phương án 2 dùng `> 3`, nghĩa là từ 4 đơn trở lên, chỉ còn khách 1 và 2.\n- Phương án 3 dùng alias `so_don` trong `HAVING`. `HAVING` chạy trước `SELECT` nên PostgreSQL báo `column \"so_don\" does not exist`."
+      "explanation": "Đáp án đúng: điều kiện trên nhóm nằm trong `HAVING COUNT(*) >= 3`, kết quả 5 khách (1, 2, 3, 4, 6).\n- Truy vấn `ORDER BY ... LIMIT 3` chỉ lấy 3 dòng đầu sau khi sắp xếp, không phải mọi khách đạt điều kiện, và ngưỡng 3 đơn không được kiểm tra.\n- Truy vấn dùng `> 3` nghĩa là từ 4 đơn trở lên, chỉ còn khách 1 và 2.\n- Truy vấn dùng alias `so_don` trong `HAVING`. `HAVING` chạy trước `SELECT` nên PostgreSQL báo `column \"so_don\" does not exist`."
     },
     {
       "id": "sql-d09-03",
@@ -43,7 +118,7 @@
         "```sql\nSELECT customer_id, COUNT(*)\nFROM orders\nGROUP BY customer_id\nHAVING COUNT(*) >= 3;\n```"
       ],
       "answer": 1,
-      "explanation": "Đáp án đúng là phương án 2: `WHERE` bỏ đơn hủy trước khi nhóm, rồi `HAVING` giữ nhóm từ 3 đơn. Kết quả có 4 khách (1, 2, 3, 6).\n- Phương án 1 đặt `status` trong `HAVING` mà `status` không nằm trong `GROUP BY` nên báo lỗi. Điều kiện trên cột thường phải ở `WHERE`.\n- Phương án 3 đúng chỗ lọc nhưng đổi ngưỡng thành `> 3`, mất khách 3 và 6.\n- Phương án 4 quên loại đơn hủy nên khách 4 (3 đơn, trong đó có 1 đơn hủy) vẫn lọt vào, cho 5 khách."
+      "explanation": "Đáp án đúng: `WHERE` bỏ đơn hủy trước khi nhóm, rồi `HAVING` giữ nhóm từ 3 đơn. Kết quả có 4 khách (1, 2, 3, 6).\n- Truy vấn đặt `status` trong `HAVING` mà `status` không nằm trong `GROUP BY` nên báo lỗi. Điều kiện trên cột thường phải ở `WHERE`.\n- Truy vấn đặt `WHERE` đúng chỗ nhưng đổi ngưỡng thành `> 3`, mất khách 3 và 6.\n- Truy vấn không có `WHERE` quên loại đơn hủy nên khách 4 (3 đơn, trong đó có 1 đơn hủy) vẫn lọt vào, cho 5 khách."
     },
     {
       "id": "sql-d09-04",
@@ -57,7 +132,7 @@
         "Alias chỉ dùng được ở mệnh đề nào có kèm `LIMIT`"
       ],
       "answer": 0,
-      "explanation": "Thứ tự logic là `FROM` → `WHERE` → `GROUP BY` → `HAVING` → `SELECT` → `DISTINCT` → `ORDER BY` → `LIMIT`. Alias chỉ ra đời ở bước `SELECT`, nên `ORDER BY` (chạy sau) thấy được còn `HAVING` (chạy trước) thì không.\n- Phương án 2 sai: `ORDER BY` chạy gần cuối chứ không phải trước `GROUP BY`.\n- Phương án 3 sai: `HAVING COUNT(*) >= 3` vẫn viết bình thường, chỉ là phải lặp lại biểu thức thay vì dùng alias.\n- Phương án 4 sai: `LIMIT` không liên quan đến quy tắc alias."
+      "explanation": "Thứ tự logic là `FROM` → `WHERE` → `GROUP BY` → `HAVING` → `SELECT` → `DISTINCT` → `ORDER BY` → `LIMIT`. Alias chỉ ra đời ở bước `SELECT`, nên `ORDER BY` (chạy sau) thấy được còn `HAVING` (chạy trước) thì không.\n- Ý \"`ORDER BY` chạy trước `GROUP BY`\" sai: nó chạy gần cuối chứ không phải trước `GROUP BY`.\n- Ý \"`HAVING` không dùng được với `COUNT`\" sai: `HAVING COUNT(*) >= 3` vẫn viết bình thường, chỉ là phải lặp lại biểu thức thay vì dùng alias.\n- Ý \"alias chỉ dùng được khi có `LIMIT`\" sai: `LIMIT` không liên quan đến quy tắc alias."
     },
     {
       "id": "sql-d09-05",
@@ -71,7 +146,7 @@
         "```sql\nSELECT order_id,\n       SUM(quantity * unit_price * (1 - discount))\nFROM order_items\nHAVING SUM(quantity * unit_price * (1 - discount))\n       > 30000000;\n```"
       ],
       "answer": 2,
-      "explanation": "Đáp án đúng là phương án 3: nhóm theo `order_id` rồi lọc nhóm bằng `HAVING` trên đúng biểu thức tổng tiền, cho 4 đơn (39, 5, 12, 27).\n- Phương án 1 dùng hàm tổng hợp trong `WHERE`: lỗi `aggregate functions are not allowed in WHERE`.\n- Phương án 2 chạy được nhưng lọc theo `SUM(unit_price)`, bỏ qua số lượng và giảm giá nên chỉ ra 3 đơn, sai kết quả.\n- Phương án 4 thiếu `GROUP BY`: không có nhóm thì cả bảng là một nhóm, và `order_id` trong `SELECT` không đại diện được cho nhóm đó nên PostgreSQL báo lỗi."
+      "explanation": "Đáp án đúng: nhóm theo `order_id` rồi lọc nhóm bằng `HAVING` trên đúng biểu thức tổng tiền, cho 4 đơn (39, 5, 12, 27).\n- Truy vấn dùng hàm tổng hợp trong `WHERE`: lỗi `aggregate functions are not allowed in WHERE`.\n- Truy vấn dùng `HAVING SUM(unit_price)` chạy được nhưng lọc theo `SUM(unit_price)`, bỏ qua số lượng và giảm giá nên chỉ ra 3 đơn, sai kết quả.\n- Truy vấn thiếu `GROUP BY`: không có nhóm thì cả bảng là một nhóm, và `order_id` trong `SELECT` không đại diện được cho nhóm đó nên PostgreSQL báo lỗi."
     },
     {
       "id": "sql-d09-06",
@@ -101,7 +176,7 @@
         "```sql\nSELECT DATE_TRUNC('month', order_date)::date AS thang,\n       COUNT(*) AS so_don\nFROM orders\nWHERE order_date >= '2026-01-01'\nGROUP BY EXTRACT(MONTH FROM order_date)\nORDER BY thang;\n```"
       ],
       "answer": 1,
-      "explanation": "Đáp án đúng là phương án 2: lọc năm 2026 ở `WHERE`, rồi nhóm theo đúng biểu thức `DATE_TRUNC('month', order_date)` nên mỗi tháng một dòng (10 tháng).\n- Phương án 1 nhóm theo `order_date` (cả ngày giờ), nên chỉ những đơn đặt cùng thời điểm mới chung nhóm, ra gần như mỗi đơn một dòng chứ không phải mỗi tháng một dòng.\n- Phương án 3 quên lọc năm: các tháng của 2025 cũng xuất hiện.\n- Phương án 4 nhóm theo số tháng nhưng `SELECT` lại dùng `DATE_TRUNC`, biểu thức này không đại diện được cho nhóm nên PostgreSQL báo lỗi."
+      "explanation": "Đáp án đúng: lọc năm 2026 ở `WHERE`, rồi nhóm theo đúng biểu thức `DATE_TRUNC('month', order_date)` nên mỗi tháng một dòng (10 tháng).\n- Truy vấn nhóm theo `order_date` (cả ngày giờ), nên chỉ những đơn đặt cùng thời điểm mới chung nhóm, ra gần như mỗi đơn một dòng chứ không phải mỗi tháng một dòng.\n- Truy vấn bỏ `WHERE` quên lọc năm: các tháng của 2025 cũng xuất hiện.\n- Truy vấn nhóm theo số tháng nhưng `SELECT` lại dùng `DATE_TRUNC`, biểu thức này không đại diện được cho nhóm nên PostgreSQL báo lỗi."
     },
     {
       "id": "sql-d09-08",
@@ -115,7 +190,7 @@
         "```sql\nSELECT COUNT(*) AS so_don\nFROM orders\nGROUP BY status\nORDER BY so_don DESC;\n```"
       ],
       "answer": 0,
-      "explanation": "Phương án 1 lỗi: `HAVING` chạy trước `SELECT` nên chưa biết alias `so_don` (`column \"so_don\" does not exist`). Phải viết `HAVING COUNT(*) >= 3`.\n- Phương án 2 chạy được: `GROUP BY 1` nhóm theo cột đầu tiên của `SELECT`.\n- Phương án 3 chạy được: PostgreSQL cho dùng alias trong `GROUP BY` (phần mở rộng ngoài chuẩn SQL).\n- Phương án 4 chạy được: không bắt buộc chọn cột nhóm, và `ORDER BY` dùng được alias vì chạy sau `SELECT`."
+      "explanation": "Truy vấn `HAVING so_don >= 3` lỗi: `HAVING` chạy trước `SELECT` nên chưa biết alias `so_don` (`column \"so_don\" does not exist`). Phải viết `HAVING COUNT(*) >= 3`.\n- Truy vấn `GROUP BY 1` chạy được: `GROUP BY 1` nhóm theo cột đầu tiên của `SELECT`.\n- Truy vấn `GROUP BY nam` chạy được: PostgreSQL cho dùng alias trong `GROUP BY` (phần mở rộng ngoài chuẩn SQL).\n- Truy vấn nhóm theo `status` mà chỉ chọn `COUNT(*)` chạy được: không bắt buộc chọn cột nhóm, và `ORDER BY` dùng được alias vì chạy sau `SELECT`."
     },
     {
       "id": "sql-d09-09",
@@ -129,7 +204,7 @@
         "```sql\nSELECT method, COUNT(*)\nFROM payments\nGROUP BY method\nHAVING SUM(amount) >= 8;\n```"
       ],
       "answer": 0,
-      "explanation": "Đáp án đúng là phương án 1: ba phương thức đạt từ 8 lần trở lên là bank_transfer (8), cash (8) và momo (14).\n- Phương án 2 dùng `> 8` nên mất bank_transfer và cash, chỉ còn momo. \"Ít nhất 8\" phải là `>= 8`.\n- Phương án 3 lọc từng dòng bằng `amount >= 8` (số tiền lớn hơn 8 đồng, gần như mọi dòng đều thỏa), không giới hạn số lần nên cả 4 phương thức đều hiện.\n- Phương án 4 lọc theo tổng tiền thay vì số lần, nên card cũng lọt vào."
+      "explanation": "Đáp án đúng: ba phương thức đạt từ 8 lần trở lên là bank_transfer (8), cash (8) và momo (14).\n- Truy vấn dùng `> 8` nên mất bank_transfer và cash, chỉ còn momo. \"Ít nhất 8\" phải là `>= 8`.\n- Truy vấn lọc từng dòng bằng `amount >= 8` (số tiền lớn hơn 8 đồng, gần như mọi dòng đều thỏa), không giới hạn số lần nên cả 4 phương thức đều hiện.\n- Truy vấn lọc theo tổng tiền thay vì số lần, nên card cũng lọt vào."
     },
     {
       "id": "sql-d09-10",
@@ -143,7 +218,7 @@
         "Báo lỗi, vì không được nhóm theo cột có NULL"
       ],
       "answer": 1,
-      "explanation": "Với `GROUP BY`, mọi giá trị NULL được xem là cùng một nhóm, nên hai khách này gộp thành một dòng `NULL | 2`.\n- Phương án 1 sai: quy tắc \"NULL không bằng NULL\" áp dụng cho phép so sánh `=` trong `WHERE`, không áp dụng cho việc gom nhóm.\n- Phương án 3 sai: `GROUP BY` không loại dòng nào, chỉ `WHERE` mới loại dòng.\n- Phương án 4 sai: nhóm theo cột có NULL hoàn toàn hợp lệ."
+      "explanation": "Với `GROUP BY`, mọi giá trị NULL được xem là cùng một nhóm, nên hai khách này gộp thành một dòng `NULL | 2`.\n- Ý \"mỗi khách một nhóm NULL riêng\" sai: quy tắc \"NULL không bằng NULL\" áp dụng cho phép so sánh `=` trong `WHERE`, không áp dụng cho việc gom nhóm.\n- Ý \"`GROUP BY` loại dòng NULL\" sai: `GROUP BY` không loại dòng nào, chỉ `WHERE` mới loại dòng.\n- Ý \"báo lỗi\" sai: nhóm theo cột có NULL hoàn toàn hợp lệ."
     },
     {
       "id": "sql-d09-11",
@@ -157,7 +232,7 @@
         "```sql\nSELECT employee_id, COUNT(*)\nFROM orders\nWHERE channel = 'offline'\nHAVING COUNT(*) >= 5;\n```"
       ],
       "answer": 2,
-      "explanation": "Đáp án đúng là phương án 3: `WHERE` giữ đơn offline, `GROUP BY employee_id` rồi `HAVING COUNT(*) >= 5`. Kết quả là nhân viên 4 và 5, mỗi người 5 đơn.\n- Phương án 1 dùng `> 5` nên không ai đạt, kết quả rỗng.\n- Phương án 2 quên lọc kênh. Đơn online có `employee_id` NULL (25 đơn) tạo thành một nhóm riêng và lọt qua `HAVING`, sai kết quả.\n- Phương án 4 thiếu `GROUP BY` nên `employee_id` không đại diện được cho nhóm duy nhất của cả bảng, PostgreSQL báo lỗi."
+      "explanation": "Đáp án đúng: `WHERE` giữ đơn offline, `GROUP BY employee_id` rồi `HAVING COUNT(*) >= 5`. Kết quả là nhân viên 4 và 5, mỗi người 5 đơn.\n- Truy vấn dùng `> 5` nên không ai đạt, kết quả rỗng.\n- Truy vấn quên lọc kênh. Đơn online có `employee_id` NULL (25 đơn) tạo thành một nhóm riêng và lọt qua `HAVING`, sai kết quả.\n- Truy vấn thiếu `GROUP BY` nên `employee_id` không đại diện được cho nhóm duy nhất của cả bảng, PostgreSQL báo lỗi."
     },
     {
       "id": "sql-d09-12",
@@ -187,7 +262,7 @@
         "```sql\nSELECT status, channel, COUNT(*)\nFROM orders\nGROUP BY status;\n```"
       ],
       "answer": 3,
-      "explanation": "Phương án 4 lỗi: `channel` có trong `SELECT` nhưng không nằm trong `GROUP BY` và không bọc trong hàm tổng hợp. Một nhóm `status` chứa cả đơn online lẫn offline, nên không có một giá trị `channel` duy nhất cho nhóm.\n- Phương án 1 chạy được: `WHERE` lọc dòng trước, `status` nằm trong `GROUP BY`.\n- Phương án 2 chạy được: không có `GROUP BY`, cả bảng là một nhóm và chỉ chọn hàm tổng hợp.\n- Phương án 3 chạy được: `channel` có trong `GROUP BY`, `HAVING` lọc theo hàm tổng hợp."
+      "explanation": "Truy vấn chọn `status, channel` mà chỉ nhóm theo `status` lỗi: `channel` có trong `SELECT` nhưng không nằm trong `GROUP BY` và không bọc trong hàm tổng hợp. Một nhóm `status` chứa cả đơn online lẫn offline, nên không có một giá trị `channel` duy nhất cho nhóm.\n- Truy vấn có `WHERE channel = 'online'` chạy được: `WHERE` lọc dòng trước, `status` nằm trong `GROUP BY`.\n- Truy vấn `HAVING COUNT(*) > 10` không có `GROUP BY` chạy được: không có `GROUP BY`, cả bảng là một nhóm và chỉ chọn hàm tổng hợp.\n- Truy vấn nhóm theo `channel` chạy được: `channel` có trong `GROUP BY`, `HAVING` lọc theo hàm tổng hợp."
     },
     {
       "id": "sql-d09-14",
@@ -221,7 +296,7 @@
         "Nhóm theo tên gộp đơn của hai người trùng tên thành một nhóm, làm sai số liệu"
       ],
       "answer": 3,
-      "explanation": "`GROUP BY` gom mọi dòng có giá trị giống hệt nhau. Tên không phải khóa nên hai người khác nhau mà trùng tên bị gộp thành một nhóm. Khóa chính `customer_id` thì mỗi khách một giá trị riêng. Tên chỉ nên dùng để hiển thị.\n- Phương án 1 sai: nhóm theo cột chữ hoàn toàn hợp lệ.\n- Phương án 2 sai: tốc độ không phải lý do chính, và không đúng \"luôn luôn\".\n- Phương án 3 sai: `customer_id` là cột thường, không phải hàm tổng hợp."
+      "explanation": "`GROUP BY` gom mọi dòng có giá trị giống hệt nhau. Tên không phải khóa nên hai người khác nhau mà trùng tên bị gộp thành một nhóm. Khóa chính `customer_id` thì mỗi khách một giá trị riêng. Tên chỉ nên dùng để hiển thị.\n- Ý \"`GROUP BY` theo cột chữ luôn báo lỗi\" sai: nhóm theo cột chữ hoàn toàn hợp lệ.\n- Ý \"nhóm theo tên luôn chậm hơn\" sai: tốc độ không phải lý do chính, và không đúng \"luôn luôn\".\n- Ý \"`customer_id` là hàm tổng hợp\" sai: `customer_id` là cột thường, không phải hàm tổng hợp."
     },
     {
       "id": "sql-d09-16",
@@ -235,7 +310,7 @@
         "```sql\nSELECT product_id\nFROM order_items\nWHERE COUNT(DISTINCT order_id) >= 3\nGROUP BY product_id;\n```"
       ],
       "answer": 2,
-      "explanation": "Đáp án đúng là phương án 3: `COUNT(DISTINCT order_id) >= 3` đếm số đơn khác nhau của mỗi sản phẩm, cho 9 sản phẩm.\n- Phương án 1 cộng số lượng chứ không đếm đơn: một đơn mua 3 cái cũng đủ điều kiện, ra 11 sản phẩm, thừa.\n- Phương án 2 dùng `> 3` nghĩa là từ 4 đơn trở lên, chỉ còn 5 sản phẩm.\n- Phương án 4 đặt hàm tổng hợp trong `WHERE`: lỗi `aggregate functions are not allowed in WHERE`."
+      "explanation": "Đáp án đúng: `COUNT(DISTINCT order_id) >= 3` đếm số đơn khác nhau của mỗi sản phẩm, cho 9 sản phẩm.\n- Truy vấn dùng `SUM(quantity)` cộng số lượng chứ không đếm đơn: một đơn mua 3 cái cũng đủ điều kiện, ra 11 sản phẩm, thừa.\n- Truy vấn dùng `> 3` nghĩa là từ 4 đơn trở lên, chỉ còn 5 sản phẩm.\n- Truy vấn đặt hàm tổng hợp trong `WHERE`: lỗi `aggregate functions are not allowed in WHERE`."
     },
     {
       "id": "sql-d09-17",

@@ -4,6 +4,76 @@
   "description": "Layered, Clean Architecture, Vertical Slice, DDD chiến thuật, MediatR pipeline, FluentValidation và domain event.",
   "questions": [
     {
+      "id": "dotnet-m16-21",
+      "topic": "Quy tắc phụ thuộc",
+      "source": "Module 16 - Clean Architecture (Uncle Bob) - dependency rule (cơ bản)",
+      "question": "Clean Architecture đề cao điều gì về hướng phụ thuộc giữa các tầng?",
+      "options": [
+        "Tầng trong (domain, nghiệp vụ) không phụ thuộc vào tầng ngoài (database, web, framework).",
+        "Domain nên gọi trực tiếp DbContext để lấy dữ liệu nhanh nhất.",
+        "Mọi tầng đều phải phụ thuộc vào tầng giao diện.",
+        "Database luôn là tầng trung tâm mà mọi tầng khác phụ thuộc."
+      ],
+      "answer": 0,
+      "explanation": "Quy tắc phụ thuộc (dependency rule): mũi tên chỉ đi từ ngoài vào trong, nên nghiệp vụ không biết gì về hạ tầng và dễ test, dễ đổi công nghệ. Domain gọi thẳng DbContext vi phạm đúng quy tắc này. Phụ thuộc vào giao diện cho mọi tầng làm mã nghiệp vụ gắn chặt với UI. Đặt database ở trung tâm là cách nghĩ kiểu cũ, còn Clean Architecture đặt domain ở trung tâm."
+    },
+    {
+      "id": "dotnet-m16-22",
+      "topic": "Entity và Value Object",
+      "source": "Module 16 - DDD chiến thuật (backend thực dụng) (cơ bản)",
+      "question": "Trong DDD, điều gì phân biệt Entity với Value Object?",
+      "options": [
+        "Entity luôn là kiểu số, Value Object luôn là kiểu chuỗi.",
+        "Entity không bao giờ thay đổi, Value Object thì có thể thay đổi.",
+        "Entity có định danh riêng nên hai đối tượng cùng giá trị vẫn là hai thực thể khác nhau, còn Value Object so sánh theo giá trị.",
+        "Hai khái niệm giống nhau, chỉ khác cách đặt tên."
+      ],
+      "answer": 2,
+      "explanation": "Entity được nhận biết bằng Id, ví dụ hai khách hàng trùng tên vẫn là hai người khác nhau; Value Object như Money hay Address được so sánh theo giá trị và thường bất biến. Phương án nói về kiểu số và chuỗi sai vì cả hai có thể chứa nhiều trường. Phương án đảo \"bất biến\" sai: chính Value Object mới nên bất biến, Entity thay đổi trạng thái theo vòng đời. Phương án \"giống nhau\" sai vì khác về cách định danh và so sánh."
+    },
+    {
+      "id": "dotnet-m16-23",
+      "topic": "DTO là gì",
+      "source": "Module 16 - Layered architecture (cổ điển nhưng vẫn hữu ích) (cơ bản)",
+      "question": "DTO (Data Transfer Object) dùng để làm gì?",
+      "options": [
+        "Là lớp chứa toàn bộ logic nghiệp vụ của hệ thống.",
+        "Là đối tượng đơn giản chỉ chứa dữ liệu để truyền qua ranh giới, ví dụ giữa API và client.",
+        "Là bảng trong database dành cho dữ liệu tạm.",
+        "Là công cụ tự động tạo giao diện từ database."
+      ],
+      "answer": 1,
+      "explanation": "DTO chỉ mang dữ liệu, không có hành vi nghiệp vụ, giúp bạn kiểm soát chính xác dữ liệu nào ra vào API mà không lộ thực thể domain. Chứa logic nghiệp vụ là vai trò của entity hay domain service, nên phương án đầu sai. DTO không phải bảng database. Nó cũng không sinh giao diện; việc đó thuộc công cụ scaffolding hoặc framework UI."
+    },
+    {
+      "id": "dotnet-m16-24",
+      "topic": "Dependency Injection",
+      "source": "Module 16 - Layered architecture (cổ điển nhưng vẫn hữu ích) (cơ bản)",
+      "question": "Dependency Injection (DI) trong .NET giúp gì cho kiến trúc phần mềm?",
+      "options": [
+        "Giúp chương trình tự biên dịch nhanh hơn.",
+        "Buộc mọi lớp phải dùng từ khoá static.",
+        "Loại bỏ nhu cầu viết interface cho mọi trường hợp.",
+        "Lớp nhận phụ thuộc qua constructor từ bên ngoài, nên dễ thay bản giả khi test và ít gắn chặt với lớp cụ thể."
+      ],
+      "answer": 3,
+      "explanation": "Với DI, lớp không tự `new` các phụ thuộc mà nhận chúng từ container, nên có thể thay bằng bản giả khi test hoặc đổi cài đặt mà không sửa lớp dùng. DI không liên quan đến tốc độ biên dịch. Nó không bắt dùng static, thậm chí static làm khó test hơn. Nó cũng không loại bỏ interface, thường chính interface mới là cầu nối mà DI inject vào."
+    },
+    {
+      "id": "dotnet-m16-25",
+      "topic": "Domain event là gì",
+      "source": "Module 16 - Domain Events (in-process) (cơ bản)",
+      "question": "Domain event (sự kiện miền) như `OrderPlaced` mô tả điều gì?",
+      "options": [
+        "Một lệnh yêu cầu hệ thống phải làm việc gì đó ngay lập tức.",
+        "Một việc có ý nghĩa nghiệp vụ đã xảy ra, được đặt tên ở thì quá khứ.",
+        "Một lỗi hệ thống cần ghi vào log.",
+        "Một câu truy vấn SQL gửi tới database."
+      ],
+      "answer": 1,
+      "explanation": "Domain event ghi nhận sự việc đã xảy ra, như OrderPlaced hay LeadConverted; các phần khác của hệ thống có thể phản ứng với nó. Lệnh yêu cầu làm gì đó là command, đặt tên theo thể mệnh lệnh như PlaceOrder. Lỗi hệ thống thuộc nhóm exception và logging. Truy vấn SQL là chi tiết hạ tầng, không phải khái niệm nghiệp vụ."
+    },
+    {
       "id": "dotnet-m16-01",
       "topic": "Entity và value object",
       "source": "Module 16 - DDD chiến thuật (backend thực dụng)",

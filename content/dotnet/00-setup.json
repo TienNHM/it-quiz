@@ -4,6 +4,76 @@
   "description": "Cài .NET SDK, chạy chương trình C# đầu tiên và tập debug, đọc thông báo lỗi.",
   "questions": [
     {
+      "id": "dotnet-m00-21",
+      "topic": "Lệnh tạo project mới",
+      "source": "Module 0 - Cài .NET SDK và trình soạn code (cơ bản)",
+      "question": "Lệnh nào dưới đây tạo một project console C# mới từ dòng lệnh?",
+      "options": [
+        "`dotnet start console`",
+        "`dotnet make console`",
+        "`dotnet new console`",
+        "`dotnet create console`"
+      ],
+      "answer": 2,
+      "explanation": "`dotnet new console` dùng template có sẵn để sinh project console, đây là cú pháp chuẩn của .NET CLI (`dotnet new <template>`).\n- `dotnet start`, `dotnet make` và `dotnet create` không phải lệnh của .NET CLI nên báo lỗi không nhận ra lệnh.\n- Cách nhớ: `new` là tạo mới, `run` là chạy, `build` là biên dịch."
+    },
+    {
+      "id": "dotnet-m00-22",
+      "topic": "Lệnh chạy chương trình",
+      "source": "Module 0 - Cài .NET SDK và trình soạn code (cơ bản)",
+      "question": "Bạn đã có project C# và muốn biên dịch rồi chạy thử ngay. Lệnh nào làm cả hai việc đó một lần?",
+      "options": [
+        "`dotnet run`",
+        "`dotnet new`",
+        "`dotnet restore`",
+        "`dotnet clean`"
+      ],
+      "answer": 0,
+      "explanation": "`dotnet run` biên dịch (nếu cần) rồi chạy chương trình, rất tiện khi học.\n- `dotnet new` chỉ tạo project mới, không chạy gì.\n- `dotnet restore` chỉ tải các gói NuGet cần thiết về máy.\n- `dotnet clean` xoá kết quả biên dịch cũ, ngược với việc chạy."
+    },
+    {
+      "id": "dotnet-m00-23",
+      "topic": "C# và .NET",
+      "source": "Module 0 - Cài .NET SDK và trình soạn code (cơ bản)",
+      "question": "Câu nào phân biệt đúng giữa C# và .NET?",
+      "options": [
+        "C# là hệ điều hành, .NET là trình soạn code",
+        "C# là một ngôn ngữ lập trình, .NET là nền tảng gồm runtime và thư viện để chạy code",
+        "C# và .NET là hai tên gọi của cùng một thứ",
+        ".NET là ngôn ngữ, còn C# là nền tảng chạy code"
+      ],
+      "answer": 1,
+      "explanation": "C# là **ngôn ngữ** bạn dùng để viết code, còn .NET là **nền tảng** gồm runtime, thư viện lớp và công cụ để biên dịch và chạy code đó.\n- C# không phải hệ điều hành và .NET không phải trình soạn code.\n- Hai thứ này đi cùng nhau nhưng khác vai trò, nên không phải cùng một thứ.\n- Đảo ngược vai trò (.NET là ngôn ngữ) cũng sai: .NET còn chạy được cả F# và VB."
+    },
+    {
+      "id": "dotnet-m00-24",
+      "topic": "Lỗi biên dịch",
+      "source": "Module 0 - Cài .NET SDK và trình soạn code (cơ bản)",
+      "question": "Lỗi biên dịch (compile error) xảy ra vào lúc nào?",
+      "options": [
+        "Khi người dùng nhập sai dữ liệu lúc chương trình đang chạy",
+        "Khi máy hết bộ nhớ",
+        "Khi trình biên dịch dịch code, trước khi chương trình chạy, ví dụ thiếu dấu chấm phẩy",
+        "Khi tắt chương trình"
+      ],
+      "answer": 2,
+      "explanation": "Lỗi biên dịch được trình biên dịch phát hiện **trước khi chạy**, thường do sai cú pháp hoặc sai kiểu (ví dụ thiếu `;`), và chương trình không chạy được cho tới khi sửa.\n- Nhập sai dữ liệu lúc chạy gây lỗi runtime, không phải lỗi biên dịch.\n- Hết bộ nhớ cũng là sự cố lúc chạy.\n- Tắt chương trình là thao tác bình thường, không phải lỗi."
+    },
+    {
+      "id": "dotnet-m00-25",
+      "topic": "Gói NuGet",
+      "source": "Module 0 - Cài .NET SDK và trình soạn code (cơ bản)",
+      "question": "NuGet trong thế giới .NET là gì?",
+      "options": [
+        "Một loại trình soạn code",
+        "Một hệ quản trị cơ sở dữ liệu",
+        "Một phiên bản của ngôn ngữ C#",
+        "Nơi chia sẻ và tải các gói thư viện để dùng trong project"
+      ],
+      "answer": 3,
+      "explanation": "NuGet là kho gói (package manager) của .NET: bạn thêm thư viện bằng lệnh như `dotnet add package <tên>` thay vì tự chép file DLL.\n- Trình soạn code là VS Code, Visual Studio hay Rider.\n- Cơ sở dữ liệu là SQL Server, PostgreSQL... không phải NuGet.\n- Phiên bản C# (12, 13, 14...) là chuyện của ngôn ngữ, không liên quan NuGet."
+    },
+    {
       "id": "dotnet-m00-01",
       "topic": "SDK và Runtime",
       "source": "Module 0 - Cài .NET SDK và trình soạn code",

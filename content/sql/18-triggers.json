@@ -4,6 +4,79 @@
   "description": "Trigger function, BEFORE/AFTER, ROW/STATEMENT, NEW/OLD, WHEN và khi nào không nên dùng trigger trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d18-15",
+      "topic": "Trigger là gì",
+      "source": "Ngày 18 - Trigger (cơ bản)",
+      "question": "Trigger (bộ kích hoạt) trong cơ sở dữ liệu là gì?",
+      "options": [
+        "Một đoạn code tự động chạy khi có sự kiện `INSERT`, `update` hoặc `DELETE` trên bảng",
+        "Một nút bấm trong giao diện ứng dụng",
+        "Một loại index",
+        "Một lệnh phải gọi bằng tay bằng `CALL`"
+      ],
+      "answer": 0,
+      "explanation": "Trigger gắn với một bảng và tự chạy khi có sự kiện ghi dữ liệu xảy ra, không cần ai gọi.\n- Nó nằm trong database, không phải nút bấm giao diện.\n- Nó không phải index.\n- Procedure mới được gọi tay bằng `CALL`; trigger thì tự chạy."
+    },
+    {
+      "id": "sql-d18-16",
+      "topic": "BEFORE và AFTER",
+      "source": "Ngày 18 - Trigger (cơ bản)",
+      "question": "Trigger `BEFORE INSERT` và `AFTER INSERT` khác nhau chủ yếu ở điểm nào?",
+      "options": [
+        "`BEFORE` chỉ chạy vào buổi sáng",
+        "`BEFORE` chạy trước khi dòng được ghi, `AFTER` chạy sau khi dòng đã được ghi",
+        "`AFTER` chạy trước, `BEFORE` chạy sau",
+        "Hai loại này hoàn toàn giống nhau"
+      ],
+      "answer": 1,
+      "explanation": "`BEFORE` chạy trước khi dòng được ghi, nên còn sửa được dữ liệu sắp ghi hoặc chặn lệnh; `AFTER` chạy sau khi dòng đã ghi, hợp với việc như ghi log.\n- Trigger không liên quan tới giờ giấc.\n- Thứ tự không đảo ngược: `BEFORE` luôn đứng trước.\n- Hai loại khác nhau về thời điểm nên không giống nhau."
+    },
+    {
+      "id": "sql-d18-17",
+      "topic": "OLD và NEW",
+      "source": "Ngày 18 - Trigger (cơ bản)",
+      "question": "Trong trigger `BEFORE UPDATE` ở mức dòng, `OLD` và `NEW` là gì?",
+      "options": [
+        "`OLD` là bảng cũ, `NEW` là bảng mới",
+        "`OLD` là người dùng cũ, `NEW` là người dùng mới",
+        "`OLD` là giá trị của dòng trước khi sửa, `NEW` là giá trị dòng sau khi sửa",
+        "Hai tên này chỉ dùng được trong `select`"
+      ],
+      "answer": 2,
+      "explanation": "`OLD` giữ dòng như trước khi `UPDATE`, `NEW` giữ dòng với giá trị mới, nên so sánh `OLD.price` với `NEW.price` là biết giá đã đổi thế nào.\n- Chúng là dòng chứ không phải cả bảng.\n- Không liên quan tới người dùng.\n- Chúng chỉ có trong trigger function, không dùng trong `SELECT` thông thường."
+    },
+    {
+      "id": "sql-d18-18",
+      "topic": "Ví dụ dùng trigger",
+      "source": "Ngày 18 - Trigger (cơ bản)",
+      "question": "Trường hợp nào sau đây là ví dụ hợp lý để dùng trigger?",
+      "options": [
+        "Tính tổng hai số trong một câu `select`",
+        "Tạo bảng mới trong lần đầu cài đặt",
+        "Sắp xếp kết quả theo ngày",
+        "Tự ghi vào bảng nhật ký (audit log) mỗi khi giá sản phẩm bị sửa"
+      ],
+      "answer": 3,
+      "explanation": "Trigger hợp với việc phải xảy ra mỗi khi dữ liệu đổi, như ghi nhật ký ai sửa gì, vì nó không thể bị quên hay bị bỏ qua.\n- Tính tổng hai số chỉ cần biểu thức trong `SELECT`.\n- Tạo bảng dùng `CREATE TABLE`, không gắn với sự kiện ghi dữ liệu.\n- Sắp xếp kết quả là việc của `ORDER BY`.",
+      "tables": [
+        "products"
+      ]
+    },
+    {
+      "id": "sql-d18-19",
+      "topic": "Gọi trigger bằng tay",
+      "source": "Ngày 18 - Trigger (cơ bản)",
+      "question": "Bạn có thể gọi trực tiếp một trigger giống như gọi function bằng `SELECT` không?",
+      "options": [
+        "Có, bằng `select trigger_name()`",
+        "Có, bằng `CALL trigger_name`",
+        "Không: trigger tự chạy khi sự kiện xảy ra, bạn chỉ có thể gây ra sự kiện đó",
+        "Có, bằng cách gõ tên trigger vào psql"
+      ],
+      "answer": 2,
+      "explanation": "Trigger không được gọi trực tiếp; nó chạy khi có `INSERT`, `UPDATE` hay `DELETE` trên bảng gắn với nó. Muốn kích hoạt thì thực hiện chính sự kiện đó.\n- `SELECT trigger_name()` và `CALL trigger_name` đều không áp dụng được vì trigger không phải function hay procedure gọi tay.\n- Gõ tên trigger vào psql cũng không làm nó chạy.\nTrigger function (hàm đứng sau trigger) thì không gọi được ngoài ngữ cảnh trigger."
+    },
+    {
       "id": "sql-d18-01",
       "topic": "AFTER không sửa được NEW",
       "source": "Ngày 18 - Trigger",

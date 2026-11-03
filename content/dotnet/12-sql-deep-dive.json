@@ -4,6 +4,76 @@
   "description": "Thiết kế schema CRM, khác biệt SQL Server/PostgreSQL, query nâng cao, index, tối ưu truy vấn và giao dịch.",
   "questions": [
     {
+      "id": "dotnet-m12-21",
+      "topic": "Khoá chính",
+      "source": "Module 12 - Database Design cho CRM (cơ bản)",
+      "question": "Khoá chính (PRIMARY KEY) trong một bảng có đặc điểm nào?",
+      "options": [
+        "Giá trị của nó xác định duy nhất mỗi dòng và không được NULL.",
+        "Cho phép nhiều dòng trùng giá trị miễn là khác cột khác.",
+        "Bắt buộc phải là kiểu chuỗi.",
+        "Chỉ dùng được một lần cho cả cơ sở dữ liệu."
+      ],
+      "answer": 0,
+      "explanation": "Khoá chính là cột hoặc nhóm cột định danh duy nhất từng dòng; nó không được trùng và không được NULL. Phương án cho phép trùng sai vì đó là mô tả của cột thường, không phải khoá. Phương án bắt buộc kiểu chuỗi sai vì khoá thường là số nguyên hoặc GUID. Phương án chỉ một lần trong cả database sai vì mỗi bảng có khoá chính của riêng mình."
+    },
+    {
+      "id": "dotnet-m12-22",
+      "topic": "INNER JOIN",
+      "source": "Module 12 - Queries nâng cao (cơ bản)",
+      "question": "Mệnh đề `INNER JOIN` giữa hai bảng trả về những dòng nào?",
+      "options": [
+        "Toàn bộ dòng của bảng bên trái kể cả khi không khớp.",
+        "Tất cả dòng của cả hai bảng, ghép ngẫu nhiên.",
+        "Chỉ các dòng có giá trị khớp điều kiện ở cả hai bảng.",
+        "Chỉ các dòng ở bảng bên trái không có dòng khớp bên phải."
+      ],
+      "answer": 2,
+      "explanation": "INNER JOIN giữ lại cặp dòng thoả điều kiện nối, dòng không khớp ở một phía bị loại. Phương án giữ toàn bộ bảng trái mô tả LEFT JOIN. Phương án ghép ngẫu nhiên sai vì phép nối luôn dựa trên điều kiện, còn ghép mọi cặp là CROSS JOIN. Phương án chỉ dòng không khớp bên phải sai vì đó là kiểu lọc anti join (LEFT JOIN rồi lọc NULL), không phải INNER JOIN."
+    },
+    {
+      "id": "dotnet-m12-23",
+      "topic": "Index là gì",
+      "source": "Module 12 - Indexing (cơ bản)",
+      "question": "Index trong cơ sở dữ liệu giống thứ gì nhất ngoài đời thực, và dùng để làm gì?",
+      "options": [
+        "Giống bản sao lưu, giúp khôi phục dữ liệu khi mất điện.",
+        "Giống mục lục của cuốn sách, giúp tìm dòng nhanh hơn mà không phải đọc cả bảng.",
+        "Giống khoá cửa, ngăn người khác đọc dữ liệu.",
+        "Giống tờ hoá đơn, ghi lại mọi thay đổi của bảng."
+      ],
+      "answer": 1,
+      "explanation": "Index là cấu trúc phụ giúp tìm kiếm theo cột nhanh hơn, giống mục lục chỉ thẳng đến trang cần đọc. Đổi lại, nó tốn thêm chỗ lưu và làm thao tác ghi chậm hơn một chút. Bản sao lưu là việc của backup, không phải index. Khoá cửa gần với phân quyền hoặc lock, không phải index. Ghi lại thay đổi giống audit log hay transaction log, cũng không phải index."
+    },
+    {
+      "id": "dotnet-m12-24",
+      "topic": "Transaction",
+      "source": "Module 12 - Transactions và Locking (cơ bản)",
+      "question": "Một transaction trong cơ sở dữ liệu bảo đảm điều nào khi lỗi xảy ra giữa chừng?",
+      "options": [
+        "Chỉ thao tác đầu tiên được giữ lại.",
+        "Các thao tác thành công được giữ, thao tác lỗi bị bỏ qua mà không báo.",
+        "Database tự động sửa lỗi rồi chạy lại thao tác sai.",
+        "Hoặc mọi thao tác trong đó được ghi nhận, hoặc không thao tác nào (rollback)."
+      ],
+      "answer": 3,
+      "explanation": "Tính nguyên tử (atomicity) của transaction nghĩa là tất cả hoặc không gì cả; khi lỗi thì rollback về trạng thái trước đó. Phương án \"chỉ thao tác đầu tiên\" sai vì không có ưu tiên nào cho bước đầu. Phương án giữ thao tác thành công sai vì như vậy dữ liệu bị lệch dở dang, đúng thứ transaction sinh ra để tránh. Phương án tự động sửa và chạy lại sai vì database không đoán ý định; ứng dụng mới quyết định có thử lại hay không."
+    },
+    {
+      "id": "dotnet-m12-25",
+      "topic": "WHERE và HAVING",
+      "source": "Module 12 - Queries nâng cao (cơ bản)",
+      "question": "Khác biệt cơ bản giữa `WHERE` và `HAVING` là gì?",
+      "options": [
+        "WHERE lọc nhóm, HAVING lọc từng dòng.",
+        "WHERE lọc dòng trước khi gom nhóm, HAVING lọc nhóm sau khi đã gom nhóm.",
+        "Hai mệnh đề này hoàn toàn giống nhau, dùng cái nào cũng được.",
+        "HAVING chỉ dùng được với câu lệnh INSERT."
+      ],
+      "answer": 1,
+      "explanation": "WHERE chạy trước GROUP BY nên chỉ thấy từng dòng và không dùng được hàm tổng hợp. HAVING chạy sau GROUP BY nên lọc theo kết quả tổng hợp như COUNT hay SUM. Phương án đảo vai trò là sai vì nói ngược thứ tự xử lý. Phương án \"giống nhau\" sai vì điều kiện dùng hàm tổng hợp chỉ hợp lệ trong HAVING. Phương án INSERT sai vì HAVING đi kèm câu SELECT có gom nhóm."
+    },
+    {
       "id": "dotnet-m12-01",
       "topic": "LEFT JOIN và WHERE",
       "source": "Module 12 - Queries nâng cao",

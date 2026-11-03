@@ -4,6 +4,76 @@
   "description": "Event-driven, outbox, inbox, retry/backoff, Kafka vs RabbitMQ và CDC: lỗi mất tin, trùng tin và cách thiết kế consumer an toàn.",
   "questions": [
     {
+      "id": "dotnet-m17-21",
+      "topic": "Message queue",
+      "source": "Module 17 - Event-driven architecture (EDA) - khi nào dùng? (cơ bản)",
+      "question": "Message queue (hàng đợi tin nhắn) như RabbitMQ giúp gì cho hệ thống?",
+      "options": [
+        "Bảo đảm mọi request HTTP luôn trả về dưới một mili giây.",
+        "Thay thế hoàn toàn database của dịch vụ.",
+        "Tự động viết lại code của consumer khi có lỗi.",
+        "Cho phép bên gửi và bên nhận giao tiếp không đồng bộ, tách rời nhau về thời gian."
+      ],
+      "answer": 3,
+      "explanation": "Hàng đợi đứng giữa producer và consumer: producer gửi xong là đi tiếp, consumer xử lý khi sẵn sàng, nên hai bên không cần cùng online và có thể chịu được lúc tải đột biến. Nó không đảm bảo tốc độ HTTP. Nó không thay database vì tin nhắn chỉ là dữ liệu truyền tạm. Nó cũng không sửa code, lỗi consumer vẫn phải được xử lý bằng retry hoặc dead-letter."
+    },
+    {
+      "id": "dotnet-m17-22",
+      "topic": "Idempotent là gì",
+      "source": "Module 17 - Messaging fears: lost & duplicates (cơ bản)",
+      "question": "Một thao tác được gọi là idempotent khi nào?",
+      "options": [
+        "Khi nó chạy rất nhanh dưới một giây.",
+        "Khi thực hiện nó một lần hay nhiều lần cho cùng kết quả cuối cùng.",
+        "Khi nó chỉ chạy được trên một server duy nhất.",
+        "Khi nó không bao giờ ném exception."
+      ],
+      "answer": 1,
+      "explanation": "Idempotent nghĩa là lặp lại không làm đổi kết quả ngoài lần đầu, ví dụ đặt trạng thái thành \"đã thanh toán\" thì gọi hai lần vẫn thế. Điều này quan trọng vì message hay request có thể bị giao trùng. Tốc độ không quyết định tính idempotent. Số lượng server cũng không liên quan. Việc không ném exception là chuyện khác; thao tác cộng thêm 10 điểm không lỗi nhưng không idempotent."
+    },
+    {
+      "id": "dotnet-m17-23",
+      "topic": "Exponential backoff",
+      "source": "Module 17 - Retry và backoff (cơ bản)",
+      "question": "Exponential backoff khi retry nghĩa là gì?",
+      "options": [
+        "Thời gian chờ giữa các lần thử lại tăng dần, ví dụ 1 giây, 2 giây, 4 giây.",
+        "Thử lại liên tục không nghỉ cho tới khi thành công.",
+        "Chỉ thử lại đúng một lần rồi bỏ cuộc.",
+        "Thời gian chờ giảm dần sau mỗi lần thử."
+      ],
+      "answer": 0,
+      "explanation": "Backoff tăng dần giúp dịch vụ đang quá tải có thời gian hồi phục thay vì bị dồn thêm request. Thử liên tục không nghỉ chỉ làm tải nặng hơn. Thử đúng một lần không phải backoff mà là retry đơn giản. Thời gian chờ giảm dần làm ngược lại mục đích, vì sẽ dồn dập nhiều hơn khi dịch vụ vẫn chưa ổn. Thường còn thêm jitter để các client không retry cùng lúc."
+    },
+    {
+      "id": "dotnet-m17-24",
+      "topic": "Kafka là gì",
+      "source": "Module 17 - Kafka vs RabbitMQ thực dụng (cơ bản)",
+      "question": "Điểm nào mô tả đúng nhất Apache Kafka?",
+      "options": [
+        "Là một hệ quản trị cơ sở dữ liệu quan hệ dùng SQL.",
+        "Là trình duyệt web dành riêng cho lập trình viên.",
+        "Là nền tảng log sự kiện phân tán, lưu message theo partition và cho phép đọc lại.",
+        "Là công cụ biên dịch mã C# sang mã máy."
+      ],
+      "answer": 2,
+      "explanation": "Kafka lưu các sự kiện thành log chia theo partition, giữ lại một thời gian và cho phép nhiều consumer group đọc độc lập hoặc đọc lại từ vị trí cũ. Nó không phải database quan hệ và không dùng SQL theo nghĩa thông thường. Không phải trình duyệt web. Cũng không liên quan đến biên dịch mã nguồn, đó là việc của compiler."
+    },
+    {
+      "id": "dotnet-m17-25",
+      "topic": "Saga là gì",
+      "source": "Module 17 - Mở rộng và đào sâu (cơ bản)",
+      "question": "Mẫu Saga trong hệ phân tán được dùng để làm gì?",
+      "options": [
+        "Gom mọi service vào một database và một transaction duy nhất.",
+        "Mã hoá message giữa các service.",
+        "Đếm số lần một service bị gọi để tính tiền.",
+        "Điều phối chuỗi bước qua nhiều service, và nếu một bước lỗi thì chạy các bước bù trừ cho bước đã xong."
+      ],
+      "answer": 3,
+      "explanation": "Khi một nghiệp vụ trải qua nhiều service, không có một transaction chung, nên Saga chia thành từng bước cục bộ và dùng bước bù trừ (ví dụ hoàn tiền) khi cần quay lui. Gom vào một database chung đi ngược tinh thần tách service. Mã hoá message là việc của TLS hoặc tầng bảo mật. Đếm lượt gọi để tính tiền là chuyện đo lường, không liên quan đến Saga."
+    },
+    {
       "id": "dotnet-m17-01",
       "topic": "Schema versioning",
       "source": "Module 17 - Event-driven architecture (EDA) - khi nào dùng?",

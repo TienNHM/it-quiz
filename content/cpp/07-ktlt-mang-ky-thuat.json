@@ -4,6 +4,76 @@
   "description": "Các kỹ thuật xử lý mảng 1 chiều, 2 chiều: lính canh, tìm nhị phân, đếm phân phối, số lớn, ma phương, dò mìn, mảng đánh dấu và chia để trị.",
   "questions": [
     {
+      "id": "cpp-c07-25",
+      "topic": "Ma phương là gì",
+      "source": "KTLT C07 - kỹ thuật xử lý mảng (cơ bản)",
+      "question": "Ma phương (magic square) cấp n là gì?",
+      "options": [
+        "Ma trận có mọi phần tử bằng 0",
+        "Ma trận chỉ có một hàng",
+        "Ma trận mà mỗi hàng được sắp xếp giảm dần",
+        "Ma trận vuông n x n chứa các số sao cho tổng mỗi hàng, mỗi cột và hai đường chéo đều bằng nhau"
+      ],
+      "answer": 3,
+      "explanation": "Ma phương là ma trận vuông (thường chứa 1..n²) mà các hàng, cột và hai đường chéo có cùng tổng. Ma trận toàn số 0 hay chỉ một hàng không phải định nghĩa đó, và sắp xếp từng hàng không liên quan."
+    },
+    {
+      "id": "cpp-c07-26",
+      "topic": "Hệ nhị phân",
+      "source": "KTLT C07 - kỹ thuật xử lý mảng (cơ bản)",
+      "question": "Hệ nhị phân (cơ số 2) dùng những chữ số nào?",
+      "options": [
+        "0 đến 9",
+        "0 đến 7",
+        "0 đến 9 và A đến F",
+        "Chỉ 0 và 1"
+      ],
+      "answer": 3,
+      "explanation": "Cơ số 2 chỉ có hai chữ số 0 và 1. Dãy 0-9 là hệ thập phân (cơ số 10), 0-7 là hệ bát phân (cơ số 8), còn 0-9 cùng A-F là hệ thập lục phân (cơ số 16)."
+    },
+    {
+      "id": "cpp-c07-27",
+      "topic": "Số nguyên lớn",
+      "source": "KTLT C07 - kỹ thuật xử lý mảng (cơ bản)",
+      "question": "Vì sao khi làm việc với số nguyên rất lớn (hàng trăm chữ số) ta thường lưu chúng bằng chuỗi hoặc mảng chữ số?",
+      "options": [
+        "Vì chuỗi tính toán nhanh hơn số",
+        "Vì các kiểu như `int`, `long long` chỉ chứa được số trong một miền giá trị giới hạn",
+        "Vì C++ không cho khai báo số nguyên",
+        "Vì mảng chữ số chiếm ít bộ nhớ hơn một `int`"
+      ],
+      "answer": 1,
+      "explanation": "`int` và `long long` có miền giá trị hữu hạn (khoảng 10^9 và 9·10^18), số quá lớn sẽ tràn. Lưu từng chữ số trong chuỗi/mảng cho phép độ dài tuỳ ý, dù không nhanh hơn và tốn nhiều bộ nhớ hơn; C++ vẫn có kiểu số nguyên."
+    },
+    {
+      "id": "cpp-c07-28",
+      "topic": "Chia để trị",
+      "source": "KTLT C07 - kỹ thuật xử lý mảng (cơ bản)",
+      "question": "Ý tưởng chung của \"chia để trị\" là gì?",
+      "options": [
+        "Chia bài toán thành các bài toán con nhỏ hơn, giải từng phần rồi kết hợp kết quả",
+        "Giải bài toán bằng cách thử tất cả khả năng rồi chọn một",
+        "Luôn chọn phương án tốt nhất tại mỗi bước và không quay lại",
+        "Lưu kết quả đã tính vào bảng để không tính lại"
+      ],
+      "answer": 0,
+      "explanation": "Chia để trị tách bài toán thành các phần nhỏ độc lập hơn, giải rồi gộp. Thử mọi khả năng là vét cạn, chọn tốt nhất từng bước là tham lam, còn lưu kết quả vào bảng để dùng lại là quy hoạch động."
+    },
+    {
+      "id": "cpp-c07-29",
+      "topic": "Mảng đánh dấu",
+      "source": "KTLT C07 - kỹ thuật xử lý mảng (cơ bản)",
+      "question": "Mảng đánh dấu (ví dụ `bool daXet[100]`) thường dùng để làm gì?",
+      "options": [
+        "Tăng tốc độ biên dịch",
+        "Thay thế hoàn toàn vòng lặp",
+        "Ghi nhớ giá trị hay vị trí nào đã được xét hoặc đã xuất hiện",
+        "Tự động sắp xếp dữ liệu"
+      ],
+      "answer": 2,
+      "explanation": "Mảng đánh dấu ghi lại trạng thái \"đã gặp/đã xét\" cho từng giá trị hoặc vị trí, giúp kiểm tra nhanh trùng lặp, thống kê. Nó không ảnh hưởng tốc độ biên dịch, không thay vòng lặp và không tự sắp xếp."
+    },
+    {
       "id": "cpp-c07-01",
       "topic": "Tìm kiếm bằng lính canh",
       "source": "NMLT C07 - 1.1 SEARCH_flag.cpp",

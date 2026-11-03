@@ -4,6 +4,76 @@
   "description": "Bài toán con gối nhau, công thức truy hồi, bảng QHD, truy vết, cái túi, LCS, đổi tiền và Fibonacci có nhớ.",
   "questions": [
     {
+      "id": "cpp-c11-25",
+      "topic": "Quy hoạch động là gì",
+      "source": "KTLT C11 - quy hoạch động (cơ bản)",
+      "question": "Ý tưởng cốt lõi của quy hoạch động (QHD) là gì?",
+      "options": [
+        "Thử mọi khả năng mà không lưu kết quả",
+        "Lưu lại kết quả các bài toán con để dùng lại, không tính lặp",
+        "Luôn chọn lựa chọn tốt nhất hiện tại và không bao giờ quay lại",
+        "Sắp xếp dữ liệu trước khi xử lý"
+      ],
+      "answer": 1,
+      "explanation": "QHD chia bài toán thành bài toán con gối nhau và lưu kết quả để khỏi tính lại. Thử mọi khả năng không lưu là vét cạn, chọn tốt nhất hiện tại là tham lam, còn sắp xếp chỉ là bước chuẩn bị không phải ý tưởng của QHD."
+    },
+    {
+      "id": "cpp-c11-26",
+      "topic": "Công thức truy hồi",
+      "source": "KTLT C11 - quy hoạch động (cơ bản)",
+      "question": "\"Công thức truy hồi\" trong QHD là gì?",
+      "options": [
+        "Công thức đổi số nhị phân sang thập phân",
+        "Công thức tính thời gian chạy của chương trình",
+        "Công thức tính lời giải bài toán lớn từ lời giải các bài toán con nhỏ hơn",
+        "Công thức khai báo mảng"
+      ],
+      "answer": 2,
+      "explanation": "Truy hồi biểu diễn kết quả bước hiện tại qua các bước trước, ví dụ F(n) = F(n-1) + F(n-2). Nó không phải công thức đổi cơ số, đo thời gian hay khai báo mảng."
+    },
+    {
+      "id": "cpp-c11-27",
+      "topic": "Bài toán cái túi",
+      "source": "KTLT C11 - quy hoạch động (cơ bản)",
+      "question": "Bài toán cái túi (knapsack) hỏi điều gì?",
+      "options": [
+        "Sắp xếp các vật theo khối lượng",
+        "Đếm số vật trong túi",
+        "Tìm vật nặng nhất trong túi",
+        "Chọn các vật có khối lượng và giá trị sao cho tổng khối lượng không vượt sức chứa mà tổng giá trị lớn nhất"
+      ],
+      "answer": 3,
+      "explanation": "Cái túi cần chọn tập vật vừa sức chứa và tối đa giá trị. Chỉ sắp xếp, đếm số vật hay tìm vật nặng nhất đều không phải bài toán tối ưu chọn vật đó."
+    },
+    {
+      "id": "cpp-c11-28",
+      "topic": "Dãy con",
+      "source": "KTLT C11 - quy hoạch động (cơ bản)",
+      "question": "Với mảng [3, 1, 4, 1, 5], dãy [3, 4, 5] có phải một \"dãy con\" không?",
+      "options": [
+        "Không, vì dãy con phải gồm các phần tử liền nhau",
+        "Có, vì dãy con chỉ cần giữ nguyên thứ tự, không cần các phần tử liền nhau",
+        "Không, vì dãy con phải có độ dài bằng mảng gốc",
+        "Không, vì dãy con phải được sắp xếp giảm dần"
+      ],
+      "answer": 1,
+      "explanation": "Dãy con được tạo bằng cách bỏ đi một số phần tử và giữ nguyên thứ tự; [3, 4, 5] lấy từ vị trí 0, 2, 4 nên hợp lệ. Phần tử liền nhau là \"đoạn con\"; dãy con không cần cùng độ dài mảng gốc và không bị bắt buộc giảm dần."
+    },
+    {
+      "id": "cpp-c11-29",
+      "topic": "Dãy con tăng dài nhất",
+      "source": "KTLT C11 - quy hoạch động (cơ bản)",
+      "question": "Bài toán \"dãy con tăng dài nhất\" yêu cầu gì?",
+      "options": [
+        "Tìm đoạn con liền nhau có tổng lớn nhất",
+        "Sắp xếp mảng theo thứ tự tăng dần",
+        "Tìm dãy con dài nhất mà các phần tử tăng dần theo thứ tự xuất hiện",
+        "Tìm phần tử lớn nhất của mảng"
+      ],
+      "answer": 2,
+      "explanation": "Cần tìm dãy con (giữ thứ tự, có thể bỏ phần tử) tăng dần và dài nhất. Đoạn con tổng lớn nhất là bài toán khác, sắp xếp mảng là thay đổi dữ liệu còn tìm phần tử lớn nhất chỉ cần một lượt duyệt."
+    },
+    {
       "id": "cpp-c11-01",
       "topic": "Điều kiện áp dụng QHD",
       "source": "KTLT C5 - Quy hoạch động - Lý thuyết",

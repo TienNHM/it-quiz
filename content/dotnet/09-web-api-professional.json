@@ -4,6 +4,76 @@
   "description": "REST, versioning, phân trang, upload an toàn và rate limiting cho Web API.",
   "questions": [
     {
+      "id": "dotnet-m09-21",
+      "topic": "Phương thức HTTP",
+      "source": "Module 9 - Pagination, Filtering, Sorting (cơ bản)",
+      "question": "Trong REST API, phương thức HTTP nào thường dùng để lấy dữ liệu mà không làm thay đổi gì?",
+      "options": [
+        "DELETE",
+        "POST",
+        "PUT",
+        "GET"
+      ],
+      "answer": 3,
+      "explanation": "`GET` dùng để **đọc** dữ liệu và không làm thay đổi trạng thái trên server.\n- `POST` thường tạo mới.\n- `PUT` thường thay thế/cập nhật.\n- `DELETE` xoá tài nguyên."
+    },
+    {
+      "id": "dotnet-m09-22",
+      "topic": "Mã trạng thái",
+      "source": "Module 9 - Pagination, Filtering, Sorting (cơ bản)",
+      "question": "Mã HTTP `404` có nghĩa là gì?",
+      "options": [
+        "Yêu cầu thành công",
+        "Máy chủ bị lỗi nội bộ",
+        "Không tìm thấy tài nguyên được yêu cầu",
+        "Chưa đăng nhập"
+      ],
+      "answer": 2,
+      "explanation": "`404 Not Found` nghĩa là **không có tài nguyên** ở địa chỉ đó (hoặc server không muốn tiết lộ nó).\n- Thành công là nhóm `2xx` như `200`.\n- Lỗi nội bộ của máy chủ là `500`.\n- Chưa đăng nhập là `401`."
+    },
+    {
+      "id": "dotnet-m09-23",
+      "topic": "DTO là gì",
+      "source": "Module 9 - Pagination, Filtering, Sorting (cơ bản)",
+      "question": "DTO (Data Transfer Object) trong Web API dùng để làm gì?",
+      "options": [
+        "Đóng gói dữ liệu đúng hình dạng cần gửi/nhận qua API, tách khỏi entity trong database",
+        "Thay thế cơ sở dữ liệu",
+        "Mã hoá mật khẩu",
+        "Chạy tác vụ nền"
+      ],
+      "answer": 0,
+      "explanation": "DTO là kiểu **chỉ chứa dữ liệu cần truyền** qua API, giúp không lộ các trường nội bộ và đổi database mà không phá hợp đồng API.\n- Không thay thế database.\n- Mã hoá mật khẩu là việc của hàm băm.\n- Tác vụ nền dùng `BackgroundService`."
+    },
+    {
+      "id": "dotnet-m09-24",
+      "topic": "Phân trang",
+      "source": "Module 9 - Pagination, Filtering, Sorting (cơ bản)",
+      "question": "Vì sao API trả danh sách lớn nên có phân trang (pagination)?",
+      "options": [
+        "Để tăng số lượng bản ghi mỗi lần trả",
+        "Để tránh phải dùng JSON",
+        "Để tránh tải và gửi quá nhiều dữ liệu một lần, giúp phản hồi nhanh và nhẹ hơn",
+        "Vì HTTP cấm trả quá 1 bản ghi"
+      ],
+      "answer": 2,
+      "explanation": "Phân trang chia kết quả thành **từng phần nhỏ** (ví dụ 20 dòng/trang), giảm tải cho server, mạng và client.\n- Mục đích ngược với việc tăng số bản ghi mỗi lần.\n- Vẫn dùng JSON như bình thường.\n- HTTP không cấm trả nhiều bản ghi."
+    },
+    {
+      "id": "dotnet-m09-25",
+      "topic": "OpenAPI",
+      "source": "Module 9 - Pagination, Filtering, Sorting (cơ bản)",
+      "question": "OpenAPI (trước đây gọi là Swagger) là gì?",
+      "options": [
+        "Một cơ sở dữ liệu",
+        "Một đặc tả mô tả API (endpoint, tham số, kiểu dữ liệu) mà người và công cụ đều đọc được",
+        "Một thư viện nén ảnh",
+        "Một trình biên dịch C#"
+      ],
+      "answer": 1,
+      "explanation": "OpenAPI là **tài liệu mô tả API** dạng chuẩn, từ đó sinh được trang thử API, tài liệu và cả mã client.\n- Không phải cơ sở dữ liệu.\n- Không liên quan nén ảnh.\n- Không phải trình biên dịch."
+    },
+    {
       "id": "dotnet-m09-01",
       "topic": "Vỏ phân trang",
       "source": "Module 9 - Pagination, Filtering, Sorting",

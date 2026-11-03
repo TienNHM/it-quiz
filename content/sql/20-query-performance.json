@@ -2,7 +2,78 @@
   "id": "sql-d20",
   "title": "Ngày 20: Đọc kế hoạch thực thi với EXPLAIN",
   "description": "EXPLAIN và EXPLAIN ANALYZE, cost/rows/loops, các kiểu scan và join, Sort, thống kê và ANALYZE.",
+  "conceptual": true,
   "questions": [
+    {
+      "id": "sql-d20-15",
+      "topic": "EXPLAIN là gì",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN (cơ bản)",
+      "question": "Lệnh `EXPLAIN` đặt trước một câu `SELECT` dùng để làm gì?",
+      "options": [
+        "Giải thích ý nghĩa của câu lệnh bằng tiếng Việt",
+        "Tự sửa câu lệnh cho nhanh hơn",
+        "Hiện kế hoạch thực thi: PostgreSQL định chạy câu lệnh theo các bước nào",
+        "Xoá bộ nhớ đệm của database"
+      ],
+      "answer": 2,
+      "explanation": "`EXPLAIN` in ra kế hoạch thực thi (execution plan): quét bảng nào, dùng index nào, nối bằng thuật toán gì, kèm chi phí ước lượng.\n- Nó không dịch câu lệnh sang tiếng Việt.\n- Nó không tự sửa câu lệnh; bạn đọc plan rồi tự quyết định cải thiện.\n- Nó không xoá bộ nhớ đệm."
+    },
+    {
+      "id": "sql-d20-16",
+      "topic": "Seq Scan",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN (cơ bản)",
+      "question": "Nút `Seq Scan` trong một plan nghĩa là gì?",
+      "options": [
+        "PostgreSQL đọc tuần tự toàn bộ các dòng của bảng",
+        "PostgreSQL đang tra index",
+        "PostgreSQL đang sắp xếp kết quả",
+        "PostgreSQL đang nối hai bảng"
+      ],
+      "answer": 0,
+      "explanation": "`Seq Scan` (sequential scan) là đọc từ đầu đến cuối bảng, kiểm tra từng dòng. Với bảng nhỏ hoặc điều kiện khớp nhiều dòng thì đây là cách rẻ nhất.\n- Tra index là `Index Scan` hoặc `Bitmap Index Scan`.\n- Sắp xếp là nút `Sort`.\n- Nối bảng là các nút như `Nested Loop`, `Hash Join`, `Merge Join`."
+    },
+    {
+      "id": "sql-d20-17",
+      "topic": "Index Scan",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN (cơ bản)",
+      "question": "Nút `Index Scan` trong plan nghĩa là gì?",
+      "options": [
+        "Đọc toàn bộ bảng một lượt",
+        "PostgreSQL xoá index",
+        "PostgreSQL dùng index để tìm thẳng các dòng khớp rồi mới đọc chúng từ bảng",
+        "PostgreSQL tạo index mới tạm thời"
+      ],
+      "answer": 2,
+      "explanation": "`Index Scan` dùng index để tìm nhanh các dòng thoả điều kiện rồi lấy dòng đó từ bảng, nên hợp khi điều kiện chọn lọc cao.\n- Đọc toàn bộ bảng là `Seq Scan`.\n- Plan chỉ mô tả cách đọc, nó không xoá index.\n- `EXPLAIN` không tạo index mới; index chỉ có khi bạn chạy `CREATE INDEX`."
+    },
+    {
+      "id": "sql-d20-18",
+      "topic": "Cost trong plan",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN (cơ bản)",
+      "question": "Con số `cost=0.00..35.50` trong plan cho biết điều gì?",
+      "options": [
+        "Số mili giây truy vấn thật sự chạy",
+        "Số tiền phải trả cho máy chủ",
+        "Số dòng chắc chắn sẽ trả về",
+        "Chi phí ước lượng của planner, tính theo đơn vị tương đối, không phải thời gian thật"
+      ],
+      "answer": 3,
+      "explanation": "`cost` là ước lượng của planner theo đơn vị quy ước (khởi động..tổng), dùng để so sánh các cách chạy với nhau chứ không phải mili giây.\n- Thời gian thật chỉ có khi dùng `EXPLAIN ANALYZE` (`actual time`).\n- Không liên quan tới tiền.\n- Số dòng ước lượng nằm ở `rows`, và cũng chỉ là ước lượng."
+    },
+    {
+      "id": "sql-d20-19",
+      "topic": "Query planner",
+      "source": "Ngày 20 - Đọc kế hoạch thực thi với EXPLAIN (cơ bản)",
+      "question": "Query planner (bộ lập kế hoạch) của PostgreSQL làm nhiệm vụ gì?",
+      "options": [
+        "Lên lịch chạy truy vấn vào ban đêm",
+        "Kiểm tra cú pháp SQL của bạn",
+        "Chọn cách chạy có chi phí ước lượng thấp nhất cho câu truy vấn trong nhiều cách khả dĩ",
+        "Sao lưu dữ liệu sang máy khác"
+      ],
+      "answer": 2,
+      "explanation": "Cùng một câu SQL có thể chạy theo nhiều cách (Seq Scan hay Index Scan, Hash Join hay Nested Loop). Planner dựa trên thống kê để chọn cách rẻ nhất.\n- Nó không lên lịch chạy.\n- Kiểm tra cú pháp là việc của bộ phân tích cú pháp (parser).\n- Sao lưu là việc của công cụ backup."
+    },
     {
       "id": "sql-d20-01",
       "topic": "EXPLAIN ANALYZE chạy thật",

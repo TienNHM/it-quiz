@@ -4,6 +4,76 @@
   "description": "Độ phức tạp thuật toán, tối ưu vòng lặp, tránh tính lặp, mảng cộng dồn, sàng nguyên tố và tránh tràn số khi tinh chỉnh chương trình.",
   "questions": [
     {
+      "id": "cpp-c08-24",
+      "topic": "Độ phức tạp thuật toán",
+      "source": "KTLT C08 - độ phức tạp và tối ưu (cơ bản)",
+      "question": "\"Độ phức tạp thuật toán\" cho biết điều gì?",
+      "options": [
+        "Thuật toán tốn bao nhiêu thời gian hoặc bộ nhớ khi kích thước dữ liệu tăng lên",
+        "Thuật toán dài bao nhiêu dòng code",
+        "Thuật toán khó viết đến mức nào",
+        "Số lỗi cú pháp trong chương trình"
+      ],
+      "answer": 0,
+      "explanation": "Độ phức tạp đo mức tăng của thời gian (hoặc bộ nhớ) theo kích thước đầu vào n, thường viết bằng ký hiệu O. Nó không đo số dòng code, độ khó viết hay số lỗi cú pháp."
+    },
+    {
+      "id": "cpp-c08-25",
+      "topic": "O(1)",
+      "source": "KTLT C08 - độ phức tạp và tối ưu (cơ bản)",
+      "question": "Thuật toán có độ phức tạp O(1) nghĩa là gì?",
+      "options": [
+        "Thuật toán chạy đúng 1 giây",
+        "Thời gian chạy gần như không đổi dù dữ liệu lớn hay nhỏ",
+        "Thời gian tăng gấp đôi khi dữ liệu tăng gấp đôi",
+        "Thuật toán chỉ chạy được khi n = 1"
+      ],
+      "answer": 1,
+      "explanation": "O(1) là hằng số: số bước không phụ thuộc n (ví dụ truy cập `a[i]`). Nó không có nghĩa đúng 1 giây; thời gian tăng gấp đôi khi n gấp đôi là O(n); và thuật toán vẫn chạy với mọi n."
+    },
+    {
+      "id": "cpp-c08-26",
+      "topic": "Mảng cộng dồn",
+      "source": "KTLT C08 - độ phức tạp và tối ưu (cơ bản)",
+      "question": "Mảng cộng dồn (prefix sum) giúp ích gì nhất?",
+      "options": [
+        "Sắp xếp mảng nhanh hơn",
+        "Đếm số phần tử nguyên tố",
+        "Tính tổng một đoạn liên tiếp của mảng nhanh, gần như O(1) mỗi lần hỏi",
+        "Đảo ngược mảng"
+      ],
+      "answer": 2,
+      "explanation": "Với `pre[i]` là tổng i phần tử đầu, tổng đoạn [l, r] bằng `pre[r] - pre[l-1]` chỉ tốn một phép trừ. Mảng này không sắp xếp, không đếm số nguyên tố và không đảo ngược mảng."
+    },
+    {
+      "id": "cpp-c08-27",
+      "topic": "Sàng Eratosthenes",
+      "source": "KTLT C08 - độ phức tạp và tối ưu (cơ bản)",
+      "question": "Sàng Eratosthenes dùng để làm gì?",
+      "options": [
+        "Tính giai thừa của n",
+        "Sắp xếp một dãy số",
+        "Tìm ước chung lớn nhất của hai số",
+        "Tìm tất cả số nguyên tố không vượt quá n"
+      ],
+      "answer": 3,
+      "explanation": "Sàng Eratosthenes đánh dấu loại dần bội của các số nguyên tố để còn lại các số nguyên tố ≤ n. Giai thừa tính bằng vòng nhân, sắp xếp dùng các thuật toán sắp xếp, còn UCLN dùng thuật toán Euclid."
+    },
+    {
+      "id": "cpp-c08-28",
+      "topic": "Giai thừa là gì",
+      "source": "KTLT C08 - độ phức tạp và tối ưu (cơ bản)",
+      "question": "Giai thừa của số nguyên dương n (ký hiệu n!) là gì?",
+      "options": [
+        "Tổng 1 + 2 + 3 + ... + n",
+        "Tích 1 × 2 × 3 × ... × n",
+        "n nhân với chính nó",
+        "n chia cho 2 liên tiếp đến khi còn 1"
+      ],
+      "answer": 1,
+      "explanation": "n! là tích của các số từ 1 đến n, ví dụ 4! = 24. Tổng 1 đến n là số tam giác, n nhân chính nó là bình phương n², và chia liên tiếp cho 2 là phép tính khác (liên quan log)."
+    },
+    {
       "id": "cpp-c08-01",
       "topic": "Lũy thừa nhanh",
       "source": "NMLT C08 - 201.cpp lũy thừa x^p",

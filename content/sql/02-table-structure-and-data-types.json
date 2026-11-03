@@ -4,6 +4,81 @@
   "description": "Chọn kiểu dữ liệu đúng, hiểu IDENTITY, các ràng buộc, ON DELETE và ALTER TABLE trên DSC Shop.",
   "questions": [
     {
+      "id": "sql-d02-15",
+      "topic": "Kiểu dữ liệu cho họ tên",
+      "source": "Ngày 2 - Bảng, kiểu dữ liệu và ràng buộc (cơ bản)",
+      "question": "Cột `full_name` lưu họ tên khách hàng nên dùng kiểu dữ liệu nào?",
+      "options": [
+        "`INT`",
+        "`BOOLEAN`",
+        "`DATE`",
+        "`VARCHAR(100)` (hoặc `TEXT`)"
+      ],
+      "answer": 3,
+      "explanation": "Họ tên là **chuỗi ký tự**, nên dùng `VARCHAR(n)` hoặc `TEXT`.\n- `INT` chỉ chứa số nguyên.\n- `BOOLEAN` chỉ chứa đúng/sai.\n- `DATE` chỉ chứa ngày tháng năm. Cả ba đều không lưu được tên người.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d02-16",
+      "topic": "Ràng buộc NOT NULL",
+      "source": "Ngày 2 - Bảng, kiểu dữ liệu và ràng buộc (cơ bản)",
+      "question": "Cột được khai báo `NOT NULL` có nghĩa là gì?",
+      "options": [
+        "cột bắt buộc phải có giá trị, không được để trống (NULL)",
+        "cột chỉ được chứa số 0",
+        "cột không được nhập chữ",
+        "cột tự động được xóa khi không ai dùng"
+      ],
+      "answer": 0,
+      "explanation": "`NOT NULL` buộc mỗi dòng phải có giá trị ở cột đó; thử `INSERT` mà bỏ trống (không có `DEFAULT`) sẽ bị từ chối.\n- Nó không liên quan đến số 0: `NULL` nghĩa là \"chưa biết\", khác với 0.\n- Không có chuyện cấm nhập chữ: kiểu dữ liệu của cột mới quyết định chữ hay số.\n- Cột không tự biến mất theo thời gian.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d02-17",
+      "topic": "Khóa ngoại",
+      "source": "Ngày 2 - Bảng, kiểu dữ liệu và ràng buộc (cơ bản)",
+      "question": "Khóa ngoại (foreign key) là gì?",
+      "options": [
+        "cột chứa mật khẩu của người dùng nước ngoài",
+        "cột bắt buộc phải là kiểu số thập phân",
+        "cột trỏ tới khóa chính của một bảng khác để liên kết hai bảng",
+        "cột được đặt ở cuối mỗi bảng"
+      ],
+      "answer": 2,
+      "explanation": "Khóa ngoại là cột có giá trị phải khớp với khóa chính của bảng khác, ví dụ `orders.customer_id` trỏ tới `customers.customer_id`. Nó giữ cho dữ liệu liên kết luôn hợp lệ.\n- Nó không liên quan đến mật khẩu hay \"nước ngoài\" dù tên gọi dễ gây hiểu lầm.\n- Kiểu dữ liệu của khóa ngoại giống kiểu khóa chính nó trỏ tới, thường là số nguyên.\n- Vị trí cột trong bảng không quyết định nó có phải khóa ngoại hay không.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d02-18",
+      "topic": "Giá trị mặc định DEFAULT",
+      "source": "Ngày 2 - Bảng, kiểu dữ liệu và ràng buộc (cơ bản)",
+      "question": "Khai báo `DEFAULT` cho một cột dùng để làm gì?",
+      "options": [
+        "cấm người dùng sửa giá trị của cột",
+        "đặt giá trị tự động khi câu `INSERT` không nêu cột đó",
+        "xóa cột nếu không có dữ liệu",
+        "đổi kiểu dữ liệu của cột khi cần"
+      ],
+      "answer": 1,
+      "explanation": "`DEFAULT` cho giá trị có sẵn: nếu `INSERT` không ghi cột đó, hệ thống tự điền, ví dụ `status` của đơn mới là `pending`.\n- Nó không cấm sửa dữ liệu, bạn vẫn `UPDATE` được.\n- Không có việc tự xóa cột khi thiếu dữ liệu.\n- Đổi kiểu dữ liệu là việc của `ALTER TABLE ... ALTER COLUMN ... TYPE`, không phải `DEFAULT`.",
+      "kind": "concept"
+    },
+    {
+      "id": "sql-d02-19",
+      "topic": "Kiểu BOOLEAN",
+      "source": "Ngày 2 - Bảng, kiểu dữ liệu và ràng buộc (cơ bản)",
+      "question": "Cột `is_active` kiểu `BOOLEAN` lưu được những giá trị nào?",
+      "options": [
+        "`TRUE`, `FALSE` (và `NULL` nếu chưa biết)",
+        "mọi số nguyên từ 0 đến 100",
+        "bất kỳ đoạn văn bản dài nào",
+        "chỉ các ngày trong năm hiện tại"
+      ],
+      "answer": 0,
+      "explanation": "`BOOLEAN` là kiểu **đúng/sai**: `TRUE` hoặc `FALSE`, và `NULL` nếu cột cho phép chưa biết. Rất hợp cho cờ như `is_active`.\n- Dãy số nguyên 0 đến 100 là việc của kiểu số như `INT`.\n- Văn bản dài thuộc kiểu `TEXT`.\n- Ngày tháng thuộc kiểu `DATE` hoặc `TIMESTAMP`.",
+      "kind": "concept"
+    },
+    {
       "id": "sql-d02-01",
       "topic": "FLOAT và NUMERIC",
       "source": "Ngày 2 - Bảng, kiểu dữ liệu và ràng buộc",
