@@ -5,7 +5,7 @@ import {STYLE_IDS} from './styles';
 export const STORAGE_KEY = 'itquiz.v1';
 export const MAX_HISTORY = 50;
 
-export const defaultSettings = (): Settings => ({style: 'obsidian', shuffleOptions: true, theme: 'auto', examSize: 30, examMinutes: 45});
+export const defaultSettings = (): Settings => ({style: 'pop', shuffleOptions: true, theme: 'auto', examSize: 30, examMinutes: 45});
 
 export const defaultProgress = (): ProgressState => ({
   version: 1,

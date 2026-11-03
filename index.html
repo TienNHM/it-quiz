@@ -15,7 +15,7 @@
           var r = document.documentElement;
           var dark = s.theme === 'dark' || (s.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
           r.dataset.mode = dark ? 'dark' : 'light';
-          r.dataset.style = s.style || 'obsidian';
+          r.dataset.style = s.style || 'pop';
         } catch (e) {}
       })();
     </script>

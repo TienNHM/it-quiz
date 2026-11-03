@@ -141,7 +141,7 @@ describe('progress import/export', () => {
     expect(getProgress().xp).toBe(before.xp);
   });
   it('settings mặc định, cập nhật và lưu localStorage', () => {
-    expect(getProgress().settings).toEqual({style: 'obsidian', shuffleOptions: true, theme: 'auto', examSize: 30, examMinutes: 45});
+    expect(getProgress().settings).toEqual({style: 'pop', shuffleOptions: true, theme: 'auto', examSize: 30, examMinutes: 45});
     const ref = getProgress();
     updateSettings({theme: 'dark', examSize: 10});
     expect(getProgress()).not.toBe(ref);
@@ -154,7 +154,7 @@ describe('progress import/export', () => {
     const raw = JSON.parse(exportProgress());
     raw.settings.style = 'khong-ton-tai';
     expect(importProgress(JSON.stringify(raw))).toBe(true);
-    expect(getProgress().settings.style).toBe('obsidian');
+    expect(getProgress().settings.style).toBe('pop');
   });
 });
 
